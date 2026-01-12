@@ -49,7 +49,6 @@ class BlacklistServiceTest {
         `when`(blacklistRepository.checkPackageExists(testGroupId, testArtifactId)).thenReturn(true)
 
         // Mock empty lists by default to avoid NPEs
-        `when`(packageRepository.findLatestByGroupId(anyString())).thenReturn(emptyList())
         `when`(packageRepository.findByGroupIdAndArtifactIdOrderByReleaseTsDesc(anyString(), anyString())).thenReturn(emptyList())
         `when`(packageRepository.findLatestByProjectId(anyInt())).thenReturn(emptyList())
     }
