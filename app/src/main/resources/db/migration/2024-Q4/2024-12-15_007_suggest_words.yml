@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop suggestion_words materialized view
+      author: dmitrii.krasnov@jetbrain.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'suggestion_words'
+      changes:
+        - sql:
+            sql: |
+              DROP MATERIALIZED VIEW suggestion_words CASCADE;
+
+  - changeSet:
+      id: create suggestion_words materialized view
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'suggestion_words'
+      changes:
+        - sqlFile:
+            path: 2024-12-15_007_suggest_words.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: add suggest_words_indexes to suggestion_words
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+          - onFail: MARK_RAN
+          - not:
+              indexExists:
+                  tableName: suggestion_words
+                  indexName: suggestion_words_word_gin_idx
+      changes:
+        - createIndex:
+            indexName: suggestion_words_word_gin_idx
+            tableName: suggestion_words
+            columns:
+              - column:
+                  name: word

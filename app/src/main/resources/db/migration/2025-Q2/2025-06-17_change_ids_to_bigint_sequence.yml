@@ -1,0 +1,210 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop_project_index_materialized_view
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'project_index'
+      changes:
+        - sql:
+            sql: DROP MATERIALIZED VIEW IF EXISTS project_index;
+
+  - changeSet:
+      id: drop_package_index_materialized_view
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'package_index'
+      changes:
+        - sql:
+            sql: DROP MATERIALIZED VIEW IF EXISTS package_index;
+
+  - changeSet:
+      id: add_id_to_package_target
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package_target
+              columnName: id
+      changes:
+        - createSequence:
+            sequenceName: package_target_id_seq
+            startValue: 1
+            incrementBy: 1
+        - addColumn:
+            tableName: package_target
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  defaultValueSequenceNext: package_target_id_seq
+                  constraints:
+                    nullable: true
+        - alterSequence:
+            sequenceName: package_target_id_seq
+            incrementBy: 50
+        - addPrimaryKey:
+            tableName: package_target
+            columnNames: id
+            constraintName: pk_package_target_id
+        - addNotNullConstraint:
+            tableName: package_target
+            columnName: id
+            constraintName: nn_package_target_id
+        - sql:
+            sql: SELECT setval('package_target_id_seq', (SELECT COUNT(*) + 100 FROM package_target), false)
+
+  - changeSet:
+      id: change_package_id_to_bigint
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: |
+              SELECT COUNT(*)
+              FROM pg_sequences
+              WHERE sequencename = 'package_id_seq'
+                AND increment_by = 50
+      changes:
+        - sql:
+            sql: ALTER TABLE package ALTER COLUMN id DROP IDENTITY IF EXISTS;
+        - sql:
+            sql: ALTER TABLE package ALTER COLUMN id DROP DEFAULT
+        - sql:
+            sql: DROP SEQUENCE IF EXISTS package_id_seq;
+        - createSequence:
+            sequenceName: package_id_seq
+            dataType: BIGINT
+            incrementBy: 50
+        - sql:
+            sql: SELECT setval('package_id_seq', (SELECT COUNT(*) + 100 FROM package), false)
+        - modifyDataType:
+            tableName: package
+            columnName: id
+            newDataType: BIGINT
+        - sql:
+            sql: ALTER TABLE package ALTER COLUMN id SET DEFAULT nextval('package_id_seq')
+
+  - changeSet:
+      id: update_package_foreign_keys
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - modifyDataType:
+            tableName: package_target
+            columnName: package_id
+            newDataType: BIGINT
+
+  - changeSet:
+      id: recreate_package_index_materialized_view
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sqlFile:
+            path: 2025-06-04_add_targets_vector_to_package_index.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: recreate_package_index_fts_gin_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_fts_gin_idx ON package_index USING GIN (fts);
+
+  - changeSet:
+      id: recreate_package_index_platforms_vector_gin_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_platforms_vector_gin_idx ON package_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: recreate_package_index_unique_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: package_index_unique
+            tableName: package_index
+            unique: true
+            columns:
+              - column:
+                  name: group_id
+              - column:
+                  name: artifact_id
+
+  - changeSet:
+      id: recreate_project_index_materialized_view
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sqlFile:
+            path: 2025-06-03_add_targets_vector_to_project_index.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: recreate_project_index_fts_gin_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts);
+
+  - changeSet:
+      id: recreate_project_index_platforms_vector_gin_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: recreate_project_index_stars_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: project_index_stars_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: stars
+
+  - changeSet:
+      id: recreate_project_index_project_id_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: project_index_project_id_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: recreate unique index to project_index for concurrent refresh
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: project_index_unique
+            tableName: project_index
+            unique: true
+            columns:
+              - column:
+                  name: project_id
+      rollback:
+        - dropIndex:
+            indexName: project_index_unique
+            tableName: project_index

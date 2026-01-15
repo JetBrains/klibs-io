@@ -1,0 +1,71 @@
+databaseChangeLog:
+  - changeSet:
+      id: update tags and description in a-sit-plus/signum project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/59"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{cryptography,crypto,COSE,JOSE,X.509,PKI,PKIX,ASN.1}'
+              - column:
+                  name: description
+                  value: 'Offers functionality for handling cryptography, COSE, JOSE, and PKI applications, including public keys, algorithm identifiers, X509 certificates, and certification requests. Supports attestation and hardware-backed crypto on mobile including biometric authentication. Features a comprehensive ASN.1 parser and encoder, and DSL for generating ASN.1 structures.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'signum' and so.login = 'a-sit-plus')"
+
+  - changeSet:
+      id: update tags in Wokdsem/kInject2 project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/63"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Dependency Injection}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'kInject2' and so.login = 'Wokdsem')"
+
+  - changeSet:
+      id: update description in spxbhuhb/adaptive project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/68"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Low-code application development system for Kotlin Multiplatform.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'adaptive' and so.login = 'spxbhuhb')"
+
+  - changeSet:
+      id: update description in DiamondEdge1/KmLogging project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/69"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Multiplatform logging library targets Android, iOS, JVM, JS and Wasm, utilizing native logging facilities. Offers high performance, minimal overhead, customizable log levels, and thread-safety without requiring configuration.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'KmLogging' and so.login = 'DiamondEdge1')"

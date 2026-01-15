@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: https://github.com/JetBrains/klibs-io-issue-management/issues/160
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Structured logging library for Kotlin, that aims to provide a developer-friendly API with minimal runtime overhead.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'devlog-kotlin' and so.login = 'hermannm')"

@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: make_package_configuration_nullable
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - dropNotNullConstraint:
+            tableName: package
+            columnName: configuration
+            columnDataType: JSONB
+        - sql:
+            sql: |-
+              UPDATE package 
+              SET configuration = NULL 
+              WHERE configuration = 'null'::jsonb;

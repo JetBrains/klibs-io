@@ -1,0 +1,47 @@
+logging:
+  level:
+    io.klibs: ${KLIBS_LOGGING_LEVEL:TRACE}
+
+spring:
+  docker:
+    compose:
+      lifecycle-management: start_and_stop
+      enabled: true
+  ai:
+    openai:
+      api-key: ${PERSONAL_AI_TOKEN:"FAKE"}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/klibs
+    username: klibs
+    password: klibs
+  cloud:
+    aws:
+      region:
+        static: eu-west-1
+      credentials:
+        access-key: test
+        secret-key: test
+      endpoint: http://s3.localhost.localstack.cloud:4566
+
+klibs:
+  ai: false
+  indexing: false
+  readme:
+    s3:
+      bucket-name: local-bucket
+      prefix: readme
+  indexing-configuration:
+    executor:
+      thread-count: 2
+    central-sonatype:
+      enabled: false
+      last-updated-offset-hours: 3
+    gmaven:
+      enabled: true
+      s3:
+        bucket-name: local-bucket
+        prefix: gmaven
+  integration:
+    github:
+      personal-access-token: ${PERSONAL_GITHUB_TOKEN}
+      update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}

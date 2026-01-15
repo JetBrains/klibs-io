@@ -1,0 +1,106 @@
+databaseChangeLog:
+  - changeSet:
+      id: create scm_owner table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: scm_owner
+      changes:
+        - createTable:
+            tableName: scm_owner
+            columns:
+              - column:
+                  name: id_native
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: id
+                  type: SERIAL
+                  constraints:
+                    primaryKeyName: primary_key
+                    nullable: false
+                    unique: true
+              - column:
+                  name: followers
+                  type: INT
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: login
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: homepage
+                  type: TEXT
+              - column:
+                  name: twitter_handle
+                  type: TEXT
+              - column:
+                  name: email
+                  type: TEXT
+              - column:
+                  name: location
+                  type: TEXT
+              - column:
+                  name: company
+                  type: TEXT
+
+  - changeSet:
+      id: add scm_owner_lower_login_idx to scm_owner
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: scm_owner
+              indexName: scm_owner_lower_login_idx
+      changes:
+        - createIndex:
+            indexName: scm_owner_lower_login_idx
+            tableName: scm_owner
+            unique: true
+            columns:
+              - column:
+                  name: login
+                  type: LOWER
+
+  - changeSet:
+      id: add scm_owner_updated_at_idx to scm_owner
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: scm_owner
+              indexName: scm_owner_updated_at_idx
+      changes:
+        - createIndex:
+            indexName: scm_owner_updated_at_idx
+            tableName: scm_owner
+            columns:
+              - column:
+                  name: updated_at

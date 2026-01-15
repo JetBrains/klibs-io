@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: create last_indexed_instant table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: last_package_indexed
+      changes:
+        - createTable:
+            tableName: last_package_indexed
+            columns:
+              - column:
+                  name: instant_value
+                  type: timestamp
+                  defaultValueComputed: "current_date - interval '2 months'"
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: |
+              INSERT INTO last_package_indexed
+              SELECT
+              WHERE NOT EXISTS (SELECT 1 FROM last_package_indexed)

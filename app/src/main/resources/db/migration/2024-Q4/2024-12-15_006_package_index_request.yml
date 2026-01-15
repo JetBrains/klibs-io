@@ -1,0 +1,87 @@
+databaseChangeLog:
+  - changeSet:
+      id: create package_index_request table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: package_index_request
+      changes:
+        - createTable:
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: id
+                  type: SERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: failed_attempts
+                  type: INT
+                  constraints:
+                    nullable: false
+                  defaultValue: 0
+              - column:
+                  name: failed_ts
+                  type: TIMESTAMP
+              - column:
+                  name: released_ts
+                  type: TIMESTAMP
+              - column:
+                  name: reindex
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+                  defaultValue: false
+              - column:
+                  name: group_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: artifact_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: TEXT
+            uniqueConstraints:
+              - uniqueConstraint:
+                  columnNames: group_id, artifact_id, version
+
+  - changeSet:
+      id: add package_index_request_released_at_idx to package_index_request
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index_request
+              indexName: package_index_request_released_at_idx
+      changes:
+        - createIndex:
+            indexName: package_index_request_released_at_idx
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: released_ts
+
+  - changeSet:
+      id: add package_index_request_failed_attempts_idx to package_index_request
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index_request
+              indexName: package_index_request_failed_attempts_idx
+      changes:
+        - createIndex:
+            indexName: package_index_request_failed_attempts_idx
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: failed_attempts

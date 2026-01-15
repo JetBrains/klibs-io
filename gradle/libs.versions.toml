@@ -1,0 +1,113 @@
+[versions]
+
+kotlin = "2.1.0"
+
+# Spring
+spring-boot = "3.2.2"
+spring-dependencyManagement = "1.1.7"
+spring-doc = "2.5.0"
+spring-ai = "1.0.3"
+spring-cloud-aws = "3.4.2"
+
+# Job / scheduling
+shedlock = "6.6.0"
+
+kohsuke-githubApi = "1.321"
+
+kotlinx-coroutines = "1.10.1"
+kotlinx-serialization = "1.6.3"
+
+okhttp = "4.12.0"
+bucket4j = "8.10.1"
+caffeine = "3.1.8"
+
+maven-model = "3.9.6"
+# when `maven-indexer` version is increased,
+# check if it is possible to remove CustomSmoSearchBackendImpl
+maven-indexer = "7.1.5"
+
+gorylenko-gitProperties = "2.4.1"
+
+jib = "3.4.3"
+
+mockito = "5.1.0"
+testcontainers = "1.21.4"
+
+markdown = "0.7.3"
+
+xml-util = "0.90.0"
+
+[plugins]
+
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+springBoot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+springDependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependencyManagement" }
+gitProperties = { id = "com.gorylenko.gradle-git-properties", version.ref = "gorylenko-gitProperties" }
+jib = { id = "com.google.cloud.tools.jib", version.ref = "jib" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinSpring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlinSpringJpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
+
+
+[libraries]
+
+kotlinx-coroutines-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm", version.ref = "kotlinx-coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
+kotlin-toolingMetadata = { module = "org.jetbrains.kotlin:kotlin-tooling-metadata", version.ref = "kotlin" }
+
+shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring", version.ref = "shedlock" }
+shedlock-jdbc = { module = "net.javacrumbs.shedlock:shedlock-provider-jdbc-template", version.ref = "shedlock" }
+
+springdoc-openapi-starter = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "spring-doc" }
+spring-ai-bom = { group = "org.springframework.ai", name = "spring-ai-bom", version.ref = "spring-ai" }
+spring-ai-starter-model-openai = { group = "org.springframework.ai", name = "spring-ai-starter-model-openai" }
+spring-cloud-aws-starter-s3 = { group = "io.awspring.cloud", name = "spring-cloud-aws-starter-s3", version.ref= "spring-cloud-aws" }
+spring-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
+spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
+spring-boot-starter-logging = { module = "org.springframework.boot:spring-boot-starter-logging" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-docker-compose = { module = "org.springframework.boot:spring-boot-docker-compose" }
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+
+kohsuke-githubApi = { module = "org.kohsuke:github-api", version.ref = "kohsuke-githubApi" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+maven-model = { module = "org.apache.maven:maven-model", version.ref = "maven-model" }
+bucket4j = { module = "com.bucket4j:bucket4j-core", version.ref = "bucket4j" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+maven-indexer-searchApi = { module = "org.apache.maven.indexer:search-api", version.ref = "maven-indexer" }
+maven-indexer-searchSmoBackend = { module = "org.apache.maven.indexer:search-backend-smo", version.ref = "maven-indexer" }
+
+mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
+
+liquibase-core = { module = "org.liquibase:liquibase-core" }
+postgresql = { module = "org.postgresql:postgresql" }
+
+testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
+testcontainers-database-commons = { module = "org.testcontainers:database-commons", version.ref = "testcontainers" }
+
+prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
+
+markdown = { module = "org.jetbrains:markdown", version.ref = "markdown" }
+
+xml-util = { module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xml-util" }
+
+[bundles]
+testcontainers = [
+    "testcontainers",
+    "testcontainers-postgresql",
+    "testcontainers-jdbc",
+    "testcontainers-database-commons"
+]

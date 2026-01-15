@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: KTL-3919_add_missing_https_prefix_to_scm_owner_homepage
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: scm_owner
+      changes:
+        - sql:
+            sql: |
+              UPDATE scm_owner 
+              SET homepage = 'https://' || substring(homepage from 8) 
+              WHERE homepage LIKE 'http://%';
+              
+              UPDATE scm_owner 
+              SET homepage = 'https://' || homepage 
+              WHERE homepage IS NOT NULL 
+                AND homepage NOT LIKE 'http://%' 
+                AND homepage NOT LIKE 'https://%';

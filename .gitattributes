@@ -1,0 +1,7 @@
+* text=auto
+
+# Make sure line endings are correct for scripts in different OSes
+*.sh text eol=lf
+*.bat text eol=crlf
+
+gradlew text eol=lf

@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: enqueue_jvm_null_target_packages_for_reindex
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: package
+        - tableExists:
+            tableName: package_target
+        - tableExists:
+            tableName: package_index_request
+      changes:
+        - sql:
+            comment: "Insert reindex requests for packages that have a JVM platform target with NULL target value"
+            sql: |
+              INSERT INTO package_index_request (group_id, artifact_id, version, released_ts, reindex, scraper_type)
+              SELECT
+                p.group_id,
+                p.artifact_id,
+                p.version,
+                p.release_ts,
+                TRUE,
+                CASE
+                  WHEN p.scraper_type = 'SEARCH_MAVEN' THEN 'CENTRAL_SONATYPE'
+                  ELSE p.scraper_type
+                  END AS scraper_type
+              FROM package p
+              WHERE EXISTS (
+                SELECT 1
+                  FROM package_target pt
+                  WHERE pt.package_id = p.id
+                  AND pt.platform = 'JVM'
+                  AND pt.target IS NULL
+              )
+              AND NOT EXISTS (
+                SELECT 1
+                  FROM package_index_request pir
+                  WHERE pir.group_id = p.group_id
+                  AND pir.artifact_id = p.artifact_id
+                  AND pir.version = p.version
+              );

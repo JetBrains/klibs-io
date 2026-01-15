@@ -1,0 +1,16 @@
+klibs:
+  indexing: false
+  indexing-configuration:
+    central-sonatype:
+      enabled: true
+    gmaven:
+      enabled: true
+  ai: false
+  integration:
+    maven:
+      central:
+        rate-limit-capacity: 100
+        rate-limit-refill-amount: 100
+        rate-limit-refill-period-sec: 5
+        discovery-endpoint: http://localhost:8080/discovery
+        search-endpoint: http://localhost:8080/search

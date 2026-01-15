@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: allowed_project_tags_setup
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: project_tags
+      changes:
+        - createTable:
+            tableName: allowed_project_tags
+            columns:
+              - column:
+                  name: name
+                  type: varchar(255)
+              - column:
+                  name: tag_synonyms
+                  type: JSONB
+        - sql:
+            sql: |
+              CREATE TEMP TABLE pg_temp.allowed_project_tags_raw (
+                name varchar(255),
+                tag_synonyms text
+              );
+        - loadData:
+            file: ../csv_data/2025-10-09-allowed_tags.csv
+            tableName: allowed_project_tags_raw
+            schemaName: pg_temp
+            relativeToChangelogFile: true
+            encoding: UTF-8
+            columns:
+              - column:
+                  name: name
+                  type: STRING
+                  header: name
+              - column:
+                  name: tag_synonyms
+                  type: STRING
+                  header: tag_synonyms
+        - sql:
+            sql: |
+              INSERT INTO allowed_project_tags (name, tag_synonyms)
+              SELECT name,
+                     to_jsonb(string_to_array(coalesce(tag_synonyms, ''), ';'))
+              FROM pg_temp.allowed_project_tags_raw;

@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: add repo_name column to package table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package
+              columnName: repo_name
+      changes:
+        - addColumn:
+            tableName: package
+            columns:
+              - column:
+                  name: repo_name
+                  type: varchar(255)
+                  defaultValue: "MAVEN_CENTRAL"
+
+  - changeSet:
+      id: add repo_name column to package_index_request table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package_index_request
+              columnName: repo_name
+      changes:
+        - addColumn:
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: repo_name
+                  type: varchar(255)
+                  defaultValue: "MAVEN_CENTRAL"

@@ -1,0 +1,61 @@
+databaseChangeLog:
+  - changeSet:
+      id: create package_target table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: package_target
+      changes:
+        - createTable:
+            tableName: package_target
+            columns:
+              - column:
+                  name: package_id
+                  type: INTEGER
+                  constraints:
+                    references: package(id)
+                    foreignKeyName: fk_package_target_package_id
+              - column:
+                  name: platform
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target
+                  type: TEXT
+
+  - changeSet:
+      id: add package_target_package_id_include_platform_idx to package_target
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_target
+              indexName: package_target_package_id_include_platform_idx
+      changes:
+        - createIndex:
+            indexName: package_target_package_id_include_platform_idx
+            tableName: package_target
+            columns:
+              - column:
+                  name: package_id
+
+  - changeSet:
+      id: add package_target_platform_idx to package_target
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_target
+              indexName: package_target_platform_idx
+      changes:
+        - createIndex:
+            indexName: package_target_platform_idx
+            tableName: package_target
+            columns:
+              - column:
+                  name: platform

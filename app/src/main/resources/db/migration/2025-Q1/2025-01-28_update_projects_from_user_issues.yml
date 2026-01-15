@@ -1,0 +1,134 @@
+databaseChangeLog:
+  - changeSet:
+      id: update tags in compose-fluent-ui project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/37"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'compose-fluent-ui' and so.login = 'Konyaco')"
+
+  - changeSet:
+      id: update tags in JsonTree project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/38"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI,JSON}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'JsonTree' and so.login = 'snappdevelopment')"
+
+  - changeSet:
+      id: update description in rocksdb-multiplatform project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/48"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Storage,Database,Data}'
+              - column:
+                  name: description
+                  value: 'Implements a cross-platform solution for RocksDB, enabling high-performance embedded key-value storage across various platforms, with full API support on JVM, Android, Linux, iOS and macOS.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'rocksdb-multiplatform' and so.login = 'marykdb')"
+
+  - changeSet:
+      id: update description in maryk project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/49"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Storage,Database,Data}'
+              - column:
+                  name: description
+                  value: 'A database/framework for defining, querying, and storing structured data efficiently across platforms. It supports powerful features like advanced querying with filters and aggregations, cross-platform serialization (JSON, YAML, ProtoBuf), and historical data versioning.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'maryk' and so.login = 'marykdb')"
+
+  - changeSet:
+      id: update description in eungabi project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/53"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI,Navigation}'
+              - column:
+                  name: description
+                  value: 'A Compose Multiplatform Navigation Library that supports the coolest transition features like predictive back gesture(iOS, Android), Shared Element Transition(All). It supports Mobile(Android, iOS), Desktop(Jvm, MacOS), Web(Wasm, IR).'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'eungabi' and so.login = 'easternkite')"
+
+  - changeSet:
+      id: update description in sketch project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/54"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI,Image Loader,Animated Image}'
+              - column:
+                  name: description
+                  value: 'Sketch is an image loading library designed for Compose Multiplatform and Android View. It is powerful and rich in functions. In addition to basic functions, it also supports GIF, SVG, video thumbnails, Exif Orientation, etc.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'sketch' and so.login = 'panpf')"
+
+  - changeSet:
+      id: update description in zoomimage project
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/klibs-io/issue-management/issues/55"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI,Image Zoom,Image Subsampling}'
+              - column:
+                  name: description
+                  value: 'ZoomImage is an gesture zoom viewing of images library specially designed for Compose Multiplatform and Android View. Supported scale, pan, locate, rotation, and super-large image subsampling.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'zoomimage' and so.login = 'panpf')"

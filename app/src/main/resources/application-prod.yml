@@ -1,0 +1,23 @@
+#
+# Configuration properties for deploying to https://console.intellij.net/
+#
+# The values are set in "Config Maps" and in "Secrets",
+# and require the app to be rebuilt to take effect.
+#
+klibs:
+  auth:
+    users:
+      - username: ${KLIBS_MAIN_USERNAME}
+        password: ${KLIBS_MAIN_PASSWORD}
+        roles: ADMIN
+      - username: ${KLIBS_ELF_USERNAME}
+        password: ${KLIBS_ELF_PASSWORD}
+        roles: api-docs, actuator
+      - username: ${KLIBS_MED_USERNAME}
+        password: ${KLIBS_MED_PASSWORD}
+        roles: actuator
+management:
+  endpoint:
+    health:
+      show-components: when_authorized
+      show-details: when_authorized

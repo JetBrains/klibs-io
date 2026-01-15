@@ -1,0 +1,76 @@
+databaseChangeLog:
+  - changeSet:
+      id: create project_tags table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: project_tags
+      changes:
+        - createTable:
+            tableName: project_tags
+            columns:
+              - column:
+                  name: project_name
+                  type: TEXT
+              - column:
+                  name: tags
+                  type: TEXT
+              - column:
+                  name: tags_processed
+                  type: TEXT[]
+
+  - changeSet:
+      id: insert tags into project_tags from csv
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project_tags
+      changes:
+        - loadData:
+            file: 'db/migration/csv_data/project_tags.csv'
+            separator: ','
+            tableName: project_tags
+            columns:
+              - column:
+                  name: project_name
+                  type: text
+              - column:
+                  name: tags
+                  type: text
+              - column:
+                  name: tags_processed
+                  type: text[]
+
+  - changeSet:
+      id: add tags column to project table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+          - onFail: MARK_RAN
+          - tableExists:
+              tableName: project
+          - not:
+              columnExists:
+                tableName: project
+                columnName: tags
+      changes:
+            - addColumn:
+                tableName: project
+                columns:
+                    - column:
+                        name: tags
+                        type: TEXT[]
+
+  - changeSet:
+      id: insert tags to project table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project_tags
+      changes:
+        - sqlFile:
+            path: 2024-12-15_011_project_tags_fill_column_with_tags.sql
+            relativeToChangelogFile: true

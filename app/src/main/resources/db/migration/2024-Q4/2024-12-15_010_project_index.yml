@@ -1,0 +1,81 @@
+databaseChangeLog:
+  - changeSet:
+      id: create project_index materialized view
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'project_index'
+      changes:
+        - sqlFile:
+            path: 2024-12-15_010_project_index.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: add project_index_fts_gin_idx to project_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_fts_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts);
+
+  - changeSet:
+      id: add project_index_platforms_vector_gin_idx to project_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_platforms_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: add project_index_stars_idx to project_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_stars_idx
+      changes:
+        - createIndex:
+            tableName: project_index
+            indexName: project_index_stars_idx
+            columns:
+              - column:
+                  name: stars
+
+  - changeSet:
+      id: add project_index_project_id_idx to project_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_project_id_idx
+      changes:
+        - createIndex:
+            tableName: project_index
+            indexName: project_index_project_id_idx
+            columns:
+              - column:
+                  name: project_id
+
+

@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: add last_error_message column to package_index_request table
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package_index_request
+              columnName: last_error_message
+      changes:
+        - addColumn:
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: last_error_message
+                  type: text
