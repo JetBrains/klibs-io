@@ -1,0 +1,25 @@
+name: "Suggest an edit"
+description: "Suggest an edit for the AI-generated description and tags"
+title: "[Edit project's metadata]: "
+labels: ["enhancement"]
+assignees: []
+body:
+- type: input
+  id: url
+  attributes:
+    label: "Project URL"
+    description: "Link to the project's page from klibs.io:"
+  validations:
+    required: true
+
+- type: textarea
+  id: description
+  attributes:
+    label: "Description"
+    description: "Suggested description for the project"
+
+- type: textarea
+  id: tags
+  attributes:
+    label: "Tags"
+    description: "Suggested tags for the project."

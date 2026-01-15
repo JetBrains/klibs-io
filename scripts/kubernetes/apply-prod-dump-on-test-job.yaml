@@ -1,0 +1,37 @@
+# To apply: kubectl apply -f apply-prod-dump-on-test-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pg-copy-dump-to-test-manual
+spec:
+  ttlSecondsAfterFinished: 1800
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: postgresql-restore
+          image: registry.jetbrains.team/p/kitd/public/kubectl-toolkit:latest
+          command: [ "/bin/psql-restore" ]
+          envFrom:
+            - secretRef: # db secret
+                name: klibs-test-db-admin # secret to database admin user. Important: it should be admin for pg
+            - secretRef: # bucket secret
+                name: db-backup-admin-secret # secret to bucket with ReadOnly/ReadWrite permissions
+          env:
+            - name: BACKUP_PREFIX # prefix in the bucket for a backup file
+              value: backups/mydatabase/
+            - name: BACKUP_NAME # prefix in the bucket for a backup file
+              value: klibs_prod_db_latest_version
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: 10Gi # provide suitable size

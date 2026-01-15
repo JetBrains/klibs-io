@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: create project_marker table
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: project_marker
+      changes:
+        - createTable:
+            tableName: project_marker
+            columns:
+              - column:
+                  name: project_id
+                  type: SERIAL
+                  constraints:
+                    primaryKey: "project_marker_pk"
+              - column:
+                  name: type
+                  type: VARCHAR
+                  constraints:
+                    primaryKey: "project_marker_pk"
+        - addUniqueConstraint:
+            columnNames: project_id, type
+            constraintName: uniq_project_marker_pk
+            tableName: project_marker
+
+  - changeSet:
+      id: add project_marker_index to project_marker
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_marker
+              indexName: project_marker_index
+      changes:
+        - createIndex:
+            tableName:  project_marker
+            columns:
+              - column:
+                  name: project_id
+              - column:
+                  name: type

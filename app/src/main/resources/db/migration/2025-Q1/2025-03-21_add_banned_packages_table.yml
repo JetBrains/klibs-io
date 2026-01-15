@@ -1,0 +1,68 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-banned-packages-table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: banned_packages
+      changes:
+        - createTable:
+            tableName: banned_packages
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: group_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: artifact_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: reason
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+        - addUniqueConstraint:
+            tableName: banned_packages
+            columnNames: group_id, artifact_id
+            constraintName: unique_group_id_artifact_id
+        - createIndex:
+            tableName: banned_packages
+            indexName: idx_banned_packages_group_id_artifact_id
+            columns:
+              - column:
+                  name: group_id
+              - column:
+                  name: artifact_id
+        - insert:
+            tableName: banned_packages
+            columns:
+              - column:
+                  name: group_id
+                  value: 'com.soywiz.korlibs.krypto'
+              - column:
+                  name: artifact_id
+                  value: 'krypto'
+              - column:
+                  name: reason
+                  value: 'Repository archived KTL-2185'
+        - insert:
+            tableName: banned_packages
+            columns:
+              - column:
+                  name: group_id
+                  value: 'org.danbrough'
+              - column:
+                  name: reason
+                  value: 'Copied JB packages KTL-1955'

@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: update uq_project_tags_unique constraint
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - dropUniqueConstraint:
+            tableName: project_tags
+            constraintName: uq_project_tags_unique
+        - addUniqueConstraint:
+            tableName: project_tags
+            columnNames: project_id, origin, value
+            constraintName: uq_project_tags_unique
+  - changeSet:
+      id: update tags for guimauvedigital/ant-design-kmp
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/170"
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: project_tags
+        - sqlCheck:
+            expectedResult: "1"
+            sql: "select count(*) from project p join scm_repo r on p.scm_repo_id = r.id join scm_owner o on r.owner_id = o.id where o.login = 'guimauvedigital' and r.name = 'ant-design-kmp'"
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_tags (project_id, origin, value)
+              SELECT p.id, 'USER', 'ui'
+              FROM project p
+              JOIN scm_repo r ON p.scm_repo_id = r.id
+              JOIN scm_owner o ON r.owner_id = o.id
+              WHERE o.login = 'guimauvedigital' AND r.name = 'ant-design-kmp';
+              
+              INSERT INTO project_tags (project_id, origin, value)
+              SELECT p.id, 'USER', 'compose-multiplatform'
+              FROM project p
+              JOIN scm_repo r ON p.scm_repo_id = r.id
+              JOIN scm_owner o ON r.owner_id = o.id
+              WHERE o.login = 'guimauvedigital' AND r.name = 'ant-design-kmp';

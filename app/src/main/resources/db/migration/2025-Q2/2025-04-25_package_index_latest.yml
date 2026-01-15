@@ -1,0 +1,62 @@
+databaseChangeLog:
+  - changeSet:
+      id: recreate package_index materialized view with latest
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: HALT
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'package_index'
+      changes:
+        - sqlFile:
+            path: 2025-04-25_package_index_latest.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: add package_index_fts_gin_idx to package_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_fts_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_fts_gin_idx ON package_index USING GIN (fts);
+
+  - changeSet:
+      id: add package_index_platforms_vector_gin_idx to package_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_platforms_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_platforms_vector_gin_idx ON package_index USING GIN (platforms_vector);
+  - changeSet:
+      id: add unique index to package_index for concurrent refresh
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: package_index_unique
+            tableName: package_index
+            unique: true
+            columns:
+              - column:
+                  name: group_id
+              - column:
+                  name: artifact_id
+      rollback:
+        - dropIndex:
+            indexName: package_index_unique
+            tableName: package_index

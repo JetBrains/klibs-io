@@ -1,0 +1,318 @@
+databaseChangeLog:
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/88
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/88"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'The missing Design System layer for Compose UI'
+              - column:
+                  name: tags
+                  value: '{Compose UI}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'compose-unstyled' and so.login = 'composablehorizons')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/91
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/91"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'A simple, customizable, and modern library for displaying alert banners in your Jetpack Compose and Compose Multiplatform applications. Easily integrate and adapt to suit any style or use case - from error notifications to informational messages!'
+              - column:
+                  name: tags
+                  value: '{Compose UI}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'compose-alert-banner' and so.login = 'mofeejegi')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/92
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/92"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Service SDK,Crypto}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'ton-kotlin' and so.login = 'ton-blockchain')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/106
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/106"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Pocketbase Kotlin is a multiplatform Kotlin SDK for Pocketbase designed for use on both the client and server sides.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'pocketbase-kotlin' and so.login = 'agrevster')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/108
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/108"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Dependency Injection,Architecture}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'anvil' and so.login = 'ZacSweers')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/109
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/109"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Dependency Injection,Architecture}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'kotlin-inject-anvil' and so.login = 'amzn')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/110
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/110"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'A blazing fast, coroutine-first, undetectable web scraping / browser automation library for Kotlin'
+              - column:
+                  name: tags
+                  value: '{Network,Messaging,Automation}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'kdriver' and so.login = 'guimauvedigital')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/114
+      author: konstantin.chernenko@jetbrains.com
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Structured logging library for Kotlin, that aims to provide a developer-friendly API with near-zero runtime overhead.'
+              - column:
+                  name: tags
+                  value: '{Log}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'devlog-kotlin' and so.login = 'hermannm')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/117
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/117"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Meeseeks is a Kotlin Multiplatform library for scheduling and managing background tasks across Android, JVM, native (iOS), and JS (Web). Whether your tasks are simple or complex, for one user or hundreds of millions, Meeseeks can help.'
+              - column:
+                  name: tags
+                  value: '{Work manager, Quartz, BGTaskScheduler, Background Syncronization}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'meeseeks' and so.login = 'matt-ramotar')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/119
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/119"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Library for executable/object files parsing (include PE version info, virtual memory), in Kotlin multiplatform.'
+              - column:
+                  name: tags
+                  value: '{pefile, pe, fileformat, exe, kotlin-multiplatform}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'Executables' and so.login = 'iseki0')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/121
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/121"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Metro is a compile-time dependency injection framework that draws heavy inspiration from Dagger, Anvil, and Kotlin-Inject. It seeks to unify their best features under one, cohesive solution while adding a few new features and implemented as a compiler plugin.'
+              - column:
+                  name: tags
+                  value: '{Dependency Injection}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'metro' and so.login = 'ZacSweers')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/122
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/122"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Simple API converts HTML to AnnotatedString with styling for UI components, replacing traditional HTML parsers. Supports custom styling, hyperlink handling, and unstyled text conversion. Future goals include inline image display.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'HtmlConverterCompose' and so.login = 'cbeyls')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/123
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/123"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Background blurring for Compose Multiplatform / Jetpack Compose'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'haze' and so.login = 'chrisbanes')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/125
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/125"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'A Kotlin Multiplatform Mobile (KMM) library designed to simplify Wi-Fi connectivity management across common platforms, targeting Android and iOS. This library provides a unified API connecting to a specific Wi-Fi network. The primary use case is for connecting to hotspots exposed by IoT devices.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'kmm-wifi-connect' and so.login = 'mattiascibien')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/127
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/127"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Multiplatform, concurrent Kotlin-first game engine built on WebGPU, still in alpha.'
+              - column:
+                  name: tags
+                  value: '{Asynchronous,Gamedev}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'Spock' and so.login = 'Laxystem')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/128
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/128"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: "Facilitates URI and URL parsing, manipulation, and encoding/decoding based on AOSP's Uri and UriCodec implementations. Integrates easily with Gradle for seamless dependency management."
+              - column:
+                  name: tags
+                  value: '{url,uri,multiplatform}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'uri-kmp' and so.login = 'eygraber')"
+
+  - changeSet:
+      id: KTL-2524 klibs-io-issue-management/issues/129
+      author: konstantin.chernenko@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/129"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Lightweight library offering efficient Trie data structures with several optimized implementations. Ideal for autocomplete, spell checkers, and prefix-based applications.'
+              - column:
+                  name: tags
+                  value: '{trie,multiplatform}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'trie-kmp' and so.login = 'eygraber')"

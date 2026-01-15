@@ -1,0 +1,167 @@
+databaseChangeLog:
+  - changeSet:
+      id: create scm_repo table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: scm_repo
+      changes:
+        - createTable:
+            tableName: scm_repo
+            columns:
+              - column:
+                  name: id_native
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: id
+                  type: SERIAL
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: owner_id
+                  type: INT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_scm_repo_owner_id
+                    references: scm_owner(id)
+              - column:
+                  name: has_gh_pages
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: has_issues
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: has_wiki
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: has_readme
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: "current_timestamp"
+              - column:
+                  name: last_activity_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stars
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: open_issues
+                  type: INT
+              - column:
+                  name: name
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: homepage
+                  type: TEXT
+              - column:
+                  name: license_key
+                  type: TEXT
+              - column:
+                  name: license_name
+                  type: TEXT
+              - column:
+                  name: default_branch
+                  type: TEXT
+                  constraints:
+                    nullable: false
+            constraints:
+              - unique:
+                  columnNames: owner_id, name
+
+  - changeSet:
+      id: add scm_repo_owner_id_idx to scm_repo
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: scm_repo
+              indexName: scm_repo_owner_id_idx
+      changes:
+        - createIndex:
+            indexName: scm_repo_owner_id_idx
+            tableName: scm_repo
+            columns:
+              - column:
+                  name: owner_id
+
+  - changeSet:
+      id: add scm_repo_lower_name_idx to scm_repo
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: scm_repo
+              indexName: scm_repo_lower_name_idx
+      changes:
+        - createIndex:
+            indexName: scm_repo_lower_name_idx
+            tableName: scm_repo
+            columns:
+              - column:
+                  name: name
+
+  - changeSet:
+      id: add scm_repo_stars_idx to scm_repo
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: scm_repo
+              indexName: scm_repo_stars_idx
+      changes:
+        - createIndex:
+            indexName: scm_repo_stars_idx
+            tableName: scm_repo
+            columns:
+              - column:
+                  name: stars
+
+  - changeSet:
+      id: add scm_repo_updated_at_idx to scm_repo
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: scm_repo
+              indexName: scm_repo_updated_at_idx
+      changes:
+        - createIndex:
+            indexName: scm_repo_updated_at_idx
+            tableName: scm_repo
+            columns:
+              - column:
+                  name: updated_at

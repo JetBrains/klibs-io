@@ -1,0 +1,203 @@
+databaseChangeLog:
+  - changeSet:
+      id: update description in compose-font-icons project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/75"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Enables use of font-based icons in Compose Multiplatform, supporting variable fonts, multiplatform resources and platform-specific resources.'
+              - column:
+                  name: tags
+                  value: '{Compose UI}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'compose-font-icons' and so.login = 'tclement0922')"
+
+  - changeSet:
+      id: update tags in KDeviceInfo project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/79"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Device}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'KDeviceInfo' and so.login = 'swapnil-musale')"
+
+  - changeSet:
+      id: update tags in ComposeViews project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/80"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'ComposeViews' and so.login = 'ltttttttttttt')"
+
+  - changeSet:
+      id: update tags in LazyPeopleHttp project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/81"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Network}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'LazyPeopleHttp' and so.login = 'ltttttttttttt')"
+
+  - changeSet:
+      id: update tags in compose-unstyled project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/82,
+                https://github.com/JetBrains/klibs-io-issue-management/issues/83"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{UI,Design system}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'compose-unstyled' and so.login = 'composablehorizons')"
+
+  - changeSet:
+      id: update tags in compose-cupertino project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/83"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI,Design system}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'compose-cupertino' and so.login = 'alexzhirkevich')"
+  - changeSet:
+      id: update tags in compose-fluent-ui project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/83"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI,Design system}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'compose-fluent-ui' and so.login = 'compose-fluent')"
+  - changeSet:
+      id: update tags in carbon-compose project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/83"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI,Design system}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'carbon-compose' and so.login = 'gabrieldrn')"
+  - changeSet:
+      id: update tags in SaltUI project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/83"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Design system}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'SaltUI' and so.login = 'Moriafly')"
+  - changeSet:
+      id: update tags in miuix project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/83"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Design system}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'miuix' and so.login = 'miuix-kotlin-multiplatform')"
+  - changeSet:
+      id: update tags in aurora project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/83"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Design system}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'aurora' and so.login = 'kirill-grouchnikov')"
+  - changeSet:
+      id: update tags in compose-pipette project
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/87"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'compose-pipette' and so.login = 'zt64')"
+

@@ -1,0 +1,65 @@
+databaseChangeLog:
+  - changeSet:
+      id: create package_index materialized view
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'package_index'
+      changes:
+        - sqlFile:
+            path: 2025-04-04_package_index.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: add package_index_fts_gin_idx to package_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_fts_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_fts_gin_idx ON package_index USING GIN (fts);
+
+  - changeSet:
+      id: add package_index_platforms_vector_gin_idx to package_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_platforms_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_platforms_vector_gin_idx ON package_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: add package_index_package_id_idx to package_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+          columnExists:
+            tableName: package_index
+            columnName: package_id
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_package_id_idx
+      changes:
+        - createIndex:
+            tableName: package_index
+            indexName: package_index_package_id_idx
+            columns:
+              - column:
+                  name: package_id

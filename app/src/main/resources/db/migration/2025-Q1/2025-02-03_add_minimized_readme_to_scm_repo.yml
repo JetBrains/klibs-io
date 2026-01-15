@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: add minimized readme to scm_repo
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: scm_repo
+              columnName: minimized_readme
+      changes:
+        - addColumn:
+            tableName: scm_repo
+            columns:
+              - column:
+                  name: minimized_readme
+                  type: TEXT

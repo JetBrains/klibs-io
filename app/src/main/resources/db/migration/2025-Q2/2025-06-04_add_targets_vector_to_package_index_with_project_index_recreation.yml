@@ -1,0 +1,177 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop project_index before updating package_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'project_index'
+      changes:
+        - sql:
+            sql: |
+              DROP MATERIALIZED VIEW IF EXISTS project_index;
+
+  - changeSet:
+      id: recreate package_index materialized view with targets_tsv
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'package_index'
+      changes:
+        - sqlFile:
+            path: 2025-06-04_add_targets_vector_to_package_index.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: add package_index_fts_gin_idx to package_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_fts_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_fts_gin_idx ON package_index USING GIN (fts);
+
+  - changeSet:
+      id: add package_index_platforms_vector_gin_idx to package_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_platforms_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_platforms_vector_gin_idx ON package_index USING GIN (platforms_vector);
+  - changeSet:
+      id: add unique index to package_index for concurrent refresh
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: package_index_unique
+            tableName: package_index
+            unique: true
+            columns:
+              - column:
+                  name: group_id
+              - column:
+                  name: artifact_id
+      rollback:
+        - dropIndex:
+            indexName: package_index_unique
+            tableName: package_index
+
+  - changeSet:
+      id: add package_index_targets_vector_gin_idx to package_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_targets_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_targets_vector_gin_idx ON package_index USING GIN (targets_vector);
+
+  - changeSet:
+      id: recreate project_index materialized view after package_index update
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sqlFile:
+            path: 2025-06-03_add_targets_vector_to_project_index.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: add project_index_fts_gin_idx to project_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_fts_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts);
+
+  - changeSet:
+      id: add project_index_platforms_vector_gin_idx to project_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_platforms_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: add project_index_stars_idx to project_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_stars_idx
+      changes:
+        - createIndex:
+            tableName: project_index
+            indexName: project_index_stars_idx
+            columns:
+              - column:
+                  name: stars
+
+  - changeSet:
+      id: add project_index_project_id_idx to project_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_project_id_idx
+      changes:
+        - createIndex:
+            tableName: project_index
+            indexName: project_index_project_id_idx
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: add project_index_targets_vector_gin_idx to project_index
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_targets_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_targets_vector_gin_idx ON project_index USING GIN (targets_vector);

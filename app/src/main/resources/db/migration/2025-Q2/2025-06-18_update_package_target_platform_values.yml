@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: update_package_target_platform_values
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - update:
+            tableName: package_target
+            columns:
+              - column:
+                  name: platform
+                  value: COMMON
+            where: platform = 'common'
+        - update:
+            tableName: package_target
+            columns:
+              - column:
+                  name: platform
+                  value: JVM
+            where: platform = 'jvm'
+        - update:
+            tableName: package_target
+            columns:
+              - column:
+                  name: platform
+                  value: ANDROIDJVM
+            where: platform = 'androidJvm'
+        - update:
+            tableName: package_target
+            columns:
+              - column:
+                  name: platform
+                  value: NATIVE
+            where: platform = 'native'
+        - update:
+            tableName: package_target
+            columns:
+              - column:
+                  name: platform
+                  value: WASM
+            where: platform = 'wasm'
+        - update:
+            tableName: package_target
+            columns:
+              - column:
+                  name: platform
+                  value: JS
+            where: platform = 'js'

@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: add generated_description column to package
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package
+              columnName: generated_description
+      changes:
+        - addColumn:
+            tableName: package
+            columns:
+              - column:
+                  name: generated_description
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

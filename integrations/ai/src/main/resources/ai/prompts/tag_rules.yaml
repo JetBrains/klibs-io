@@ -1,0 +1,1267 @@
+tag_rules:
+  - name: aes
+    definition: Apply when the project implements or directly uses AES encryption primitives.
+    positive_cues: ["AES", "AES-GCM", "AES-CBC"]
+    hard_negatives: ["mentions AES but no crypto code/APIs present"]
+    synonyms: ["advanced encryption standard", "aes encryption"]
+    tag_synonyms: ["advanced-encryption-standard", "aes-encryption"]
+
+  - name: agentic-ai
+    definition: Apply when the project implements agentic AI patterns (tool-using LLM agents, planners, reactors).
+    positive_cues: ["agent", "tool calling", "planner", "reactor"]
+    hard_negatives: ["generic AI mention without agent/tool-use patterns"]
+    synonyms: ["ai agents", "agent framework"]
+    tag_synonyms: ["ai-agents", "agent-framework"]
+
+  - name: agents
+    definition: Apply when the project defines software agents (bots/LLM agents/task agents) with autonomous behavior.
+    positive_cues: ["agent", "autonomous", "tool use"]
+    hard_negatives: ["simple SDK client without agent loop"]
+    synonyms: ["software agents", "ai agents"]
+    tag_synonyms: ["software-agents", "ai-agents"]
+
+  - name: ai
+    definition: Apply when the text references ML/AI libraries or models used by the project itself.
+    positive_cues: ["KotlinDL", "TensorFlow", "ONNX Runtime", "OpenAI"]
+    hard_negatives: ["uses 'AI', but does not provide support for APIs or models or any ML"]
+    synonyms: ["machine learning", "ml", "neural net", "ai/ml"]
+    tag_synonyms: ["machine-learning", "ml", "neural-net", "ai"]
+
+  - name: amqp
+    definition: Apply when the project mentions the AMQP protocol or AMQP client libraries.
+    positive_cues: ["AMQP", "com.rabbitmq", "qpid"]
+    hard_negatives: ["only 'message queue' with no AMQP or RabbitMQ/Qpid mention"]
+    synonyms: ["advanced message queuing protocol"]
+    tag_synonyms: ["advanced-message-queuing-protocol"]
+
+  - name: analytics
+    definition: Apply when the project collects/sends analytics via named SDKs or events.
+    positive_cues: ["Firebase Analytics", "Amplitude", "Mixpanel"]
+    hard_negatives: ["mentions 'metrics' generically without SDK or event API names"]
+    synonyms: ["telemetry", "event tracking"]
+    tag_synonyms: ["telemetry", "event-tracking"]
+
+  - name: android-architecture
+    definition: Apply when it defines architecture patterns/guides specifically for Android apps.
+    positive_cues: ["android architecture", "mvvm for android", "mvi for android"]
+    hard_negatives: ["generic architecture without Android focus"]
+    synonyms: ["android arch", "android app architecture"]
+    tag_synonyms: ["android-arch", "android-app-architecture"]
+
+  - name: android-ui
+    definition: Apply when it provides Android UI components (Views/Jetpack Compose Android-specific).
+    positive_cues: ["androidx.compose", "android views", "xml layout"]
+    hard_negatives: ["compose multiplatform only"]
+    synonyms: ["android ui components", "android views"]
+    tag_synonyms: ["android-ui-components", "android-views"]
+
+  - name: animated-image
+    definition: Apply when the project loads/renders animated image formats (e.g., GIF/WebP APNG).
+    positive_cues: ["animated GIF", "animated WebP", "APNG"]
+    hard_negatives: ["static image only", "sprite sheet without playback"]
+    synonyms: ["gif animation", "animated webp", "apng"]
+    tag_synonyms: ["gif-animation", "animated-webp", "apng"]
+
+  - name: animation
+    definition: Apply when it provides APIs or components for runtime animations or transitions.
+    positive_cues: ["animate*", "easing", "keyframes"]
+    hard_negatives: ["only static SVG/PNG assets"]
+    synonyms: ["motion", "tween", "interpolation"]
+    tag_synonyms: ["motion", "tween", "interpolation"]
+
+  - name: api
+    definition: Apply when it exposes a concrete API/SDK endpoints or server routes for consumption.
+    positive_cues: ["api endpoints", "rest api", "sdk api"]
+    hard_negatives: ["internal only without public API surface"]
+    synonyms: ["application programming interface"]
+    tag_synonyms: ["application-programming-interface"]
+
+  - name: apollographql
+    definition: Apply when it uses or provides Apollo GraphQL client/server tooling.
+    positive_cues: ["com.apollographql", "Apollo GraphQL"]
+    hard_negatives: ["GraphQL mention without Apollo"]
+    synonyms: ["apollo graphql"]
+    tag_synonyms: ["apollo-graphql"]
+
+  - name: apple
+    definition: Apply when it targets Apple platforms/ecosystem (iOS, macOS, watchOS, tvOS).
+    positive_cues: ["Apple", "Xcode", "Cocoa/CocoaTouch"]
+    hard_negatives: ["Android/Windows-only"]
+    synonyms: ["apple platforms", "cocoa"]
+    tag_synonyms: ["apple-platforms", "cocoa"]
+
+  - name: architecture
+    definition: Apply when it defines app architecture patterns or scaffolding.
+    positive_cues: ["MVVM", "MVI", "Clean Architecture"]
+    hard_negatives: ["only mentions 'architecture' in passing"]
+    synonyms: ["app structure", "layers", "hexagonal"]
+    tag_synonyms: ["app-structure", "layers", "hexagonal"]
+
+  - name: arrow-kt
+    definition: Apply when it uses or extends Arrow libraries for functional programming in Kotlin.
+    positive_cues: ["io.arrow-kt", "Arrow", "Either/Option"]
+    hard_negatives: ["mentions 'arrow' not related to Arrow-Kt"]
+    synonyms: ["arrow", "arrow kt"]
+    tag_synonyms: ["arrow", "arrow-kt"]
+
+  - name: asn.1
+    definition: Apply when the text references ASN.1 schemas/encoders (DER/BER).
+    positive_cues: ["ASN.1", "DER", "BER"]
+    hard_negatives: ["only X.509 with no encoding details"]
+    synonyms: ["abstract syntax notation"]
+    tag_synonyms: ["abstract-syntax-notation"]
+
+  - name: assertions
+    definition: Apply when it provides assertion APIs or testing assertions utilities.
+    positive_cues: ["assert", "assertThat", "expect"]
+    hard_negatives: ["tests only without an assertions library"]
+    synonyms: ["assert utils", "assertion library"]
+    tag_synonyms: ["assert-utils", "assertion-library"]
+
+  - name: asynchronous
+    definition: Apply when the project exposes async APIs or coroutine/async primitives.
+    positive_cues: ["kotlinx-coroutines", "suspend fun", "Deferred/Flow"]
+    hard_negatives: ["sync-only utilities", "mentions 'async' as marketing"]
+    synonyms: ["async", "non-blocking", "coroutines"]
+    tag_synonyms: ["async", "non-blocking", "coroutines"]
+
+  - name: audio
+    definition: Apply when it records, plays, processes, or analyzes audio.
+    positive_cues: ["PCM/WAV/MP3", "audio playback/recording", "FFT for audio"]
+    hard_negatives: ["video/image-only", "text-to-speech mention without API"]
+    synonyms: ["sound", "music", "audio dsp"]
+    tag_synonyms: ["sound", "music", "audio-dsp"]
+
+  - name: authentication
+    definition: Apply when it implements auth flows/protocols or provides authentication SDKs.
+    positive_cues: ["OAuth2", "OpenID Connect", "login", "token"]
+    hard_negatives: ["mentions 'auth' without flows or libraries"]
+    synonyms: ["auth", "login", "oidc"]
+    tag_synonyms: ["auth", "login", "oidc"]
+
+  - name: automation
+    definition: Apply when it automates tasks/builds/tests or workflows via scripts/APIs.
+    positive_cues: ["Gradle task automation", "CI pipeline scripts", "scripting driver"]
+    hard_negatives: ["manual guide only"]
+    synonyms: ["scripting", "orchestration"]
+    tag_synonyms: ["scripting", "orchestration"]
+
+  - name: background-synchronization
+    definition: Apply when it performs periodic or background data sync (spelled as given).
+    positive_cues: ["background sync", "periodic sync", "offline sync"]
+    hard_negatives: ["one-off network request only"]
+    synonyms: ["background synchronization", "sync in background"]
+    tag_synonyms: ["background-synchronization", "sync-in-background"]
+
+  - name: bgtaskscheduler
+    definition: Apply when it uses iOS BGTaskScheduler APIs.
+    positive_cues: ["BGTaskScheduler", "BGProcessingTaskRequest", "BGAppRefreshTaskRequest"]
+    hard_negatives: ["Android WorkManager without iOS BGTaskScheduler"]
+    synonyms: ["bg task scheduler", "ios background tasks"]
+    tag_synonyms: ["bg-task-scheduler", "ios-background-tasks"]
+
+  - name: bot
+    definition: Apply when it implements a non-chat automated agent for platforms (e.g., Telegram/Discord).
+    positive_cues: ["Telegram Bot API", "Discord bot token", "GitHub App bot"]
+    hard_negatives: ["CLI tool only", "chat SDK without bot behavior"]
+    synonyms: ["automation bot", "telegram bot", "discord bot"]
+    tag_synonyms: ["automation-bot", "telegram-bot", "discord-bot"]
+
+  - name: bottomsheet
+    definition: Apply when it provides BottomSheet components/behaviors for Android/Compose.
+    positive_cues: ["bottom sheet", "modal bottom sheet", "persistent bottom sheet"]
+    hard_negatives: ["no actual component/api for bottom sheet"]
+    synonyms: ["bottom sheet", "sheet"]
+    tag_synonyms: ["bottom-sheet", "sheet"]
+
+  - name: cache
+    definition: Apply when it implements in-memory/disk caches or caching strategies.
+    positive_cues: ["LRU cache", "disk cache", "cache store"]
+    hard_negatives: ["mentions 'cache' without implementation/APIs"]
+    synonyms: ["caching", "cache store"]
+    tag_synonyms: ["caching", "cache-store"]
+
+  - name: calendar
+    definition: Apply when it implements calendar views, APIs, or date calculations for calendars.
+    positive_cues: ["calendar view", "ics", "event calendar"]
+    hard_negatives: ["date utils only without calendar UI/APIs"]
+    synonyms: ["calendar ui", "calendar api"]
+    tag_synonyms: ["calendar-ui", "calendar-api"]
+
+  - name: charts
+    definition: Apply when it provides chart/graph components or charting APIs.
+    positive_cues: ["line chart", "bar chart", "pie chart"]
+    hard_negatives: ["images of charts only, no library"]
+    synonyms: ["chart", "graphing", "plot"]
+    tag_synonyms: ["chart", "graphing", "plot"]
+
+  - name: chatbot
+    definition: Apply when it implements conversational agents (LLM or scripted) for chat interfaces.
+    positive_cues: ["OpenAI ChatCompletion", "Rasa", "Dialogflow"]
+    hard_negatives: ["just messaging transport", "no conversation logic"]
+    synonyms: ["conversational ai", "chat bot"]
+    tag_synonyms: ["conversational-ai", "chat-bot"]
+
+  - name: chatgpt
+    definition: Apply when it integrates with or wraps the ChatGPT/OpenAI chat APIs.
+    positive_cues: ["ChatGPT", "gpt-", "OpenAI chat"]
+    hard_negatives: ["generic AI without OpenAI chat integration"]
+    synonyms: ["gpt", "openai chat"]
+    tag_synonyms: ["gpt", "openai-chat"]
+
+  - name: client
+    definition: Apply when it is an SDK/client library for interacting with a remote API/service.
+    positive_cues: ["client sdk", "client library", "api client"]
+    hard_negatives: ["server-only implementation"]
+    synonyms: ["sdk client", "api client"]
+    tag_synonyms: ["sdk-client", "api-client"]
+
+  - name: cmp
+    definition: Apply when it is a Consent Management Platform (CMP) or integrates with one.
+    positive_cues: ["consent", "cmp", "gdpr consent"]
+    hard_negatives: ["privacy mention without consent flow"]
+    synonyms: ["consent management"]
+    tag_synonyms: ["consent-management"]
+
+  - name: code-generation
+    definition: Apply when it generates code from schemas/annotations/templates.
+    positive_cues: ["ksp", "kapt", "codegen"]
+    hard_negatives: ["only runtime reflection", "templates without generator"]
+    synonyms: ["ksp codegen", "annotation processing"]
+    tag_synonyms: ["ksp-codegen", "annotation-processing"]
+
+  - name: color-picker
+    definition: Apply when it provides UI components or APIs for picking/selecting colors.
+    positive_cues: ["color picker", "HSV/RGB picker", "palette"]
+    hard_negatives: ["no interactive picking functionality"]
+    synonyms: ["color selection", "picker"]
+    tag_synonyms: ["color-selection", "picker"]
+
+  - name: command-line-interface
+    definition: Apply when it builds a terminal/console app or CLI framework.
+    positive_cues: ["kotlinx-cli", "picocli", "subcommands/options parsing"]
+    hard_negatives: ["library only with no CLI entry point"]
+    synonyms: ["cli", "command-line", "console"]
+    tag_synonyms: ["cli", "command-line", "console"]
+
+  - name: compiler-plugin
+    definition: Apply when it implements a Kotlin compiler plugin or compiler extension.
+    positive_cues: ["kotlin compiler plugin", "analysis plugin", "frontend/backend extension"]
+    hard_negatives: ["gradle plugin only without compiler hooks"]
+    synonyms: ["kotlin compiler plugin"]
+    tag_synonyms: ["kotlin-compiler-plugin"]
+
+  - name: compose
+    definition: Apply when it targets Jetpack Compose or Compose Multiplatform generically.
+    positive_cues: ["compose", "@Composable", "remember{}"]
+    hard_negatives: ["UI without Compose"]
+    synonyms: ["compose ui", "jetpack compose", "compose multiplatform"]
+    tag_synonyms: ["jetpack-compose"]
+
+  - name: compose-html
+    definition: Apply when it uses Compose HTML APIs.
+    positive_cues: ["compose-html", "org.jetbrains.compose.web.dom"]
+    hard_negatives: ["plain HTML without Compose"]
+    synonyms: ["compose web html", "compose html"]
+    tag_synonyms: ["compose-web-html", "compose-html"]
+
+  - name: compose-multiplatform
+    definition: Apply when it targets Compose Multiplatform (org.jetbrains.compose) across platforms.
+    positive_cues: ["org.jetbrains.compose", "composeResources()", "compose multiplatform"]
+    hard_negatives: ["androidx.compose only"]
+    synonyms: ["compose mpp", "compose ui"]
+    tag_synonyms: ["compose-mpp"]
+
+  - name: compose-navigation
+    definition: Apply when it provides navigation utilities for Compose (Jetpack or MPP).
+    positive_cues: ["Navigation-Compose", "Voyager", "Decompose"]
+    hard_negatives: ["no actual navigation APIs"]
+    synonyms: ["compose navigator", "compose routing"]
+    tag_synonyms: ["compose-navigator", "compose-routing"]
+
+  - name: compose-ui
+    definition: Apply when it uses Compose Multiplatform (org.jetbrains.compose) UI.
+    positive_cues: ["org.jetbrains.compose", "compose.desktop", "composeResources()"]
+    hard_negatives: ["androidx.compose* only → use 'jetpack compose' instead"]
+    synonyms: ["compose mpp", "compose multiplatform"]
+    tag_synonyms: []
+
+  - name: concurrency
+    definition: Apply when it provides primitives/utilities for concurrent execution beyond basic coroutines.
+    positive_cues: ["Mutex/Channel", "Atomic*", "SharedFlow/StateFlow utilities"]
+    hard_negatives: ["plain coroutines without extra concurrency tools"]
+    synonyms: ["threading", "parallelism"]
+    tag_synonyms: ["threading", "parallelism"]
+
+  - name: coroutines
+    definition: Apply when it directly uses or provides APIs around Kotlin coroutines.
+    positive_cues: ["kotlinx-coroutines", "suspend", "CoroutineScope"]
+    hard_negatives: ["threads/executors only"]
+    synonyms: ["kotlin coroutines", "kotlinx coroutines"]
+    tag_synonyms: ["kotlin-coroutines", "kotlinx-coroutines"]
+
+  - name: cose
+    definition: Apply when it implements COSE (CBOR Object Signing and Encryption).
+    positive_cues: ["COSE_Sign1", "COSE_Encrypt", "RFC 8152/9052"]
+    hard_negatives: ["JOSE/JWT only"]
+    synonyms: ["cbor cose"]
+    tag_synonyms: ["cbor-cose"]
+
+  - name: crypto
+    definition: Apply when it handles cryptocurrencies, wallets, or blockchain protocols.
+    positive_cues: ["bitcoin/ethereum", "mnemonic seed/BIP-39", "web3", "keccak"]
+    hard_negatives: ["general cryptography only → use 'cryptography'"]
+    synonyms: ["web3", "blockchain", "crypto coin"]
+    tag_synonyms: ["web3", "blockchain", "crypto-coin"]
+
+  - name: cryptography
+    definition: Apply when it provides crypto primitives or protocols (hash, cipher, signature).
+    positive_cues: ["AES/SHA/ChaCha", "Ed25519/RSA", "kotlinx-crypto/okio + crypto calls"]
+    hard_negatives: ["cryptocurrency with no primitives → use 'crypto'"]
+    synonyms: ["crypto primitives", "encryption", "hashing"]
+    tag_synonyms: ["crypto-primitives", "encryption", "hashing"]
+
+  - name: csv
+    definition: Apply when it reads/writes or parses CSV data.
+    positive_cues: ["comma-separated values", "CSV parser", ".csv read/write"]
+    hard_negatives: ["only mentions 'export to csv' without API"]
+    synonyms: ["csv parsing", "csv writer"]
+    tag_synonyms: ["csv-parsing", "csv-writer"]
+
+  - name: data
+    definition: Apply when the project centers on data structures/transforms independent of a specific format.
+    positive_cues: ["ETL", "data pipeline", "transformations"]
+    hard_negatives: ["only JSON/CSV specific (then use those tags)"]
+    synonyms: ["datasets", "data processing"]
+    tag_synonyms: ["datasets", "data-processing"]
+
+  - name: database
+    definition: Apply when it abstracts or manages databases (general, not SQLite-specific).
+    positive_cues: ["Realm Kotlin", "SQLDelight", "NoSQL database driver"]
+    hard_negatives: ["pure file storage", "in-memory only collections"]
+    synonyms: ["db", "persistence", "orm"]
+    tag_synonyms: ["db", "persistence", "orm"]
+
+  - name: date-time
+    definition: Apply when it manipulates dates/times (parsing, formatting, arithmetic).
+    positive_cues: ["Instant/LocalDateTime", "ISO-8601 parsing", "time arithmetic"]
+    hard_negatives: ["timezone data only → use 'time zone'"]
+    synonyms: ["datetime", "date time"]
+    tag_synonyms: ["datetime", "date-time"]
+
+  - name: datepicker
+    definition: Apply when it provides a date picker UI component.
+    positive_cues: ["date picker", "calendar picker", "select date"]
+    hard_negatives: ["date utils only with no UI"]
+    synonyms: ["date picker ui"]
+    tag_synonyms: ["date-picker-ui"]
+
+  - name: debug
+    definition: Apply when it provides debugging tools/logging overlays or debug-only utilities.
+    positive_cues: ["debug build tools", "inspector", "assert/diagnostics"]
+    hard_negatives: ["normal logging library with no debug features"]
+    synonyms: ["diagnostics", "inspector"]
+    tag_synonyms: ["diagnostics", "inspector"]
+
+  - name: dependency-management
+    definition: Apply when it manages dependency versions/catalogs (spelling as given).
+    positive_cues: ["versions catalog", "Gradle BOM", "dependency graph"]
+    hard_negatives: ["library just declaring its own deps"]
+    synonyms: ["dependency management", "deps management", "version catalog"]
+    tag_synonyms: ["dependency-management", "deps-management", "version-catalog"]
+
+  - name: dependency-injection
+    definition: Apply when it uses or provides DI frameworks/utilities.
+    positive_cues: ["Koin", "Kodein-DI", "Dagger/Hilt"]
+    hard_negatives: ["service locator without DI library"]
+    synonyms: ["di", "inversion of control", "ioc"]
+    tag_synonyms: ["di", "inversion-of-control", "ioc"]
+
+  - name: design-system
+    definition: Apply when it offers tokens/components/themes as a reusable design system.
+    positive_cues: ["design tokens", "theme system", "component library"]
+    hard_negatives: ["single app theme without reuse intent"]
+    synonyms: ["ui kit", "component library"]
+    tag_synonyms: ["ui-kit", "component-library"]
+
+  - name: desktop
+    definition: Apply when it targets desktop platforms (Windows/macOS/Linux) with native/desktop UI.
+    positive_cues: ["compose desktop", "swing", "javafx", "native desktop"]
+    hard_negatives: ["mobile/web only"]
+    synonyms: ["desktop app"]
+    tag_synonyms: ["desktop-app"]
+
+  - name: device
+    definition: Apply when accessing device hardware/capabilities (sensors, camera, BLE).
+    positive_cues: ["Camera/AVFoundation", "CoreBluetooth/Bluetooth", "sensor APIs"]
+    hard_negatives: ["simulated data only"]
+    synonyms: ["hardware", "peripherals"]
+    tag_synonyms: ["hardware", "peripherals"]
+
+  - name: discord
+    definition: Apply when it provides a Discord bot/client or utilities for Discord APIs.
+    positive_cues: ["discord bot", "discord api", "gateway intents"]
+    hard_negatives: ["generic chat without Discord"]
+    synonyms: ["discord sdk", "discord integration"]
+    tag_synonyms: ["discord-sdk", "discord-integration"]
+
+  - name: dsl
+    definition: Apply when it defines a domain-specific language or fluent DSL in Kotlin.
+    positive_cues: ["kotlin dsl", "type-safe builder", "dsl"]
+    hard_negatives: ["simple helpers without a cohesive DSL"]
+    synonyms: ["domain specific language", "builder dsl"]
+    tag_synonyms: ["domain-specific-language", "builder-dsl"]
+
+  - name: elm-architecture
+    definition: Apply when it follows or implements The Elm Architecture (TEA).
+    positive_cues: ["update", "view", "model", "elm architecture"]
+    hard_negatives: ["mvi/mvvm not aligned to TEA"]
+    synonyms: ["tea", "elm arch"]
+    tag_synonyms: ["tea", "elm-arch"]
+
+  - name: exe
+    definition: Apply when it builds Windows executables or manipulates .exe files.
+    positive_cues: [".exe", "mingwX64 target", "Windows executable tools"]
+    hard_negatives: ["JAR only with no Windows native"]
+    synonyms: ["windows exe", "native exe"]
+    tag_synonyms: ["windows-exe", "native-exe"]
+
+  - name: file
+    definition: Apply when it provides file IO utilities or abstractions (open/read/write).
+    positive_cues: ["java.io/okio", "file read/write", "path operations"]
+    hard_negatives: ["network stream only"]
+    synonyms: ["filesystem", "io files"]
+    tag_synonyms: ["filesystem", "io-files"]
+
+  - name: fileformat
+    definition: Apply when it defines/parses a specific file format structure.
+    positive_cues: ["spec/grammar for format", "reader/writer for format"]
+    hard_negatives: ["generic IO without format rules"]
+    synonyms: ["file format", "parser format"]
+    tag_synonyms: ["file-format", "parser-format"]
+
+  - name: flutter
+    definition: Apply when it targets or integrates with Flutter/Dart ecosystem.
+    positive_cues: ["Flutter", "Dart", "flutter plugin"]
+    hard_negatives: ["Compose-only with no Flutter integration"]
+    synonyms: ["flutter sdk"]
+    tag_synonyms: ["flutter-sdk"]
+
+  - name: framework
+    definition: Apply when it provides or wraps a full framework (not just a library utility).
+    positive_cues: ["framework", "scaffolding", "plugin system"]
+    hard_negatives: ["single-purpose helper library only"]
+    synonyms: ["application framework"]
+    tag_synonyms: ["application-framework"]
+
+  - name: functional-programming
+    definition: Apply when it exposes FP patterns (functors, monads, immutability) beyond idiomatic Kotlin.
+    positive_cues: ["Monad", "Functor", "Arrow", "pure functions"]
+    hard_negatives: ["basic Kotlin only without FP abstractions"]
+    synonyms: ["fp", "functional"]
+    tag_synonyms: ["fp", "functional"]
+
+  - name: gamedev
+    definition: Apply when it provides engines, tools, or APIs for building games.
+    positive_cues: ["game loop", "entity component system", "rendering engine for games"]
+    hard_negatives: ["graphics demo not tied to games"]
+    synonyms: ["game dev", "game development"]
+    tag_synonyms: ["game-dev", "game-development"]
+
+  - name: gestures
+    definition: Apply when it detects/handles user gestures (tap/pinch/drag).
+    positive_cues: ["pointerInput", "onTap/onDrag", "gesture detector"]
+    hard_negatives: ["keyboard input only"]
+    synonyms: ["touch", "multi-touch", "gesture"]
+    tag_synonyms: ["touch", "multi-touch", "gesture"]
+
+  - name: gradle
+    definition: Apply when it targets Gradle build system usage or plugins.
+    positive_cues: ["Gradle", "build.gradle.kts", "tasks"]
+    hard_negatives: ["Maven-only projects"]
+    synonyms: ["gradle build"]
+    tag_synonyms: ["gradle-build"]
+
+  - name: gradle-plugin
+    definition: Apply when it implements a Gradle plugin.
+    positive_cues: ["PluginDeclaration", "id(\"...\")", "Gradle plugin"]
+    hard_negatives: ["library used by Gradle but not a plugin"]
+    synonyms: ["gradle plugin"]
+    tag_synonyms: ["gradle-plugin"]
+
+  - name: graphics
+    definition: Apply when it renders/draws 2D/3D graphics or vector paths.
+    positive_cues: ["Canvas API", "OpenGL/Vulkan/Skia", "vector paths"]
+    hard_negatives: ["image loading only"]
+    synonyms: ["rendering", "drawing"]
+    tag_synonyms: ["drawing"]
+
+  - name: graphql
+    definition: Apply when it targets GraphQL (schemas, queries, servers, or clients).
+    positive_cues: ["graphql schema", "query", "mutation", "graphql server"]
+    hard_negatives: ["REST-only HTTP"]
+    synonyms: ["graph ql"]
+    tag_synonyms: ["graph-ql"]
+
+  - name: graphql-client
+    definition: Apply when it implements or uses a GraphQL client library.
+    positive_cues: ["GraphQL client", "Apollo", "Ktor client for GraphQL"]
+    hard_negatives: ["GraphQL server only"]
+    synonyms: ["graphql sdk client"]
+    tag_synonyms: ["graphql-sdk-client"]
+
+  - name: html
+    definition: Apply when it parses/generates HTML or renders HTML content.
+    positive_cues: ["HTML parser", "<html>", "DOM"]
+    hard_negatives: ["web requests only"]
+    synonyms: ["markup", "hypertext"]
+    tag_synonyms: ["markup", "hypertext"]
+
+  - name: http
+    definition: Apply when it performs HTTP client/server operations.
+    positive_cues: ["io.ktor:ktor-client*", "OkHttp", "HTTP server/routes"]
+    hard_negatives: ["WebSocket only without HTTP"]
+    synonyms: ["rest", "http client", "http server"]
+    tag_synonyms: ["rest", "http-client", "http-server"]
+
+  - name: http-client
+    definition: Apply when it implements/uses HTTP client libraries.
+    positive_cues: ["OkHttp", "Ktor client", "Retrofit"]
+    hard_negatives: ["server-only"]
+    synonyms: ["http sdk client"]
+    tag_synonyms: ["http-sdk-client"]
+
+  - name: image
+    definition: Apply when it loads/saves/processes images (not necessarily animated).
+    positive_cues: ["bitmap/PNG/JPEG/WebP", "image processing filters", "decode/encode images"]
+    hard_negatives: ["icons as assets only"]
+    synonyms: ["picture", "bitmap", "raster"]
+    tag_synonyms: ["picture", "bitmap", "raster"]
+
+  - name: image-loader
+    definition: Apply when it provides image loading/caching libraries.
+    positive_cues: ["Kamel", "Coil", "image cache/loader"]
+    hard_negatives: ["raw decode without caching/pipelines"]
+    synonyms: ["imageloader", "image loading"]
+    tag_synonyms: ["imageloader", "image-loading"]
+
+  - name: image-subsampling
+    definition: Apply when it supports tiled/large image subsampling techniques.
+    positive_cues: ["subsampling", "tile decoder", "region decode"]
+    hard_negatives: ["full-image only decodes"]
+    synonyms: ["tiled image", "region decode"]
+    tag_synonyms: ["tiled-image", "region-decode"]
+
+  - name: image-zoom
+    definition: Apply when it offers pinch-to-zoom/zoomable image components.
+    positive_cues: ["zoomable image", "pinch zoom", "scale gesture"]
+    hard_negatives: ["static image viewer without zoom"]
+    synonyms: ["image pinch", "zoom"]
+    tag_synonyms: ["image-pinch", "zoom"]
+
+  - name: io
+    definition: Apply when it provides input/output abstractions for files, streams, or sockets.
+    positive_cues: ["io", "streams", "okio"]
+    hard_negatives: ["business logic only without IO"]
+    synonyms: ["input output"]
+    tag_synonyms: ["input-output"]
+
+  - name: jetpack
+    definition: Apply when it uses Android Jetpack components (AndroidX libraries).
+    positive_cues: ["androidx.*", "Jetpack", "Navigation-Compose"]
+    hard_negatives: ["no AndroidX/Jetpack usage"]
+    synonyms: ["androidx", "jetpack components"]
+    tag_synonyms: ["androidx", "jetpack-components"]
+
+  - name: jose
+    definition: Apply when it implements JOSE/JWT/JWS/JWE.
+    positive_cues: ["JWT", "JWS", "JWE", "RFC 7519/7515"]
+    hard_negatives: ["COSE only"]
+    synonyms: ["json web token", "jose"]
+    tag_synonyms: ["json-web-token", "jose"]
+
+  - name: json
+    definition: Apply when it parses/serializes JSON or defines JSON schemas.
+    positive_cues: ["kotlinx-serialization-json", "Moshi", "Gson"]
+    hard_negatives: ["only mentions 'REST' with no JSON API/library"]
+    synonyms: ["javascript object notation", "json parsing"]
+    tag_synonyms: ["javascript-object-notation", "json-parsing"]
+
+  - name: kmp-viewmodel
+    definition: Apply when it provides shared ViewModel abstractions for KMP.
+    positive_cues: ["ViewModel", "expect/actual", "state"]
+    hard_negatives: ["no viewmodel layer"]
+    synonyms: ["kmp view model"]
+    tag_synonyms: ["kmp-view-model"]
+
+  - name: kotlin-compiler-plugin
+    definition: Apply when it implements a Kotlin compiler plugin or analysis plugin.
+    positive_cues: ["compiler plugin", "analysis handler", "IR plugin"]
+    hard_negatives: ["gradle plugin only"]
+    synonyms: ["compiler plugin"]
+    tag_synonyms: ["compiler-plugin"]
+
+  - name: kotlin-coroutines
+    definition: Apply when it uses or provides Kotlin coroutines features.
+    positive_cues: ["kotlinx-coroutines", "suspend", "CoroutineScope"]
+    hard_negatives: ["threading only"]
+    synonyms: ["coroutines", "kotlinx coroutines"]
+    tag_synonyms: ["coroutines", "kotlinx-coroutines"]
+
+  - name: kotlin-dsl
+    definition: Apply when it uses Kotlin DSL (type-safe builders) for configuration or APIs.
+    positive_cues: ["kotlin dsl", "type-safe builder", "gradle kts"]
+    hard_negatives: ["no dsl constructs"]
+    synonyms: ["dsl in kotlin"]
+    tag_synonyms: ["dsl-in-kotlin"]
+
+  - name: kotlin-flow
+    definition: Apply when it uses kotlinx.coroutines Flow APIs.
+    positive_cues: ["Flow", "StateFlow", "SharedFlow"]
+    hard_negatives: ["RxJava only"]
+    synonyms: ["flow"]
+    tag_synonyms: ["flow"]
+
+  - name: kotlin-multiplatform-sample
+    definition: Apply when it is a sample/demo project for Kotlin Multiplatform.
+    positive_cues: ["sample", "demo", "mpp example"]
+    hard_negatives: ["production library without sample focus"]
+    synonyms: ["kmp sample", "mpp example"]
+    tag_synonyms: ["kmp-sample", "mpp-example"]
+
+  - name: kotlin-native
+    definition: Apply when it targets Kotlin/Native (konan) artifacts/interops.
+    positive_cues: ["kotlin native", "cinterop", "konan"]
+    hard_negatives: ["jvm/js only"]
+    synonyms: ["konan", "kotlin native"]
+    tag_synonyms: ["konan", "kotlin-native"]
+
+  - name: kotlin-serialization
+    definition: Apply when it uses kotlinx.serialization or provides serializers.
+    positive_cues: ["kotlinx-serialization", "@Serializable", "KSerializer"]
+    hard_negatives: ["gson/moshi without kotlinx"]
+    synonyms: ["kotlin serialization"]
+    tag_synonyms: ["kotlin-serialization"]
+
+  - name: kotlinx-datetime
+    definition: Apply when it uses kotlinx-datetime specifically.
+    positive_cues: ["org.jetbrains.kotlinx:kotlinx-datetime", "Instant/LocalDate from kotlinx-datetime"]
+    hard_negatives: ["java.time only"]
+    synonyms: ["kotlinx datetime"]
+    tag_synonyms: ["kotlinx-datetime"]
+
+  - name: ksp
+    definition: Apply when it uses Kotlin Symbol Processing (KSP) for code generation.
+    positive_cues: ["com.google.devtools.ksp", "ksp"]
+    hard_negatives: ["kapt only"]
+    synonyms: ["kotlin symbol processing"]
+    tag_synonyms: ["kotlin-symbol-processing"]
+
+  - name: ktor
+    definition: Apply when it uses Ktor framework (client/server) for networking.
+    positive_cues: ["io.ktor", "ktor"]
+    hard_negatives: ["OkHttp/Retrofit only"]
+    synonyms: ["ktor framework"]
+    tag_synonyms: ["ktor-framework"]
+
+  - name: ktor-client
+    definition: Apply when it uses Ktor client artifacts.
+    positive_cues: ["io.ktor:ktor-client*", "HttpClient"]
+    hard_negatives: ["server-only Ktor"]
+    synonyms: ["ktor http client"]
+    tag_synonyms: ["ktor-http-client"]
+
+  - name: ktor-plugin
+    definition: Apply when it defines a Ktor plugin (server/client feature).
+    positive_cues: ["createApplicationPlugin", "install(Plugin)"]
+    hard_negatives: ["no Ktor plugin APIs"]
+    synonyms: ["ktor feature"]
+    tag_synonyms: ["ktor-feature"]
+
+  - name: ktor-server
+    definition: Apply when it uses Ktor server.
+    positive_cues: ["io.ktor:ktor-server*", "routing { }"]
+    hard_negatives: ["client-only"]
+    synonyms: ["ktor http server"]
+    tag_synonyms: ["ktor-http-server"]
+
+  - name: language-extensions
+    definition: Apply when it adds Kotlin language features or stdlib extensions.
+    positive_cues: ["extension functions", "operator overloads", "DSLs for Kotlin"]
+    hard_negatives: ["app code using extensions without providing a library"]
+    synonyms: ["kotlin extensions", "stdlib ext", "dsl"]
+    tag_synonyms: ["kotlin-extensions", "stdlib-ext", "dsl"]
+
+  - name: license
+    definition: Apply when it analyzes, injects, or manages software licenses.
+    positive_cues: ["license checker", "OSS licenses generation", "SPDX"]
+    hard_negatives: ["only contains a LICENSE file"]
+    synonyms: ["licensing", "oss licenses"]
+    tag_synonyms: ["licensing", "oss-licenses"]
+
+  - name: linux
+    definition: Apply when it targets Linux platform or provides Linux-specific support.
+    positive_cues: ["linux", "gnu/linux", "linux build"]
+    hard_negatives: ["windows/macos only"]
+    synonyms: ["linux platform"]
+    tag_synonyms: ["linux-platform"]
+
+  - name: llm
+    definition: Apply when it uses Large Language Models (LLM) for generation/chat/embedding.
+    positive_cues: ["llm", "transformer", "chat completion"]
+    hard_negatives: ["AI mention without model usage"]
+    synonyms: ["large language model"]
+    tag_synonyms: ["large-language-model"]
+
+  - name: localization
+    definition: Apply when it provides i18n/l10n (strings, pluralization, locales).
+    positive_cues: ["i18n/l10n", "resource bundles", "translation keys"]
+    hard_negatives: ["single-language strings only"]
+    synonyms: ["i18n", "l10n", "internationalization"]
+    tag_synonyms: ["i18n", "l10n", "internationalization"]
+
+  - name: logging
+    definition: Apply when it provides logging or adapters.
+    positive_cues: ["logger", "slf4j", "napier", "kermit"]
+    hard_negatives: ["no logging APIs"]
+    synonyms: ["log", "logging api"]
+    tag_synonyms: ["log", "logger"]
+
+  - name: macos
+    definition: Apply when it targets macOS specifically.
+    positive_cues: ["macos", "AppKit", "Cocoa"]
+    hard_negatives: ["iOS/Windows-only"]
+    synonyms: ["mac os", "osx"]
+    tag_synonyms: ["mac-os", "osx"]
+
+  - name: material-design
+    definition: Apply when it uses Material Design systems/components.
+    positive_cues: ["Material", "MDC", "material components"]
+    hard_negatives: ["custom design with no Material"]
+    synonyms: ["material"]
+    tag_synonyms: ["material"]
+
+  - name: material3
+    definition: Apply when it uses Material 3 components/themes.
+    positive_cues: ["material3", "androidx.compose.material3"]
+    hard_negatives: ["material2/previous only"]
+    synonyms: ["m3", "material you"]
+    tag_synonyms: ["m3", "material-you"]
+
+  - name: math
+    definition: Apply when it implements math libraries or numerical algorithms.
+    positive_cues: ["matrix/vector math", "FFT", "linear algebra"]
+    hard_negatives: ["trivial arithmetic examples only"]
+    synonyms: ["numerics", "algebra"]
+    tag_synonyms: ["numerics", "algebra"]
+
+  - name: maven
+    definition: Apply when it targets Maven ecosystem (publishing, plugins, artifacts).
+    positive_cues: ["pom.xml", "mvn", "maven plugin"]
+    hard_negatives: ["gradle-only"]
+    synonyms: ["apache maven"]
+    tag_synonyms: ["apache-maven"]
+
+  - name: messaging
+    definition: Apply when it implements message-based communication beyond HTTP (brokers, queues, MQTT).
+    positive_cues: ["MQTT", "NATS", "message broker"]
+    hard_negatives: ["pure email/chat UI"]
+    synonyms: ["message queue", "messaging systems"]
+    tag_synonyms: ["message-queue", "messaging-systems"]
+
+  - name: midi
+    definition: Apply when it handles MIDI input/output or processing.
+    positive_cues: ["MIDI", "synth", "midi device"]
+    hard_negatives: ["audio only without MIDI"]
+    synonyms: ["musical instrument digital interface"]
+    tag_synonyms: ["musical-instrument-digital-interface"]
+
+  - name: mock
+    definition: Apply when it provides mocking utilities/frameworks for tests.
+    positive_cues: ["mock", "stub", "fake", "MockK"]
+    hard_negatives: ["tests without mocking library"]
+    synonyms: ["mocking", "stubs", "fakes"]
+    tag_synonyms: ["mocking", "stubs", "fakes"]
+
+  - name: moko
+    definition: Apply when it uses moko libraries (moko-resources/mvvm/etc.).
+    positive_cues: ["dev.icerock.moko", "moko-* libs"]
+    hard_negatives: ["no moko deps"]
+    synonyms: ["moko libs"]
+    tag_synonyms: ["moko-libs"]
+
+  - name: monads
+    definition: Apply when it uses or provides monadic types/operators.
+    positive_cues: ["Arrow", "Either/Option", "map/flatMap for custom types"]
+    hard_negatives: ["regular Kotlin Result only without functional lib"]
+    synonyms: ["functional types", "fp"]
+    tag_synonyms: ["functional-types", "fp"]
+
+  - name: mvi
+    definition: Apply when it implements Model-View-Intent patterns/libraries.
+    positive_cues: ["intent", "reducer", "store"]
+    hard_negatives: ["mvvm only"]
+    synonyms: ["model view intent"]
+    tag_synonyms: ["model-view-intent"]
+
+  - name: mvvm
+    definition: Apply when it implements Model-View-ViewModel patterns/libraries.
+    positive_cues: ["ViewModel", "state", "binding"]
+    hard_negatives: ["no viewmodel/store layer"]
+    synonyms: ["model view viewmodel"]
+    tag_synonyms: ["model-view-viewmodel"]
+
+  - name: native
+    definition: Apply when it targets native binaries (Kotlin/Native, C interop) or OS-native features.
+    positive_cues: ["kotlin native", "cinterop", "native build"]
+    hard_negatives: ["jvm/js only"]
+    synonyms: ["native binaries"]
+    tag_synonyms: ["native-binaries"]
+
+  - name: navigation
+    definition: Apply when it provides navigation/routing between screens/modules.
+    positive_cues: ["Decompose", "Voyager", "androidx.navigation"]
+    hard_negatives: ["single-screen component library"]
+    synonyms: ["routing", "nav"]
+    tag_synonyms: ["routing", "nav"]
+
+  - name: network
+    definition: Apply when it handles low-level networking or protocols beyond HTTP.
+    positive_cues: ["TCP/UDP sockets", "WebSocket", "Ktor CIO engine config"]
+    hard_negatives: ["HTTP-only → use 'http'"]
+    synonyms: ["networking", "sockets"]
+    tag_synonyms: ["networking", "sockets"]
+
+  - name: okhttp
+    definition: Apply when it uses OkHttp client or interceptors.
+    positive_cues: ["com.squareup.okhttp3", "OkHttpClient"]
+    hard_negatives: ["no okhttp deps"]
+    synonyms: ["okhttp3"]
+    tag_synonyms: ["okhttp3"]
+
+  - name: okio
+    definition: Apply when it uses Square Okio buffers/streams.
+    positive_cues: ["com.squareup.okio", "okio"]
+    hard_negatives: ["no okio usage"]
+    synonyms: ["square okio"]
+    tag_synonyms: ["square-okio"]
+
+  - name: openai
+    definition: Apply when it integrates with OpenAI APIs (chat, embeddings, images).
+    positive_cues: ["OpenAI", "gpt-", "chat completions"]
+    hard_negatives: ["no OpenAI integration"]
+    synonyms: ["open ai"]
+    tag_synonyms: ["open-ai"]
+
+  - name: parsing
+    definition: Apply when it offers parsers/grammars/tokenizers for structured text.
+    positive_cues: ["ANTLR/grammar", "parser combinators", "tokenizer"]
+    hard_negatives: ["simple string split"]
+    synonyms: ["parser", "lexer"]
+    tag_synonyms: ["parser", "lexer"]
+
+  - name: pe
+    definition: Apply when it documents or manipulates the Portable Executable format.
+    positive_cues: ["PE/COFF", "MZ header", "PE32/PE32+"]
+    hard_negatives: ["just 'exe' build without PE parsing"]
+    synonyms: ["portable executable", "pe format"]
+    tag_synonyms: ["portable-executable", "pe-format", "pefile"]
+
+  - name: performance-optimization
+    definition: Apply when it targets performance with measurable profiling/tuning features.
+    positive_cues: ["benchmark", "profiling", "SIMD/native opt"]
+    hard_negatives: ["claims 'fast' with no benchmarks or API"]
+    synonyms: ["perf", "optimization", "tuning"]
+    tag_synonyms: ["perf", "optimization", "tuning"]
+
+  - name: pki
+    definition: Apply when it implements Public Key Infrastructure components.
+    positive_cues: ["certificate chain/CRL", "trust store", "OCSP"]
+    hard_negatives: ["ad-hoc key pair without PKI constructs"]
+    synonyms: ["public key infrastructure"]
+    tag_synonyms: ["public-key-infrastructure"]
+
+  - name: pkix
+    definition: Apply when it references PKIX standards or validation.
+    positive_cues: ["PKIX path validation", "RFC 5280", "certificate policies"]
+    hard_negatives: ["certificate parsing only without PKIX validation"]
+    synonyms: ["x.509 pkix"]
+    tag_synonyms: ["x.509-pkix"]
+
+  - name: preferences
+    definition: Apply when it provides preferences APIs (shared preferences/datastore-like).
+    positive_cues: ["preferences", "datastore", "key-value store"]
+    hard_negatives: ["in-memory only"]
+    synonyms: ["settings", "app preferences"]
+    tag_synonyms: ["settings", "app-preferences"]
+
+  - name: process
+    definition: Apply when the project provides APIs to create and manage OS processes (spawn/exec), handle stdin/stdout/stderr piping, and process lifecycle/signals — similar to Node.js child_process.
+    positive_cues: [ "ProcessBuilder", "Runtime.exec", "child_process", "spawn", "exec", "stdin/stdout/stderr", "process signals" ]
+    hard_negatives: [ "uses 'process' to mean business process/workflow only" ]
+    synonyms: [ "subprocess", "child process", "process management", "os process" ]
+    tag_synonyms: [ "subprocess", "child-process", "process-management" ]
+
+  - name: quartz
+    definition: Apply when it integrates or wraps the Quartz scheduler.
+    positive_cues: ["org.quartz-scheduler:quartz", "CronScheduleBuilder", "JobDetail/Trigger"]
+    hard_negatives: ["generic cron expressions without Quartz lib"]
+    synonyms: ["quartz scheduler"]
+    tag_synonyms: ["quartz-scheduler"]
+
+  - name: rabbitmq
+    definition: Apply when it explicitly uses RabbitMQ.
+    positive_cues: ["com.rabbitmq:amqp-client", "RabbitMQ exchange/queue", "amqp:// URI"]
+    hard_negatives: ["generic AMQP mention without RabbitMQ"]
+    synonyms: ["rabbit mq"]
+    tag_synonyms: ["rabbit-mq"]
+
+  - name: react
+    definition: Apply when it targets React (JS/TS) or React wrappers from Kotlin/JS.
+    positive_cues: ["react", "react-dom", "kotlin-react"]
+    hard_negatives: ["compose web only"]
+    synonyms: ["reactjs"]
+    tag_synonyms: ["reactjs"]
+
+  - name: reactive
+    definition: Apply when it uses reactive programming (Rx/Flow reactive patterns).
+    positive_cues: ["Rx", "Flow", "reactive streams"]
+    hard_negatives: ["imperative only"]
+    synonyms: ["rx", "reactive streams"]
+    tag_synonyms: ["rx", "reactive-streams"]
+
+  - name: redux
+    definition: Apply when it implements Redux-like state containers.
+    positive_cues: ["reducer", "store", "action"]
+    hard_negatives: ["no reducer/store patterns"]
+    synonyms: ["redux pattern"]
+    tag_synonyms: ["redux-pattern"]
+
+  - name: rendering
+    definition: Apply when it renders visual content from a scene/graph or pipeline.
+    positive_cues: ["renderer", "framebuffer", "shader pipeline"]
+    hard_negatives: ["simple image display"]
+    synonyms: ["render", "rasterization"]
+    tag_synonyms: ["render", "rasterization"]
+
+  - name: resources
+    definition: Apply when it manages or generates multiplatform resources/assets.
+    positive_cues: ["composeResources()", "resource loader", "assets generator"]
+    hard_negatives: ["just includes images without APIs"]
+    synonyms: ["assets", "resource management"]
+    tag_synonyms: ["assets", "resource-management"]
+
+  - name: retrofit
+    definition: Apply when it uses Retrofit HTTP client.
+    positive_cues: ["com.squareup.retrofit2", "Retrofit.Builder"]
+    hard_negatives: ["no retrofit usage"]
+    synonyms: ["retrofit2"]
+    tag_synonyms: ["retrofit2"]
+
+  - name: router
+    definition: Apply when it provides routing/navigation utilities.
+    positive_cues: ["router", "route", "navigator"]
+    hard_negatives: ["single-screen with no routing"]
+    synonyms: ["routing"]
+    tag_synonyms: ["routing"]
+
+  - name: rpc
+    definition: Apply when it implements Remote Procedure Call protocols (gRPC/Thrift/etc.).
+    positive_cues: ["gRPC", "protobuf service", "thrift"]
+    hard_negatives: ["http rest only"]
+    synonyms: ["remote procedure call"]
+    tag_synonyms: ["remote-procedure-call"]
+
+  - name: scala
+    definition: Apply when it uses Scala language or interop.
+    positive_cues: ["scala", "sbt", "scala library"]
+    hard_negatives: ["kotlin/java only"]
+    synonyms: ["scala language"]
+    tag_synonyms: ["scala-language"]
+
+  - name: scheduling
+    definition: Apply when it schedules tasks/jobs with timers/cron beyond platform defaults.
+    positive_cues: ["cron", "scheduler API", "scheduled job"]
+    hard_negatives: ["runOnce delay only"]
+    synonyms: ["job scheduling", "task scheduler"]
+    tag_synonyms: ["job-scheduling", "task-scheduler"]
+
+  - name: science
+    definition: Apply when it targets scientific computing or domain science.
+    positive_cues: ["units/measurements", "scientific computing", "numerical analysis"]
+    hard_negatives: ["basic math utilities only"]
+    synonyms: ["scientific", "science toolkit"]
+    tag_synonyms: ["scientific", "science-toolkit"]
+
+  - name: sdk
+    definition: Apply when it provides an SDK for a service or platform.
+    positive_cues: ["sdk", "client sdk", "public api"]
+    hard_negatives: ["not intended for external consumption"]
+    synonyms: ["software development kit"]
+    tag_synonyms: ["software-development-kit"]
+
+  - name: semver
+    definition: Apply when it handles semantic versioning parsing/comparison.
+    positive_cues: ["semver", "version comparator", "version range"]
+    hard_negatives: ["random version strings without parser"]
+    synonyms: ["semantic versioning"]
+    tag_synonyms: ["semantic-versioning"]
+
+  - name: serialization
+    definition: Apply when it provides serialization logic (generic) or config.
+    positive_cues: ["serializer", "encode/decode", "format"]
+    hard_negatives: ["no serialization APIs"]
+    synonyms: ["serde"]
+    tag_synonyms: ["serde"]
+
+  - name: serializer
+    definition: Apply when it provides serialization frameworks or custom serializers (beyond plain JSON).
+    positive_cues: ["kotlinx-serialization", "Protobuf/CBOR/Avro serializers", "KSerializer"]
+    hard_negatives: ["manual toString parsing"]
+    synonyms: ["serialization", "serde"]
+    tag_synonyms: ["serialization", "serde"]
+
+  - name: service-sdk
+    definition: Apply when it is an SDK for a specific external service/API.
+    positive_cues: ["client SDK for X", "API key/auth for service", "endpoint wrappers"]
+    hard_negatives: ["self-contained app with no external service"]
+    synonyms: ["api sdk", "client library"]
+    tag_synonyms: ["api-sdk", "client-library"]
+
+  - name: sharedpreferences
+    definition: Apply when it uses Android SharedPreferences or provides wrappers.
+    positive_cues: ["SharedPreferences", "preferences"]
+    hard_negatives: ["datastore only"]
+    synonyms: ["shared prefs"]
+    tag_synonyms: ["shared-prefs"]
+
+  - name: simbot
+    definition: Apply when it targets SimBot libraries/platform.
+    positive_cues: ["simbot"]
+    hard_negatives: ["no simbot usage"]
+    synonyms: ["sim bot"]
+    tag_synonyms: ["sim-bot"]
+
+  - name: skydoves
+    definition: Apply when it uses Skydoves libraries/components.
+    positive_cues: ["skydoves", "balloon", "landscapist"]
+    hard_negatives: ["no skydoves deps"]
+    synonyms: ["skydoves libs"]
+    tag_synonyms: ["skydoves-libs"]
+
+  - name: spring-boot
+    definition: Apply when it uses Spring Boot framework.
+    positive_cues: ["org.springframework.boot", "@SpringBootApplication"]
+    hard_negatives: ["ktor only"]
+    synonyms: ["spring boot"]
+    tag_synonyms: ["spring-boot"]
+
+  - name: sql
+    definition: Apply when it deals with SQL databases or SQL queries.
+    positive_cues: ["SQL", "query", "jdbc"]
+    hard_negatives: ["nosql only"]
+    synonyms: ["structured query language"]
+    tag_synonyms: ["structured-query-language"]
+
+  - name: sqldelight
+    definition: Apply when it uses SQLDelight.
+    positive_cues: ["com.squareup.sqldelight", "sqldelight"]
+    hard_negatives: ["room/realm only"]
+    synonyms: ["sql delight"]
+    tag_synonyms: ["sql-delight"]
+
+  - name: sqlite
+    definition: Apply when it explicitly uses SQLite engines or wrappers.
+    positive_cues: ["SQLite", "SQLiter", "SQLDelight driver: SQLite"]
+    hard_negatives: ["Realm/NoSQL only"]
+    synonyms: ["sql lite", "sqlite db"]
+    tag_synonyms: ["sql-lite", "sqlite-db"]
+
+  - name: state-management
+    definition: Apply when it provides state containers or MVI/Redux patterns.
+    positive_cues: ["ReduxKotlin", "MVIKotlin", "StateFlow store/reducer"]
+    hard_negatives: ["one mutable var example only"]
+    synonyms: ["state", "store", "mvi", "redux"]
+    tag_synonyms: ["state", "store", "mvi", "redux"]
+
+  - name: storage
+    definition: Apply when it offers persistent key-value/file/object storage APIs.
+    positive_cues: ["DataStore", "multiplatform-settings", "key-value store"]
+    hard_negatives: ["in-memory cache only"]
+    synonyms: ["persistence", "kv store"]
+    tag_synonyms: ["persistence", "kv-store"]
+
+  - name: swift
+    definition: Apply when it targets Swift language or Swift interop.
+    positive_cues: ["Swift", "swift package", "swift code"]
+    hard_negatives: ["kotlin-only"]
+    synonyms: ["swift language"]
+    tag_synonyms: ["swift-language"]
+
+  - name: swiftui
+    definition: Apply when it uses SwiftUI for iOS/macOS.
+    positive_cues: ["SwiftUI", "View", "@State"]
+    hard_negatives: ["UIKit/Compose only"]
+    synonyms: ["swift ui"]
+    tag_synonyms: ["swift-ui"]
+
+  - name: telegram
+    definition: Apply when it uses Telegram Bot API or Telegram integrations.
+    positive_cues: ["telegram bot", "bot api", "tdlib"]
+    hard_negatives: ["no telegram integration"]
+    synonyms: ["telegram sdk"]
+    tag_synonyms: ["telegram-sdk"]
+
+  - name: test
+    definition: Apply when it provides testing frameworks/utilities/runners.
+    positive_cues: ["kotlin-test", "Kotest", "MockK"]
+    hard_negatives: ["only has tests, no testing library provided"]
+    synonyms: ["testing", "unit tests"]
+    tag_synonyms: ["testing", "unit-tests"]
+
+  - name: text
+    definition: Apply when it processes or analyzes text (tokenization, search, formatting).
+    positive_cues: ["tokenizer", "text normalization", "string search/index"]
+    hard_negatives: ["simple string utils only"]
+    synonyms: ["nlp-lite", "text processing"]
+    tag_synonyms: ["nlp-lite", "text-processing"]
+
+  - name: time
+    definition: Apply when it deals with time measurement/formatting (non-timezone specific).
+    positive_cues: ["duration", "Instant", "time format"]
+    hard_negatives: ["timezone db only"]
+    synonyms: ["time utils"]
+    tag_synonyms: ["time-utils"]
+
+  - name: time-zone
+    definition: Apply when it handles timezone data/lookup/olson/iana zone rules.
+    positive_cues: ["IANA tz database", "ZoneRules/ZonedDateTime", "tzdb"]
+    hard_negatives: ["date formatting without zones"]
+    synonyms: ["timezone", "tz", "timezones"]
+    tag_synonyms: ["timezone", "tz", "timezones"]
+
+  - name: trie
+    definition: Apply when it implements or exposes trie/prefix tree structures.
+    positive_cues: ["trie", "prefix tree", "radix tree"]
+    hard_negatives: ["hash map/list only"]
+    synonyms: ["prefix tree", "radix"]
+    tag_synonyms: ["prefix-tree", "radix"]
+
+  - name: typescript
+    definition: Apply when it targets TypeScript or provides TS type bindings/generators.
+    positive_cues: ["typescript", "ts", "d.ts"]
+    hard_negatives: ["js only without ts"]
+    synonyms: ["ts"]
+    tag_synonyms: ["ts"]
+
+  - name: udf
+    definition: Apply when it defines User-Defined Functions for databases or compute engines.
+    positive_cues: ["udf", "user defined function"]
+    hard_negatives: ["no udf export"]
+    synonyms: ["user-defined function"]
+    tag_synonyms: ["user-defined-function"]
+
+  - name: ui
+    definition: Apply when it provides general UI components/widgets not tied to a specific framework.
+    positive_cues: ["UI components", "widgets", "view library"]
+    hard_negatives: ["compose/jetpack-specific → use those tags too"]
+    synonyms: ["user interface", "components"]
+    tag_synonyms: ["user-interface", "components"]
+
+  - name: unidirectional-data-flow
+    definition: Apply when it enforces unidirectional data flow (UDF/Redux/MVI).
+    positive_cues: ["udf", "unidirectional", "state -> view -> intent"]
+    hard_negatives: ["two-way binding only"]
+    synonyms: ["udf", "one-way data flow"]
+    tag_synonyms: ["udf", "one-way-data-flow"]
+
+  - name: uri
+    definition: Apply when it parses/builds URIs with scheme/host/path/query handling.
+    positive_cues: ["URI parser/builder", "RFC 3986", "percent-encoding"]
+    hard_negatives: ["URL only → use 'url'"]
+    synonyms: ["uri parsing"]
+    tag_synonyms: ["uri-parsing"]
+
+  - name: url
+    definition: Apply when it deals specifically with URLs (validation, building, shortening).
+    positive_cues: ["URL builder", "shortener", "validation regex"]
+    hard_negatives: ["generic URI without http/https"]
+    synonyms: ["link", "web address"]
+    tag_synonyms: ["link", "web-address"]
+
+  - name: utility
+    definition: Apply when it is a general-purpose helper library not fitting other tags.
+    positive_cues: ["helpers/utils", "common utilities", "extensions toolkit"]
+    hard_negatives: ["fits a more specific tag already"]
+    synonyms: ["utils", "toolkit"]
+    tag_synonyms: ["utils", "toolkit"]
+
+  - name: validation
+    definition: Apply when it validates data/input/schemas with rules.
+    positive_cues: ["validator", "constraints", "validation"]
+    hard_negatives: ["no validation logic"]
+    synonyms: ["data validation"]
+    tag_synonyms: ["data-validation"]
+
+  - name: viewmodel
+    definition: Apply when it uses or provides ViewModel abstractions (Android/KMP).
+    positive_cues: ["ViewModel", "state", "lifecycle"]
+    hard_negatives: ["no viewmodel layer"]
+    synonyms: ["view model"]
+    tag_synonyms: ["view-model"]
+
+  - name: wasm
+    definition: Apply when it targets WebAssembly.
+    positive_cues: [ "wasm", "webassembly", "wasm target" ]
+    hard_negatives: [ "no wasm targets" ]
+    synonyms: [ "web assembly" ]
+    tag_synonyms: ["web-assembly"]
+
+  - name: web
+    definition: Apply when it targets web runtimes or web APIs (Kotlin/JS, browser APIs).
+    positive_cues: ["kotlin-js", "browser DOM APIs", "webpack/npm setup for Kotlin"]
+    hard_negatives: ["HTTP client without web runtime"]
+    synonyms: ["kotlin js", "browser"]
+    tag_synonyms: ["kotlin-js", "browser"]
+
+  - name: webview
+    definition: Apply when it embeds or controls a WebView component.
+    positive_cues: ["WebView", "webview", "wkwebview"]
+    hard_negatives: ["http client only"]
+    synonyms: ["in-app browser"]
+    tag_synonyms: ["in-app-browser"]
+
+  - name: windows
+    definition: Apply when it targets Windows platform.
+    positive_cues: ["windows", "mingwX64", "win32"]
+    hard_negatives: ["linux/macos only"]
+    synonyms: ["microsoft windows"]
+    tag_synonyms: ["microsoft-windows"]
+
+  - name: work-manager
+    definition: Apply when it uses AndroidX WorkManager APIs/dependencies.
+    positive_cues: ["androidx.work:work-runtime-ktx", "OneTimeWorkRequest", "PeriodicWorkRequest"]
+    hard_negatives: ["iOS BGTaskScheduler only → use 'bgtaskscheduler'"]
+    synonyms: ["workmanager", "android workmanager"]
+    tag_synonyms: ["workmanager", "android-workmanager"]
+
+  - name: wrapper
+    definition: Apply when it wraps an existing library or native API to expose a nicer API.
+    positive_cues: ["wrapper", "adapter", "facade"]
+    hard_negatives: ["original implementation only"]
+    synonyms: ["adapter library"]
+    tag_synonyms: ["adapter-library"]
+
+  - name: x.509
+    definition: Apply when it parses/validates or generates X.509 certificates.
+    positive_cues: ["X.509 certificate", "CertificateFactory", "Subject/Issuer DN"]
+    hard_negatives: ["keys only without certificates"]
+    synonyms: ["x509", "certificates"]
+    tag_synonyms: ["x509", "certificates"]
+
+  - name: xml
+    definition: Apply when it parses/serializes XML or works with XML schemas.
+    positive_cues: ["XML", "DOM/SAX/StAX", "xml parser"]
+    hard_negatives: ["json-only"]
+    synonyms: ["extensible markup language"]
+    tag_synonyms: ["extensible-markup-language"]

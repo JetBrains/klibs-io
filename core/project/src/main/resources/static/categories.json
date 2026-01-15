@@ -1,0 +1,17 @@
+{
+  "categories": [
+    {
+      "name": "Featured",
+      "markers": [
+        "FEATURED"
+      ]
+    },
+    {
+      "name": "Grant winners",
+      "markers": [
+        "GRANT_WINNER_2023",
+        "GRANT_WINNER_2024"
+      ]
+    }
+  ]
+}

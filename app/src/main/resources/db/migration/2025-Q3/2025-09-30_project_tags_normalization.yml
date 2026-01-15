@@ -1,0 +1,152 @@
+databaseChangeLog:
+  - changeSet:
+      id: create_project_tags_table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - createTable:
+            tableName: project_tags
+            columns:
+              - column:
+                  name: project_id
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: origin
+                  type: VARCHAR
+                  constraints:
+                    nullable: false
+              - column:
+                  name: value
+                  type: TEXT
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: project_tags
+            baseColumnNames: project_id
+            referencedTableName: project
+            referencedColumnNames: id
+            constraintName: fk_project_tags_project
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: project_tags
+            columnNames: project_id, value
+            constraintName: uq_project_tags_unique
+        - createIndex:
+            tableName: project_tags
+            indexName: idx_project_tags_project_id
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: backfill_project_tags_from_project
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: project
+            columnName: tags
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_tags (project_id, origin, value)
+              SELECT p.id, 'USER', trim(tag)
+              FROM project p
+              CROSS JOIN LATERAL unnest(p.tags) AS tag
+              WHERE p.tags IS NOT NULL;
+
+  - changeSet:
+      id: drop_project_index_materialized_view
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'project_index'
+      changes:
+        - sql:
+            sql: DROP MATERIALIZED VIEW IF EXISTS project_index;
+
+  - changeSet:
+      id: drop_project_tags_column
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: project
+            columnName: tags
+      changes:
+        - dropColumn:
+            tableName: project
+            columnName: tags
+
+  - changeSet:
+      id: recreate_project_index_with_project_tags
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sqlFile:
+            path: 2025-09-30_recreate_project_index_with_project_tags.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: recreate_project_index_fts_gin_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts);
+
+  - changeSet:
+      id: recreate_project_index_platforms_vector_gin_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: recreate_project_index_stars_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: project_index_stars_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: stars
+
+  - changeSet:
+      id: recreate_project_index_project_id_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: project_index_project_id_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: recreate unique index to project_index for concurrent refresh
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: project_index_unique
+            tableName: project_index
+            unique: true
+            columns:
+              - column:
+                  name: project_id
+      rollback:
+        - dropIndex:
+            indexName: project_index_unique
+            tableName: project_index

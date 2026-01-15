@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: KTL-2855 klibs-io-issue-management/issues/130
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/130"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Pure Kotlin AMQP client and protocol implementation, optimized for KMP and coroutines.'
+              - column:
+                  name: tags
+                  value: '{Network,AMQP,RabbitMQ,Messaging}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'kourier' and so.login = 'guimauvedigital')"
+
+  - changeSet:
+      id: KTL-2855 klibs-io-issue-management/issues/131
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/131"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Metro is a compile-time dependency injection framework that draws heavy inspiration from Dagger, Anvil, and Kotlin-Inject. It seeks to unify their best features under one, cohesive solution while adding a few new features and implemented as a compiler plugin.'
+              - column:
+                  name: tags
+                  value: '{Dependency Injection,Architecture}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'metro' and so.login = 'ZacSweers')"
+

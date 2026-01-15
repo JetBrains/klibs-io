@@ -1,0 +1,54 @@
+databaseChangeLog:
+  - changeSet:
+      id: KTL-2914 klibs-io-issue-management/issues/106
+      author: nikolay.pachkov@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/106"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Pocketbase Kotlin is a multiplatform Kotlin SDK for Pocketbase designed for use on both the client and server sides. Requires kotlinx-serialization.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'pocketbase-kotlin' and so.login = 'agrevster')"
+
+  - changeSet:
+      id: KTL-2914 klibs-io-issue-management/issues/110
+      author: nikolay.pachkov@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/110"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'A blazing fast, coroutine-first, undetectable web scraping / browser automation library for Kotlin'
+              - column:
+                  name: tags
+                  value: '{Network,Messaging,Automation}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'kdriver' and so.login = 'cdpdriver')"
+
+  - changeSet:
+      id: KTL-2914 klibs-io-issue-management/issues/127
+      author: nikolay.pachkov@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/127"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Multiplatform, concurrent Kotlin-first game engine built on WebGPU, still in alpha. Updated README is on Codeberg due to technical issues: https://codeberg.org/Laxystem/Spock.'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'Spock' and so.login = 'Laxystem')"

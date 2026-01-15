@@ -1,0 +1,50 @@
+# To apply: kubectl -n klibs-features apply -f apply-prod-dump-on-klibs-features-environment-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pg-copy-dump-to-klibs-features-environment-manual
+spec:
+  ttlSecondsAfterFinished: 1800
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: postgresql-restore
+          image: registry.jetbrains.team/p/kitd/public/kubectl-toolkit:latest
+          command:
+            - /bin/sh
+            - -lc
+            - |
+              psql --host="$PGHOST" --port="$PGPORT" --username="$PGUSER" --dbname="$PGDATABASE" -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;"
+              /bin/psql-restore
+          envFrom:
+            - secretRef: # db secret
+                name: db-secrets # secret to database admin user. Important: it should be admin for pg
+            - secretRef: # bucket secret
+                name: db-backup-admin-secret # secret to bucket with ReadOnly/ReadWrite permissions
+          env:
+            - name: BACKUP_FILE # prefix in the bucket for a backup file
+              value: backups/mydatabase/klibs_prod_db_latest_version.pgdump.gz
+            - name: PGHOST
+              valueFrom: { secretKeyRef: { name: db-secrets, key: host } }
+            - name: PGPORT
+              valueFrom: { secretKeyRef: { name: db-secrets, key: port } }
+            - name: PGUSER
+              valueFrom: { secretKeyRef: { name: db-secrets, key: username } }
+            - name: PGPASSWORD
+              valueFrom: { secretKeyRef: { name: db-secrets, key: password } }
+            - name: PGDATABASE
+              valueFrom: { secretKeyRef: { name: db-secrets, key: name } }
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          ephemeral:
+            volumeClaimTemplate:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: 10Gi # provide suitable size

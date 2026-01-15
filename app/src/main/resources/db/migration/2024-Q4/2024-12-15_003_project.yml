@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: create project table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: project
+      changes:
+        - createTable:
+            tableName: project
+            columns:
+              - column:
+                  name: id
+                  type: SERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: scm_repo_id
+                  type: INTEGER
+                  constraints:
+                    references: scm_repo(id)
+                    foreignKeyName: fk_project_scm_repo_id
+                    unique: true
+              - column:
+                  name: latest_version_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: latest_version
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT

@@ -1,0 +1,43 @@
+# To apply: kubectl apply -f create-prod-dump-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-create-dump
+spec:
+  schedule: "0 8 * * 2"  # At 08:00 on Tuesday
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 1800  # Remove finished job after 30 minutes
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: postgresql-backup
+              image: registry.jetbrains.team/p/kitd/public/kubectl-toolkit:latest
+              command: ["/bin/psql-backup"]
+              envFrom:
+                - secretRef: # db secret
+                    name: db-secrets # secret to database admin user. Important: it should be admin for pg
+                - secretRef: # bucket secret
+                    name: db-backup-admin-secret # secret to bucket with Write/ReadWrite permissions
+              env:
+                - name: BACKUP_PREFIX # prefix in the bucket for a backup file
+                  value: backups/mydatabase/
+                - name: BACKUP_NAME # prefix in the bucket for a backup file
+                  value: klibs_prod_db_latest_version
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              ephemeral:
+                volumeClaimTemplate:
+                  spec:
+                    accessModes: [ "ReadWriteOnce" ]
+                    resources:
+                      requests:
+                        storage: 10Gi # provide suitable size

@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: change repo_name to scraper_type column name in package table
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package
+              columnName: scraper_type
+      changes:
+        - dropColumn:
+            tableName: package
+            columnName: repo_name
+        - addColumn:
+            tableName: package
+            columns:
+              - column:
+                  name: scraper_type
+                  type: varchar(255)
+                  value: "SEARCH_MAVEN"
+
+  - changeSet:
+      id: change repo_name to scraper_type column name in package_index_request table
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package_index_request
+              columnName: scraper_type
+      changes:
+        - dropColumn:
+            tableName: package_index_request
+            columnName: repo_name
+        - addColumn:
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: scraper_type
+                  type: varchar(255)
+                  value: "SEARCH_MAVEN"

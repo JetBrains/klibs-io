@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: move haze to Compose UI category
+      author: nikita.vlaev@jetbrains.com
+      comment: "Move the 'haze' library to the 'Compose UI' category"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Compose UI}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'haze' and so.login = 'chrisbanes')"
+
+  - changeSet:
+      id: remove compose-cupertino from featured
+      author: nikita.vlaev@jetbrains.com
+      comment: "Remove 'compose-cupertino' from featured projects"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project_marker
+      changes:
+        - delete:
+            tableName: project_marker
+            where: "type = 'FEATURED' AND project_id in (SELECT project_id FROM project_index WHERE name = 'compose-cupertino' AND owner_login = 'alexzhirkevich')"

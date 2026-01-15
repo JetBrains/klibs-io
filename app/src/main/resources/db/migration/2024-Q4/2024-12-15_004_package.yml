@@ -1,0 +1,168 @@
+databaseChangeLog:
+  - changeSet:
+      id: create package table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: package
+      changes:
+        - createTable:
+            tableName: package
+            columns:
+              - column:
+                  name: id
+                  type: SERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: project_id
+                  type: INTEGER
+                  constraints:
+                    references: project(id)
+                    foreignKeyName: fk_package_project_id
+              - column:
+                  name: release_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: group_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: artifact_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: url
+                  type: TEXT
+              - column:
+                  name: scm_url
+                  type: TEXT
+              - column:
+                  name: build_tool
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: build_tool_version
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: kotlin_version
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: configuration
+                  type: JSONB
+                  defaultValue: "{}"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: developers
+                  type: JSONB
+                  defaultValue: "[]"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: licenses
+                  type: JSONB
+                  defaultValue: "[]"
+                  constraints:
+                    nullable: false
+            constraints:
+              - unique:
+                  columnNames: group_id, artifact_id, version
+
+  - changeSet:
+      id: add package_project_id_idx to package
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package
+              indexName: package_project_id_idx
+      changes:
+        - createIndex:
+            tableName: package
+            indexName: package_project_id_idx
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: add package_group_id_idx to package
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package
+              indexName: package_group_id_idx
+      changes:
+        - createIndex:
+            tableName: package
+            indexName: package_group_id_idx
+            columns:
+              - column:
+                  name: group_id
+
+  - changeSet:
+      id: add package_artifact_id_idx to package
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package
+              indexName: package_artifact_id_idx
+      changes:
+        - createIndex:
+            tableName: package
+            indexName: package_artifact_id_idx
+            columns:
+              - column:
+                  name: artifact_id
+
+  - changeSet:
+      id: add package_version_idx to package
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package
+              indexName: package_version_idx
+      changes:
+        - createIndex:
+            tableName: package
+            indexName: package_version_idx
+            columns:
+              - column:
+                  name: version

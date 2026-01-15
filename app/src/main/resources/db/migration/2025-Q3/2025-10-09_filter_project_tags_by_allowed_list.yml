@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: remove_disallowed_project_tags
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: project_tags
+        - tableExists:
+            tableName: allowed_project_tags
+      changes:
+        - sqlFile:
+            path: 2025-10-09_filter_project_tags_by_allowed_list.sql
+            relativeToChangelogFile: true

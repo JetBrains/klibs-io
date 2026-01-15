@@ -1,0 +1,73 @@
+databaseChangeLog:
+  - changeSet:
+      id: bump_package_id_seq_to_max_plus_100
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*)
+              FROM pg_sequences
+              WHERE sequencename = 'package_id_seq'
+                AND increment_by = 50
+      changes:
+        - sql:
+            sql: |
+              SELECT setval(
+                'package_id_seq',
+                GREATEST(
+                  COALESCE((SELECT MAX(id) FROM package), 0) + 100,
+                  (SELECT last_value FROM package_id_seq)
+                ),
+                true
+              );
+
+  - changeSet:
+      id: bump_package_target_id_seq_to_max_plus_100
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*)
+              FROM pg_sequences
+              WHERE sequencename = 'package_target_id_seq'
+                AND increment_by = 50
+      changes:
+        - sql:
+            sql: |
+              SELECT setval(
+                'package_target_id_seq',
+                GREATEST(
+                  COALESCE((SELECT MAX(id) FROM package_target), 0) + 100,
+                  (SELECT last_value FROM package_target_id_seq)
+                ),
+                true
+              );
+
+
+  - changeSet:
+      id: bump_package_index_request_id_seq_to_max_plus_100
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*)
+              FROM pg_sequences
+              WHERE sequencename = 'package_index_request_id_seq'
+                AND increment_by = 50
+      changes:
+        - sql:
+            sql: |
+              SELECT setval(
+                'package_index_request_id_seq',
+                GREATEST(
+                  COALESCE((SELECT MAX(id) FROM package_index_request), 0) + 100,
+                  (SELECT last_value FROM package_index_request_id_seq)
+                ),
+                true
+              );

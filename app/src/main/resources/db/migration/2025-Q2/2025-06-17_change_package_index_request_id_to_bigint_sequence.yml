@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: change_package_index_request_id_to_bigint
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: |
+              SELECT COUNT(*)
+              FROM pg_sequences
+              WHERE sequencename = 'package_index_request_id_seq'
+                AND increment_by = 50
+      changes:
+        - sql:
+            sql: ALTER TABLE package_index_request ALTER COLUMN id DROP IDENTITY IF EXISTS;
+        - sql:
+            sql: ALTER TABLE package_index_request ALTER COLUMN id DROP DEFAULT
+        - sql:
+            sql: DROP SEQUENCE IF EXISTS package_index_request_id_seq;
+        - createSequence:
+            sequenceName: package_index_request_id_seq
+            dataType: BIGINT
+            incrementBy: 50
+        - sql:
+            sql: SELECT setval('package_index_request_id_seq', (SELECT COUNT(*) + 100 FROM package_index_request), false)
+        - modifyDataType:
+            tableName: package_index_request
+            columnName: id
+            newDataType: BIGINT
+        - sql:
+            sql: ALTER TABLE package_index_request ALTER COLUMN id SET DEFAULT nextval('package_index_request_id_seq')

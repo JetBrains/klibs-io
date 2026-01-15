@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop project_tags table
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - dropTable:
+            tableName: project_tags

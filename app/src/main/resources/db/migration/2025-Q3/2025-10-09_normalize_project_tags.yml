@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: normalize_project_tags_values
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: project_tags
+      changes:
+        - sql:
+            sql: |
+              UPDATE project_tags
+              SET value = trim(BOTH '-' FROM regexp_replace(regexp_replace(lower(value), '[^a-z0-9]+', '-', 'g'), '-{2,}', '-', 'g'));
+
+              -- Preserve dots for specific known tags like "x.509"
+              UPDATE project_tags SET value = 'x.509' WHERE value = 'x-509';
+              UPDATE project_tags SET value = 'asn.1' WHERE value = 'asn-1';
+
+              -- Fix known misspellings
+              UPDATE project_tags SET value = 'dependency-management' WHERE value = 'dependancy-management';
+              UPDATE project_tags SET value = 'background-synchronization' WHERE value = 'background-syncronization';

@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: KTL-3012 klibs-io-issue-management/issues/144
+      author: nikolay.pachkov@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/144"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Ktor Client File Caching is (almost) literally a port of the Ktor FileStorage, but for KMP applications.'
+              - column:
+                  name: tags
+                  value: '{Ktor,Client,Cache,Caching}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'KtorKMPFileCaching' and so.login = 'frankois944')"
+
+  - changeSet:
+      id: KTL-3012 klibs-io-issue-management/issues/145
+      author: nikolay.pachkov@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/145"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Log}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'klogging' and so.login = 'klogging')"
+
+

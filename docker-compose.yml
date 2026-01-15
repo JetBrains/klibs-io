@@ -1,0 +1,50 @@
+version: "4.0"
+services:
+  postgres:
+    image: postgres:15.12 # such version is on prod now
+    container_name: klibs-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=klibs
+      - POSTGRES_USER=klibs
+      - POSTGRES_PASSWORD=klibs
+    networks:
+      - klibs-net
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: klibs-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: eu-west-1
+    volumes:
+      - ./localstack-data:/var/lib/localstack
+    networks:
+      - klibs-net
+
+  s3-init:
+    image: amazon/aws-cli:latest
+    depends_on:
+      - localstack
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: eu-west-1
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "
+      echo 'Creating S3 bucket...' &&
+      aws --endpoint-url=http://localstack:4566 s3 mb s3://local-bucket
+      "
+    networks:
+      - klibs-net
+
+volumes:
+  localstack-data:
+
+networks:
+  klibs-net:
+    driver: bridge

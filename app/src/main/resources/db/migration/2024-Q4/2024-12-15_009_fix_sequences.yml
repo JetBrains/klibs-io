@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: fix sequences current value
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sqlFile:
+            path: 2024-12-15_009_fix_sequences.sql
+            relativeToChangelogFile: true
+            endDelimiter: $$;\n

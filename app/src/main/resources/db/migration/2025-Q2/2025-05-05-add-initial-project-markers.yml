@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert initial markers into project_marker table
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+              tableName: project_marker
+      changes:
+        - sqlFile:
+            path: 2025-05.05-add-initial-project-markers.sql
+            relativeToChangelogFile: true

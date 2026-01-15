@@ -1,0 +1,6 @@
+#
+# Configuration properties for deploying to https://console.intellij.net/
+#
+# The values are set in "Config Maps" and in "Secrets",
+# and require the app to be rebuilt to take effect.
+#

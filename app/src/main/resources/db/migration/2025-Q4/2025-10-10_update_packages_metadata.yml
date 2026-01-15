@@ -1,0 +1,106 @@
+databaseChangeLog:
+  - changeSet:
+      id: https://github.com/JetBrains/klibs-io-issue-management/issues/150
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/150"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Process}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'kmp-process' and so.login = '05nelsonm')"
+  - changeSet:
+      id: https://github.com/JetBrains/klibs-io-issue-management/issues/151
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/151"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{File}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'kmp-file' and so.login = '05nelsonm')"
+  - changeSet:
+      id: https://github.com/JetBrains/klibs-io-issue-management/issues/152
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/152"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Procure cryptographically secure random data from system sources'
+              - column:
+                  name: tags
+                  value: '{Crypto}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'random' and so.login = 'KotlinCrypto')"
+  - changeSet:
+      id: https://github.com/JetBrains/klibs-io-issue-management/issues/153
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/153"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'Cryptographic hash functions, such as MD5, SHA-1, SHA-2, SHA-3, BLAKE2.'
+              - column:
+                  name: tags
+                  value: '{Crypto}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'hash' and so.login = 'KotlinCrypto')"
+  - changeSet:
+      id: https://github.com/JetBrains/klibs-io-issue-management/issues/154
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/154"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: tags
+                  value: '{Crypto}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'MACs' and so.login = 'KotlinCrypto')"
+  - changeSet:
+      id: https://github.com/JetBrains/klibs-io-issue-management/issues/158
+      author: nikita.vlaev@jetbrains.com
+      comment: "https://github.com/JetBrains/klibs-io-issue-management/issues/158"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: project
+      changes:
+        - update:
+            tableName: project
+            columns:
+              - column:
+                  name: description
+                  value: 'A shared UI library for Compose Multiplatform. Supports all platform targets. Provides components with Xiaomi HyperOS design style.'
+              - column:
+                  name: tags
+                  value: '{Compose UI,Design system}'
+            where: "scm_repo_id in (SELECT sr.id FROM scm_repo sr JOIN scm_owner so on sr.owner_id = so.id WHERE sr.name = 'miuix' and so.login = 'compose-miuix-ui')"

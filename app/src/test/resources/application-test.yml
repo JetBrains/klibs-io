@@ -1,0 +1,18 @@
+klibs:
+  indexing: false
+  ai: false
+
+spring:
+  sql:
+    init:
+      mode: always
+  cloud:
+    aws:
+      region:
+        static: eu-west-1
+      credentials:
+        access-key: test
+        secret-key: test
+      endpoint: http://localhost:4566
+#  profiles:
+#    active: test
