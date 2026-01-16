@@ -1,7 +1,12 @@
 package io.klibs.integration.github
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.every
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -27,12 +32,30 @@ class GitHubMetricsTest {
     @BeforeEach
     fun setUp() {
         meterRegistry = SimpleMeterRegistry()
-        
-        githubApi = mockk()
+
+        // Relaxed mock for GitHub API and explicit stubs to avoid hitting real API
+        githubApi = mockk(relaxed = true)
+        every { githubApi.getRepository("kotlin/dokka") } returns null
+        every { githubApi.getRepositoryById(DOKKA_REPOSITORY_ID) } returns null
+        every { githubApi.getUser("bnorm") } returns null
+
+        // Use a real OkHttpClient with an interceptor to avoid real network calls
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(404)
+                    .message("Not Found")
+                    .body("".toResponseBody(null))
+                    .build()
+            }
+            .build()
+
         gitHubIntegration = GitHubIntegrationKohsukeLibrary(
             meterRegistry,
             githubApi,
-            OkHttpClient(),
+            okHttpClient,
             GitHubIntegrationProperties(
                 cache = GitHubIntegrationProperties.Cache(),
             )
