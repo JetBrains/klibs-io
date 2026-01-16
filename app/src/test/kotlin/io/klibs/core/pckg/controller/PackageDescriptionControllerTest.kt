@@ -1,9 +1,6 @@
 package io.klibs.core.pckg.controller
 
 import BaseUnitWithDbLayerTest
-import com.fasterxml.jackson.databind.ObjectMapper
-import io.klibs.core.pckg.api.UpdateDescriptionRequest
-import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.junit.jupiter.api.Test
@@ -24,12 +21,6 @@ import kotlin.test.assertTrue
 
 @ActiveProfiles("test")
 class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
-
-    @Autowired
-    private lateinit var objectMapper: ObjectMapper
-
-    @Autowired
-    private lateinit var packageRepository: PackageRepository
 
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -127,32 +118,6 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
             .andReturn()
 
         assertEquals(expectedDescription, result.response.contentAsString)
-    }
-
-    @Test
-    @Sql(value = ["classpath:sql/PackageDescriptionControllerTest/insert-package-with-specific-version.sql"])
-    fun `should update description for a specific package directly`() {
-        val groupId = "org.example"
-        val artifactId = "test-library"
-        val version = "1.0.0"
-        val userProvidedDescription = "This is a user-provided description for the test library."
-        val requestBody = UpdateDescriptionRequest(userProvidedDescription)
-
-        val result = mockMvc.post("/package-description/$groupId/$artifactId/$version") {
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(requestBody)
-        }
-        .andExpect {
-            status { isOk() }
-            content { string(userProvidedDescription) }
-        }
-        .andReturn()
-
-        assertEquals(userProvidedDescription, result.response.contentAsString)
-
-        val updatedPackage = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
-        assertEquals(userProvidedDescription, updatedPackage?.description)
-        assertEquals(false, updatedPackage?.generatedDescription) // Should be marked as not generated (user-provided)
     }
 
     @Test

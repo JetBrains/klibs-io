@@ -3,6 +3,9 @@ package io.klibs.core.search
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.micrometer.core.annotation.Timed
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -12,7 +15,8 @@ import kotlin.system.measureNanoTime
 @Service
 class SearchService(
     private val projectSearchRepository: ProjectSearchRepository,
-    private val packageSearchRepository: PackageSearchRepository
+    private val packageSearchRepository: PackageSearchRepository,
+    private val applicationScope: CoroutineScope
 ) {
     /**
      * Refreshes the project search indexes to include recently indexed / updated packages and projects.
@@ -23,6 +27,15 @@ class SearchService(
             refreshProjectIndexView()
         } catch (e: Exception) {
             logger.error("Unable to refresh search views", e)
+        }
+    }
+
+    /**
+     * Asynchronously refreshes the search views.
+     */
+    fun refreshSearchViewsAsync() {
+        applicationScope.launch(Dispatchers.IO) {
+            refreshSearchViews()
         }
     }
 

@@ -1,8 +1,8 @@
-package io.klibs.core.pckg.api
+package io.klibs.app.api
 
 /**
  * Request body for updating a package description
  */
-data class UpdateDescriptionRequest(
+data class UpdatePackageDescriptionRequest(
     val description: String
 )

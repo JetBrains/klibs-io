@@ -1,4 +1,4 @@
-package io.klibs.app.util
+package io.klibs.core.project.utils
 
 fun normalizeTag(raw: String): String {
     var v = raw.trim().lowercase()

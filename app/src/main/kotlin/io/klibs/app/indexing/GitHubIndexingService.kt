@@ -1,7 +1,7 @@
 package io.klibs.app.indexing
 
 import io.klibs.app.util.BackoffProvider
-import io.klibs.app.util.normalizeTag
+import io.klibs.core.project.utils.normalizeTag
 import io.klibs.core.owner.ScmOwnerEntity
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.owner.ScmOwnerType
