@@ -6,8 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.kohsuke.github.GitHub
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
+import io.mockk.mockk
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -16,12 +15,11 @@ import kotlin.test.assertTrue
 /**
  * Tests that verify GitHub metrics are collected and reported correctly.
  */
-@ExtendWith(MockitoExtension::class)
+@ExtendWith()
 class GitHubMetricsTest {
 
     private lateinit var meterRegistry: SimpleMeterRegistry
     
-    @Mock
     private lateinit var githubApi: GitHub
     
     private lateinit var gitHubIntegration: GitHubIntegration
@@ -30,6 +28,7 @@ class GitHubMetricsTest {
     fun setUp() {
         meterRegistry = SimpleMeterRegistry()
         
+        githubApi = mockk()
         gitHubIntegration = GitHubIntegrationKohsukeLibrary(
             meterRegistry,
             githubApi,

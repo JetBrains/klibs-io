@@ -14,19 +14,17 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.kohsuke.github.GitHub
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
+import io.mockk.mockk
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-@ExtendWith(MockitoExtension::class)
+@ExtendWith()
 class GetReadmeWithModifiedSinceCheckTest {
 
     private lateinit var meterRegistry: SimpleMeterRegistry
 
-    @Mock
     private lateinit var githubApi: GitHub
 
     private lateinit var props: GitHubIntegrationProperties
@@ -37,6 +35,7 @@ class GetReadmeWithModifiedSinceCheckTest {
         props = GitHubIntegrationProperties(
             cache = GitHubIntegrationProperties.Cache()
         )
+        githubApi = mockk()
     }
 
     private fun newIntegration(client: OkHttpClient): GitHubIntegration =

@@ -4,10 +4,10 @@ import io.klibs.core.pckg.model.TargetGroup
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import org.springframework.jdbc.core.simple.JdbcClient
-import org.mockito.kotlin.mock
+import io.mockk.mockk
 
 class ProjectSearchRepositoryJdbcTest {
-    private val jdbcClient: JdbcClient = mock()
+    private val jdbcClient: JdbcClient = mockk()
     private val projectSearchRepository = ProjectSearchRepositoryJdbc(jdbcClient)
 
     @Test

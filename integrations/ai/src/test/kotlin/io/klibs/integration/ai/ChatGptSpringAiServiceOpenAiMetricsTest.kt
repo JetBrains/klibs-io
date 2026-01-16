@@ -3,9 +3,8 @@ package io.klibs.integration.ai
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
+import io.mockk.every
+import io.mockk.mockk
 import org.springframework.ai.chat.messages.SystemMessage
 import org.springframework.ai.chat.messages.UserMessage
 import org.springframework.ai.chat.metadata.ChatResponseMetadata
@@ -36,7 +35,7 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
         meterRegistry = SimpleMeterRegistry()
 
         // Mock the OpenAI chat model
-        chatModel = mock()
+        chatModel = mockk()
 
         // Create the service with mocked dependencies
         chatGptSpringAiService = ChatGptSpringAiService(
@@ -47,13 +46,13 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
 
     @Test
     fun `should record token usage, rate limit metrics and timer when making OpenAI requests`() {
-        val testUsage = mock<Usage>()
-        `when`(testUsage.getPromptTokens()).thenReturn(100)
-        `when`(testUsage.getCompletionTokens()).thenReturn(50)
-        `when`(testUsage.getTotalTokens()).thenReturn(150)
+        val testUsage = mockk<Usage>()
+        every { testUsage.getPromptTokens() } returns 100
+        every { testUsage.getCompletionTokens() } returns 50
+        every { testUsage.getTotalTokens() } returns 150
 
         // Create a simple mock response
-        val mockResponse = mock<ChatResponse>()
+        val mockResponse = mockk<ChatResponse>()
 
         val metadata = ChatResponseMetadata.builder()
             .usage(testUsage)
@@ -69,9 +68,8 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
             )
             .build()
 
-        // Set up the mock to return our response
-        `when`(chatModel.call(any<Prompt>())).thenReturn(mockResponse)
-        `when`(mockResponse.metadata).thenReturn(metadata)
+        // We'll set up the mock after creating the prompt below
+        every { mockResponse.metadata } returns metadata
 
         // Act - Call the service method
         try {
@@ -91,6 +89,9 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
                 .build()
 
             val prompt = Prompt(messages, options)
+
+            // Set up the mock to return our response for the specific prompt instance
+            every { chatModel.call(prompt) } returns mockResponse
 
             chatGptSpringAiService.executeOpenAiRequest(prompt, "ask", model)
         } catch (e: Exception) {

@@ -7,9 +7,7 @@ import io.klibs.integration.maven.request.impl.UnlimitedRateLimiter
 import org.apache.maven.search.api.transport.Transport
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import java.io.InputStream
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
@@ -26,22 +24,24 @@ class BaseMavenSearchClientRedirectTest {
 
     @BeforeEach
     fun setup() {
-        transport = mock()
+        // will be initialized per test with appropriate response sequence
+        transport = SequenceTransport(ArrayDeque())
         client = TestClient(transport)
     }
 
     @Test
     fun `single redirect then ok`() {
         val pom = minimalPom("org.example", "example-artifact", "1.0.0")
-        val redirect = mockResponse(
+        val redirect = fakeResponse(
             code = 301,
             headers = mapOf("location" to "https://example.com/redirected")
         )
-        val ok = mockResponse(
+        val ok = fakeResponse(
             code = 200,
             body = pom
         )
-        whenever(transport.get(any(), any())).thenReturn(redirect, ok)
+        transport = SequenceTransport(ArrayDeque(listOf(redirect, ok)))
+        client = TestClient(transport)
 
         val result = client.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
@@ -57,14 +57,15 @@ class BaseMavenSearchClientRedirectTest {
     fun `multiple redirects within limit then ok`() {
         val pom = minimalPom("org.example", "example-artifact", "1.0.0")
         val redirects = (1..MAX_REDIRECTS).map { idx ->
-            mockResponse(
+            fakeResponse(
                 code = 302,
                 headers = mapOf("location" to "https://example.com/redirect/$idx")
             )
         }
-        val ok = mockResponse(code = 200, body = pom)
+        val ok = fakeResponse(code = 200, body = pom)
         // enqueue 5 redirects then OK
-        whenever(transport.get(any(), any())).thenReturn(redirects[0], *redirects.subList(1, redirects.size).toTypedArray(), ok)
+        transport = SequenceTransport(ArrayDeque(redirects + ok))
+        client = TestClient(transport)
 
         val result = client.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
@@ -76,14 +77,13 @@ class BaseMavenSearchClientRedirectTest {
     @Test
     fun `too many redirects throws`() {
         val redirects = (1..MAX_REDIRECTS + 1).map { idx ->
-            mockResponse(
+            fakeResponse(
                 code = if (idx % 2 == 0) 307 else 308, // mix permanent/temp redirect codes
                 headers = mapOf("location" to "https://example.com/redirect/$idx")
             )
         }
-        whenever(transport.get(any(), any())).thenReturn(
-            redirects[0], *redirects.subList(1, redirects.size).toTypedArray()
-        )
+        transport = SequenceTransport(ArrayDeque(redirects))
+        client = TestClient(transport)
 
         val ex = assertFailsWith<IllegalStateException> {
             client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
@@ -94,8 +94,9 @@ class BaseMavenSearchClientRedirectTest {
 
     @Test
     fun `redirect missing location header throws`() {
-        val redirect = mockResponse(code = 302, headers = emptyMap())
-        whenever(transport.get(any(), any())).thenReturn(redirect)
+        val redirect = fakeResponse(code = 302, headers = emptyMap())
+        transport = SequenceTransport(ArrayDeque(listOf(redirect)))
+        client = TestClient(transport)
 
         assertFailsWith<IllegalArgumentException> {
             client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
@@ -104,8 +105,9 @@ class BaseMavenSearchClientRedirectTest {
 
     @Test
     fun `unexpected status throws`() {
-        val serverError = mockResponse(code = 500)
-        whenever(transport.get(any(), any())).thenReturn(serverError)
+        val serverError = fakeResponse(code = 500)
+        transport = SequenceTransport(ArrayDeque(listOf(serverError)))
+        client = TestClient(transport)
 
         assertFailsWith<IllegalStateException> {
             client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
@@ -114,8 +116,9 @@ class BaseMavenSearchClientRedirectTest {
 
     @Test
     fun `not found returns null`() {
-        val notFound = mockResponse(code = 404)
-        whenever(transport.get(any(), any())).thenReturn(notFound)
+        val notFound = fakeResponse(code = 404)
+        transport = SequenceTransport(ArrayDeque(listOf(notFound)))
+        client = TestClient(transport)
 
         val result = client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
         assertNull(result, "Expected null for HTTP 404 response")
@@ -133,17 +136,17 @@ class BaseMavenSearchClientRedirectTest {
         |</project>
     """.trimMargin()
 
-    private fun mockResponse(
+    private fun fakeResponse(
         code: Int,
         headers: Map<String, String> = emptyMap(),
         body: String? = null
     ): Transport.Response {
-        val response = mock<Transport.Response>()
-        whenever(response.code).thenReturn(code)
-        whenever(response.headers).thenReturn(headers)
-        val stream = ByteArrayInputStream((body ?: "").toByteArray(StandardCharsets.UTF_8))
-        whenever(response.body).thenReturn(stream)
-        return response
+        val stream: InputStream = ByteArrayInputStream((body ?: "").toByteArray(StandardCharsets.UTF_8))
+        return object : Transport.Response {
+            override val code: Int = code
+            override val headers: Map<String, String> = headers
+            override val body: InputStream = stream
+        }
     }
 
     private class TestClient(transport: Transport) : BaseMavenSearchClient(
@@ -155,6 +158,17 @@ class BaseMavenSearchClientRedirectTest {
     ) {
         override fun getContentUrlPrefix(): String {
             return "https://test/remotecontent?filepath="
+        }
+    }
+
+    private class SequenceTransport(private val responses: ArrayDeque<Transport.Response>) : Transport {
+        override fun get(url: String, headers: Map<String, String>): Transport.Response {
+            if (responses.isEmpty()) throw IllegalStateException("No more responses queued")
+            return responses.removeFirst()
+        }
+
+        override fun iterate(url: String, headers: Map<String, String>): Iterator<Transport.Response> {
+            throw UnsupportedOperationException("Not used in tests")
         }
     }
 }

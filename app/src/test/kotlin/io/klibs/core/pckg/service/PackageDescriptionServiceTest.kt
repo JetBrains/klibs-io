@@ -5,9 +5,9 @@ import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
+import io.mockk.every
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
+import com.ninjasquad.springmockk.MockkBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import kotlin.test.assertEquals
@@ -26,7 +26,7 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var packageService: PackageService
 
-    @MockBean
+    @MockkBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
 
     @Test
@@ -42,14 +42,14 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(packageEntity, "Package entity should exist in the database")
         assertEquals("Old description", packageEntity.description, "Package should have the initial description")
 
-        `when`(
+        every {
             packageDescriptionGenerator.generatePackageDescription(
                 packageName,
                 groupId,
                 artifactId,
                 version
             )
-        ).thenReturn(expectedDescription)
+        } returns expectedDescription
 
         val result = packageDescriptionService.generateDescription(groupId, artifactId, version)
 
@@ -70,14 +70,14 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(version, packageEntity.version, "Package should have the latest version")
         assertEquals("Old description 2", packageEntity.description, "Package should have the initial description")
 
-        `when`(
+        every {
             packageDescriptionGenerator.generatePackageDescription(
                 packageName,
                 groupId,
                 artifactId,
                 version
             )
-        ).thenReturn(expectedDescription)
+        } returns expectedDescription
 
         val result = packageDescriptionService.generateDescription(groupId, artifactId)
 
@@ -106,23 +106,23 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(package2, "Package with artifactId $artifactId2 should exist")
         assertEquals("Old description 2", package2.description, "Package should have the initial description")
 
-        `when`(
+        every {
             packageDescriptionGenerator.generatePackageDescription(
                 packageName1,
                 groupId,
                 artifactId1,
                 version
             )
-        ).thenReturn(expectedDescription)
+        } returns expectedDescription
 
-        `when`(
+        every {
             packageDescriptionGenerator.generatePackageDescription(
                 packageName2,
                 groupId,
                 artifactId2,
                 version
             )
-        ).thenReturn(expectedDescription)
+        } returns expectedDescription
 
         val result = packageDescriptionService.generateDescription(groupId)
 
@@ -182,14 +182,14 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         packageIds.forEach { id ->
             val packageEntity = packageRepository.findById(id).orElse(null)
             if (packageEntity != null) {
-                `when`(
+                every {
                     packageDescriptionGenerator.generatePackageDescription(
                         packageEntity.name,
                         packageEntity.groupId,
                         packageEntity.artifactId,
                         packageEntity.version
                     )
-                ).thenReturn("Placeholder description for ${packageEntity.name} ${packageEntity.version}")
+                } returns "Placeholder description for ${packageEntity.name} ${packageEntity.version}"
             }
         }
 

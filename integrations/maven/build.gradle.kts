@@ -20,5 +20,5 @@ dependencies {
     implementation(libs.maven.indexer.searchApi)
     implementation(libs.maven.indexer.searchSmoBackend)
 
-    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockk)
 }

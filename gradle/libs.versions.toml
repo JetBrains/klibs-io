@@ -31,6 +31,8 @@ gorylenko-gitProperties = "2.4.1"
 jib = "3.4.3"
 
 mockito = "5.1.0"
+mockk = "1.13.13"
+springmockk = "4.0.2"
 testcontainers = "1.21.4"
 
 markdown = "0.7.3"
@@ -89,6 +91,8 @@ maven-indexer-searchSmoBackend = { module = "org.apache.maven.indexer:search-bac
 
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+springmockk = { module = "com.ninja-squad:springmockk", version.ref = "springmockk" }
 
 liquibase-core = { module = "org.liquibase:liquibase-core" }
 postgresql = { module = "org.postgresql:postgresql" }

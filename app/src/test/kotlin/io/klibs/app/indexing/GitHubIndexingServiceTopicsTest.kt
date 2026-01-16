@@ -17,20 +17,26 @@ import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.ReadmeFetchResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.*
+import io.mockk.CapturingSlot
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
+import io.mockk.any
+import io.mockk.eq
 import java.time.Instant
 
 class GitHubIndexingServiceTopicsTest {
 
-    private val gitHubIntegration: GitHubIntegration = mock()
-    private val scmRepositoryRepository: ScmRepositoryRepository = mock()
-    private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
-    private val readmeService: ReadmeService = mock()
-    private val projectRepository: ProjectRepository = mock()
-    private val projectTagRepository: ProjectTagRepository = mock()
+    private val gitHubIntegration: GitHubIntegration = mockk()
+    private val scmRepositoryRepository: ScmRepositoryRepository = mockk()
+    private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mockk()
+    private val readmeService: ReadmeService = mockk()
+    private val projectRepository: ProjectRepository = mockk()
+    private val projectTagRepository: ProjectTagRepository = mockk()
     private val readmeProcessors: List<ReadmeProcessor> = emptyList()
-    private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mock()
-    private val ownerBackoffProvider: BackoffProvider = mock()
+    private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mockk()
+    private val ownerBackoffProvider: BackoffProvider = mockk()
 
     private fun uut() = GitHubIndexingService(
         gitHubIntegration = gitHubIntegration,
@@ -103,44 +109,40 @@ class GitHubIndexingServiceTopicsTest {
         val topicsFromGh = listOf("Kotlin", "kotlin", "  SPRING  ", "", "Web", "compose UI", "flow")
         val expectedNormalized = listOf("kotlin", "spring", "web", "compose-ui", "kotlin-flow")
 
-        whenever(gitHubIntegration.getRepository(ghNativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getLicense(ghNativeId)).thenReturn(null)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(ghNativeId), any()))
-            .thenReturn(ReadmeFetchResult.NotFound)
+        every { gitHubIntegration.getRepository(ghNativeId) } returns ghRepo
+        every { gitHubIntegration.getLicense(ghNativeId) } returns null
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(ghNativeId), any()) } returns ReadmeFetchResult.NotFound
 
-        whenever(scmRepositoryRepository.findByName(ownerLogin, repoName)).thenReturn(existingRepo)
-        whenever(scmRepositoryRepository.update(any())).thenAnswer { invocation ->
-            val arg = invocation.getArgument<ScmRepositoryEntity>(0)
-            arg.copy(id = repoId)
-        }
+        every { scmRepositoryRepository.findByName(ownerLogin, repoName) } returns existingRepo
+        every { scmRepositoryRepository.update(any()) } answers { firstArg<ScmRepositoryEntity>().copy(id = repoId) }
 
-        whenever(projectRepository.findByScmRepoId(repoId)).thenReturn(project)
-        whenever(gitHubIntegration.getRepositoryTopics(ghNativeId)).thenReturn(topicsFromGh)
-        whenever(projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB)).thenReturn(emptyList())
+        every { projectRepository.findByScmRepoId(repoId) } returns project
+        every { gitHubIntegration.getRepositoryTopics(ghNativeId) } returns topicsFromGh
+        every { projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB) } returns emptyList()
 
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue(any<String>())).thenReturn(null)
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("kotlin")).thenReturn("kotlin")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("spring")).thenReturn("spring")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("web")).thenReturn("web")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("compose-ui")).thenReturn("compose-ui")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("flow")).thenReturn("kotlin-flow")
+        every { allowedProjectTagsRepository.findCanonicalNameByValue(any<String>()) } returns null
+        every { allowedProjectTagsRepository.findCanonicalNameByValue("kotlin") } returns "kotlin"
+        every { allowedProjectTagsRepository.findCanonicalNameByValue("spring") } returns "spring"
+        every { allowedProjectTagsRepository.findCanonicalNameByValue("web") } returns "web"
+        every { allowedProjectTagsRepository.findCanonicalNameByValue("compose-ui") } returns "compose-ui"
+        every { allowedProjectTagsRepository.findCanonicalNameByValue("flow") } returns "kotlin-flow"
 
         val persisted = uut().updateRepo(existingRepo)
 
         assertEquals(repoId, persisted.id)
-        verify(projectTagRepository).deleteByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB)
+        verify { projectTagRepository.deleteByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB) }
 
-        val captor = argumentCaptor<Iterable<TagEntity>>()
-        verify(projectTagRepository).saveAll(captor.capture())
-        val savedTags = captor.firstValue.map { it.value }.sorted()
+        val captor: CapturingSlot<Iterable<TagEntity>> = slot()
+        verify { projectTagRepository.saveAll(capture(captor)) }
+        val savedTags = captor.captured.map { it.value }.sorted()
         assertEquals(expectedNormalized.sorted(), savedTags)
 
-        captor.firstValue.forEach { tagEntity ->
+        captor.captured.forEach { tagEntity ->
             assertEquals(TagOrigin.GITHUB, tagEntity.origin)
             assertEquals(project.idNotNull, tagEntity.projectId)
         }
 
-        verify(gitHubIntegration).getRepositoryTopics(ghNativeId)
+        verify { gitHubIntegration.getRepositoryTopics(ghNativeId) }
     }
 
     @Test
@@ -200,29 +202,25 @@ class GitHubIndexingServiceTopicsTest {
 
         val existingUserTags = listOf(TagEntity(project.idNotNull, TagOrigin.USER, "kotlin"))
 
-        whenever(gitHubIntegration.getRepository(ghNativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getLicense(ghNativeId)).thenReturn(null)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(ghNativeId), any()))
-            .thenReturn(ReadmeFetchResult.NotFound)
+        every { gitHubIntegration.getRepository(ghNativeId) } returns ghRepo
+        every { gitHubIntegration.getLicense(ghNativeId) } returns null
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(ghNativeId), any()) } returns ReadmeFetchResult.NotFound
 
-        whenever(scmRepositoryRepository.findByName(ownerLogin, repoName)).thenReturn(existingRepo)
-        whenever(scmRepositoryRepository.update(any())).thenAnswer { invocation ->
-            val arg = invocation.getArgument<ScmRepositoryEntity>(0)
-            arg.copy(id = repoId)
-        }
+        every { scmRepositoryRepository.findByName(ownerLogin, repoName) } returns existingRepo
+        every { scmRepositoryRepository.update(any()) } answers { firstArg<ScmRepositoryEntity>().copy(id = repoId) }
 
-        whenever(projectRepository.findByScmRepoId(repoId)).thenReturn(project)
-        whenever(gitHubIntegration.getRepositoryTopics(ghNativeId)).thenReturn(listOf("kotlin"))
-        whenever(projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB)).thenReturn(existingUserTags)
+        every { projectRepository.findByScmRepoId(repoId) } returns project
+        every { gitHubIntegration.getRepositoryTopics(ghNativeId) } returns listOf("kotlin")
+        every { projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB) } returns existingUserTags
 
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue(any<String>())).thenReturn(null)
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("kotlin")).thenReturn("kotlin")
+        every { allowedProjectTagsRepository.findCanonicalNameByValue(any<String>()) } returns null
+        every { allowedProjectTagsRepository.findCanonicalNameByValue("kotlin") } returns "kotlin"
 
         val persisted = uut().updateRepo(existingRepo)
 
         assertEquals(repoId, persisted.id)
-        verify(projectTagRepository).deleteByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB)
-        verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
-        verify(gitHubIntegration).getRepositoryTopics(ghNativeId)
+        verify { projectTagRepository.deleteByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB) }
+        verify(exactly = 0) { projectTagRepository.saveAll(any()) }
+        verify { gitHubIntegration.getRepositoryTopics(ghNativeId) }
     }
 }

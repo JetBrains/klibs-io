@@ -6,9 +6,9 @@ import io.klibs.integration.maven.request.impl.MavenCentralRateLimiter
 import io.klibs.integration.maven.search.MavenSearchResponse
 import org.apache.maven.search.api.request.Query
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import io.mockk.any
+import io.mockk.every
+import io.mockk.mockk
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.ExpectedCount
@@ -26,17 +26,14 @@ class SonatypeDiscoverySearchClientTest {
     fun `searchWithThrottle returns only packages discovered strictly after lastUpdatedSince`() {
         // Given
         val discoveryEndpoint = "https://example.com/api/discovery"
-        val properties = mock<MavenIntegrationProperties>()
-        val central = mock<MavenIntegrationProperties.Central>()
-        whenever(properties.central).thenReturn(central)
-        whenever(central.discoveryEndpoint).thenReturn(discoveryEndpoint)
+        val properties = mockk<MavenIntegrationProperties>()
+        val central = mockk<MavenIntegrationProperties.Central>()
+        every { properties.central } returns central
+        every { central.discoveryEndpoint } returns discoveryEndpoint
 
-        val rateLimiter = mock<MavenCentralRateLimiter>()
+        val rateLimiter = mockk<MavenCentralRateLimiter>()
         // Make the rate limiter just run the action immediately
-        whenever(rateLimiter.withRateLimitBlocking<Any>(any())).thenAnswer { invocation ->
-            val action = invocation.arguments[0] as () -> Any
-            action.invoke()
-        }
+        every { rateLimiter.withRateLimitBlocking<Any>(any()) } answers { firstArg<() -> Any>().invoke() }
 
         val cutoff = Instant.ofEpochMilli(2_000L)
         val beforeTs = 1_000L
@@ -79,8 +76,8 @@ class SonatypeDiscoverySearchClientTest {
         val client = SonatypeDiscoverSearchClient(properties, rateLimiter, objectMapper, builder)
 
         // We only need a Query with a value, so mock it
-        val query = mock<Query>()
-        whenever(query.value).thenReturn("some-query")
+        val query = mockk<Query>()
+        every { query.value } returns "some-query"
 
         // When
         val result: MavenSearchResponse = client.searchWithThrottle(page = 0, query = query, lastUpdatedSince = cutoff)

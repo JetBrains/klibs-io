@@ -11,11 +11,11 @@ import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.whenever
+import io.mockk.verify
+import io.mockk.confirmVerified
+import io.mockk.every
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
+import com.ninjasquad.springmockk.MockkBean
 import org.springframework.test.context.jdbc.Sql
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -31,7 +31,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
 
-    @MockBean
+    @MockkBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
     private val repoNativeId = 598863246L
@@ -86,14 +86,14 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         val before = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
         initVars(before)
 
-        whenever(gitHubIntegration.getRepository(repoNativeId)).thenReturn(null)
-        whenever(gitHubIntegration.getRepository(before.ownerLogin, before.name)).thenReturn(null)
+        every { gitHubIntegration.getRepository(repoNativeId) } returns null
+        every { gitHubIntegration.getRepository(before.ownerLogin, before.name) } returns null
 
         uut.updateRepo(before)
 
-        verify(gitHubIntegration).getRepository(repoNativeId)
-        verify(gitHubIntegration).getRepository(before.ownerLogin, before.name)
-        verifyNoMoreInteractions(gitHubIntegration)
+        verify { gitHubIntegration.getRepository(repoNativeId) }
+        verify { gitHubIntegration.getRepository(before.ownerLogin, before.name) }
+        confirmVerified(gitHubIntegration)
 
         val after = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
 
@@ -112,23 +112,23 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
             description = "Updated repo description"
         )
 
-        whenever(gitHubIntegration.getRepository(repoNativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(ghLicenseBefore)
+        every { gitHubIntegration.getRepository(repoNativeId) } returns ghRepo
+        every { gitHubIntegration.getLicense(repoNativeId) } returns ghLicenseBefore
 
-        whenever(
+        every {
             gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, before.updatedAtTs)
-        ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
-        whenever(gitHubIntegration.markdownToHtml("Updated readme", repoNativeId)).thenReturn("<p>Updated readme</p>")
-        whenever(gitHubIntegration.markdownRender("Updated readme", repoNativeId)).thenReturn("Updated readme (rendered)")
+        } returns ReadmeFetchResult.Content("Updated readme")
+        every { gitHubIntegration.markdownToHtml("Updated readme", repoNativeId) } returns "<p>Updated readme</p>"
+        every { gitHubIntegration.markdownRender("Updated readme", repoNativeId) } returns "Updated readme (rendered)"
 
         uut.updateRepo(before)
 
-        verify(gitHubIntegration).getRepository(repoNativeId)
-        verify(gitHubIntegration).getLicense(repoNativeId)
-        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, before.updatedAtTs)
-        verify(gitHubIntegration).markdownToHtml("Updated readme", repoNativeId)
-        verify(gitHubIntegration).markdownRender("Updated readme", repoNativeId)
-        verifyNoMoreInteractions(gitHubIntegration)
+        verify { gitHubIntegration.getRepository(repoNativeId) }
+        verify { gitHubIntegration.getLicense(repoNativeId) }
+        verify { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, before.updatedAtTs) }
+        verify { gitHubIntegration.markdownToHtml("Updated readme", repoNativeId) }
+        verify { gitHubIntegration.markdownRender("Updated readme", repoNativeId) }
+        confirmVerified(gitHubIntegration)
 
         val after = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
 
@@ -161,26 +161,26 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
             name = newOwnerLogin,
         )
 
-        whenever(gitHubIntegration.getRepository(repoNativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getUser(newOwnerLogin)).thenReturn(ghUser)
-        whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(ghLicenseBefore)
+        every { gitHubIntegration.getRepository(repoNativeId) } returns ghRepo
+        every { gitHubIntegration.getUser(newOwnerLogin) } returns ghUser
+        every { gitHubIntegration.getLicense(repoNativeId) } returns ghLicenseBefore
 
-        whenever(
+        every {
             gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
-        ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
-        whenever(gitHubIntegration.markdownToHtml("Updated readme", repoNativeId)).thenReturn("<p>Updated readme</p>")
-        whenever(gitHubIntegration.markdownRender("Updated readme", repoNativeId)).thenReturn("Updated readme (rendered)")
+        } returns ReadmeFetchResult.Content("Updated readme")
+        every { gitHubIntegration.markdownToHtml("Updated readme", repoNativeId) } returns "<p>Updated readme</p>"
+        every { gitHubIntegration.markdownRender("Updated readme", repoNativeId) } returns "Updated readme (rendered)"
 
         uut.updateRepo(repoBefore)
 
-        verify(gitHubIntegration).getRepository(repoNativeId)
-        verify(gitHubIntegration).getUser(newOwnerLogin)
-        verify(gitHubIntegration).getLicense(repoNativeId)
-        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
-        verify(gitHubIntegration).markdownToHtml("Updated readme", repoNativeId)
-        verify(gitHubIntegration).markdownRender("Updated readme", repoNativeId)
+        verify { gitHubIntegration.getRepository(repoNativeId) }
+        verify { gitHubIntegration.getUser(newOwnerLogin) }
+        verify { gitHubIntegration.getLicense(repoNativeId) }
+        verify { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs) }
+        verify { gitHubIntegration.markdownToHtml("Updated readme", repoNativeId) }
+        verify { gitHubIntegration.markdownRender("Updated readme", repoNativeId) }
 
-        verifyNoMoreInteractions(gitHubIntegration)
+        confirmVerified(gitHubIntegration)
 
         val repoAfter = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
 
@@ -222,26 +222,26 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
             login = renamedLogin,
         )
 
-        whenever(gitHubIntegration.getRepository(repoNativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getUser(renamedLogin)).thenReturn(ghUserSameNative)
-        whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(ghLicenseBefore)
+        every { gitHubIntegration.getRepository(repoNativeId) } returns ghRepo
+        every { gitHubIntegration.getUser(renamedLogin) } returns ghUserSameNative
+        every { gitHubIntegration.getLicense(repoNativeId) } returns ghLicenseBefore
 
-        whenever(
+        every {
             gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
-        ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
-        whenever(gitHubIntegration.markdownToHtml("Updated readme", repoNativeId)).thenReturn("<p>Updated readme</p>")
-        whenever(gitHubIntegration.markdownRender("Updated readme", repoNativeId)).thenReturn("Updated readme (rendered)")
+        } returns ReadmeFetchResult.Content("Updated readme")
+        every { gitHubIntegration.markdownToHtml("Updated readme", repoNativeId) } returns "<p>Updated readme</p>"
+        every { gitHubIntegration.markdownRender("Updated readme", repoNativeId) } returns "Updated readme (rendered)"
 
         uut.updateRepo(repoBefore)
 
-        verify(gitHubIntegration).getRepository(repoNativeId)
-        verify(gitHubIntegration).getUser(renamedLogin)
-        verify(gitHubIntegration).getLicense(repoNativeId)
-        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
-        verify(gitHubIntegration).markdownToHtml("Updated readme", repoNativeId)
-        verify(gitHubIntegration).markdownRender("Updated readme", repoNativeId)
+        verify { gitHubIntegration.getRepository(repoNativeId) }
+        verify { gitHubIntegration.getUser(renamedLogin) }
+        verify { gitHubIntegration.getLicense(repoNativeId) }
+        verify { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs) }
+        verify { gitHubIntegration.markdownToHtml("Updated readme", repoNativeId) }
+        verify { gitHubIntegration.markdownRender("Updated readme", repoNativeId) }
 
-        verifyNoMoreInteractions(gitHubIntegration)
+        confirmVerified(gitHubIntegration)
 
         val repoAfter = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
         val repoAfterExpected = repoBefore.copy(
@@ -270,24 +270,24 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
             name = newName,
         )
 
-        whenever(gitHubIntegration.getRepository(repoNativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(ghLicenseBefore)
+        every { gitHubIntegration.getRepository(repoNativeId) } returns ghRepo
+        every { gitHubIntegration.getLicense(repoNativeId) } returns ghLicenseBefore
 
-        whenever(
+        every {
             gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
-        ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
-        whenever(gitHubIntegration.markdownToHtml("Updated readme", repoNativeId)).thenReturn("<p>Updated readme</p>")
-        whenever(gitHubIntegration.markdownRender("Updated readme", repoNativeId)).thenReturn("Updated readme (rendered)")
+        } returns ReadmeFetchResult.Content("Updated readme")
+        every { gitHubIntegration.markdownToHtml("Updated readme", repoNativeId) } returns "<p>Updated readme</p>"
+        every { gitHubIntegration.markdownRender("Updated readme", repoNativeId) } returns "Updated readme (rendered)"
 
         uut.updateRepo(repoBefore)
 
-        verify(gitHubIntegration).getRepository(repoNativeId)
-        verify(gitHubIntegration).getLicense(repoNativeId)
-        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
-        verify(gitHubIntegration).markdownToHtml("Updated readme", repoNativeId)
-        verify(gitHubIntegration).markdownRender("Updated readme", repoNativeId)
+        verify { gitHubIntegration.getRepository(repoNativeId) }
+        verify { gitHubIntegration.getLicense(repoNativeId) }
+        verify { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs) }
+        verify { gitHubIntegration.markdownToHtml("Updated readme", repoNativeId) }
+        verify { gitHubIntegration.markdownRender("Updated readme", repoNativeId) }
 
-        verifyNoMoreInteractions(gitHubIntegration)
+        confirmVerified(gitHubIntegration)
 
         val after = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
         val expectedAfter = repoBefore.copy(

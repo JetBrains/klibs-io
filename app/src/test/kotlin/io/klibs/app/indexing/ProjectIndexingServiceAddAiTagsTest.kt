@@ -11,25 +11,25 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.integration.ai.ProjectTagsGenerator
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import io.mockk.any
+import io.mockk.CapturingSlot
+import io.mockk.every
+import io.mockk.eq
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import java.time.Instant
 
 class ProjectIndexingServiceAddAiTagsTest {
 
-    private val readmeService: ReadmeService = mock()
-    private val projectDescriptionGenerator: io.klibs.integration.ai.ProjectDescriptionGenerator = mock()
-    private val projectRepository: ProjectRepository = mock()
-    private val scmRepositoryRepository: ScmRepositoryRepository = mock()
-    private val projectTagsGenerator: ProjectTagsGenerator = mock()
-    private val projectTagRepository: ProjectTagRepository = mock()
-    private val descriptionBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
-    private val tagsBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
+    private val readmeService: ReadmeService = mockk()
+    private val projectDescriptionGenerator: io.klibs.integration.ai.ProjectDescriptionGenerator = mockk()
+    private val projectRepository: ProjectRepository = mockk()
+    private val scmRepositoryRepository: ScmRepositoryRepository = mockk()
+    private val projectTagsGenerator: ProjectTagsGenerator = mockk()
+    private val projectTagRepository: ProjectTagRepository = mockk()
+    private val descriptionBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mockk())
+    private val tagsBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mockk())
 
     private fun uut() = ProjectIndexingService(
             readmeService = readmeService,
@@ -53,7 +53,7 @@ class ProjectIndexingServiceAddAiTagsTest {
             latestVersion = "1.0.0",
             latestVersionTs = Instant.parse("2024-01-01T00:00:00Z")
         )
-        whenever(projectRepository.findWithoutTags()).thenReturn(project)
+        every { projectRepository.findWithoutTags() } returns project
 
         val readme = "# Awesome lib\nSome README content"
         val repo = ScmRepositoryEntity(
@@ -79,28 +79,25 @@ class ProjectIndexingServiceAddAiTagsTest {
             updatedAtTs = Instant.parse("2024-06-01T00:00:00Z"),
             minimizedReadme = readme
         )
-        whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
+        every { scmRepositoryRepository.findById(scmRepoId) } returns repo
 
         val generatedTags = listOf("kotlin", "testing", "http-client")
-        whenever(
+        every {
             projectTagsGenerator.generateTagsForProject(
                 eq(repo.name),
                 eq(project.description ?: ""),
                 eq(repo.description ?: ""),
                 eq(readme)
             )
-        ).thenReturn(generatedTags)
+        } returns generatedTags
 
-        whenever(projectTagRepository.saveAll(any<Iterable<TagEntity>>())).thenAnswer { invocation ->
-            @Suppress("UNCHECKED_CAST")
-            (invocation.arguments[0] as Iterable<TagEntity>).toList()
-        }
+        every { projectTagRepository.saveAll(any<Iterable<TagEntity>>()) } answers { firstArg<Iterable<TagEntity>>().toList() }
 
         uut().addAiTags()
 
-        val captor = argumentCaptor<Iterable<TagEntity>>()
-        verify(projectTagRepository).saveAll(captor.capture())
-        val saved = captor.firstValue.toList()
+        val captor: CapturingSlot<Iterable<TagEntity>> = slot()
+        verify { projectTagRepository.saveAll(capture(captor)) }
+        val saved = captor.captured.toList()
 
         assert(saved.size == generatedTags.size)
         saved.forEachIndexed { idx, tagEntity ->
@@ -112,14 +109,14 @@ class ProjectIndexingServiceAddAiTagsTest {
 
     @Test
     fun `addAiTags should do nothing when there is no project without tags`() {
-        whenever(projectRepository.findWithoutTags()).thenReturn(null)
+        every { projectRepository.findWithoutTags() } returns null
 
         uut().addAiTags()
 
-        verify(scmRepositoryRepository, never()).findById(any<Int>())
-        verify(readmeService, never()).readReadmeMd(any<Int>())
-        verify(projectTagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
-        verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
+        verify(exactly = 0) { scmRepositoryRepository.findById(any<Int>()) }
+        verify(exactly = 0) { readmeService.readReadmeMd(any<Int>()) }
+        verify(exactly = 0) { projectTagsGenerator.generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>()) }
+        verify(exactly = 0) { projectTagRepository.saveAll(any<Iterable<TagEntity>>()) }
     }
 
     @Test
@@ -135,7 +132,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         )
 
         // Always return the same project (so second run hits backoff and exits)
-        whenever(projectRepository.findWithoutTags()).thenReturn(project)
+        every { projectRepository.findWithoutTags() } returns project
 
         val repo = ScmRepositoryEntity(
             id = scmRepoId,
@@ -160,12 +157,12 @@ class ProjectIndexingServiceAddAiTagsTest {
             updatedAtTs = Instant.parse("2024-06-01T00:00:00Z"),
             minimizedReadme = "readme"
         )
-        whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
+        every { scmRepositoryRepository.findById(scmRepoId) } returns repo
 
         // Force a failure during tag generation
-        whenever(
+        every {
             projectTagsGenerator.generateTagsForProject(any(), any(), any(), any())
-        ).thenThrow(RuntimeException("AI tags generation failure"))
+        } throws RuntimeException("AI tags generation failure")
 
         val service = uut()
 
@@ -176,9 +173,9 @@ class ProjectIndexingServiceAddAiTagsTest {
         service.addAiTags()
 
         // Generator should be invoked only once (first run). Second run should skip early.
-        verify(projectTagsGenerator).generateTagsForProject(any(), any(), any(), any())
+        verify { projectTagsGenerator.generateTagsForProject(any(), any(), any(), any()) }
 
         // No tags should be saved at all due to failure and then skip
-        verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
+        verify(exactly = 0) { projectTagRepository.saveAll(any<Iterable<TagEntity>>()) }
     }
 }

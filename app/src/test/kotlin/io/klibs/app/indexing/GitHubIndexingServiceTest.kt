@@ -12,13 +12,12 @@ import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.whenever
+import io.mockk.any
+import io.mockk.every
+import io.mockk.verify
+import io.mockk.confirmVerified
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
+import com.ninjasquad.springmockk.MockkBean
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.test.context.jdbc.Sql
@@ -41,10 +40,10 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
 
-    @MockBean
+    @MockkBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
-    @MockBean(name = "ownerBackoffProvider")
+    @MockkBean(name = "ownerBackoffProvider")
     private lateinit var ownerBackoffProvider: BackoffProvider
 
     @Test
@@ -69,7 +68,7 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
             followers = 20
         )
 
-        whenever(gitHubIntegration.getUser(login)).thenReturn(githubUser)
+        every { gitHubIntegration.getUser(login) } returns githubUser
 
         uut.syncOwnerWithGitHub()
 
@@ -101,11 +100,11 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `updateOwner should handle exception when GitHub user not found`(output: CapturedOutput) {
 
-        whenever(gitHubIntegration.getUser(any())).thenReturn(null)
+        every { gitHubIntegration.getUser(any()) } returns null
 
         uut.syncOwnerWithGitHub()
 
-        verify(gitHubIntegration, times(1)).getUser(any())
+        verify(exactly = 1) { gitHubIntegration.getUser(any()) }
         assertContains(output.out, "Error while updating a GitHub owner")
     }
 
@@ -114,7 +113,7 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         uut.syncOwnerWithGitHub()
 
-        verifyNoMoreInteractions(gitHubIntegration)
+        confirmVerified(gitHubIntegration)
         assert(!output.out.contains("Error while updating a GitHub owner"))
     }
 
@@ -122,11 +121,11 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `updateOwner should handle exception when GitHub integration fails`(output: CapturedOutput) {
 
-        whenever(gitHubIntegration.getUser(any())).thenThrow(RuntimeException("API error"))
+        every { gitHubIntegration.getUser(any()) } throws RuntimeException("API error")
 
         uut.syncOwnerWithGitHub()
 
-        verify(gitHubIntegration, times(1)).getUser(any())
+        verify(exactly = 1) { gitHubIntegration.getUser(any()) }
         assertContains(output.out, "Error while updating a GitHub owner")
     }
 
@@ -174,23 +173,23 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
             0
         )
 
-        whenever(gitHubIntegration.getRepository(repositoryNativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getUser(ownerLogin)).thenReturn(gitHubUser)
-        whenever(gitHubIntegration.getLicense(repositoryNativeId)).thenReturn(
+        every { gitHubIntegration.getRepository(repositoryNativeId) } returns ghRepo
+        every { gitHubIntegration.getUser(ownerLogin) } returns gitHubUser
+        every { gitHubIntegration.getLicense(repositoryNativeId) } returns (
             GitHubLicense(
                 updatedLicenseKey,
                 updatedLicenseValue
             )
         )
-        whenever(
+        every {
             gitHubIntegration.getReadmeWithModifiedSinceCheck(repositoryNativeId, repositoryBeforeTest.updatedAtTs)
-        ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
-        whenever(gitHubIntegration.markdownToHtml("Updated readme", repositoryNativeId)).thenReturn("<p>Updated readme</p>")
-        whenever(gitHubIntegration.markdownRender("Updated readme", repositoryNativeId)).thenReturn("Updated readme (rendered)")
+        } returns ReadmeFetchResult.Content("Updated readme")
+        every { gitHubIntegration.markdownToHtml("Updated readme", repositoryNativeId) } returns "<p>Updated readme</p>"
+        every { gitHubIntegration.markdownRender("Updated readme", repositoryNativeId) } returns "Updated readme (rendered)"
 
         uut.updateRepo(repositoryBeforeTest)
 
-        verify(gitHubIntegration).getRepository(repositoryNativeId)
+        verify { gitHubIntegration.getRepository(repositoryNativeId) }
 
         val repositoryAfterTest = scmRepositoryRepository.findByNativeId(repositoryNativeId)
         assertNotNull(repositoryAfterTest, "Repository entity should exist after test")
