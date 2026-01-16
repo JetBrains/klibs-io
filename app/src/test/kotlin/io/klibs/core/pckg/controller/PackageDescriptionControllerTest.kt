@@ -7,12 +7,11 @@ import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.timeout
+import io.mockk.every
+import io.mockk.verify
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.test.mock.mockito.SpyBean
+import com.ninjasquad.springmockk.MockkBean
+import com.ninjasquad.springmockk.SpykBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
@@ -34,10 +33,10 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    @SpyBean
+    @SpykBean
     private lateinit var packageDescriptionService: PackageDescriptionService
 
-    @MockBean
+    @MockkBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
 
     @Test
@@ -49,12 +48,12 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
         val packageName = "$groupId:$artifactId"
         val expectedDescription = "This is a test library for demonstration purposes."
 
-        `when`(packageDescriptionGenerator.generatePackageDescription(
+        every { packageDescriptionGenerator.generatePackageDescription(
             packageName,
             groupId,
             artifactId,
             version
-        )).thenReturn(expectedDescription)
+        ) } returns expectedDescription
 
         val result = mockMvc.get("/package-description/$groupId/$artifactId/$version")
             .andExpect {
@@ -77,19 +76,19 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
         val packageName2 = "$groupId:$artifactId2"
         val expectedDescription = "This is a description for the org.example group."
 
-        `when`(packageDescriptionGenerator.generatePackageDescription(
+        every { packageDescriptionGenerator.generatePackageDescription(
             packageName1,
             groupId,
             artifactId1,
             version
-        )).thenReturn(expectedDescription)
+        ) } returns expectedDescription
 
-        `when`(packageDescriptionGenerator.generatePackageDescription(
+        every { packageDescriptionGenerator.generatePackageDescription(
             packageName2,
             groupId,
             artifactId2,
             version
-        )).thenReturn(expectedDescription)
+        ) } returns expectedDescription
 
         val result = mockMvc.get("/package-description/$groupId")
             .andExpect {
@@ -112,12 +111,12 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
         val packageName = "$groupId:$artifactId"
         val expectedDescription = "This is a description for the org.example:test-library package."
 
-        `when`(packageDescriptionGenerator.generatePackageDescription(
+        every { packageDescriptionGenerator.generatePackageDescription(
             packageName,
             groupId,
             artifactId,
             version
-        )).thenReturn(expectedDescription)
+        ) } returns expectedDescription
 
         val result = mockMvc.get("/package-description/$groupId/$artifactId")
             .andExpect {
@@ -167,8 +166,7 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
 
         assertEquals("Unique descriptions generation started successfully", result.response.contentAsString)
 
-        // We use timeout(1000) to wait up to 1 second for the method to be called
-        // This is necessary because the method is called in a separate thread
-        verify(packageDescriptionService, timeout(1000)).generateUniqueDescriptions()
-    }
+        // Wait up to 1 second for the method to be called (async)
+        verify(timeout = 1000) { packageDescriptionService.generateUniqueDescriptions() }
+}
 }

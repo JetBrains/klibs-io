@@ -2,6 +2,6 @@ plugins {
     id("klibs.spring")
 }
 dependencies {
-    testImplementation(libs.mockito)
-    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockk)
+    testImplementation(libs.springmockk)
 }

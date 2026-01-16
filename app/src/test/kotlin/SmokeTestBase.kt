@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
+import com.ninjasquad.springmockk.MockkBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
@@ -31,10 +31,10 @@ import org.testcontainers.containers.PostgreSQLContainer
 @Import(SmokeTestBase.TestConfig::class)
 abstract class SmokeTestBase {
 
-    @MockBean
+    @MockkBean
     private lateinit var aiService: AiService
 
-    @MockBean
+    @MockkBean
     private lateinit var s3Template: S3Template
 
     @Autowired

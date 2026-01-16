@@ -5,7 +5,7 @@ import org.springframework.ai.model.openai.autoconfigure.*
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import com.ninjasquad.springmockk.MockkBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -31,10 +31,10 @@ import org.testcontainers.containers.PostgreSQLContainer
 @AutoConfigureMockMvc
 abstract class BaseUnitWithDbLayerTest {
 
-    @MockBean
+    @MockkBean
     protected lateinit var aiService: AiService
 
-    @MockBean
+    @MockkBean
     protected lateinit var s3Template: S3Template
 
     companion object {

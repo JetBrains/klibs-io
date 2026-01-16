@@ -16,29 +16,44 @@ import org.apache.maven.search.api.request.BooleanQuery
 import org.apache.maven.search.api.request.Query
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import java.util.ArrayDeque
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class CentralSonatypeScraperTest {
 
-    private lateinit var mockCentralSonatypeClient: MavenSearchClient
-    private lateinit var mockDiscoveryClient: MavenSearchClient
+    private lateinit var fakeCentralClient: RecordingClient
+    private lateinit var fakeDiscoveryClient: RecordingClient
     private lateinit var centralSonatypeScraper: MavenCentralScraper
     private lateinit var errorChannel: Channel<Exception>
-    private val queryCaptor = argumentCaptor<Query>()
+    
+    private class RecordingClient(
+        private val pageSizeVal: Int = 2,
+        responses: List<MavenSearchResponse> = emptyList(),
+        private val throwOnCall: Boolean = false,
+    ) : MavenSearchClient {
+        val capturedPages = mutableListOf<Int>()
+        val capturedQueries = mutableListOf<Query>()
+        private val queue = ArrayDeque(responses)
+        override fun pageSize(): Int = pageSizeVal
+        override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse {
+            if (throwOnCall) throw RuntimeException("Test exception")
+            capturedPages += page
+            capturedQueries += query
+            return if (queue.isEmpty()) MavenSearchResponse(0, 0, emptyList()) else queue.removeFirst()
+        }
+    }
 
     @BeforeEach
     fun setUp() {
-        mockCentralSonatypeClient = mock<CentralSonatypeSearchClient>()
-        mockDiscoveryClient = mock()
-        centralSonatypeScraper = CentralSonatypeScraper(mockDiscoveryClient, mockCentralSonatypeClient as CentralSonatypeSearchClient)
+        fakeCentralClient = RecordingClient(pageSizeVal = 2)
+        fakeDiscoveryClient = RecordingClient(pageSizeVal = 2)
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
+            override fun pageSize(): Int = fakeCentralClient.pageSize()
+            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
+                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
+        })
         errorChannel = Channel(Channel.UNLIMITED)
     }
 
@@ -62,15 +77,18 @@ class CentralSonatypeScraperTest {
                 ArtifactData("org.example", "example-artifact", "1.2.0", Instant.ofEpochMilli(3000L))
             )
         )
-        whenever(mockCentralSonatypeClient.searchWithThrottle(any(), any(), any()))
-            .thenReturn(mockResponse)
-            .thenReturn(MavenSearchResponse(0, 0, emptyList()))
+        fakeCentralClient = RecordingClient(responses = listOf(mockResponse, MavenSearchResponse(0, 0, emptyList())))
+        // rewire scraper to use the prepared central client
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
+            override fun pageSize(): Int = fakeCentralClient.pageSize()
+            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
+                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
+        })
 
         // Act
         val result = centralSonatypeScraper.findAllVersionForArtifact(artifact, errorChannel).toList()
 
-        verify(mockCentralSonatypeClient).searchWithThrottle(any(), queryCaptor.capture(), any())
-        val query = queryCaptor.firstValue
+        val query = fakeCentralClient.capturedQueries.first()
         assertTrue(query is BooleanQuery.And, "Query should be a BooleanQuery.And")
 
         // Check that the query contains the expected parts
@@ -95,17 +113,18 @@ class CentralSonatypeScraperTest {
         // Arrange
         val artifactData = ArtifactData("org.example", "example-artifact", "1.0.0", Instant.ofEpochMilli(1000L))
         val mockResponse = MavenSearchResponse(1, 1, listOf(artifactData))
-        whenever(mockDiscoveryClient.searchWithThrottle(any(), any(), any()))
-            .thenReturn(mockResponse)
-            .thenReturn(MavenSearchResponse(0, 0, emptyList()))
+        fakeDiscoveryClient = RecordingClient(responses = listOf(mockResponse, MavenSearchResponse(0, 0, emptyList())))
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
+            override fun pageSize(): Int = fakeCentralClient.pageSize()
+            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
+                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
+        })
 
         // Act
         val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()
 
         // Verify the search request contains the expected query
-        val queryCaptor = argumentCaptor<Query>()
-        verify(mockDiscoveryClient, times(2)).searchWithThrottle(any(), queryCaptor.capture(), any())
-        val query = queryCaptor.firstValue
+        val query = fakeDiscoveryClient.capturedQueries.first()
         assertTrue(
             query.value.contains("l:kotlin-tooling-metadata"),
             "Query should search for kotlin-tooling-metadata"
@@ -122,7 +141,12 @@ class CentralSonatypeScraperTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `test error handling when search client throws exception`() = runTest {
-        whenever(mockDiscoveryClient.searchWithThrottle(any(), any(), any())).thenThrow(RuntimeException("Test exception"))
+        fakeDiscoveryClient = RecordingClient(throwOnCall = true)
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
+            override fun pageSize(): Int = fakeCentralClient.pageSize()
+            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
+                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
+        })
 
         // Act
         val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()
@@ -153,21 +177,22 @@ class CentralSonatypeScraperTest {
         )
         val page2Response = MavenSearchResponse(4, 2, page2Data)
 
-        whenever(mockDiscoveryClient.searchWithThrottle(any(), any(), any()))
-            .thenReturn(page1Response)
-            .thenReturn(page2Response)
-            .thenReturn(MavenSearchResponse(0, 0, emptyList()))
-
-        whenever(mockDiscoveryClient.pageSize()).thenReturn(2)
+        fakeDiscoveryClient = RecordingClient(
+            pageSizeVal = 2,
+            responses = listOf(page1Response, page2Response, MavenSearchResponse(0, 0, emptyList()))
+        )
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
+            override fun pageSize(): Int = fakeCentralClient.pageSize()
+            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
+                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
+        })
 
         // Act
         val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()
 
-        val pageCaptor = argumentCaptor<Int>()
-        val queryCaptor2 = argumentCaptor<Query>()
-        verify(mockDiscoveryClient, times(3)).searchWithThrottle(pageCaptor.capture(), queryCaptor2.capture(), any())
+        val pageValues = fakeDiscoveryClient.capturedPages
         assertTrue(
-            pageCaptor.allValues[1] > pageCaptor.allValues[0],
+            pageValues[1] > pageValues[0],
             "Second request should have higher page offset"
         )
 

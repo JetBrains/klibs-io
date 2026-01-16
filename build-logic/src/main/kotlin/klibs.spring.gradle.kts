@@ -32,5 +32,7 @@ dependencies {
     implementation(libs.jackson.module.kotlin)
 
     testImplementation(libs.kotlinx.coroutines.test.jvm)
-    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.test) {
+        exclude(group = "org.mockito")
+    }
 }

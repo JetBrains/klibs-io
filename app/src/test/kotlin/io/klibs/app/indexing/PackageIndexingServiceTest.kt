@@ -12,11 +12,11 @@ import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
+import io.mockk.every
+import io.mockk.any
+import io.mockk.mockk
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
+import com.ninjasquad.springmockk.MockkBean
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.jdbc.core.JdbcTemplate
@@ -46,10 +46,10 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var packageDescriptionService: PackageDescriptionService
 
-    @MockBean
+    @MockkBean
     private lateinit var mavenStaticDataProvider: CentralSonatypeSearchClient
 
-    @MockBean
+    @MockkBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
 
     @Test
@@ -68,7 +68,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequestBeforeProcessing)
 
-        `when`(mavenStaticDataProvider.getPom(any())).thenThrow(RuntimeException("Mocked getPom exception"))
+        every { mavenStaticDataProvider.getPom(any()) } throws RuntimeException("Mocked getPom exception")
 
         val result = uut.processPackageQueue()
 
@@ -91,15 +91,15 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequestBeforeProcessing)
 
-        val pom = mock<MavenPom>()
-        `when`(pom.groupId).thenReturn(packageIndexRequestBeforeProcessing.groupId)
-        `when`(pom.artifactId).thenReturn(packageIndexRequestBeforeProcessing.artifactId)
-        `when`(pom.version).thenReturn(packageIndexRequestBeforeProcessing.version)
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        `when`(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val pom = mockk<MavenPom>()
+        every { pom.groupId } returns packageIndexRequestBeforeProcessing.groupId
+        every { pom.artifactId } returns packageIndexRequestBeforeProcessing.artifactId
+        every { pom.version } returns packageIndexRequestBeforeProcessing.version
+        val kotlinToolingMetadata = mockk<GradleMetadata>()
+        every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        `when`(mavenStaticDataProvider.getPom(any())).thenReturn(pom)
-        `when`(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getPom(any()) } returns pom
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         val result = uut.processPackageQueue()
 
@@ -120,14 +120,14 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val indexRequest = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(indexRequest)
 
-        val pom = mock<MavenPom>()
-        `when`(pom.groupId).thenReturn(indexRequest.groupId)
-        `when`(pom.artifactId).thenReturn(indexRequest.artifactId)
-        `when`(pom.version).thenReturn(indexRequest.version)
+        val pom = mockk<MavenPom>()
+        every { pom.groupId } returns indexRequest.groupId
+        every { pom.artifactId } returns indexRequest.artifactId
+        every { pom.version } returns indexRequest.version
 
         // Gradle metadata stub that mimics KMP Android target reported under JVM with AGP class name
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        `when`(kotlinToolingMetadata.variants).thenReturn(
+        val kotlinToolingMetadata = mockk<GradleMetadata>()
+        every { kotlinToolingMetadata.variants } returns (
             listOf(
                 Variant(
                     mapOf(
@@ -140,8 +140,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
 
-        `when`(mavenStaticDataProvider.getPom(any())).thenReturn(pom)
-        `when`(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getPom(any()) } returns pom
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         // Act
         val result = uut.processPackageQueue()
@@ -177,14 +177,14 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val generatedDescription = "This is a generated description for testing"
 
         // Mock the AI service to return a predictable description
-        `when`(packageDescriptionGenerator.generatePackageDescription(
+        every { packageDescriptionGenerator.generatePackageDescription(
             any(), // packageName
             any(), // groupId
             any(), // artifactId
             any(), // version
             any(), // minDescriptionWordCount
             any()  // maxDescriptionWordCount
-        )).thenReturn(generatedDescription)
+        ) } returns generatedDescription
 
         // Generate a description for the existing package
         packageDescriptionService.generateDescription(groupId, artifactId, version1)
@@ -201,15 +201,15 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(artifactId, packageIndexRequest.artifactId)
         assertEquals(version2, packageIndexRequest.version)
 
-        val pom = mock<MavenPom>()
-        `when`(pom.groupId).thenReturn(groupId)
-        `when`(pom.artifactId).thenReturn(artifactId)
-        `when`(pom.version).thenReturn(version2)
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        `when`(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val pom = mockk<MavenPom>()
+        every { pom.groupId } returns groupId
+        every { pom.artifactId } returns artifactId
+        every { pom.version } returns version2
+        val kotlinToolingMetadata = mockk<GradleMetadata>()
+        every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        `when`(mavenStaticDataProvider.getPom(any())).thenReturn(pom)
-        `when`(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getPom(any()) } returns pom
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         // Process the indexing request
         val result = uut.processPackageQueue()

@@ -13,11 +13,11 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.core.project.repository.TagRepository
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.ArgumentMatchers.anyInt
+import io.mockk.every
+import io.mockk.any
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import com.ninjasquad.springmockk.MockkBean
 import org.springframework.test.context.ActiveProfiles
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -31,25 +31,25 @@ class ProjectServiceSmokeTest {
     @Autowired
     private lateinit var uut: ProjectService
 
-    @MockBean
+    @MockkBean
     private lateinit var packageService: PackageService
 
-    @MockBean
+    @MockkBean
     private lateinit var readmeService: ReadmeService
 
-    @MockBean
+    @MockkBean
     private lateinit var projectRepository: ProjectRepository
 
-    @MockBean
+    @MockkBean
     private lateinit var packageRepository: PackageRepository
 
-    @MockBean
+    @MockkBean
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
 
-    @MockBean
+    @MockkBean
     private lateinit var markerRepository: MarkerRepository
 
-    @MockBean
+    @MockkBean
     private lateinit var tagRepository: TagRepository
 
     @Test
@@ -93,12 +93,12 @@ class ProjectServiceSmokeTest {
         )
 
         // Mock repository responses
-        `when`(scmRepositoryRepository.findByName(ownerLogin, projectName)).thenReturn(scmRepositoryEntity)
-        `when`(projectRepository.findByScmRepoId(scmRepoId)).thenReturn(projectEntity)
-        `when`(packageRepository.existsByProjectId(projectEntity.idNotNull)).thenReturn(false)
+        every { scmRepositoryRepository.findByName(ownerLogin, projectName) } returns scmRepositoryEntity
+        every { projectRepository.findByScmRepoId(scmRepoId) } returns projectEntity
+        every { packageRepository.existsByProjectId(projectEntity.idNotNull) } returns false
 
         // Default stub for tags
-        `when`(tagRepository.getTagsByProjectId(anyInt())).thenReturn(emptyList())
+        every { tagRepository.getTagsByProjectId(any()) } returns emptyList()
 
         // Act
         val result = uut.getProjectDetailsByName(ownerLogin, projectName)
@@ -152,13 +152,13 @@ class ProjectServiceSmokeTest {
 
         val platforms = listOf(PackagePlatform.JVM, PackagePlatform.JS)
 
-        `when`(projectRepository.findById(projectId)).thenReturn(projectEntity)
-        `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
-        `when`(packageRepository.findPlatformsOf(projectId)).thenReturn(platforms)
-        `when`(markerRepository.findAllByProjectId(projectId)).thenReturn(projectMarkers)
+        every { projectRepository.findById(projectId) } returns projectEntity
+        every { scmRepositoryRepository.findById(scmRepoId) } returns scmRepositoryEntity
+        every { packageRepository.findPlatformsOf(projectId) } returns platforms
+        every { markerRepository.findAllByProjectId(projectId) } returns projectMarkers
 
         // Default stub for tags
-        `when`(tagRepository.getTagsByProjectId(anyInt())).thenReturn(emptyList())
+        every { tagRepository.getTagsByProjectId(any()) } returns emptyList()
 
         val foundProject = uut.getProjectDetailsById(projectId)
 
@@ -217,11 +217,11 @@ class ProjectServiceSmokeTest {
         val platforms = listOf(PackagePlatform.JVM, PackagePlatform.JS)
 
         // Mock repository responses
-        `when`(scmRepositoryRepository.findByName(ownerLogin, projectName)).thenReturn(scmRepositoryEntity)
-        `when`(projectRepository.findByScmRepoId(scmRepoId)).thenReturn(projectEntity)
-        `when`(packageRepository.existsByProjectId(projectEntity.idNotNull)).thenReturn(true)
-        `when`(packageRepository.findPlatformsOf(projectEntity.idNotNull)).thenReturn(platforms)
-        `when`(markerRepository.findAllByProjectId(projectEntity.idNotNull)).thenReturn(projectMarkers)
+        every { scmRepositoryRepository.findByName(ownerLogin, projectName) } returns scmRepositoryEntity
+        every { projectRepository.findByScmRepoId(scmRepoId) } returns projectEntity
+        every { packageRepository.existsByProjectId(projectEntity.idNotNull) } returns true
+        every { packageRepository.findPlatformsOf(projectEntity.idNotNull) } returns platforms
+        every { markerRepository.findAllByProjectId(projectEntity.idNotNull) } returns projectMarkers
 
         val result = uut.getProjectDetailsByName(ownerLogin, projectName)
 

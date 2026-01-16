@@ -3,8 +3,8 @@ package io.klibs.integration.maven
 import org.apache.maven.search.api.MAVEN
 import org.apache.maven.search.api.Record
 import org.apache.maven.search.backend.smo.SmoSearchResponse
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import io.mockk.every
+import io.mockk.mockk
 
 /**
  * Utility class for creating mock objects for Maven tests.
@@ -21,11 +21,11 @@ object MavenTestUtils {
      * @return A mock Record with the specified properties
      */
     fun createMockRecord(groupId: String, artifactId: String, version: String, lastUpdated: Long): Record {
-        val record = mock<Record>()
-        whenever(record.getValue(MAVEN.GROUP_ID)).thenReturn(groupId)
-        whenever(record.getValue(MAVEN.ARTIFACT_ID)).thenReturn(artifactId)
-        whenever(record.getValue(MAVEN.VERSION)).thenReturn(version)
-        whenever(record.lastUpdated).thenReturn(lastUpdated)
+        val record = mockk<Record>()
+        every { record.getValue(MAVEN.GROUP_ID) } returns groupId
+        every { record.getValue(MAVEN.ARTIFACT_ID) } returns artifactId
+        every { record.getValue(MAVEN.VERSION) } returns version
+        every { record.lastUpdated } returns lastUpdated
         return record
     }
 
@@ -38,10 +38,10 @@ object MavenTestUtils {
      * @return A mock SmoSearchResponse with the specified properties
      */
     fun createMockResponse(records: List<Record>, totalHits: Int, currentHits: Int): SmoSearchResponse {
-        val response = mock<SmoSearchResponse>()
-        whenever(response.page).thenReturn(records)
-        whenever(response.totalHits).thenReturn(totalHits)
-        whenever(response.currentHits).thenReturn(currentHits)
+        val response = mockk<SmoSearchResponse>()
+        every { response.page } returns records
+        every { response.totalHits } returns totalHits
+        every { response.currentHits } returns currentHits
         return response
     }
 }

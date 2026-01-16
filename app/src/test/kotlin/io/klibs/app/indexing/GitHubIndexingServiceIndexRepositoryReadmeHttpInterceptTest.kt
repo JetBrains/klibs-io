@@ -14,12 +14,12 @@ import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import jakarta.transaction.Transactional
 import org.kohsuke.github.GitHub
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import io.mockk.every
+import io.mockk.any
+import io.mockk.mockk
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.test.mock.mockito.SpyBean
+import com.ninjasquad.springmockk.MockkBean
+import com.ninjasquad.springmockk.SpykBean
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -27,7 +27,7 @@ import kotlin.test.assertTrue
 
 class GitHubIndexingServiceIndexRepositoryReadmeHttpInterceptTest : BaseUnitWithDbLayerTest() {
 
-    @MockBean
+    @MockkBean
     private lateinit var okHttpClient: OkHttpClient
 
     @Autowired
@@ -36,19 +36,19 @@ class GitHubIndexingServiceIndexRepositoryReadmeHttpInterceptTest : BaseUnitWith
     @Autowired
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
 
-    @SpyBean
+    @SpykBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
-    @MockBean
+    @MockkBean
     private lateinit var githubApi: GitHub
 
     @Test
     @Transactional
     fun `indexRepository fetches README via intercepted HTTP and persists it`() {
         // Configure @MockBean OkHttpClient to return README content for /readme calls
-        val mockCall = mock<okhttp3.Call>()
-        whenever(okHttpClient.newCall(any())).thenAnswer { invocation ->
-            val request = invocation.arguments[0] as Request
+        val mockCall = mockk<okhttp3.Call>()
+        every { okHttpClient.newCall(any()) } answers {
+            val request = firstArg<Request>()
             val response = if (request.url.encodedPath.endsWith("/readme")) {
                 Response.Builder()
                     .request(request)
@@ -66,7 +66,7 @@ class GitHubIndexingServiceIndexRepositoryReadmeHttpInterceptTest : BaseUnitWith
                     .body("".toResponseBody(null))
                     .build()
             }
-            whenever(mockCall.execute()).thenReturn(response)
+            every { mockCall.execute() } returns response
             mockCall
         }
         val ownerLogin = "k-libs"
@@ -107,12 +107,12 @@ class GitHubIndexingServiceIndexRepositoryReadmeHttpInterceptTest : BaseUnitWith
             name = "Apache License 2.0"
         )
 
-        whenever(gitHubIntegration.getRepository(ownerLogin, repoName)).thenReturn(ghRepoModel)
-        whenever(gitHubIntegration.getUser(ownerLogin)).thenReturn(ghUserModel)
-        whenever(gitHubIntegration.getLicense(repoId)).thenReturn(ghLicenseModel)
+        every { gitHubIntegration.getRepository(ownerLogin, repoName) } returns ghRepoModel
+        every { gitHubIntegration.getUser(ownerLogin) } returns ghUserModel
+        every { gitHubIntegration.getLicense(repoId) } returns ghLicenseModel
 
-        whenever(gitHubIntegration.markdownToHtml("# Title\nSome content", repoId)).thenReturn("<h1>Title</h1><p>Some content</p>")
-        whenever(gitHubIntegration.markdownRender("# Title\nSome content", repoId)).thenReturn("# Title\nSome content")
+        every { gitHubIntegration.markdownToHtml("# Title\nSome content", repoId) } returns "<h1>Title</h1><p>Some content</p>"
+        every { gitHubIntegration.markdownRender("# Title\nSome content", repoId) } returns "# Title\nSome content"
 
         val persisted = uut.indexRepository(ownerLogin, repoName)
         assertNotNull(persisted)

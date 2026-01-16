@@ -6,28 +6,27 @@ import io.klibs.core.project.repository.ProjectRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.Mock
-import org.mockito.Mockito.*
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.junit.jupiter.MockitoSettings
-import org.mockito.quality.Strictness
+import io.mockk.MockK
+import io.mockk.junit5.MockKExtension
+import io.mockk.every
+import io.mockk.verify
+import io.mockk.confirmVerified
+import io.mockk.any
+import io.mockk.mockk
 import java.time.Instant
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@ExtendWith(MockitoExtension::class)
-@MockitoSettings(strictness = Strictness.LENIENT)
+@ExtendWith(MockKExtension::class)
 class BlacklistServiceTest {
 
-    @Mock
+    @MockK
     private lateinit var blacklistRepository: BlacklistRepository
 
-    @Mock
+    @MockK
     private lateinit var packageRepository: PackageRepository
 
-    @Mock
+    @MockK
     private lateinit var projectRepository: ProjectRepository
 
     private lateinit var uut: BlacklistService
@@ -46,25 +45,25 @@ class BlacklistServiceTest {
             projectRepository
         )
 
-        `when`(blacklistRepository.checkPackageExists(testGroupId, testArtifactId)).thenReturn(true)
+        every { blacklistRepository.checkPackageExists(testGroupId, testArtifactId) } returns true
 
         // Mock empty lists by default to avoid NPEs
-        `when`(packageRepository.findLatestByGroupId(anyString())).thenReturn(emptyList())
-        `when`(packageRepository.findByGroupIdAndArtifactIdOrderByReleaseTsDesc(anyString(), anyString())).thenReturn(emptyList())
-        `when`(packageRepository.findLatestByProjectId(anyInt())).thenReturn(emptyList())
+        every { packageRepository.findLatestByGroupId(any<String>()) } returns emptyList()
+        every { packageRepository.findByGroupIdAndArtifactIdOrderByReleaseTsDesc(any<String>(), any<String>()) } returns emptyList()
+        every { packageRepository.findLatestByProjectId(any<Int>()) } returns emptyList()
     }
 
     private fun mockPackageDoesNotExist() {
-        `when`(blacklistRepository.checkPackageExists(testGroupId, testArtifactId)).thenReturn(false)
+        every { blacklistRepository.checkPackageExists(testGroupId, testArtifactId) } returns false
     }
 
     private fun mockPackageIsAlreadyBanned() {
-        `when`(blacklistRepository.checkPackageBanned(testGroupId, testArtifactId)).thenReturn(true)
+        every { blacklistRepository.checkPackageBanned(testGroupId, testArtifactId) } returns true
     }
 
     private fun verifyNoFurtherInteractions() {
-        verify(blacklistRepository, never()).addToBannedPackages(anyString(), anyString(), anyString())
-        verify(blacklistRepository, never()).removeBannedPackages(anyString(), anyString())
+        verify(exactly = 0) { blacklistRepository.addToBannedPackages(any<String>(), any<String>(), any<String>()) }
+        verify(exactly = 0) { blacklistRepository.removeBannedPackages(any<String>(), any<String>()) }
     }
 
     @Test
@@ -72,11 +71,11 @@ class BlacklistServiceTest {
         val result = uut.banPackage(testGroupId, testArtifactId, null)
 
         assertTrue(result)
-        verify(blacklistRepository).checkPackageExists(testGroupId, testArtifactId)
-        verify(blacklistRepository).checkPackageBanned(testGroupId, testArtifactId)
-        verify(blacklistRepository).addToBannedPackages(testGroupId, testArtifactId, null)
-        verify(blacklistRepository).removeBannedPackages(testGroupId, testArtifactId)
-        verify(blacklistRepository).removeBannedPackages()
+        verify { blacklistRepository.checkPackageExists(testGroupId, testArtifactId) }
+        verify { blacklistRepository.checkPackageBanned(testGroupId, testArtifactId) }
+        verify { blacklistRepository.addToBannedPackages(testGroupId, testArtifactId, null) }
+        verify { blacklistRepository.removeBannedPackages(testGroupId, testArtifactId) }
+        verify { blacklistRepository.removeBannedPackages() }
     }
 
     @Test
@@ -86,7 +85,7 @@ class BlacklistServiceTest {
         val result = uut.banPackage(testGroupId, testArtifactId, null)
 
         assertFalse(result)
-        verify(blacklistRepository).checkPackageExists(testGroupId, testArtifactId)
+        verify { blacklistRepository.checkPackageExists(testGroupId, testArtifactId) }
         verifyNoFurtherInteractions()
     }
 
@@ -97,7 +96,7 @@ class BlacklistServiceTest {
         val result = uut.banPackage(testGroupId, testArtifactId, null)
 
         assertFalse(result)
-        verify(blacklistRepository).checkPackageExists(testGroupId, testArtifactId)
+        verify { blacklistRepository.checkPackageExists(testGroupId, testArtifactId) }
         verifyNoFurtherInteractions()
     }
 
@@ -107,89 +106,89 @@ class BlacklistServiceTest {
         val result = uut.banByGroup(testGroupId, reason)
 
         assertTrue(result)
-        verify(blacklistRepository).addToBannedPackages(testGroupId, null, reason)
-        verify(blacklistRepository).removeBannedPackages(testGroupId, null)
-        verify(blacklistRepository).removeBannedPackages()
+        verify { blacklistRepository.addToBannedPackages(testGroupId, null, reason) }
+        verify { blacklistRepository.removeBannedPackages(testGroupId, null) }
+        verify { blacklistRepository.removeBannedPackages() }
     }
 
     @Test
     fun testProjectsUpdatedWhenPackageBanned() {
-        `when`(projectRepository.findProjectsByPackages(testGroupId, testArtifactId)).thenReturn(setOf(testProjectId))
+        every { projectRepository.findProjectsByPackages(testGroupId, testArtifactId) } returns setOf(testProjectId)
 
-        val latestPackage = mock(PackageEntity::class.java)
-        `when`(latestPackage.version).thenReturn(testVersion)
-        `when`(latestPackage.releaseTs).thenReturn(testReleaseTs)
-        `when`(packageRepository.findLatestByProjectId(testProjectId)).thenReturn(listOf(latestPackage))
+        val latestPackage = mockk<PackageEntity>()
+        every { latestPackage.version } returns testVersion
+        every { latestPackage.releaseTs } returns testReleaseTs
+        every { packageRepository.findLatestByProjectId(testProjectId) } returns listOf(latestPackage)
 
         val result = uut.banPackage(testGroupId, testArtifactId, null)
 
         assertTrue(result)
-        verify(blacklistRepository).checkPackageExists(testGroupId, testArtifactId)
-        verify(blacklistRepository).checkPackageBanned(testGroupId, testArtifactId)
-        verify(blacklistRepository).addToBannedPackages(testGroupId, testArtifactId, null)
-        verify(blacklistRepository).removeBannedPackages(testGroupId, testArtifactId)
-        verify(blacklistRepository).removeBannedPackages()
+        verify { blacklistRepository.checkPackageExists(testGroupId, testArtifactId) }
+        verify { blacklistRepository.checkPackageBanned(testGroupId, testArtifactId) }
+        verify { blacklistRepository.addToBannedPackages(testGroupId, testArtifactId, null) }
+        verify { blacklistRepository.removeBannedPackages(testGroupId, testArtifactId) }
+        verify { blacklistRepository.removeBannedPackages() }
 
-        verify(projectRepository).findProjectsByPackages(testGroupId, testArtifactId)
-        verify(projectRepository).updateLatestVersion(testProjectId, testVersion, testReleaseTs)
+        verify { projectRepository.findProjectsByPackages(testGroupId, testArtifactId) }
+        verify { projectRepository.updateLatestVersion(testProjectId, testVersion, testReleaseTs) }
     }
 
     @Test
     fun testProjectsUpdatedWhenGroupBanned() {
-        `when`(projectRepository.findProjectsByPackages(testGroupId, null)).thenReturn(setOf(testProjectId))
+        every { projectRepository.findProjectsByPackages(testGroupId, null) } returns setOf(testProjectId)
 
         // Mock package repository to return a latest package for the project
-        val latestPackage = mock(PackageEntity::class.java)
-        `when`(latestPackage.version).thenReturn(testVersion)
-        `when`(latestPackage.releaseTs).thenReturn(testReleaseTs)
-        `when`(packageRepository.findLatestByProjectId(testProjectId)).thenReturn(listOf(latestPackage))
+        val latestPackage = mockk<PackageEntity>()
+        every { latestPackage.version } returns testVersion
+        every { latestPackage.releaseTs } returns testReleaseTs
+        every { packageRepository.findLatestByProjectId(testProjectId) } returns listOf(latestPackage)
 
         val result = uut.banByGroup(testGroupId, null)
 
         assertTrue(result)
-        verify(blacklistRepository).addToBannedPackages(testGroupId, null, null)
-        verify(blacklistRepository).removeBannedPackages(testGroupId, null)
-        verify(blacklistRepository).removeBannedPackages()
+        verify { blacklistRepository.addToBannedPackages(testGroupId, null, null) }
+        verify { blacklistRepository.removeBannedPackages(testGroupId, null) }
+        verify { blacklistRepository.removeBannedPackages() }
 
-        verify(projectRepository).findProjectsByPackages(testGroupId, null)
-        verify(projectRepository).updateLatestVersion(testProjectId, testVersion, testReleaseTs)
+        verify { projectRepository.findProjectsByPackages(testGroupId, null) }
+        verify { projectRepository.updateLatestVersion(testProjectId, testVersion, testReleaseTs) }
     }
 
     @Test
     fun testNoProjectsUpdatedWhenNoLatestPackages() {
-        `when`(projectRepository.findProjectsByPackages(testGroupId, testArtifactId)).thenReturn(setOf(testProjectId))
-        `when`(packageRepository.findLatestByProjectId(testProjectId)).thenReturn(emptyList())
+        every { projectRepository.findProjectsByPackages(testGroupId, testArtifactId) } returns setOf(testProjectId)
+        every { packageRepository.findLatestByProjectId(testProjectId) } returns emptyList()
 
         val result = uut.banPackage(testGroupId, testArtifactId, null)
 
         assertTrue(result)
-        verify(blacklistRepository).checkPackageExists(testGroupId, testArtifactId)
-        verify(blacklistRepository).checkPackageBanned(testGroupId, testArtifactId)
-        verify(blacklistRepository).addToBannedPackages(testGroupId, testArtifactId, null)
-        verify(blacklistRepository).removeBannedPackages(testGroupId, testArtifactId)
-        verify(blacklistRepository).removeBannedPackages()
+        verify { blacklistRepository.checkPackageExists(testGroupId, testArtifactId) }
+        verify { blacklistRepository.checkPackageBanned(testGroupId, testArtifactId) }
+        verify { blacklistRepository.addToBannedPackages(testGroupId, testArtifactId, null) }
+        verify { blacklistRepository.removeBannedPackages(testGroupId, testArtifactId) }
+        verify { blacklistRepository.removeBannedPackages() }
 
         // Verify that the project repository was called to find projects by packages
-        verify(projectRepository).findProjectsByPackages(testGroupId, testArtifactId)
-        verifyNoMoreInteractions(projectRepository)
+        verify { projectRepository.findProjectsByPackages(testGroupId, testArtifactId) }
+        confirmVerified(projectRepository)
     }
 
     @Test
     fun testNoProjectsUpdatedWhenNoConnectedProjects() {
-        `when`(projectRepository.findProjectsByPackages(testGroupId, testArtifactId)).thenReturn(emptySet())
+        every { projectRepository.findProjectsByPackages(testGroupId, testArtifactId) } returns emptySet()
 
         val result = uut.banPackage(testGroupId, testArtifactId, null)
 
         assertTrue(result)
-        verify(blacklistRepository).checkPackageExists(testGroupId, testArtifactId)
-        verify(blacklistRepository).checkPackageBanned(testGroupId, testArtifactId)
-        verify(blacklistRepository).addToBannedPackages(testGroupId, testArtifactId, null)
-        verify(blacklistRepository).removeBannedPackages(testGroupId, testArtifactId)
-        verify(blacklistRepository).removeBannedPackages()
+        verify { blacklistRepository.checkPackageExists(testGroupId, testArtifactId) }
+        verify { blacklistRepository.checkPackageBanned(testGroupId, testArtifactId) }
+        verify { blacklistRepository.addToBannedPackages(testGroupId, testArtifactId, null) }
+        verify { blacklistRepository.removeBannedPackages(testGroupId, testArtifactId) }
+        verify { blacklistRepository.removeBannedPackages() }
 
         // Verify that the project repository was called to only find projects by packages
         // and for nothing else
-        verify(projectRepository).findProjectsByPackages(testGroupId, testArtifactId)
-        verifyNoMoreInteractions(projectRepository)
+        verify { projectRepository.findProjectsByPackages(testGroupId, testArtifactId) }
+        confirmVerified(projectRepository)
     }
 }

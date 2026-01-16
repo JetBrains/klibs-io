@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import java.io.File
 
 class S3ReadmeServiceTest {
@@ -25,7 +25,7 @@ class S3ReadmeServiceTest {
                 prefix = "readme"
             )
         )
-        s3StorageService = mock()
+        s3StorageService = mockk()
         uut = S3ReadmeService(readmeProperties, s3StorageService)
     }
 
@@ -35,7 +35,7 @@ class S3ReadmeServiceTest {
         val key = "readme/readme-123.md"
         val content = "README content"
         
-        whenever(s3StorageService.readText("test-bucket", key)).thenReturn(content)
+        every { s3StorageService.readText("test-bucket", key) } returns content
 
         val result = uut.readReadmeMd(scmRepositoryId)
 
@@ -47,7 +47,7 @@ class S3ReadmeServiceTest {
         val scmRepositoryId = 123
         val key = "readme/readme-123.md"
         
-        whenever(s3StorageService.readText("test-bucket", key)).thenReturn(null)
+        every { s3StorageService.readText("test-bucket", key) } returns null
 
         val result = uut.readReadmeMd(scmRepositoryId)
 
@@ -62,7 +62,7 @@ class S3ReadmeServiceTest {
         
         uut.writeReadmeFiles(scmRepositoryId, mdContent, htmlContent)
 
-        verify(s3StorageService).writeText("test-bucket", "readme/readme-123.md", mdContent)
-        verify(s3StorageService).writeText("test-bucket", "readme/readme-123.html", htmlContent)
-    }
+        verify { s3StorageService.writeText("test-bucket", "readme/readme-123.md", mdContent) }
+        verify { s3StorageService.writeText("test-bucket", "readme/readme-123.html", htmlContent) }
+}
 }

@@ -14,34 +14,33 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import io.mockk.any
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Instant
 
 class PackageIndexingServiceTestOld {
-    private val discoverer: PackageDiscoverer = mock()
+    private val discoverer: PackageDiscoverer = mockk()
     private val providers: Map<String, MavenStaticDataProvider> = mapOf(
-        "maven_central" to mock(),
-        "gmaven" to mock(),
-        "gcloud" to mock()
+        "maven_central" to mockk(),
+        "gmaven" to mockk(),
+        "gcloud" to mockk()
     )
-    private val gitHubIndexingService: GitHubIndexingService = mock()
-    private val projectIndexingService: ProjectIndexingService = mock()
-    private val packageDescriptionGenerator: PackageDescriptionGenerator = mock()
-    private val indexingRequestRepository: IndexingRequestRepository = mock()
-    private val packageService: PackageService = mock()
-    private val packageRepository: PackageRepository = mock()
-    private val transactionTemplate: TransactionTemplate = mock()
+    private val gitHubIndexingService: GitHubIndexingService = mockk()
+    private val projectIndexingService: ProjectIndexingService = mockk()
+    private val packageDescriptionGenerator: PackageDescriptionGenerator = mockk()
+    private val indexingRequestRepository: IndexingRequestRepository = mockk()
+    private val packageService: PackageService = mockk()
+    private val packageRepository: PackageRepository = mockk()
+    private val transactionTemplate: TransactionTemplate = mockk()
 
     private lateinit var service: PackageIndexingService
 
     @BeforeEach
     fun setup() {
-        whenever(transactionTemplate.execute<Any?>(any())).thenReturn(null)
+        every { transactionTemplate.execute<Any?>(any()) } returns null
 
         service = PackageIndexingService(
             listOf(discoverer),
@@ -65,13 +64,13 @@ class PackageIndexingServiceTestOld {
             releasedAt = Instant.now()
         )
 
-        whenever(discoverer.discover(any())).thenAnswer { invocation ->
-            val channel = invocation.getArgument<Channel<Exception>>(0)
+        every { discoverer.discover(any()) } answers {
+            val channel = firstArg<Channel<Exception>>()
             channel.close()
             flowOf(artifact)
         }
 
-        whenever(indexingRequestRepository.saveAll(any<Iterable<IndexingRequestEntity>>())).thenReturn(listOf(IndexingRequestEntity(
+        every { indexingRequestRepository.saveAll(any<Iterable<IndexingRequestEntity>>()) } returns listOf(IndexingRequestEntity(
             id = 1L,
             groupId = artifact.groupId,
             artifactId = artifact.artifactId,
@@ -79,17 +78,19 @@ class PackageIndexingServiceTestOld {
             releasedAt = artifact.releasedAt,
             repo = artifact.scraperType
         )))
-        whenever(indexingRequestRepository.removeRepeating()).thenReturn(0)
+        every { indexingRequestRepository.removeRepeating() } returns 0
 
         service.indexNewPackages()
 
-        verify(indexingRequestRepository).saveAll(argThat<Iterable<IndexingRequestEntity>> { requests ->
-            val list = requests.toList()
-            list.size == 1 && list[0].groupId == artifact.groupId &&
-                    list[0].artifactId == artifact.artifactId &&
-                    list[0].version == artifact.version &&
-                    list[0].repo == artifact.scraperType
-        })
-        verify(indexingRequestRepository).removeRepeating()
+        verify {
+            indexingRequestRepository.saveAll(match<Iterable<IndexingRequestEntity>> { requests ->
+                val list = requests.toList()
+                list.size == 1 && list[0].groupId == artifact.groupId &&
+                        list[0].artifactId == artifact.artifactId &&
+                        list[0].version == artifact.version &&
+                        list[0].repo == artifact.scraperType
+            })
+        }
+        verify { indexingRequestRepository.removeRepeating() }
     }
 }
