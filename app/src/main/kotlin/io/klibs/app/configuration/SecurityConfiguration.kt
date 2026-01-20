@@ -33,27 +33,24 @@ class SecurityConfiguration(
             authorizeHttpRequests {
                 authorize(HttpMethod.GET, "/categories.json", permitAll)
 
-                authorize(HttpMethod.GET, "tags/**", permitAll)
-                authorize(HttpMethod.OPTIONS, "tags/**", permitAll)
+                authorize(HttpMethod.GET, "/tags/**", permitAll)
+                authorize(HttpMethod.OPTIONS, "/tags/**", permitAll)
 
-                authorize(HttpMethod.GET, "owner/**", permitAll)
-                authorize(HttpMethod.OPTIONS, "owner/**", permitAll)
+                authorize(HttpMethod.GET, "/owner/**", permitAll)
+                authorize(HttpMethod.OPTIONS, "/owner/**", permitAll)
 
-                authorize(HttpMethod.GET, "package/**", permitAll)
-                authorize(HttpMethod.OPTIONS, "package/**", permitAll)
+                authorize(HttpMethod.GET, "/package/**", permitAll)
+                authorize(HttpMethod.OPTIONS, "/package/**", permitAll)
 
-                authorize(HttpMethod.GET, "project/**", permitAll)
-                authorize(HttpMethod.OPTIONS, "project/**", permitAll)
+                authorize(HttpMethod.GET, "/project/**", permitAll)
+                authorize(HttpMethod.OPTIONS, "/project/**", permitAll)
 
-                authorize(HttpMethod.GET, "search/**", permitAll)
-                authorize(HttpMethod.POST, "search/**", permitAll)
-                authorize(HttpMethod.OPTIONS, "search/**", permitAll)
+                authorize(HttpMethod.GET, "/search/**", permitAll)
+                authorize(HttpMethod.POST, "/search/**", permitAll)
+                authorize(HttpMethod.OPTIONS, "/search/**", permitAll)
 
-                authorize(HttpMethod.GET, "ping", permitAll)
-                authorize(HttpMethod.OPTIONS, "ping", permitAll)
-
-                authorize("/actuator/metrics", permitAll)
-                authorize("/actuator/prometheus", permitAll)
+                authorize(HttpMethod.GET, "/ping", permitAll)
+                authorize(HttpMethod.OPTIONS, "/ping", permitAll)
 
                 authorize("/error", permitAll)
 
@@ -61,12 +58,14 @@ class SecurityConfiguration(
                     authorize("/blacklist/**", hasRole("ADMIN"))
                     authorize("/actuator/**", hasRole("actuator"))
                     authorize("/api-docs/**", hasRole("api-docs"))
-                    authorize("package-description/**", hasRole("ADMIN"))
+                    authorize("/package-description/**", hasRole("ADMIN"))
+                    authorize(HttpMethod.PATCH, "/content/**", hasRole("content-manager"))
                 } else {
                     authorize("/blacklist/**", permitAll)
                     authorize("/actuator/**", permitAll)
                     authorize("/api-docs/**", permitAll)
-                    authorize("package-description/**", permitAll)
+                    authorize(HttpMethod.PATCH, "/content/**", permitAll)
+                    authorize("/package-description/**", permitAll)
                 }
 
                 authorize(anyRequest, authenticated)

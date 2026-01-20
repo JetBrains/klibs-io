@@ -5,12 +5,17 @@ import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.project.entity.Marker
+import io.klibs.core.project.entity.TagEntity
+import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.MarkerRepository
 import io.klibs.core.project.repository.ProjectRepository
+import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.readme.ReadmeService
+import io.klibs.core.project.repository.AllowedProjectTagsRepository
+import io.klibs.core.project.utils.normalizeTag
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,6 +30,8 @@ class ProjectService(
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val markerRepository: MarkerRepository,
     private val tagRepository: TagRepository,
+    private val projectTagRepository: ProjectTagRepository,
+    private val allowedProjectTagsRepository: AllowedProjectTagsRepository,
 ) {
     @Transactional(readOnly = true)
     fun getProjectDetailsByName(ownerLogin: String, projectName: String): ProjectDetails? {
@@ -86,6 +93,68 @@ class ProjectService(
     fun getProjectReadmeHtml(ownerLogin: String, projectName: String): String? {
         val scmRepositoryId = scmRepositoryRepository.findIdByName(ownerLogin, projectName) ?: return null
         return readmeService.readReadmeHtml(scmRepositoryId)
+    }
+
+    @Transactional
+    fun updateProjectDescription(projectName: String, ownerLogin: String, description: String) {
+        projectRepository.updateDescription(projectName, ownerLogin, description)
+    }
+
+    @Transactional
+    fun updateProjectTags(
+        projectName: String,
+        ownerLogin: String,
+        tags: List<String>,
+        tagsType: TagOrigin
+    ): List<String> {
+        val scmRepositoryEntity = scmRepositoryRepository.findByName(ownerLogin, projectName)
+            ?: throw IllegalArgumentException("Project $ownerLogin/$projectName not found")
+        val projectEntity = projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)
+            ?: throw IllegalArgumentException("Project $ownerLogin/$projectName not found")
+        val projectId = projectEntity.idNotNull
+
+        val normalizedTags = tags.asSequence()
+            .map { normalizeTag(it) }
+            .filter { it.isNotEmpty() }
+            .distinct()
+            .toList()
+
+        if (normalizedTags.isEmpty()) {
+            throw IllegalArgumentException("No one tag passed the normalization filter." +
+                    " Make sure that your tags are correctly normalized:" +
+                    " they should be lowercase, and words should be separated by a dash. Example: `compose-ui`")
+        }
+
+        val invalidTags = mutableListOf<String>()
+        val canonicalTagsToAdd = mutableListOf<String>()
+
+        for (tag in normalizedTags) {
+            val canonicalName = allowedProjectTagsRepository.findCanonicalNameByValue(tag)
+            if (canonicalName == null) {
+                invalidTags.add(tag)
+            } else {
+                canonicalTagsToAdd.add(canonicalName)
+            }
+        }
+
+        if (invalidTags.isNotEmpty()) {
+            throw IllegalArgumentException("Invalid tags were provided: ${invalidTags.joinToString(", ")}")
+        }
+
+        val tagsToSave = canonicalTagsToAdd.distinct()
+
+        projectTagRepository.deleteByProjectIdAndOrigin(projectId, tagsType)
+
+        val entities = tagsToSave.map { value ->
+            TagEntity(
+                projectId = projectId,
+                value = value,
+                origin = tagsType
+            )
+        }
+        projectTagRepository.saveAll(entities)
+
+        return tagsToSave
     }
 
     private companion object {

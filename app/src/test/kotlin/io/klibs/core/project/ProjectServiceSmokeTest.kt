@@ -12,6 +12,8 @@ import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.core.project.repository.TagRepository
+import io.klibs.core.project.repository.ProjectTagRepository
+import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.ArgumentMatchers.anyInt
@@ -51,6 +53,12 @@ class ProjectServiceSmokeTest {
 
     @MockBean
     private lateinit var tagRepository: TagRepository
+
+    @MockBean
+    private lateinit var projectTagRepository: ProjectTagRepository
+
+    @MockBean
+    private lateinit var allowedProjectTagsRepository: AllowedProjectTagsRepository
 
     @Test
     fun `getProjectDetailsByName returns null when project has no packages`() {

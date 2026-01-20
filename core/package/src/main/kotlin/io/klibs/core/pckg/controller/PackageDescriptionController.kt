@@ -1,6 +1,5 @@
 package io.klibs.core.pckg.controller
 
-import io.klibs.core.pckg.api.UpdateDescriptionRequest
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -9,14 +8,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.util.concurrent.TimeUnit
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.util.concurrent.TimeUnit
 
 @RestController
 @RequestMapping("/package-description")
@@ -68,20 +66,5 @@ class PackageDescriptionController(
         }
 
         return "Unique descriptions generation started successfully"
-    }
-
-
-    @Operation(
-        summary = "Update a package description directly",
-        description = "Updates the description of a package identified by groupId, artifactId, and version with a user-provided description"
-    )
-    @PostMapping("/{groupId}/{artifactId}/{version}")
-    fun updateDescription(
-        @PathVariable groupId: String,
-        @PathVariable artifactId: String,
-        @PathVariable version: String,
-        @RequestBody request: UpdateDescriptionRequest
-    ): String {
-        return packageDescriptionService.updatePackageDescription(groupId, artifactId, version, request.description)
     }
 }
