@@ -66,12 +66,12 @@ class ContentUpdateControllerAsyncTest : SmokeTestBase() {
         val artifactId = "test-library"
         val version = "1.0.0"
         val userProvidedDescription = "This is a user-provided description for the test library."
-        val requestBody = UpdatePackageDescriptionRequest(userProvidedDescription)
+        val requestBody = UpdatePackageDescriptionRequest(groupId, artifactId, version, userProvidedDescription)
 
         `when`(packageDescriptionService.updatePackageDescription(groupId, artifactId, version, userProvidedDescription))
             .thenReturn(userProvidedDescription)
 
-        mockMvc.patch("/content/package/description/$groupId/$artifactId/$version") {
+        mockMvc.patch("/content/package/description") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(requestBody)
         }

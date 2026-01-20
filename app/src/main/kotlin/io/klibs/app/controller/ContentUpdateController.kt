@@ -52,14 +52,16 @@ class ContentUpdateController(
         summary = "Update a package description directly",
         description = "Updates the description of a package identified by groupId, artifactId, and version with a user-provided description"
     )
-    @PatchMapping("/package/description/{groupId}/{artifactId}/{version}")
+    @PatchMapping("/package/description")
     fun updatePackageDescription(
-        @PathVariable groupId: String,
-        @PathVariable artifactId: String,
-        @PathVariable version: String,
-        @RequestBody request: UpdatePackageDescriptionRequest
+        @Valid @RequestBody request: UpdatePackageDescriptionRequest
     ): String {
-        val description = packageDescriptionService.updatePackageDescription(groupId, artifactId, version, request.description)
+        val description = packageDescriptionService.updatePackageDescription(
+            request.groupId,
+            request.artifactId,
+            request.version,
+            request.description
+        )
         searchService.refreshSearchViewsAsync()
         return description
     }
