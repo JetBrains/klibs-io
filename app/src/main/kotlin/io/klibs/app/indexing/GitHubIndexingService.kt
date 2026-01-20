@@ -1,15 +1,12 @@
 package io.klibs.app.indexing
 
 import io.klibs.app.util.BackoffProvider
-import io.klibs.core.project.utils.normalizeTag
 import io.klibs.core.owner.ScmOwnerEntity
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.project.ProjectEntity
-import io.klibs.core.project.entity.TagEntity
+import io.klibs.core.project.ProjectService
 import io.klibs.core.project.enums.TagOrigin
-import io.klibs.core.project.repository.ProjectTagRepository
-import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
@@ -45,10 +42,9 @@ class GitHubIndexingService(
     private val readmeProcessors: List<ReadmeProcessor>,
 
     private val projectRepository: ProjectRepository,
-    private val projectTagRepository: ProjectTagRepository,
-    private val allowedProjectTagsRepository: AllowedProjectTagsRepository,
     @Qualifier("ownerBackoffProvider")
     private val ownerBackoffProvider: BackoffProvider,
+    private val projectService: ProjectService,
 ) {
 
     @Transactional
@@ -355,34 +351,9 @@ class GitHubIndexingService(
 
     private fun updateGithubTagsForProject(projectEntity: ProjectEntity?, scmRepositoryEntity: ScmRepositoryEntity?) {
         if (projectEntity == null || scmRepositoryEntity == null) return
+        val repositoryTopics = gitHubIntegration.getRepositoryTopics(scmRepositoryEntity.nativeId)
         try {
-            val tags = gitHubIntegration.getRepositoryTopics(scmRepositoryEntity.nativeId)
-                .map { normalizeTag(it) }
-                .filter { it.isNotEmpty() }
-                .mapNotNull { normalized ->
-                    allowedProjectTagsRepository.findCanonicalNameByValue(normalized)
-                }
-                .distinct()
-
-            projectTagRepository.deleteByProjectIdAndOrigin(projectEntity.idNotNull, TagOrigin.GITHUB)
-            if (tags.isNotEmpty()) {
-                val existingValues: Set<String> = projectTagRepository
-                    .findAllByProjectIdAndOrigin(projectEntity.idNotNull, TagOrigin.GITHUB)
-                    .map { it.value }
-                    .toSet()
-
-                val newValues = tags.filterNot { it in existingValues }
-                if (newValues.isNotEmpty()) {
-                    val entities = newValues.map { value ->
-                        TagEntity(
-                            projectId = projectEntity.idNotNull,
-                            value = value,
-                            origin = TagOrigin.GITHUB
-                        )
-                    }
-                    projectTagRepository.saveAll(entities)
-                }
-            }
+            projectService.updateProjectTags(scmRepositoryEntity.name, scmRepositoryEntity.ownerLogin, repositoryTopics, TagOrigin.GITHUB)
         } catch (e: Exception) {
             logger.error("Failed to update GitHub tags for projectId=${projectEntity.idNotNull}", e)
         }

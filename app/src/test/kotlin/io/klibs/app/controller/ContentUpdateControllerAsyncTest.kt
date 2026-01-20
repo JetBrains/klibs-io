@@ -8,12 +8,15 @@ import io.klibs.core.project.ProjectService
 import io.klibs.core.search.SearchService
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.patch
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.app.api.UpdatePackageDescriptionRequest
+import io.klibs.core.project.enums.TagOrigin
 
 class ContentUpdateControllerAsyncTest : SmokeTestBase() {
 
@@ -47,7 +50,7 @@ class ContentUpdateControllerAsyncTest : SmokeTestBase() {
     @Test
     fun `updateProjectTags should return immediately and call refreshSearchViewsAsync`() {
         val request = UpdateProjectTagsRequest("test-project", "test-owner", listOf("tag1", "tag2"))
-        `when`(projectService.updateUserTags(anyString(), anyString(), anyList())).thenReturn(listOf("tag1", "tag2"))
+        whenever(projectService.updateProjectTags(any(), any(), any(), any())).thenReturn(listOf("tag1", "tag2"))
 
         mockMvc.patch("/content/project/tags") {
             contentType = MediaType.APPLICATION_JSON
@@ -56,7 +59,7 @@ class ContentUpdateControllerAsyncTest : SmokeTestBase() {
             status { isOk() }
         }
 
-        verify(projectService).updateUserTags("test-project", "test-owner", listOf("tag1", "tag2"))
+        verify(projectService).updateProjectTags("test-project", "test-owner", listOf("tag1", "tag2"), TagOrigin.USER)
         verify(searchService).refreshSearchViewsAsync()
     }
 

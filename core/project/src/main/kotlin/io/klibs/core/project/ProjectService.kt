@@ -101,7 +101,7 @@ class ProjectService(
     }
 
     @Transactional
-    fun updateUserTags(projectName: String, ownerLogin: String, tags: List<String>): List<String> {
+    fun updateProjectTags(projectName: String, ownerLogin: String, tags: List<String>, tagsType: TagOrigin): List<String> {
         val scmRepositoryEntity = scmRepositoryRepository.findByName(ownerLogin, projectName)
             ?: throw IllegalArgumentException("Project $ownerLogin/$projectName not found")
         val projectEntity = projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)
@@ -136,13 +136,13 @@ class ProjectService(
 
         val tagsToSave = canonicalTagsToAdd.distinct()
 
-        projectTagRepository.deleteByProjectIdAndOrigin(projectId, TagOrigin.USER)
+        projectTagRepository.deleteByProjectIdAndOrigin(projectId, tagsType)
 
         val entities = tagsToSave.map { value ->
             TagEntity(
                 projectId = projectId,
                 value = value,
-                origin = TagOrigin.USER
+                origin = tagsType
             )
         }
         projectTagRepository.saveAll(entities)
