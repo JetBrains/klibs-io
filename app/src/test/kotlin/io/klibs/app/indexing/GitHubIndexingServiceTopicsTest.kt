@@ -22,8 +22,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import io.mockk.any
-import io.mockk.eq
 import java.time.Instant
 
 class GitHubIndexingServiceTopicsTest {
@@ -35,7 +33,7 @@ class GitHubIndexingServiceTopicsTest {
     private val projectRepository: ProjectRepository = mockk()
     private val projectTagRepository: ProjectTagRepository = mockk()
     private val readmeProcessors: List<ReadmeProcessor> = emptyList()
-    private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mockk()
+    private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mockk(relaxed = true)
     private val ownerBackoffProvider: BackoffProvider = mockk()
 
     private fun uut() = GitHubIndexingService(
@@ -111,16 +109,16 @@ class GitHubIndexingServiceTopicsTest {
 
         every { gitHubIntegration.getRepository(ghNativeId) } returns ghRepo
         every { gitHubIntegration.getLicense(ghNativeId) } returns null
-        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(ghNativeId), any()) } returns ReadmeFetchResult.NotFound
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(ghNativeId, existingRepo.updatedAtTs) } returns ReadmeFetchResult.NotFound
 
         every { scmRepositoryRepository.findByName(ownerLogin, repoName) } returns existingRepo
-        every { scmRepositoryRepository.update(any()) } answers { firstArg<ScmRepositoryEntity>().copy(id = repoId) }
+        val updateCaptor = slot<ScmRepositoryEntity>()
+        every { scmRepositoryRepository.update(capture(updateCaptor)) } answers { updateCaptor.captured.copy(id = repoId) }
 
         every { projectRepository.findByScmRepoId(repoId) } returns project
         every { gitHubIntegration.getRepositoryTopics(ghNativeId) } returns topicsFromGh
         every { projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB) } returns emptyList()
 
-        every { allowedProjectTagsRepository.findCanonicalNameByValue(any<String>()) } returns null
         every { allowedProjectTagsRepository.findCanonicalNameByValue("kotlin") } returns "kotlin"
         every { allowedProjectTagsRepository.findCanonicalNameByValue("spring") } returns "spring"
         every { allowedProjectTagsRepository.findCanonicalNameByValue("web") } returns "web"
@@ -204,23 +202,24 @@ class GitHubIndexingServiceTopicsTest {
 
         every { gitHubIntegration.getRepository(ghNativeId) } returns ghRepo
         every { gitHubIntegration.getLicense(ghNativeId) } returns null
-        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(ghNativeId), any()) } returns ReadmeFetchResult.NotFound
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(ghNativeId, existingRepo.updatedAtTs) } returns ReadmeFetchResult.NotFound
 
         every { scmRepositoryRepository.findByName(ownerLogin, repoName) } returns existingRepo
-        every { scmRepositoryRepository.update(any()) } answers { firstArg<ScmRepositoryEntity>().copy(id = repoId) }
+        val updateCaptor = slot<ScmRepositoryEntity>()
+        every { scmRepositoryRepository.update(capture(updateCaptor)) } answers { updateCaptor.captured.copy(id = repoId) }
 
         every { projectRepository.findByScmRepoId(repoId) } returns project
         every { gitHubIntegration.getRepositoryTopics(ghNativeId) } returns listOf("kotlin")
         every { projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB) } returns existingUserTags
 
-        every { allowedProjectTagsRepository.findCanonicalNameByValue(any<String>()) } returns null
         every { allowedProjectTagsRepository.findCanonicalNameByValue("kotlin") } returns "kotlin"
 
         val persisted = uut().updateRepo(existingRepo)
 
         assertEquals(repoId, persisted.id)
+        verify { projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB) }
         verify { projectTagRepository.deleteByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB) }
-        verify(exactly = 0) { projectTagRepository.saveAll(any()) }
+        io.mockk.confirmVerified(projectTagRepository)
         verify { gitHubIntegration.getRepositoryTopics(ghNativeId) }
     }
 }

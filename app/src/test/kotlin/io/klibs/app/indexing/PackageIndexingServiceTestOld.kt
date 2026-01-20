@@ -14,10 +14,11 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import io.mockk.any
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.slot
+import io.mockk.coEvery
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Instant
 
@@ -40,8 +41,6 @@ class PackageIndexingServiceTestOld {
 
     @BeforeEach
     fun setup() {
-        every { transactionTemplate.execute<Any?>(any()) } returns null
-
         service = PackageIndexingService(
             listOf(discoverer),
             providers,
@@ -64,20 +63,21 @@ class PackageIndexingServiceTestOld {
             releasedAt = Instant.now()
         )
 
-        every { discoverer.discover(any()) } answers {
-            val channel = firstArg<Channel<Exception>>()
-            channel.close()
+        val chSlot = slot<Channel<Exception>>()
+        coEvery { discoverer.discover(capture(chSlot)) } answers {
+            chSlot.captured.close()
             flowOf(artifact)
         }
 
-        every { indexingRequestRepository.saveAll(any<Iterable<IndexingRequestEntity>>()) } returns listOf(IndexingRequestEntity(
+        val saveSlot = slot<Iterable<IndexingRequestEntity>>()
+        every { indexingRequestRepository.saveAll(capture(saveSlot)) } returns listOf(IndexingRequestEntity(
             id = 1L,
             groupId = artifact.groupId,
             artifactId = artifact.artifactId,
             version = artifact.version,
             releasedAt = artifact.releasedAt,
             repo = artifact.scraperType
-        )))
+        ))
         every { indexingRequestRepository.removeRepeating() } returns 0
 
         service.indexNewPackages()

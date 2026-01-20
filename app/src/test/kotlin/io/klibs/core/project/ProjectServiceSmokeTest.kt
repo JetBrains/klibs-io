@@ -14,7 +14,6 @@ import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.core.project.repository.TagRepository
 import org.junit.jupiter.api.Test
 import io.mockk.every
-import io.mockk.any
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import com.ninjasquad.springmockk.MockkBean
@@ -98,7 +97,7 @@ class ProjectServiceSmokeTest {
         every { packageRepository.existsByProjectId(projectEntity.idNotNull) } returns false
 
         // Default stub for tags
-        every { tagRepository.getTagsByProjectId(any()) } returns emptyList()
+        every { tagRepository.getTagsByProjectId(projectEntity.idNotNull) } returns emptyList()
 
         // Act
         val result = uut.getProjectDetailsByName(ownerLogin, projectName)
@@ -158,7 +157,7 @@ class ProjectServiceSmokeTest {
         every { markerRepository.findAllByProjectId(projectId) } returns projectMarkers
 
         // Default stub for tags
-        every { tagRepository.getTagsByProjectId(any()) } returns emptyList()
+        every { tagRepository.getTagsByProjectId(projectId) } returns emptyList()
 
         val foundProject = uut.getProjectDetailsById(projectId)
 

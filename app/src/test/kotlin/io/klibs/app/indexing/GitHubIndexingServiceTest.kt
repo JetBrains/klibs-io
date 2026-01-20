@@ -12,7 +12,6 @@ import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import io.mockk.any
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.confirmVerified
@@ -100,11 +99,12 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `updateOwner should handle exception when GitHub user not found`(output: CapturedOutput) {
 
-        every { gitHubIntegration.getUser(any()) } returns null
+        val login = "voize-gmbh"
+        every { gitHubIntegration.getUser(login) } returns null
 
         uut.syncOwnerWithGitHub()
 
-        verify(exactly = 1) { gitHubIntegration.getUser(any()) }
+        verify(exactly = 1) { gitHubIntegration.getUser(login) }
         assertContains(output.out, "Error while updating a GitHub owner")
     }
 
@@ -121,11 +121,12 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `updateOwner should handle exception when GitHub integration fails`(output: CapturedOutput) {
 
-        every { gitHubIntegration.getUser(any()) } throws RuntimeException("API error")
+        val login = "voize-gmbh"
+        every { gitHubIntegration.getUser(login) } throws RuntimeException("API error")
 
         uut.syncOwnerWithGitHub()
 
-        verify(exactly = 1) { gitHubIntegration.getUser(any()) }
+        verify(exactly = 1) { gitHubIntegration.getUser(login) }
         assertContains(output.out, "Error while updating a GitHub owner")
     }
 

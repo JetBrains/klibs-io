@@ -167,8 +167,9 @@ class BaseMavenSearchClientRedirectTest {
             return responses.removeFirst()
         }
 
-        override fun iterate(url: String, headers: Map<String, String>): Iterator<Transport.Response> {
-            throw UnsupportedOperationException("Not used in tests")
+        override fun head(url: String, headers: Map<String, String>): Transport.Response {
+            if (responses.isEmpty()) throw IllegalStateException("No more responses queued")
+            return responses.first() // do not consume for HEAD
         }
     }
 }

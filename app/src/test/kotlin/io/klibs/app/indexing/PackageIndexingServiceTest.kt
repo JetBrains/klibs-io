@@ -13,8 +13,8 @@ import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import io.mockk.every
-import io.mockk.any
 import io.mockk.mockk
+import io.mockk.slot
 import org.springframework.beans.factory.annotation.Autowired
 import com.ninjasquad.springmockk.MockkBean
 import org.springframework.boot.test.system.CapturedOutput
@@ -68,7 +68,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequestBeforeProcessing)
 
-        every { mavenStaticDataProvider.getPom(any()) } throws RuntimeException("Mocked getPom exception")
+        val pomArg1 = slot<io.klibs.integration.maven.MavenArtifact>()
+        every { mavenStaticDataProvider.getPom(capture(pomArg1)) } throws RuntimeException("Mocked getPom exception")
 
         val result = uut.processPackageQueue()
 
@@ -98,8 +99,10 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val kotlinToolingMetadata = mockk<GradleMetadata>()
         every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        every { mavenStaticDataProvider.getPom(any()) } returns pom
-        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
+        val pomArg2 = slot<io.klibs.integration.maven.MavenArtifact>()
+        val ktmArg2 = slot<io.klibs.integration.maven.MavenArtifact>()
+        every { mavenStaticDataProvider.getPom(capture(pomArg2)) } returns pom
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(capture(ktmArg2)) } returns kotlinToolingMetadataDelegate
 
         val result = uut.processPackageQueue()
 
@@ -140,8 +143,10 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
 
-        every { mavenStaticDataProvider.getPom(any()) } returns pom
-        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
+        val pomArg3 = slot<io.klibs.integration.maven.MavenArtifact>()
+        val ktmArg3 = slot<io.klibs.integration.maven.MavenArtifact>()
+        every { mavenStaticDataProvider.getPom(capture(pomArg3)) } returns pom
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(capture(ktmArg3)) } returns kotlinToolingMetadataDelegate
 
         // Act
         val result = uut.processPackageQueue()
@@ -178,12 +183,12 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         // Mock the AI service to return a predictable description
         every { packageDescriptionGenerator.generatePackageDescription(
-            any(), // packageName
-            any(), // groupId
-            any(), // artifactId
-            any(), // version
-            any(), // minDescriptionWordCount
-            any()  // maxDescriptionWordCount
+            artifactId, // packageName (pom.name is null -> artifactId is used)
+            groupId, // groupId
+            artifactId, // artifactId
+            version2, // version
+            10, // minDescriptionWordCount default
+            20  // maxDescriptionWordCount default
         ) } returns generatedDescription
 
         // Generate a description for the existing package
@@ -208,8 +213,10 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val kotlinToolingMetadata = mockk<GradleMetadata>()
         every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        every { mavenStaticDataProvider.getPom(any()) } returns pom
-        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
+        val pomArg4 = slot<io.klibs.integration.maven.MavenArtifact>()
+        val ktmArg4 = slot<io.klibs.integration.maven.MavenArtifact>()
+        every { mavenStaticDataProvider.getPom(capture(pomArg4)) } returns pom
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(capture(ktmArg4)) } returns kotlinToolingMetadataDelegate
 
         // Process the indexing request
         val result = uut.processPackageQueue()

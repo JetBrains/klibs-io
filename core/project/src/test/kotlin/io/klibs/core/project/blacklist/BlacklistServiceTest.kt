@@ -6,27 +6,18 @@ import io.klibs.core.project.repository.ProjectRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import io.mockk.MockK
-import io.mockk.junit5.MockKExtension
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.confirmVerified
-import io.mockk.any
 import io.mockk.mockk
 import java.time.Instant
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@ExtendWith(MockKExtension::class)
 class BlacklistServiceTest {
 
-    @MockK
     private lateinit var blacklistRepository: BlacklistRepository
-
-    @MockK
     private lateinit var packageRepository: PackageRepository
-
-    @MockK
     private lateinit var projectRepository: ProjectRepository
 
     private lateinit var uut: BlacklistService
@@ -39,18 +30,19 @@ class BlacklistServiceTest {
 
     @BeforeEach
     fun setUp() {
-        uut = BlacklistService(
-            blacklistRepository,
-            packageRepository,
-            projectRepository
-        )
+        // Create relaxed mocks to avoid explicit stubbing of Unit functions
+        blacklistRepository = mockk(relaxUnitFun = true)
+        packageRepository = mockk(relaxed = true)
+        projectRepository = mockk(relaxUnitFun = true)
+
+        uut = BlacklistService(blacklistRepository, packageRepository, projectRepository)
 
         every { blacklistRepository.checkPackageExists(testGroupId, testArtifactId) } returns true
-
-        // Mock empty lists by default to avoid NPEs
-        every { packageRepository.findLatestByGroupId(any<String>()) } returns emptyList()
-        every { packageRepository.findByGroupIdAndArtifactIdOrderByReleaseTsDesc(any<String>(), any<String>()) } returns emptyList()
-        every { packageRepository.findLatestByProjectId(any<Int>()) } returns emptyList()
+        // Default: not banned
+        every { blacklistRepository.checkPackageBanned(testGroupId, testArtifactId) } returns false
+        // Default: no connected projects
+        every { projectRepository.findProjectsByPackages(testGroupId, testArtifactId) } returns emptySet()
+        every { projectRepository.findProjectsByPackages(testGroupId, null) } returns emptySet()
     }
 
     private fun mockPackageDoesNotExist() {
@@ -62,8 +54,8 @@ class BlacklistServiceTest {
     }
 
     private fun verifyNoFurtherInteractions() {
-        verify(exactly = 0) { blacklistRepository.addToBannedPackages(any<String>(), any<String>(), any<String>()) }
-        verify(exactly = 0) { blacklistRepository.removeBannedPackages(any<String>(), any<String>()) }
+        verify(exactly = 0) { blacklistRepository.addToBannedPackages(testGroupId, testArtifactId, null) }
+        verify(exactly = 0) { blacklistRepository.removeBannedPackages(testGroupId, testArtifactId) }
     }
 
     @Test
@@ -119,6 +111,15 @@ class BlacklistServiceTest {
         every { latestPackage.version } returns testVersion
         every { latestPackage.releaseTs } returns testReleaseTs
         every { packageRepository.findLatestByProjectId(testProjectId) } returns listOf(latestPackage)
+        every { projectRepository.updateLatestVersion(testProjectId, testVersion, testReleaseTs) } returns (
+            io.klibs.core.project.ProjectEntity(
+                id = testProjectId,
+                scmRepoId = 0,
+                description = null,
+                latestVersion = testVersion,
+                latestVersionTs = testReleaseTs
+            )
+        )
 
         val result = uut.banPackage(testGroupId, testArtifactId, null)
 
@@ -142,6 +143,15 @@ class BlacklistServiceTest {
         every { latestPackage.version } returns testVersion
         every { latestPackage.releaseTs } returns testReleaseTs
         every { packageRepository.findLatestByProjectId(testProjectId) } returns listOf(latestPackage)
+        every { projectRepository.updateLatestVersion(testProjectId, testVersion, testReleaseTs) } returns (
+            io.klibs.core.project.ProjectEntity(
+                id = testProjectId,
+                scmRepoId = 0,
+                description = null,
+                latestVersion = testVersion,
+                latestVersionTs = testReleaseTs
+            )
+        )
 
         val result = uut.banByGroup(testGroupId, null)
 

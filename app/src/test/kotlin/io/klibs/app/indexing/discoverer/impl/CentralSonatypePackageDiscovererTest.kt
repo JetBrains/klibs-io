@@ -14,8 +14,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import io.mockk.every
 import io.mockk.verify
-import io.mockk.any
-import io.mockk.eq
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.slot
 import org.springframework.boot.test.context.SpringBootTest
 import com.ninjasquad.springmockk.MockkBean
 import org.springframework.test.context.ActiveProfiles
@@ -71,12 +72,13 @@ internal class CentralSonatypePackageDiscovererTest {
         )
 
         every { packageRepository.findAllKnownPackages() } returns emptyList()
-        every { centralSonatypeScraper.findKmpArtifacts(any(), any()) } returns flowOf(artifact1, artifact2)
-        every { centralSonatypeScraper.findAllVersionForArtifact(eq(artifact1), any()) } returns flowOf(artifact1)
-        every { centralSonatypeScraper.findAllVersionForArtifact(eq(artifact2), any()) } returns flowOf(artifact2)
-
+        val expectedStartTs = initialTimestamp.minusSeconds(3 * 3600L)
         val errorChannel = Channel<Exception>()
+        coEvery { centralSonatypeScraper.findKmpArtifacts(expectedStartTs, errorChannel) } returns flowOf(artifact1, artifact2)
+        coEvery { centralSonatypeScraper.findAllVersionForArtifact(artifact1, errorChannel) } returns flowOf(artifact1)
+        coEvery { centralSonatypeScraper.findAllVersionForArtifact(artifact2, errorChannel) } returns flowOf(artifact2)
 
+        val savedTs = slot<java.time.Instant>()
         val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
 
         assertEquals(2, artifacts.size)
@@ -95,7 +97,8 @@ internal class CentralSonatypePackageDiscovererTest {
         assertEquals(ScraperType.CENTRAL_SONATYPE, resultArtifact2?.scraperType)
         assertTrue(resultArtifact2?.releasedAt != null)
 
-        verify(exactly = 1) { lastPackageIndexedRepository.save(any()) }
+        verify(exactly = 1) { lastPackageIndexedRepository.save(capture(savedTs)) }
+        assertTrue(savedTs.captured.isAfter(initialTimestamp))
     }
 
     @Test
@@ -124,23 +127,20 @@ internal class CentralSonatypePackageDiscovererTest {
         )
 
         every { packageRepository.findAllKnownPackages() } returns listOf(knownPackage)
-        every { centralSonatypeScraper.findKmpArtifacts(any(), any()) } returns flowOf(knownArtifact, newArtifact)
-        every {
-            centralSonatypeScraper.findAllVersionForArtifact(
-                eq(newArtifact),
-                any()
-            )
-        } returns flowOf(newArtifact)
+        val expectedStartTs2 = initialTimestamp.minusSeconds(3 * 3600L)
+        val errorChannel2 = Channel<Exception>()
+        coEvery { centralSonatypeScraper.findKmpArtifacts(expectedStartTs2, errorChannel2) } returns flowOf(knownArtifact, newArtifact)
+        coEvery { centralSonatypeScraper.findAllVersionForArtifact(newArtifact, errorChannel2) } returns flowOf(newArtifact)
 
-        val errorChannel = Channel<Exception>()
-
-        val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
+        val savedTs2 = slot<java.time.Instant>()
+        val artifacts = discoverer.discover(errorChannel = errorChannel2).toList()
 
         assertEquals(1, artifacts.size)
         assertEquals("new-lib", artifacts[0].artifactId)
 
         // Verify the timestamp was updated
-        verify(exactly = 1) { lastPackageIndexedRepository.save(any()) }
+        verify(exactly = 1) { lastPackageIndexedRepository.save(capture(savedTs2)) }
+        assertTrue(savedTs2.captured.isAfter(initialTimestamp))
     }
 
     @Test
@@ -163,37 +163,41 @@ internal class CentralSonatypePackageDiscovererTest {
         )
 
         every { packageRepository.findAllKnownPackages() } returns emptyList()
-        every { centralSonatypeScraper.findKmpArtifacts(any(), any()) } returns flowOf(artifact)
-        every { centralSonatypeScraper.findAllVersionForArtifact(eq(artifact), any()) } returns (
+        val expectedStartTs3 = initialTimestamp.minusSeconds(3 * 3600L)
+        val errorChannel3 = Channel<Exception>()
+        coEvery { centralSonatypeScraper.findKmpArtifacts(expectedStartTs3, errorChannel3) } returns flowOf(artifact)
+        coEvery { centralSonatypeScraper.findAllVersionForArtifact(artifact, errorChannel3) } returns (
             flowOf(
                 artifact,
                 version2
             )
         )
 
-        val errorChannel = Channel<Exception>()
-
         // When
-        val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
+        val savedTs3 = slot<java.time.Instant>()
+        val artifacts = discoverer.discover(errorChannel = errorChannel3).toList()
 
         assertEquals(2, artifacts.size)
         val versions = artifacts.map { it.version }.sorted()
         assertEquals(listOf("1.0.0", "2.0.0"), versions)
 
-        verify(exactly = 1) { lastPackageIndexedRepository.save(any()) }
+        verify(exactly = 1) { lastPackageIndexedRepository.save(capture(savedTs3)) }
+        assertTrue(savedTs3.captured.isAfter(initialTimestamp))
     }
 
     @Test
     fun `should handle empty results`() = runTest {
         every { packageRepository.findAllKnownPackages() } returns emptyList()
-        every { centralSonatypeScraper.findKmpArtifacts(any(), any()) } returns flowOf()
+        val expectedStartTs4 = initialTimestamp.minusSeconds(3 * 3600L)
+        val errorChannel4 = Channel<Exception>()
+        coEvery { centralSonatypeScraper.findKmpArtifacts(expectedStartTs4, errorChannel4) } returns flowOf()
 
-        val errorChannel = Channel<Exception>()
-
-        val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
+        val savedTs4 = slot<java.time.Instant>()
+        val artifacts = discoverer.discover(errorChannel = errorChannel4).toList()
 
         assertEquals(0, artifacts.size)
-        verify(exactly = 1) { lastPackageIndexedRepository.save(any()) }
+        verify(exactly = 1) { lastPackageIndexedRepository.save(capture(savedTs4)) }
+        assertTrue(savedTs4.captured.isAfter(initialTimestamp))
     }
 
     /**
@@ -214,19 +218,19 @@ internal class CentralSonatypePackageDiscovererTest {
         val dup2 = dup1.copy()
 
         every { packageRepository.findAllKnownPackages() } returns emptyList()
-        every { centralSonatypeScraper.findKmpArtifacts(any(), any()) } returns flowOf(dup1, dup2)
-        every { centralSonatypeScraper.findAllVersionForArtifact(eq(dup1), any()) } returns flowOf(dup1, dup2)
+        val expectedStartTs5 = initialTimestamp.minusSeconds(3 * 3600L)
+        val errorChannel5 = Channel<Exception>()
+        coEvery { centralSonatypeScraper.findKmpArtifacts(expectedStartTs5, errorChannel5) } returns flowOf(dup1, dup2)
+        coEvery { centralSonatypeScraper.findAllVersionForArtifact(dup1, errorChannel5) } returns flowOf(dup1, dup2)
 
         // shouldn't be called
-        every { centralSonatypeScraper.findAllVersionForArtifact(eq(dup2), any()) } returns flowOf(dup1, dup2)
+        coEvery { centralSonatypeScraper.findAllVersionForArtifact(dup2, errorChannel5) } returns flowOf(dup1, dup2)
 
-        val errorChannel = Channel<Exception>()
-
-        val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
+        val artifacts = discoverer.discover(errorChannel = errorChannel5).toList()
 
         assertEquals(1, artifacts.size)
 
-        verify(exactly = 1) { centralSonatypeScraper.findAllVersionForArtifact(eq(dup1), any()) }
+        coVerify(exactly = 1) { centralSonatypeScraper.findAllVersionForArtifact(dup1, errorChannel5) }
     }
 
     @Test
@@ -241,16 +245,17 @@ internal class CentralSonatypePackageDiscovererTest {
         val duplicate = base.copy()
 
         every { packageRepository.findAllKnownPackages() } returns emptyList()
-        every { centralSonatypeScraper.findKmpArtifacts(any(), any()) } returns flowOf(base)
+        val expectedStartTs6 = initialTimestamp.minusSeconds(3 * 3600L)
+        val errorChannel6 = Channel<Exception>()
+        coEvery { centralSonatypeScraper.findKmpArtifacts(expectedStartTs6, errorChannel6) } returns flowOf(base)
 
         // findAllVersionForArtifact mistakenly returns duplicates
-        every { centralSonatypeScraper.findAllVersionForArtifact(eq(base), any()) } returns flowOf(base, duplicate)
+        coEvery { centralSonatypeScraper.findAllVersionForArtifact(base, errorChannel6) } returns flowOf(base, duplicate)
 
-        val errorChannel = Channel<Exception>()
-        val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
+        val artifacts = discoverer.discover(errorChannel = errorChannel6).toList()
 
         assertEquals(1, artifacts.size)
 
-        verify(exactly = 1) { centralSonatypeScraper.findAllVersionForArtifact(eq(base), any()) }
+        coVerify(exactly = 1) { centralSonatypeScraper.findAllVersionForArtifact(base, errorChannel6) }
     }
 }

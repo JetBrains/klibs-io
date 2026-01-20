@@ -8,6 +8,16 @@ import io.klibs.integration.maven.scraper.MavenCentralScraper
 import io.klibs.integration.maven.search.MavenSearchResponse
 import io.klibs.integration.maven.search.ArtifactData
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
+import io.klibs.integration.maven.MavenIntegrationProperties
+import io.klibs.integration.maven.request.impl.MavenCentralRateLimiter
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.apache.maven.search.api.MAVEN
+import org.apache.maven.search.api.Record
+import org.apache.maven.search.api.SearchRequest
+import org.apache.maven.search.backend.smo.SmoSearchBackend
+import org.apache.maven.search.backend.smo.SmoSearchResponse
+import org.apache.maven.search.backend.smo.internal.SmoSearchResponseImpl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.toList
@@ -49,12 +59,49 @@ class CentralSonatypeScraperTest {
     fun setUp() {
         fakeCentralClient = RecordingClient(pageSizeVal = 2)
         fakeDiscoveryClient = RecordingClient(pageSizeVal = 2)
-        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
-            override fun pageSize(): Int = fakeCentralClient.pageSize()
-            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
-                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
-        })
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, createCentralClientDelegatingTo(fakeCentralClient))
         errorChannel = Channel(Channel.UNLIMITED)
+    }
+
+    private fun createCentralClientDelegatingTo(delegate: RecordingClient): CentralSonatypeSearchClient {
+        val props = MavenIntegrationProperties(
+            MavenIntegrationProperties.Central(
+                rateLimitCapacity = 100,
+                rateLimitRefillAmount = 100,
+                rateLimitRefillPeriodSec = 1,
+                discoveryEndpoint = "http://localhost",
+                searchEndpoint = "http://localhost"
+            )
+        )
+        val rateLimiter = MavenCentralRateLimiter(props, SimpleMeterRegistry())
+        val objectMapper = ObjectMapper()
+        return object : CentralSonatypeSearchClient(props, rateLimiter, objectMapper) {
+            override fun createSearchBackend(): SmoSearchBackend {
+                return object : SmoSearchBackend {
+                    override fun search(searchRequest: SearchRequest): SmoSearchResponse {
+                        val pageOffset = searchRequest.paging.pageOffset
+                        val query = searchRequest.query
+                        // Record what was requested
+                        delegate.capturedPages += pageOffset
+                        delegate.capturedQueries += query
+
+                        val resp = delegate.searchWithThrottle(pageOffset, query, Instant.EPOCH)
+                        val records = resp.page.map { ad ->
+                            val attrs = hashMapOf(
+                                MAVEN.GROUP_ID to ad.groupId,
+                                MAVEN.ARTIFACT_ID to ad.artifactId,
+                                MAVEN.VERSION to ad.version,
+                            )
+                            Record("backend", "repo", null, ad.releasedAt?.toEpochMilli() ?: 0L, attrs)
+                        }
+                        return SmoSearchResponseImpl(searchRequest, resp.totalHits, records, "mock://search", "")
+                    }
+
+                    override fun getRepositoryId(): String = "repo"
+                    override fun getBackendId(): String = "backend"
+                }
+            }
+        }
     }
 
     @Test
@@ -79,11 +126,7 @@ class CentralSonatypeScraperTest {
         )
         fakeCentralClient = RecordingClient(responses = listOf(mockResponse, MavenSearchResponse(0, 0, emptyList())))
         // rewire scraper to use the prepared central client
-        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
-            override fun pageSize(): Int = fakeCentralClient.pageSize()
-            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
-                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
-        })
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, createCentralClientDelegatingTo(fakeCentralClient))
 
         // Act
         val result = centralSonatypeScraper.findAllVersionForArtifact(artifact, errorChannel).toList()
@@ -114,11 +157,7 @@ class CentralSonatypeScraperTest {
         val artifactData = ArtifactData("org.example", "example-artifact", "1.0.0", Instant.ofEpochMilli(1000L))
         val mockResponse = MavenSearchResponse(1, 1, listOf(artifactData))
         fakeDiscoveryClient = RecordingClient(responses = listOf(mockResponse, MavenSearchResponse(0, 0, emptyList())))
-        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
-            override fun pageSize(): Int = fakeCentralClient.pageSize()
-            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
-                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
-        })
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, createCentralClientDelegatingTo(fakeCentralClient))
 
         // Act
         val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()
@@ -142,11 +181,7 @@ class CentralSonatypeScraperTest {
     @Test
     fun `test error handling when search client throws exception`() = runTest {
         fakeDiscoveryClient = RecordingClient(throwOnCall = true)
-        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
-            override fun pageSize(): Int = fakeCentralClient.pageSize()
-            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
-                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
-        })
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, createCentralClientDelegatingTo(fakeCentralClient))
 
         // Act
         val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()
@@ -181,11 +216,7 @@ class CentralSonatypeScraperTest {
             pageSizeVal = 2,
             responses = listOf(page1Response, page2Response, MavenSearchResponse(0, 0, emptyList()))
         )
-        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, object : CentralSonatypeSearchClient {
-            override fun pageSize(): Int = fakeCentralClient.pageSize()
-            override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse =
-                fakeCentralClient.searchWithThrottle(page, query, lastUpdatedSince)
-        })
+        centralSonatypeScraper = CentralSonatypeScraper(fakeDiscoveryClient, createCentralClientDelegatingTo(fakeCentralClient))
 
         // Act
         val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()

@@ -25,7 +25,8 @@ class S3ReadmeServiceTest {
                 prefix = "readme"
             )
         )
-        s3StorageService = mockk()
+        // Allow calling Unit functions (writeText) without explicit stubbing
+        s3StorageService = mockk(relaxUnitFun = true)
         uut = S3ReadmeService(readmeProperties, s3StorageService)
     }
 

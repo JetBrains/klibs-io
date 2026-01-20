@@ -11,10 +11,8 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.integration.ai.ProjectTagsGenerator
 import org.junit.jupiter.api.Test
-import io.mockk.any
 import io.mockk.CapturingSlot
 import io.mockk.every
-import io.mockk.eq
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
@@ -84,14 +82,15 @@ class ProjectIndexingServiceAddAiTagsTest {
         val generatedTags = listOf("kotlin", "testing", "http-client")
         every {
             projectTagsGenerator.generateTagsForProject(
-                eq(repo.name),
-                eq(project.description ?: ""),
-                eq(repo.description ?: ""),
-                eq(readme)
+                repo.name,
+                project.description ?: "",
+                repo.description ?: "",
+                readme
             )
         } returns generatedTags
 
-        every { projectTagRepository.saveAll(any<Iterable<TagEntity>>()) } answers { firstArg<Iterable<TagEntity>>().toList() }
+        val saveAllSlot: CapturingSlot<Iterable<TagEntity>> = slot()
+        every { projectTagRepository.saveAll(capture(saveAllSlot)) } answers { saveAllSlot.captured.toList() }
 
         uut().addAiTags()
 
@@ -113,10 +112,10 @@ class ProjectIndexingServiceAddAiTagsTest {
 
         uut().addAiTags()
 
-        verify(exactly = 0) { scmRepositoryRepository.findById(any<Int>()) }
-        verify(exactly = 0) { readmeService.readReadmeMd(any<Int>()) }
-        verify(exactly = 0) { projectTagsGenerator.generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>()) }
-        verify(exactly = 0) { projectTagRepository.saveAll(any<Iterable<TagEntity>>()) }
+        io.mockk.confirmVerified(scmRepositoryRepository)
+        io.mockk.confirmVerified(readmeService)
+        io.mockk.confirmVerified(projectTagsGenerator)
+        io.mockk.confirmVerified(projectTagRepository)
     }
 
     @Test
@@ -161,7 +160,7 @@ class ProjectIndexingServiceAddAiTagsTest {
 
         // Force a failure during tag generation
         every {
-            projectTagsGenerator.generateTagsForProject(any(), any(), any(), any())
+            projectTagsGenerator.generateTagsForProject(repo.name, project.description ?: "", repo.description ?: "", repo.minimizedReadme!!)
         } throws RuntimeException("AI tags generation failure")
 
         val service = uut()
@@ -173,9 +172,9 @@ class ProjectIndexingServiceAddAiTagsTest {
         service.addAiTags()
 
         // Generator should be invoked only once (first run). Second run should skip early.
-        verify { projectTagsGenerator.generateTagsForProject(any(), any(), any(), any()) }
+        verify(exactly = 1) { projectTagsGenerator.generateTagsForProject(repo.name, project.description ?: "", repo.description ?: "", repo.minimizedReadme!!) }
 
         // No tags should be saved at all due to failure and then skip
-        verify(exactly = 0) { projectTagRepository.saveAll(any<Iterable<TagEntity>>()) }
+        io.mockk.confirmVerified(projectTagRepository)
     }
 }

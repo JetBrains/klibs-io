@@ -15,8 +15,8 @@ import io.klibs.integration.github.model.GitHubUser
 import jakarta.transaction.Transactional
 import org.kohsuke.github.GitHub
 import io.mockk.every
-import io.mockk.any
 import io.mockk.mockk
+import io.mockk.slot
 import org.springframework.beans.factory.annotation.Autowired
 import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
@@ -47,7 +47,7 @@ class GitHubIndexingServiceIndexRepositoryReadmeHttpInterceptTest : BaseUnitWith
     fun `indexRepository fetches README via intercepted HTTP and persists it`() {
         // Configure @MockBean OkHttpClient to return README content for /readme calls
         val mockCall = mockk<okhttp3.Call>()
-        every { okHttpClient.newCall(any()) } answers {
+        every { okHttpClient.newCall(capture(slot<Request>())) } answers {
             val request = firstArg<Request>()
             val response = if (request.url.encodedPath.endsWith("/readme")) {
                 Response.Builder()

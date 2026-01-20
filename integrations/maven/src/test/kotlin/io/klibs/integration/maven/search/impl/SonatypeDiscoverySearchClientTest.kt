@@ -6,9 +6,9 @@ import io.klibs.integration.maven.request.impl.MavenCentralRateLimiter
 import io.klibs.integration.maven.search.MavenSearchResponse
 import org.apache.maven.search.api.request.Query
 import org.junit.jupiter.api.Test
-import io.mockk.any
 import io.mockk.every
 import io.mockk.mockk
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.test.web.client.ExpectedCount
@@ -26,14 +26,16 @@ class SonatypeDiscoverySearchClientTest {
     fun `searchWithThrottle returns only packages discovered strictly after lastUpdatedSince`() {
         // Given
         val discoveryEndpoint = "https://example.com/api/discovery"
-        val properties = mockk<MavenIntegrationProperties>()
-        val central = mockk<MavenIntegrationProperties.Central>()
-        every { properties.central } returns central
-        every { central.discoveryEndpoint } returns discoveryEndpoint
-
-        val rateLimiter = mockk<MavenCentralRateLimiter>()
-        // Make the rate limiter just run the action immediately
-        every { rateLimiter.withRateLimitBlocking<Any>(any()) } answers { firstArg<() -> Any>().invoke() }
+        val properties = MavenIntegrationProperties(
+            MavenIntegrationProperties.Central(
+                rateLimitCapacity = 100,
+                rateLimitRefillAmount = 100,
+                rateLimitRefillPeriodSec = 1,
+                discoveryEndpoint = discoveryEndpoint,
+                searchEndpoint = "https://example.com/api/search"
+            )
+        )
+        val rateLimiter = MavenCentralRateLimiter(properties, SimpleMeterRegistry())
 
         val cutoff = Instant.ofEpochMilli(2_000L)
         val beforeTs = 1_000L
