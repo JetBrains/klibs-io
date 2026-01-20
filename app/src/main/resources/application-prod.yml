@@ -16,6 +16,9 @@ klibs:
       - username: ${KLIBS_MED_USERNAME}
         password: ${KLIBS_MED_PASSWORD}
         roles: actuator
+      - username: ${KLIBS_CAT_USERNAME}
+        password: ${KLIBS_CAT_PASSWORD}
+        roles: content-manager
 management:
   endpoint:
     health:

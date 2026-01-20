@@ -53,6 +53,28 @@ class ProjectRepositoryJdbc(
         }
     }
 
+    override fun updateDescription(projectName: String, ownerLogin: String, description: String) {
+        val sql = """
+            UPDATE project 
+            SET description = :description 
+            FROM scm_repo 
+            JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+            WHERE scm_repo.name = :projectName 
+              AND scm_owner.login = :ownerLogin
+              AND project.scm_repo_id = scm_repo.id
+        """.trimIndent()
+
+        val updated = jdbcClient.sql(sql)
+            .param("projectName", projectName)
+            .param("ownerLogin", ownerLogin)
+            .param("description", description)
+            .update()
+
+        require(updated == 1) {
+            "Did not update the project description for projectName: $projectName, ownerLogin: $ownerLogin"
+        }
+    }
+
     override fun updateDescription(id: Int, description: String) {
         val sql = """
             UPDATE project 

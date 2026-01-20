@@ -1,5 +1,6 @@
 package io.klibs.app.util
 
+import io.klibs.core.project.utils.normalizeTag
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test

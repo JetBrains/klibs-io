@@ -9,6 +9,8 @@ interface ProjectRepository {
 
     fun updateLatestVersion(id: Int, latestVersion: String, latestVersionTs: Instant): ProjectEntity
 
+    fun updateDescription(projectName: String, ownerLogin: String, description: String)
+
     fun updateDescription(id: Int, description: String)
 
     fun findById(id: Int): ProjectEntity?

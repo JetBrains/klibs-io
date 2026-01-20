@@ -36,27 +36,6 @@ This document describes the branching strategy and release flow for our backend 
 
   * Naming: `hotfix/KTL-<task-id>-<short-description>`
 
-## Updating metadata flow
-This is an instruction on how to update the project metadata using liquibase migrations.
-1. Create a branch from the current `release`
-    ```bash
-    git checkout -b feature/KTL-<task-id>-<short-description> release
-    ```
-2. Description update:
-   1. Create a migration using [reference](app/src/main/resources/db/migration/2025-Q3/2025-08-01_update_packages_metadata.yml).
-       Notes:
-      * Make sure that description changes and tags make sense for the project.
-      * `sr.name` is the project name. `so.login` is the project owner.
-   2. Add the migration to [changelog](app/src/main/resources/db/migration/db.changelog-master.yml).
-3. If metadata changes include project tags changes:
-   1. Normalize the tags: they should be lowercase, and words should be separated by a dash. Example: `compose-ui`
-   2. If the new tag is not present in [tag_rules.yaml](integrations/ai/src/main/resources/ai/prompts/tag_rules.yaml):
-      * Look for synonymous tags in [tag_rules.yaml](integrations/ai/src/main/resources/ai/prompts/tag_rules.yaml) and consider replacing requested one with synonym.
-      * If there are no synonyms:
-        * Add a new tag in [tag_rules.yaml](integrations/ai/src/main/resources/ai/prompts/tag_rules.yaml) following the file structure.
-   3. Create a migration that adds selected tags to the `project_tags` table with `USER` type.
-4. Commit changes, push and open a Merge request to the `release` branch.
-
 ## Feature development flow
 This block describees working on a new feature flow.
 
