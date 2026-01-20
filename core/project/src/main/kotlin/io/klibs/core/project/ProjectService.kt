@@ -101,7 +101,12 @@ class ProjectService(
     }
 
     @Transactional
-    fun updateProjectTags(projectName: String, ownerLogin: String, tags: List<String>, tagsType: TagOrigin): List<String> {
+    fun updateProjectTags(
+        projectName: String,
+        ownerLogin: String,
+        tags: List<String>,
+        tagsType: TagOrigin
+    ): List<String> {
         val scmRepositoryEntity = scmRepositoryRepository.findByName(ownerLogin, projectName)
             ?: throw IllegalArgumentException("Project $ownerLogin/$projectName not found")
         val projectEntity = projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)
@@ -115,7 +120,9 @@ class ProjectService(
             .toList()
 
         if (normalizedTags.isEmpty()) {
-            throw IllegalArgumentException("No valid tags were provided")
+            throw IllegalArgumentException("No one tag passed the normalization filter." +
+                    " Make sure that your tags are correctly normalized:" +
+                    " they should be lowercase, and words should be separated by a dash. Example: `compose-ui`")
         }
 
         val invalidTags = mutableListOf<String>()
