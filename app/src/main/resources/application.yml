@@ -63,6 +63,8 @@ klibs:
         rate-limit-capacity: ${KLIBS_MAVEN_RATE_LIMIT_CAPACITY:5}
         rate-limit-refill-amount: ${KLIBS_MAVEN_RATE_LIMIT_REFILL_AMOUNT:2}
         rate-limit-refill-period-sec: ${KLIBS_MAVEN_RATE_LIMIT_REFILL_PERIOD:5}
+        index-endpoint: ${KLIBS_MAVEN_INDEX_ENDPOINT:https://repo1.maven.org/maven2}
+        index-dir: ${KLIBS_MAVEN_INDEX_CACHE_DIR:${user.dir}/cache/maven-index}
     github:
       personal-access-token: ${KLIBS_GITHUB_TOKEN}
       cache:

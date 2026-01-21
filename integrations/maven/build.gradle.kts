@@ -17,8 +17,7 @@ dependencies {
 
     implementation(libs.bucket4j)
 
-    implementation(libs.maven.indexer.searchApi)
-    implementation(libs.maven.indexer.searchSmoBackend)
+    implementation(libs.bundles.maven.indexer)
 
     testImplementation(libs.mockito.kotlin)
 }
