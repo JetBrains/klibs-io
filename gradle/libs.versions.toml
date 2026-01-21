@@ -3,7 +3,7 @@
 kotlin = "2.1.0"
 
 # Spring
-spring-boot = "3.2.2"
+spring-boot = "3.5.9"
 spring-dependencyManagement = "1.1.7"
 spring-doc = "2.5.0"
 spring-ai = "1.0.3"
@@ -24,7 +24,7 @@ caffeine = "3.1.8"
 maven-model = "3.9.6"
 maven-indexer = "7.1.6"
 
-gorylenko-gitProperties = "2.4.1"
+gorylenko-gitProperties = "2.5.4"
 
 jib = "3.4.3"
 
