@@ -12,6 +12,90 @@
         "GRANT_WINNER_2023",
         "GRANT_WINNER_2024"
       ]
+    },
+    {
+      "name": "Local Storage",
+      "markers": [
+        "LOCAL_STORAGE"
+      ]
+    },
+    {
+      "name": "Compose UI",
+      "markers": [
+        "COMPOSE_UI"
+      ]
+    },
+    {
+      "name": "Navigation",
+      "markers": [
+        "NAVIGATION"
+      ]
+    },
+    {
+      "name": "Logging and testing",
+      "markers": [
+        "LOGGING_AND_TESTING"
+      ]
+    },
+    {
+      "name": "Utilities",
+      "markers": [
+        "UTILITIES"
+      ]
+    },
+    {
+      "name": "Networking",
+      "markers": [
+        "NETWORKING"
+      ]
+    },
+    {
+      "name": "Media",
+      "markers": [
+        "MEDIA"
+      ]
+    },
+    {
+      "name": "Image loading",
+      "markers": [
+        "IMAGE_LOADING"
+      ]
+    },
+    {
+      "name": "Dependency Injection",
+      "markers": [
+        "DEPENDENCY_INJECTION"
+      ]
+    },
+    {
+      "name": "Remote data",
+      "markers": [
+        "REMOTE_DATA"
+      ]
+    },
+    {
+      "name": "Preferences",
+      "markers": [
+        "PREFERENCES"
+      ]
+    },
+    {
+      "name": "Web and HTML",
+      "markers": [
+        "WEB_AND_HTML"
+      ]
+    },
+    {
+      "name": "Architectural",
+      "markers": [
+        "ARCHITECTURAL"
+      ]
+    },
+    {
+      "name": "Extended iOS support",
+      "markers": [
+        "EXTENDED_IOS_SUPPORT"
+      ]
     }
   ]
 }

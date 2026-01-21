@@ -115,3 +115,5 @@ databaseChangeLog:
       file: db/migration/2026-Q1/2026-01-06_update_scm_owner_homepage.yml
   - include:
       file: db/migration/2026-Q1/2026-01-11_update_devlog_kotlin_description.yml
+  - include:
+      file: db/migration/2026-Q1/2026-01-21_add_all_categories_markers.yml

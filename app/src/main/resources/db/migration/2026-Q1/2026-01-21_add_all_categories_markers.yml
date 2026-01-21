@@ -1,0 +1,234 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-local-storage-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'LOCAL_STORAGE'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'sqldelight' AND scm_owner.login = 'sqldelight')
+                 OR (scm_repo.name = 'androidx' AND scm_owner.login = 'androidx')
+                 OR (scm_repo.name = 'Store' AND scm_owner.login = 'MobileNativeFoundation')
+              ON CONFLICT (project_id, type) DO NOTHING;
+  - changeSet:
+      id: add-compose-ui-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'COMPOSE_UI'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'compose-multiplatform' AND scm_owner.login = 'JetBrains')
+                 OR (scm_repo.name = 'Calendar' AND scm_owner.login = 'kizitonwose')
+                 OR (scm_repo.name = 'AboutLibraries' AND scm_owner.login = 'mikepenz')
+                 OR (scm_repo.name = 'haze' AND scm_owner.login = 'chrisbanes')
+                 OR (scm_repo.name = 'Calf' AND scm_owner.login = 'MohamedRejeb')
+                 OR (scm_repo.name = 'compose-icons' AND scm_owner.login = 'devsrsouza')
+                 OR (scm_repo.name = 'ComposeCharts' AND scm_owner.login = 'ehsannarmani')
+                 OR (scm_repo.name = 'multiplatform-markdown-renderer' AND scm_owner.login = 'mikepenz')
+                 OR (scm_repo.name = 'compottie' AND scm_owner.login = 'alexzhirkevich')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-navigation-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'NAVIGATION'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'androidx' AND scm_owner.login = 'androidx')
+                 OR (scm_repo.name = 'voyager' AND scm_owner.login = 'adrielcafe')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-logging-and-testing-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'LOGGING_AND_TESTING'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'mockk' AND scm_owner.login = 'mockk')
+                 OR (scm_repo.name = 'kotlin-logging' AND scm_owner.login = 'oshai')
+                 OR (scm_repo.name = 'turbine' AND scm_owner.login = 'cashapp')
+                 OR (scm_repo.name = 'Kermit' AND scm_owner.login = 'touchlab')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-utilities-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'UTILITIES'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'kotlinx.coroutines' AND scm_owner.login = 'Kotlin')
+                 OR (scm_repo.name = 'kotlinx-datetime' AND scm_owner.login = 'Kotlin')
+                 OR (scm_repo.name = 'kotlinx.serialization' AND scm_owner.login = 'Kotlin')
+                 OR (scm_repo.name = 'arrow' AND scm_owner.login = 'arrow-kt')
+                 OR (scm_repo.name = 'okio' AND scm_owner.login = 'square')
+                 OR (scm_repo.name = 'kotlinx-io' AND scm_owner.login = 'Kotlin')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-networking-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'NETWORKING'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'ktor' AND scm_owner.login = 'ktorio')
+                 OR (scm_repo.name = 'fuel' AND scm_owner.login = 'kittinunf')
+                 OR (scm_repo.name = 'apollo-kotlin' AND scm_owner.login = 'apollographql')
+                 OR (scm_repo.name = 'Ktorfit' AND scm_owner.login = 'Foso')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-media-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'MEDIA'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'MediaPlayer-KMP' AND scm_owner.login = 'KhubaibKhan4')
+                 OR (scm_repo.name = 'ComposeMediaPlayer' AND scm_owner.login = 'kdroidFilter')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-image-loading-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'IMAGE_LOADING'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'coil' AND scm_owner.login = 'coil-kt')
+                 OR (scm_repo.name = 'landscapist' AND scm_owner.login = 'skydoves')
+                 OR (scm_repo.name = 'sketch' AND scm_owner.login = 'panpf')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-dependency-injection-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'DEPENDENCY_INJECTION'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'koin' AND scm_owner.login = 'InsertKoinIO')
+                 OR (scm_repo.name = 'Kodein' AND scm_owner.login = 'kosi-libs')
+                 OR (scm_repo.name = 'kotlin-inject' AND scm_owner.login = 'evant')
+                 OR (scm_repo.name = 'metro' AND scm_owner.login = 'ZacSweers')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-remote-data-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'REMOTE_DATA'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'firebase-kotlin-sdk' AND scm_owner.login = 'GitLiveApp')
+                 OR (scm_repo.name = 'supabase-kt' AND scm_owner.login = 'supabase-community')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-preferences-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'PREFERENCES'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'multiplatform-settings' AND scm_owner.login = 'russhwolf')
+                 OR (scm_repo.name = 'androidx' AND scm_owner.login = 'androidx')
+                 OR (scm_repo.name = 'ComposePreference' AND scm_owner.login = 'zhanghai' )
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-web-and-html-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'WEB_AND_HTML'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'kobweb' AND scm_owner.login = 'varabyte')
+                 OR (scm_repo.name = 'kotlinx.html' AND scm_owner.login = 'Kotlin')
+                 OR (scm_repo.name = 'kvision' AND scm_owner.login = 'rjaros')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-architectural-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'ARCHITECTURAL'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'Decompose' AND scm_owner.login = 'arkivanov')
+                 OR (scm_repo.name = 'circuit' AND scm_owner.login = 'slackhq')
+                 OR (scm_repo.name = 'orbit-mvi' AND scm_owner.login = 'orbit-mvi')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-extended-ios-support-markers
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'EXTENDED_IOS_SUPPORT'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'SKIE' AND scm_owner.login = 'touchlab')
+                 OR (scm_repo.name = 'KMP-NativeCoroutines' AND scm_owner.login = 'rickclephas')
+                 OR (scm_repo.name = 'KMP-ObservableViewModel' AND scm_owner.login = 'rickclephas')
+                 OR (scm_repo.name = 'CrashKiOS' AND scm_owner.login = 'touchlab')
+                 OR (scm_repo.name = 'NSExceptionKt' AND scm_owner.login = 'rickclephas')
+              ON CONFLICT (project_id, type) DO NOTHING;
