@@ -18,7 +18,7 @@ const val GOOGLE_MAVEN_URL = "https://dl.google.com/dl/android/maven2/"
 class GoogleMavenSearchClient(
     unlimitedRateLimiter: RequestRateLimiter,
     objectMapper: ObjectMapper
-) : BaseMavenSearchClient(GOOGLE_MAVEN_URL, unlimitedRateLimiter, logger, objectMapper) {
+) : BaseMavenSearchClient(unlimitedRateLimiter, logger, objectMapper) {
 
     companion object {
         val logger = LoggerFactory.getLogger(GoogleMavenSearchClient::class.java)

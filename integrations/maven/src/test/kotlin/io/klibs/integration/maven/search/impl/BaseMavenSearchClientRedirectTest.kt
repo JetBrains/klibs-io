@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.request.impl.UnlimitedRateLimiter
+import io.klibs.integration.maven.search.MavenSearchResponse
+import org.apache.maven.search.api.request.Query
 import org.apache.maven.search.api.transport.Transport
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -13,6 +15,7 @@ import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -147,7 +150,6 @@ class BaseMavenSearchClientRedirectTest {
     }
 
     private class TestClient(transport: Transport) : BaseMavenSearchClient(
-        baseUrl = "https://test",
         rateLimiter = UnlimitedRateLimiter(),
         logger = LoggerFactory.getLogger(TestClient::class.java),
         objectMapper = ObjectMapper(),
@@ -155,6 +157,14 @@ class BaseMavenSearchClientRedirectTest {
     ) {
         override fun getContentUrlPrefix(): String {
             return "https://test/remotecontent?filepath="
+        }
+
+        override fun searchWithThrottle(
+            page: Int,
+            query: Query,
+            lastUpdatedSince: Instant
+        ): MavenSearchResponse {
+            throw UnsupportedOperationException("Not implemented")
         }
     }
 }

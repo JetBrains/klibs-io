@@ -11,6 +11,5 @@ data class MavenIntegrationProperties(
         val rateLimitRefillAmount: Long,
         val rateLimitRefillPeriodSec: Long,
         val discoveryEndpoint: String,
-        val searchEndpoint: String,
     )
 }

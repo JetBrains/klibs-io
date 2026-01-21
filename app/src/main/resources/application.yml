@@ -60,7 +60,6 @@ klibs:
     maven:
       central:
         discovery-endpoint: ${KLIBS_MAVEN_CENTRAL_DISCOVERY_ENDPOINT}
-        search-endpoint: ${KLIBS_MAVEN_CENTRAL_SEARCH_ENDPOINT}
         rate-limit-capacity: ${KLIBS_MAVEN_RATE_LIMIT_CAPACITY:5}
         rate-limit-refill-amount: ${KLIBS_MAVEN_RATE_LIMIT_REFILL_AMOUNT:2}
         rate-limit-refill-period-sec: ${KLIBS_MAVEN_RATE_LIMIT_REFILL_PERIOD:5}

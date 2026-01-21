@@ -17,7 +17,6 @@ class MavenMetricsTest {
                 rateLimitRefillAmount = 10,
                 rateLimitRefillPeriodSec = 60,
                 discoveryEndpoint = "http://localhost/discovery",
-                searchEndpoint = "http://localhost/search"
             )
         )
         

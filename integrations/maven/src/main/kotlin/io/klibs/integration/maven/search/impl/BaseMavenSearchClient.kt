@@ -9,21 +9,10 @@ import io.klibs.integration.maven.androidx.ModuleMetadataWrapper
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateImpl
 import io.klibs.integration.maven.request.RequestRateLimiter
-import io.klibs.integration.maven.search.ArtifactData
 import io.klibs.integration.maven.search.MavenSearchClient
-import io.klibs.integration.maven.search.MavenSearchResponse
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
-import org.apache.maven.search.api.MAVEN
-import org.apache.maven.search.api.Record
-import org.apache.maven.search.api.SearchRequest
-import org.apache.maven.search.api.request.Paging
-import org.apache.maven.search.api.request.Query
 import org.apache.maven.search.api.transport.Java11HttpClientTransport
 import org.apache.maven.search.api.transport.Transport
-import org.apache.maven.search.backend.smo.SmoSearchBackend
-import org.apache.maven.search.backend.smo.SmoSearchBackendFactory
-import org.apache.maven.search.backend.smo.SmoSearchBackendFactory.DEFAULT_BACKEND_ID
-import org.apache.maven.search.backend.smo.SmoSearchBackendFactory.DEFAULT_REPOSITORY_ID
 import org.jetbrains.kotlin.tooling.KotlinToolingMetadata
 import org.jetbrains.kotlin.tooling.KotlinToolingMetadataParsingResult
 import org.jetbrains.kotlin.tooling.parseJson
@@ -35,13 +24,11 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
-private const val MAVEN_CENTRAL_REPOSITORY_URL = "https://search.maven.org/remotecontent?filepath="
 private const val DEFAULT_PAGE_SIZE = 200
 internal const val MAX_REDIRECTS = 3
 
 abstract class BaseMavenSearchClient(
-    protected val baseUrl: String,
-    private val rateLimiter: RequestRateLimiter,
+    protected val rateLimiter: RequestRateLimiter,
     private val logger: Logger,
     private val objectMapper: ObjectMapper,
     protected val clientTransport: Transport = Java11HttpClientTransport()
@@ -49,34 +36,7 @@ abstract class BaseMavenSearchClient(
 
     private val mavenXpp3Reader = MavenXpp3Reader()
 
-    private val searchClient: SmoSearchBackend = createSearchBackend()
-
-    protected open fun createSearchBackend(): SmoSearchBackend = SmoSearchBackendFactory.create(
-        DEFAULT_BACKEND_ID,
-        DEFAULT_REPOSITORY_ID,
-        "$baseUrl/solrsearch/select",
-        clientTransport
-    )
-
     override fun pageSize(): Int = DEFAULT_PAGE_SIZE
-
-    override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse {
-        val paging = Paging(DEFAULT_PAGE_SIZE, page)
-        val request = SearchRequest(paging, query)
-        request.nextPage()
-
-        val response = executeWithThrottle {
-            rateLimiter.withRateLimitBlocking {
-                searchClient.search(request)
-            }
-        }
-
-        return MavenSearchResponse(
-            totalHits = response.totalHits,
-            currentHits = response.currentHits,
-            page = response.page.map { it.toArtifactData() },
-        )
-    }
 
     override fun getPom(mavenArtifact: MavenArtifact): MavenPom? {
         val pomFileUrl = getPomUrl(mavenArtifact)
@@ -136,20 +96,9 @@ abstract class BaseMavenSearchClient(
         }
     }
 
-    protected open fun getContentUrlPrefix(): String {
-        return MAVEN_CENTRAL_REPOSITORY_URL
-    }
+    protected abstract fun getContentUrlPrefix(): String
 
-    private fun Record.toArtifactData(): ArtifactData {
-        return ArtifactData(
-            groupId = this.getValue(MAVEN.GROUP_ID),
-            artifactId = this.getValue(MAVEN.ARTIFACT_ID),
-            version = this.getValue(MAVEN.VERSION),
-            releasedAt = Instant.ofEpochMilli(this.lastUpdated)
-        )
-    }
-
-    private fun <T> executeWithThrottle(body: () -> T): T {
+    protected fun <T> executeWithThrottle(body: () -> T): T {
         try {
             return rateLimiter.withRateLimitBlocking {
                 body.invoke()

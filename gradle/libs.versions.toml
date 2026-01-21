@@ -22,9 +22,7 @@ bucket4j = "8.10.1"
 caffeine = "3.1.8"
 
 maven-model = "3.9.6"
-# when `maven-indexer` version is increased,
-# check if it is possible to remove CustomSmoSearchBackendImpl
-maven-indexer = "7.1.5"
+maven-indexer = "7.1.6"
 
 gorylenko-gitProperties = "2.4.1"
 
