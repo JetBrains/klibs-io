@@ -129,12 +129,10 @@ class PackageDescriptionService(
      * @return The generated description
      */
     private fun generatePackageDescription(packageEntity: PackageEntity): String {
-        val packageName = packageEntity.name
 
         logger.info("Generating description for package: ${packageEntity.groupId}:${packageEntity.artifactId}:${packageEntity.version}")
 
         val description = packageDescriptionGenerator.generatePackageDescription(
-            packageName,
             packageEntity.groupId,
             packageEntity.artifactId,
             packageEntity.version
