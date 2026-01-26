@@ -111,6 +111,6 @@ private fun PackageIndexEntity.toOverview(): PackageOverview {
         version = this.latestVersion,
         releasedAt = this.releaseTs,
         description = this.latestDescription,
-        targets = this.targets.map { PackageTarget(it.platform, it.target) }
+        targets = this.parsedTargets
     )
 }

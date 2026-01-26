@@ -89,17 +89,4 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
         """,
         nativeQuery = true)
     fun findLatestByProjectId(projectId: Int): List<PackageEntity>
-
-    @Query(value = """
-            WITH latest_package_ids AS (SELECT DISTINCT ON (group_id, artifact_id) id
-                                        FROM package
-                                        WHERE group_id = :groupId
-                                        ORDER BY group_id, artifact_id, release_ts DESC)
-            SELECT *
-            FROM package
-            WHERE id IN (SELECT id FROM latest_package_ids)
-            ORDER BY group_id, artifact_id;
-         """,
-        nativeQuery = true)
-    fun findLatestByGroupId(groupId: String): List<PackageEntity>
 }

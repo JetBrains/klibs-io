@@ -17,3 +17,8 @@ INSERT INTO public.project VALUES (8004, 8004, CURRENT_TIMESTAMP, '1.0.0', CURRE
 INSERT INTO public.package VALUES (8004, 8003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-library', '1.0.0', 'Old description 1', 'https://example.com/test-library', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');
 
 INSERT INTO public.package VALUES (8005, 8004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-utils', '1.0.0', 'Old description 2', 'https://example.com/test-utils', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');
+
+INSERT INTO public.package_target (package_id, platform, target) VALUES (8004, 'JVM', '1.8');
+INSERT INTO public.package_target (package_id, platform, target) VALUES (8005, 'JVM', '1.8');
+
+REFRESH MATERIALIZED VIEW package_index;

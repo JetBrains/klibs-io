@@ -18,9 +18,9 @@ class PackageIndexRepositoryTest : BaseUnitWithDbLayerTest() {
     private lateinit var packageRepository: PackageRepository
 
     @Test
-    @Sql("classpath:sql/PackageIndexRepositoryTest/seed-project-with-packages.sql")
+    @Sql("classpath:sql/PackageIndexTest/seed-project-with-packages.sql")
     fun `should return latest packages by project id`() {
-        val projectId = 9001
+        val projectId = 19001
 
         val rows = packageIndexRepository.findByProjectId(projectId)
 
@@ -36,9 +36,9 @@ class PackageIndexRepositoryTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    @Sql("classpath:sql/PackageIndexRepositoryTest/seed-project-with-packages.sql")
+    @Sql("classpath:sql/PackageIndexTest/seed-project-with-packages.sql")
     fun `should return empty list when project has no packages`() {
-        val projectId = 9100
+        val projectId = 19100
 
         val rows = packageIndexRepository.findByProjectId(projectId)
 
@@ -46,7 +46,7 @@ class PackageIndexRepositoryTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    @Sql("classpath:sql/PackageIndexRepositoryTest/seed-project-with-packages.sql")
+    @Sql("classpath:sql/PackageIndexTest/seed-project-with-packages.sql")
     fun `should return latest packages by group id`() {
         val groupId = "org.example"
 
