@@ -120,6 +120,8 @@ databaseChangeLog:
   - include:
       file: db/migration/2026-Q1/2026-01-21_add_all_categories_markers.yml
   - include:
+      file: db/migration/2026-Q1/2026-01-26_package_drop_column_name.yml
+  - include:
       file: db/migration/2026-Q1/2026-01-30_maven_central_log.yml
   - include:
       file: db/migration/2026-Q1/2026-01-28_remove_suggestion_words.yml

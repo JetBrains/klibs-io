@@ -20,7 +20,6 @@ INSERT INTO public.package VALUES (
     'io.klibs',         -- group_id
     'sample',           -- artifact_id
     '1.0.0',            -- version
-    'io.klibs:sample',  -- name
     'Old desc',         -- description
     'https://example.com/sample', -- url
     'gradle',           -- build_tool

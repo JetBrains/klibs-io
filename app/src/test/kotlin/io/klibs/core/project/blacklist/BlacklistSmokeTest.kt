@@ -148,7 +148,6 @@ class BlacklistSmokeTest : SmokeTestBase() {
         savedProjectId = savedProject.id
 
         // Create a package with a unique name for easy identification in search results
-        val packageName = "Unique Test Package ${System.currentTimeMillis()}"
         val packageDTO = PackageDTO(
             id = null,
             projectId = savedProject.id,
@@ -157,7 +156,6 @@ class BlacklistSmokeTest : SmokeTestBase() {
             artifactId = "unique-test-${System.currentTimeMillis()}",
             version = "1.0.0",
             releaseTs = Instant.now(),
-            name = packageName,
             description = "A test package for smoke testing",
             url = "https://example.com/unique-test",
             scmUrl = "https://github.com/example/unique-test",

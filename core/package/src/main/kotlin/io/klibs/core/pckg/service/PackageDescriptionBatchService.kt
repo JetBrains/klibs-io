@@ -35,7 +35,6 @@ class PackageDescriptionBatchService(
             val latestPackage = packagesInGroup.maxBy { it.releaseTs }
 
             val newDescription = packageDescriptionGenerator.generatePackageDescription(
-                latestPackage.name,
                 latestPackage.groupId,
                 latestPackage.artifactId,
                 latestPackage.version

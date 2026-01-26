@@ -17,4 +17,4 @@ VALUES (598863246, 368, 198, true, true, true, true, '2023-02-08 01:28:54.000000
 INSERT INTO public.project VALUES (10004, 368, CURRENT_TIMESTAMP, '2.0.0', CURRENT_TIMESTAMP, 'k-big-numbers', NULL, 198);
 
 -- Insert test package with groupId and artifactId
-INSERT INTO public.package VALUES (10004, 10004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-library', '2.0.0', 'org.example:test-library', 'Old description', 'https://example.com/test-library', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');
+INSERT INTO public.package VALUES (10004, 10004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-library', '2.0.0', 'Old description', 'https://example.com/test-library', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');

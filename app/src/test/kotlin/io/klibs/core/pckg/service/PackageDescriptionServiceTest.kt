@@ -35,7 +35,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         val groupId = "org.example"
         val artifactId = "test-library"
         val version = "1.0.0"
-        val packageName = "$groupId:$artifactId"
         val expectedDescription = "This is a test library for demonstration purposes."
 
         val packageEntity = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
@@ -44,7 +43,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
 
         `when`(
             packageDescriptionGenerator.generatePackageDescription(
-                packageName,
                 groupId,
                 artifactId,
                 version
@@ -62,7 +60,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         val groupId = "org.example"
         val artifactId = "test-library"
         val version = "2.0.0" // Latest version
-        val packageName = "$groupId:$artifactId"
         val expectedDescription = "This is a description for the org.example:test-library package."
 
         val packageEntity = packageRepository.findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId, artifactId)
@@ -72,7 +69,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
 
         `when`(
             packageDescriptionGenerator.generatePackageDescription(
-                packageName,
                 groupId,
                 artifactId,
                 version
@@ -91,8 +87,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         val artifactId1 = "test-library"
         val artifactId2 = "test-utils"
         val version = "1.0.0"
-        val packageName1 = "$groupId:$artifactId1"
-        val packageName2 = "$groupId:$artifactId2"
         val expectedDescription = "This is a description for the org.example group."
 
         val packages = packageRepository.findLatestByGroupId(groupId)
@@ -108,7 +102,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
 
         `when`(
             packageDescriptionGenerator.generatePackageDescription(
-                packageName1,
                 groupId,
                 artifactId1,
                 version
@@ -117,7 +110,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
 
         `when`(
             packageDescriptionGenerator.generatePackageDescription(
-                packageName2,
                 groupId,
                 artifactId2,
                 version
@@ -184,12 +176,11 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
             if (packageEntity != null) {
                 `when`(
                     packageDescriptionGenerator.generatePackageDescription(
-                        packageEntity.name,
                         packageEntity.groupId,
                         packageEntity.artifactId,
                         packageEntity.version
                     )
-                ).thenReturn("Placeholder description for ${packageEntity.name} ${packageEntity.version}")
+                ).thenReturn("Placeholder description for ${packageEntity.artifactId} ${packageEntity.version}")
             }
         }
 

@@ -12,7 +12,6 @@ data class PackageDetails(
     val version: String,
     val releasedAt: Instant,
 
-    val name: String?,
     val description: String?,
 
     val targets: List<PackageTarget>,
