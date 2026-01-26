@@ -43,13 +43,23 @@ class PackageIndexEntity(
     @Column(name = "platforms")
     val platforms: List<PackagePlatform>,
 
-    @Column(name = "targets", columnDefinition = "text[]") // <--- To jest klucz do sukcesu
-    val _targets: Array<String>
+    @Column(name = "targets", columnDefinition = "text[]")
+    val targets: Array<String>
 ) {
     @get:Transient
-    val targets: List<PackageTarget>
-        get() = _targets.map { raw ->
-            parseTargetOrThrow(raw)
+    val parsedTargets: List<PackageTarget>
+        get() {
+            val existingTargets = targets.map { raw ->
+                parseTargetOrThrow(raw)
+            }
+
+            val platformsInTargets = existingTargets.map { it.platform }.toSet()
+
+            val missingTargets = platforms
+                .filter { it !in platformsInTargets }
+                .map { platform -> PackageTarget(platform = platform, target = null) }
+
+            return existingTargets + missingTargets
         }
 
     private fun parseTargetOrThrow(raw: String): PackageTarget {
