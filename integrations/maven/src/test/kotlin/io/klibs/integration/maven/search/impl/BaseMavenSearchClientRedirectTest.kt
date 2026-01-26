@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.request.impl.UnlimitedRateLimiter
+import nl.adaptivity.xmlutil.serialization.UnknownChildHandler
+import nl.adaptivity.xmlutil.serialization.XML
 import io.klibs.integration.maven.search.MavenSearchResponse
 import org.apache.maven.search.api.request.Query
 import org.apache.maven.search.api.transport.Transport
@@ -150,6 +152,12 @@ class BaseMavenSearchClientRedirectTest {
     }
 
     private class TestClient(transport: Transport) : BaseMavenSearchClient(
+        xml = XML {
+            autoPolymorphic = true
+            defaultPolicy {
+                unknownChildHandler = UnknownChildHandler { _, _, _, _, _ -> emptyList() }
+            }
+        },
         rateLimiter = UnlimitedRateLimiter(),
         logger = LoggerFactory.getLogger(TestClient::class.java),
         objectMapper = ObjectMapper(),

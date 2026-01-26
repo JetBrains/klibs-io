@@ -2,6 +2,7 @@ package io.klibs.integration.maven.search.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.integration.maven.MavenArtifact
+import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.MavenPom
 import io.klibs.integration.maven.MavenStaticDataProvider
 import io.klibs.integration.maven.androidx.GradleMetadata
@@ -10,6 +11,7 @@ import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateImpl
 import io.klibs.integration.maven.request.RequestRateLimiter
 import io.klibs.integration.maven.search.MavenSearchClient
+import nl.adaptivity.xmlutil.serialization.XML
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
 import org.apache.maven.search.api.transport.Java11HttpClientTransport
 import org.apache.maven.search.api.transport.Transport
@@ -28,6 +30,7 @@ private const val DEFAULT_PAGE_SIZE = 200
 internal const val MAX_REDIRECTS = 3
 
 abstract class BaseMavenSearchClient(
+    private val xml: XML,
     protected val rateLimiter: RequestRateLimiter,
     private val logger: Logger,
     private val objectMapper: ObjectMapper,
@@ -42,6 +45,24 @@ abstract class BaseMavenSearchClient(
         val pomFileUrl = getPomUrl(mavenArtifact)
         return executeFetch(pomFileUrl) { response ->
             mavenXpp3Reader.read(StringReader(response.body.readAllBytes().toString(StandardCharsets.UTF_8)))
+        }
+    }
+
+    override fun getMavenMetadata(groupId: String, artifactId: String): MavenMetadata? {
+        val fileDir = groupId.replace(".", "/") + "/$artifactId"
+        val metadataUrl = "${getContentUrlPrefix()}$fileDir/maven-metadata.xml"
+        return executeFetch(metadataUrl) { response ->
+            xml.decodeFromString(
+                MavenMetadata.serializer(),
+                String(response.body.readAllBytes(), StandardCharsets.UTF_8)
+            )
+        }
+    }
+
+    override fun getReleaseDate(groupId: String, artifactId: String, version: String): Instant? {
+        val pomUrl = getRemoteFileUrl(groupId, artifactId, version, ".pom")
+        return executeHead(pomUrl) { response ->
+            getReleasedAt(response)
         }
     }
 
@@ -114,17 +135,38 @@ abstract class BaseMavenSearchClient(
         headers: Map<String, String> = emptyMap(),
         converter: (response: Transport.Response) -> R,
     ): R? {
-        return executeFetchInternal(serviceUri, headers, converter, 0)
+        return followRedirects(
+            serviceUri = serviceUri,
+            headers = headers,
+            converter = converter,
+            redirectCount = 0,
+            requestExecutor = clientTransport::get
+        )
     }
 
-    private fun <R> executeFetchInternal(
+    private fun <R> executeHead(
+        serviceUri: String,
+        headers: Map<String, String> = emptyMap(),
+        converter: (response: Transport.Response) -> R,
+    ): R? {
+        return followRedirects(
+            serviceUri = serviceUri,
+            headers = headers,
+            converter = converter,
+            redirectCount = 0,
+            requestExecutor = clientTransport::head,
+        )
+    }
+
+    private fun <R> followRedirects(
         serviceUri: String,
         headers: Map<String, String>,
         converter: (response: Transport.Response) -> R,
-        redirectCount: Int
+        redirectCount: Int,
+        requestExecutor: (String, Map<String, String>) -> Transport.Response
     ): R? {
         return executeWithThrottle {
-            clientTransport.get(serviceUri, headers).use { response ->
+            requestExecutor.invoke(serviceUri, headers).use { response ->
                 when (response.code) {
                     HttpURLConnection.HTTP_OK -> converter.invoke(response)
                     HttpURLConnection.HTTP_NOT_FOUND -> null
@@ -133,14 +175,15 @@ abstract class BaseMavenSearchClient(
                     HttpURLConnection.HTTP_SEE_OTHER,
                     307, // HTTP_TEMP_REDIRECT (not in HttpURLConnection constants)
                     308  // HTTP_PERM_REDIRECT (not in HttpURLConnection constants)
-                    -> {
+                        -> {
                         val location = requireNotNull(response.headers["location"]) {
                             "Location of a moved resource cannot be null"
                         }
+                        logger.debug("Redirecting to $location")
                         if (redirectCount + 1 > MAX_REDIRECTS) {
                             throw IOException("Too many redirects when fetching $serviceUri -> $location")
                         }
-                        executeFetchInternal(location, headers, converter, redirectCount + 1)
+                        followRedirects(location, headers, converter, redirectCount + 1, requestExecutor)
                     }
 
                     else -> throw IOException("Unexpected response: ${response.code}")

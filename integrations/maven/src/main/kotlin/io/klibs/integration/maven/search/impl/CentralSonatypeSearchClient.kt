@@ -2,6 +2,7 @@ package io.klibs.integration.maven.search.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.integration.maven.request.impl.MavenCentralRateLimiter
+import nl.adaptivity.xmlutil.serialization.XML
 import io.klibs.integration.maven.search.ArtifactData
 import io.klibs.integration.maven.search.MavenSearchResponse
 import org.apache.maven.search.api.MAVEN
@@ -22,9 +23,11 @@ private const val MAVEN_CENTRAL_REPOSITORY_URL = "https://search.maven.org/remot
 
 @Component("CENTRAL_SONATYPE")
 class CentralSonatypeSearchClient(
+    xml: XML,
     mavenCentralRateLimiter: MavenCentralRateLimiter,
     objectMapper: ObjectMapper,
 ) : BaseMavenSearchClient(
+    xml,
     mavenCentralRateLimiter,
     LoggerFactory.getLogger(CentralSonatypeSearchClient::class.java),
     objectMapper,

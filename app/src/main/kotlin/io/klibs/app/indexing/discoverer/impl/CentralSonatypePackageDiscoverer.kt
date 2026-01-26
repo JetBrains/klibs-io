@@ -1,6 +1,8 @@
 package io.klibs.app.indexing.discoverer.impl
 
 import io.klibs.app.indexing.discoverer.PackageDiscoverer
+import io.klibs.app.indexing.discoverer.collectAllKnownPackages
+import io.klibs.app.indexing.discoverer.createArtifactCoordinates
 import io.klibs.app.util.instant.InstantRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.maven.MavenArtifact
@@ -41,7 +43,7 @@ class CentralSonatypePackageDiscoverer(
     override suspend fun discover(errorChannel: Channel<Exception>): Flow<MavenArtifact> {
         logger.info("--- Central sonatype packages discovering started. ---")
         val timestampBeforeIndexing = Instant.now()
-        val existingPackages = collectAllKnownPackages()
+        val existingPackages = collectAllKnownPackages(packageRepository)
         val seenCoordinates = mutableMapOf<String, MutableList<String>>()
 
         return centralSonatypeScraper.findKmpArtifacts(
@@ -89,12 +91,9 @@ class CentralSonatypePackageDiscoverer(
         }
     }
 
-    private fun collectAllKnownPackages(): Map<String, Set<String>> = packageRepository.findAllKnownPackages()
-        .associateBy({ createArtifactCoordinates(it.groupId, it.artifactId) }) { it.versions }
 
     private fun MavenArtifact.getArtifactCoordinates(): String = createArtifactCoordinates(groupId, artifactId)
 
-    private fun createArtifactCoordinates(groupId: String, artifactId: String): String = "$groupId:$artifactId"
 
     private companion object {
         private val logger = LoggerFactory.getLogger(CentralSonatypePackageDiscoverer::class.java)

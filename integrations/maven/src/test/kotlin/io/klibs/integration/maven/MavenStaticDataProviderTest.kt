@@ -1,7 +1,6 @@
+package io.klibs.integration.maven
+
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.klibs.integration.maven.MavenIntegrationConfiguration
-import io.klibs.integration.maven.MavenStaticDataProvider
-import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
 import io.klibs.integration.maven.search.impl.GoogleMavenSearchClient
 import io.micrometer.core.instrument.MeterRegistry

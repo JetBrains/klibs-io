@@ -126,4 +126,39 @@ class CentralSonatypeScraper(
             currentPage++
         } while (totalHits > processedArtifactsCount)
     }
+
+    override suspend fun findNewVersions(
+        knownArtifacts: Map<String, Set<String>>,
+        errorChannel: Channel<Exception>
+    ): Flow<MavenArtifact> = flow {
+        for ((coordinates, knownVersions) in knownArtifacts) {
+            runCatching {
+                val parts = coordinates.split(":")
+                if (parts.size != 2) return@runCatching
+                val groupId = parts[0]
+                val artifactId = parts[1]
+
+                val metadata = centralSonatypeSearchClient.getMavenMetadata(groupId, artifactId)
+                if (metadata != null) {
+                    val newVersions = metadata.versioning.versions.filter { it !in knownVersions }
+                    for (version in newVersions) {
+                        val releasedAt = centralSonatypeSearchClient.getReleaseDate(groupId, artifactId, version)
+                        emit(
+                            MavenArtifact(
+                                groupId = groupId,
+                                artifactId = artifactId,
+                                version = version,
+                                scraperType = scraperType,
+                                releasedAt = releasedAt
+                            )
+                        )
+                    }
+                }
+            }.onFailure { exception ->
+                errorChannel.send(
+                    Exception("Could not process request for metadata of $coordinates", exception)
+                )
+            }
+        }
+    }
 }

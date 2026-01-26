@@ -41,6 +41,8 @@ klibs:
       s3:
         bucket-name: local-bucket
         prefix: gmaven
+    updater:
+      enabled: false
   integration:
     github:
       personal-access-token: ${PERSONAL_GITHUB_TOKEN}

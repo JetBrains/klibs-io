@@ -83,6 +83,8 @@ klibs:
       s3:
         bucket-name: ${BUCKET_NAME}
         prefix: ${KLIBS_GMAVEN_S3_PREFIX:gmaven}
+    updater:
+      enabled: ${KLIBS_ENABLE_INDEXING_UPDATER:false}
   ai: true
 
 management:
