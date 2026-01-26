@@ -1,6 +1,7 @@
 package io.klibs.core.pckg.service
 
 import BaseUnitWithDbLayerTest
+import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.junit.jupiter.api.assertThrows
@@ -22,6 +23,9 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var packageRepository: PackageRepository
+
+    @Autowired
+    private lateinit var packageIndexRepository: PackageIndexRepository
 
     @Autowired
     private lateinit var packageService: PackageService
@@ -89,16 +93,16 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         val version = "1.0.0"
         val expectedDescription = "This is a description for the org.example group."
 
-        val packages = packageRepository.findLatestByGroupId(groupId)
+        val packages = packageIndexRepository.findByIdGroupId(groupId)
         assertEquals(2, packages.size, "Should find 2 packages with the same groupId")
 
-        val package1 = packages.find { it.artifactId == artifactId1 }
+        val package1 = packages.find { it.id.artifactId == artifactId1 }
         assertNotNull(package1, "Package with artifactId $artifactId1 should exist")
-        assertEquals("Old description 1", package1.description, "Package should have the initial description")
+        assertEquals("Old description 1", package1.latestDescription, "Package should have the initial description")
 
-        val package2 = packages.find { it.artifactId == artifactId2 }
+        val package2 = packages.find { it.id.artifactId == artifactId2 }
         assertNotNull(package2, "Package with artifactId $artifactId2 should exist")
-        assertEquals("Old description 2", package2.description, "Package should have the initial description")
+        assertEquals("Old description 2", package2.latestDescription, "Package should have the initial description")
 
         `when`(
             packageDescriptionGenerator.generatePackageDescription(
@@ -136,7 +140,7 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
             packageRepository.findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId, artifactId)
         assertEquals(null, packageWithoutVersion, "No package should exist with the specified groupId and artifactId")
 
-        val packagesWithGroupId = packageRepository.findLatestByGroupId(groupId)
+        val packagesWithGroupId = packageIndexRepository.findByIdGroupId(groupId)
         assertTrue(packagesWithGroupId.isEmpty(), "No packages should exist with the specified groupId")
 
         assertThrows<IllegalArgumentException> {
