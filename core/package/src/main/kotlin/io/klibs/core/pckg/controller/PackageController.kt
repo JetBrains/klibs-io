@@ -135,7 +135,7 @@ private fun PackageDetails.toDTO(): PackageDetailsResponse {
         artifactId = this.artifactId,
         version = this.version,
         releasedAtMillis = this.releasedAt.toEpochMilli(),
-        name = this.name,
+        name = this.artifactId,
         description = this.description,
         targets = this.targets.map { it.toDTO() },
         licenses = this.licenses.map { OptionalLinkResponse(title = it.name, url = it.url) },

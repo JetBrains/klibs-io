@@ -182,7 +182,6 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         // Mock the AI service to return a predictable description
         `when`(packageDescriptionGenerator.generatePackageDescription(
-            any(), // packageName
             any(), // groupId
             any(), // artifactId
             any(), // version

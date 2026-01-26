@@ -41,7 +41,6 @@ class PackageEntityTest {
         assertEquals(originalPackage.artifactId, copiedPackage.artifactId)
         assertEquals(originalPackage.version, copiedPackage.version)
         assertEquals(originalPackage.releaseTs, copiedPackage.releaseTs)
-        assertEquals(originalPackage.name, copiedPackage.name)
         assertEquals(originalPackage.description, copiedPackage.description)
         assertEquals(originalPackage.url, copiedPackage.url)
         assertEquals(originalPackage.scmUrl, copiedPackage.scmUrl)
@@ -107,7 +106,6 @@ class PackageEntityTest {
         assertEquals(originalPackage.groupId, copiedPackage.groupId)
         assertEquals(originalPackage.artifactId, copiedPackage.artifactId)
         assertEquals(originalPackage.releaseTs, copiedPackage.releaseTs)
-        assertEquals(originalPackage.name, copiedPackage.name)
         assertEquals(originalPackage.url, copiedPackage.url)
         assertEquals(originalPackage.scmUrl, copiedPackage.scmUrl)
         assertEquals(originalPackage.buildTool, copiedPackage.buildTool)
@@ -149,7 +147,6 @@ class PackageEntityTest {
             artifactId = "test-package",
             version = "1.0.0",
             releaseTs = Instant.now(),
-            name = "Test Package",
             description = "A test package for unit testing",
             url = "https://example.com/test-package",
             scmUrl = "https://github.com/example/test-package",
