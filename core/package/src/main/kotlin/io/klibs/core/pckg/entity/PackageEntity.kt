@@ -48,9 +48,6 @@ data class PackageEntity(
     @Column(name = "release_ts")
     val releaseTs: Instant,
 
-    @Column(name = "name")
-    val name: String,
-
     @Column(name = "description")
     val description: String?,
 
@@ -105,7 +102,6 @@ data class PackageEntity(
      * @param artifactId The artifact ID of the new entity, defaults to the current entity's artifact ID
      * @param version The version of the new entity, defaults to the current entity's version
      * @param releaseTs The release timestamp of the new entity, defaults to the current entity's release timestamp
-     * @param name The name of the new entity, defaults to the current entity's name
      * @param description The description of the new entity, defaults to the current entity's description
      * @param url The URL of the new entity, defaults to the current entity's URL
      * @param scmUrl The SCM URL of the new entity, defaults to the current entity's SCM URL
@@ -126,7 +122,6 @@ data class PackageEntity(
         artifactId: String = this.artifactId,
         version: String = this.version,
         releaseTs: Instant = this.releaseTs,
-        name: String = this.name,
         description: String? = this.description,
         url: String? = this.url,
         scmUrl: String? = this.scmUrl,
@@ -147,7 +142,6 @@ data class PackageEntity(
             artifactId = artifactId,
             version = version,
             releaseTs = releaseTs,
-            name = name,
             description = description,
             url = url,
             scmUrl = scmUrl,
