@@ -1,8 +1,8 @@
-package io.klibs.integration.maven
+package io.klibs.integration.maven.configuration
 
-import nl.adaptivity.xmlutil.ExperimentalXmlUtilApi
-import nl.adaptivity.xmlutil.serialization.UnknownChildHandler
-import nl.adaptivity.xmlutil.serialization.XML
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import io.klibs.integration.maven.MavenIntegrationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
@@ -13,12 +13,8 @@ import org.springframework.context.annotation.Configuration
 @ComponentScan(basePackages = ["io.klibs.integration.maven"])
 class MavenIntegrationConfiguration {
 
-    @OptIn(ExperimentalXmlUtilApi::class)
     @Bean
-    fun xml() = XML {
-        autoPolymorphic = true
-        defaultPolicy {
-            unknownChildHandler = UnknownChildHandler { _, _, _, _, _ -> emptyList() }
-        }
+    fun xmlMapper(): XmlMapper = XmlMapper().apply {
+        registerKotlinModule()
     }
 }

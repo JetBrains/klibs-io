@@ -1,13 +1,13 @@
 package io.klibs.integration.maven.search.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
 import io.klibs.integration.maven.request.RequestRateLimiter
 import io.klibs.integration.maven.search.MavenSearchResponse
-import nl.adaptivity.xmlutil.serialization.XML
 import org.apache.maven.search.api.request.Query
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -17,10 +17,10 @@ const val GOOGLE_MAVEN_URL = "https://dl.google.com/dl/android/maven2/"
 
 @Component("GOOGLE_MAVEN")
 class GoogleMavenSearchClient(
-    xml: XML,
+    xmlMapper: XmlMapper,
     unlimitedRateLimiter: RequestRateLimiter,
     objectMapper: ObjectMapper
-) : BaseMavenSearchClient(xml, unlimitedRateLimiter, logger, objectMapper) {
+) : BaseMavenSearchClient(xmlMapper, unlimitedRateLimiter, logger, objectMapper) {
 
     companion object {
         val logger = LoggerFactory.getLogger(GoogleMavenSearchClient::class.java)

@@ -1,31 +1,25 @@
 package io.klibs.integration.maven.dto
 
-import kotlinx.serialization.Serializable
-import nl.adaptivity.xmlutil.serialization.XmlChildrenName
-import nl.adaptivity.xmlutil.serialization.XmlElement
-import nl.adaptivity.xmlutil.serialization.XmlSerialName
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
 
-@Serializable
-@XmlSerialName("metadata", "", "")
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JacksonXmlRootElement(localName = "metadata")
 data class MavenMetadata(
-    @XmlElement(true)
-    val groupId: String,
-    @XmlElement(true)
-    val artifactId: String,
-    @XmlElement(true)
-    val versioning: Versioning
+    val groupId: String = "",
+    val artifactId: String = "",
+    val versioning: Versioning = Versioning()
 ) {
-    @Serializable
-    @XmlSerialName("versioning", "", "")
+    @JsonIgnoreProperties(ignoreUnknown = true)
     data class Versioning(
-        @XmlElement(true)
         val latest: String? = null,
-        @XmlElement(true)
         val release: String? = null,
-        @XmlElement(true)
-        @XmlChildrenName("version", "", "")
-        val versions: List<String>,
-        @XmlElement(true)
+        @JacksonXmlElementWrapper(localName = "versions")
+        @param:JacksonXmlProperty(localName = "versions")
+        @get:JacksonXmlProperty(localName = "version")
+        val versions: List<String> = emptyList(),
         val lastUpdated: String? = null
     )
 }

@@ -1,6 +1,7 @@
 package io.klibs.integration.maven.search.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.MavenPom
@@ -11,7 +12,6 @@ import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateImpl
 import io.klibs.integration.maven.request.RequestRateLimiter
 import io.klibs.integration.maven.search.MavenSearchClient
-import nl.adaptivity.xmlutil.serialization.XML
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
 import org.apache.maven.search.api.transport.Java11HttpClientTransport
 import org.apache.maven.search.api.transport.Transport
@@ -30,7 +30,7 @@ private const val DEFAULT_PAGE_SIZE = 200
 internal const val MAX_REDIRECTS = 3
 
 abstract class BaseMavenSearchClient(
-    private val xml: XML,
+    private val xmlMapper: XmlMapper,
     protected val rateLimiter: RequestRateLimiter,
     private val logger: Logger,
     private val objectMapper: ObjectMapper,
@@ -52,10 +52,7 @@ abstract class BaseMavenSearchClient(
         val fileDir = groupId.replace(".", "/") + "/$artifactId"
         val metadataUrl = "${getContentUrlPrefix()}$fileDir/maven-metadata.xml"
         return executeFetch(metadataUrl) { response ->
-            xml.decodeFromString(
-                MavenMetadata.serializer(),
-                String(response.body.readAllBytes(), StandardCharsets.UTF_8)
-            )
+            xmlMapper.readValue(response.body, MavenMetadata::class.java)
         }
     }
 

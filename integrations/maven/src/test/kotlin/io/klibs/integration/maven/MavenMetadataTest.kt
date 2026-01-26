@@ -1,8 +1,8 @@
 package io.klibs.integration.maven
 
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.klibs.integration.maven.dto.MavenMetadata
-import nl.adaptivity.xmlutil.serialization.UnknownChildHandler
-import nl.adaptivity.xmlutil.serialization.XML
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -32,14 +32,9 @@ class MavenMetadataTest {
             </metadata>
         """.trimIndent()
 
-        val xml = XML {
-            autoPolymorphic = true
-            defaultPolicy {
-                unknownChildHandler = UnknownChildHandler { _, _, _, _, _ -> emptyList() }
-            }
-        }
+        val xmlMapper = XmlMapper().registerKotlinModule()
 
-        val metadata = xml.decodeFromString(MavenMetadata.serializer(), xmlText)
+        val metadata = xmlMapper.readValue(xmlText, MavenMetadata::class.java)
 
         assertEquals("io.klibs", metadata.groupId)
         assertEquals("core", metadata.artifactId)
