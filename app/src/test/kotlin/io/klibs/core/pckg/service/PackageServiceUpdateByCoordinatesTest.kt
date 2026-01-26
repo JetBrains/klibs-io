@@ -96,7 +96,6 @@ class PackageServiceUpdateByCoordinatesTest : BaseUnitWithDbLayerTest() {
         artifactId = artifactId,
         version = version,
         releaseTs = Instant.now(),
-        name = "$groupId:$artifactId",
         description = "Updated desc",
         url = "https://example.com/$artifactId",
         scmUrl = null,

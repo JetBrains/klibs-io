@@ -79,7 +79,6 @@ private fun PackageEntity.toModel(): PackageDetails {
         artifactId = this.artifactId,
         version = this.version,
         releasedAt = this.releaseTs,
-        name = this.name,
         description = this.description,
         targets = this.targets.map { PackageTarget(it.platform, it.target) },
         licenses = this.licenses.map { PackageLicense(it.name, it.url) },
