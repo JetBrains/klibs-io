@@ -1,6 +1,8 @@
 package io.klibs.core.pckg.service
 
 import io.klibs.core.pckg.entity.PackageEntity
+import io.klibs.core.pckg.entity.PackageIndexEntity
+import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.slf4j.LoggerFactory
@@ -10,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class PackageDescriptionService(
     private val packageRepository: PackageRepository,
+    private val packageIndexRepository: PackageIndexRepository,
     private val packageDescriptionGenerator: PackageDescriptionGenerator,
     private val packageDescriptionBatchService: PackageDescriptionBatchService,
 ) {
@@ -89,19 +92,15 @@ class PackageDescriptionService(
         }
 
         // Case 3: only groupId is provided (get all latest versions)
-        val packages = packageRepository.findLatestByGroupId(groupId)
-        if (packages.isEmpty()) {
+        val latestPackages = packageIndexRepository.findByIdGroupId(groupId)
+        if (latestPackages.isEmpty()) {
             throw IllegalArgumentException("No packages found with groupId=$groupId")
         }
-
-        val latestPackages = packages.groupBy { it.artifactId }
-            .mapValues { (_, packages) -> packages.first() } // First package is the latest due to OrderByReleaseTsDesc
-            .values
 
         val descriptions = mutableMapOf<String, String>()
         for (pkg in latestPackages) {
             val description = generatePackageDescription(pkg)
-            descriptions["${pkg.groupId}:${pkg.artifactId}:${pkg.version}"] = description
+            descriptions["${pkg.id.groupId}:${pkg.id.artifactId}:${pkg.latestVersion}"] = description
         }
 
         val summary = buildString {
@@ -123,29 +122,59 @@ class PackageDescriptionService(
     }
 
     /**
-     * Generates the description of a package using AI and saves it to the database.
+     * Generates the description of a package.
      *
      * @param packageEntity The package entity to update
      * @return The generated description
      */
     private fun generatePackageDescription(packageEntity: PackageEntity): String {
+        return generateDescriptionAndSave(packageEntity.groupId, packageEntity.artifactId, packageEntity.version, packageEntity)
+    }
 
-        logger.info("Generating description for package: ${packageEntity.groupId}:${packageEntity.artifactId}:${packageEntity.version}")
+    /**
+     * Generates the description of a package.
+     *
+     * @param packageIndexEntity The package entity to update
+     * @return The generated description
+     */
+    private fun generatePackageDescription(packageIndexEntity: PackageIndexEntity): String {
+        val packageEntity = packageRepository.findById(packageIndexEntity.latestPackageId)
+            .orElseThrow { IllegalArgumentException("No package found with groupId=$packageIndexEntity.id.groupId, artifactId=$packageIndexEntity.id.artifactId")}
+
+        return generateDescriptionAndSave(packageIndexEntity.id.groupId, packageIndexEntity.id.artifactId, packageIndexEntity.latestVersion, packageEntity)
+    }
+
+    /**
+     * Generates the description of a package using AI and saves it to the database.
+     *
+     * @param groupId The group ID of the package
+     * @param artifactId The artifact ID of the package
+     * @param version The version of the package
+     * @param packageEntity The package entity to update
+     * @return The generated description
+     */
+    private fun generateDescriptionAndSave(
+        groupId: String,
+        artifactId: String,
+        version: String,
+        packageEntity: PackageEntity
+    ): String{
+        logger.info("Generating description for package: ${groupId}:${artifactId}:${version}")
 
         val description = packageDescriptionGenerator.generatePackageDescription(
-            packageEntity.groupId,
-            packageEntity.artifactId,
-            packageEntity.version
+            groupId,
+            artifactId,
+            version
         )
 
-        // Update the package description in the database and mark it as generated
         val updatedPackage = packageEntity.deepCopy(
             description = description,
             generatedDescription = true
         )
+
         packageRepository.save(updatedPackage)
 
-        logger.info("Generated description for package ${packageEntity.groupId}:${packageEntity.artifactId}:${packageEntity.version}: $description")
+        logger.info("Generated description for package ${groupId}:${artifactId}:${version}: $description")
 
         return description
     }
