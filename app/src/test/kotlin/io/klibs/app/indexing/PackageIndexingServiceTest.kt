@@ -6,6 +6,7 @@ import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenPom
+import io.klibs.integration.maven.PomWithReleaseDate
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.Variant
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
@@ -16,10 +17,10 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -46,10 +47,10 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var packageDescriptionService: PackageDescriptionService
 
-    @MockBean
+    @MockitoBean
     private lateinit var mavenStaticDataProvider: CentralSonatypeSearchClient
 
-    @MockBean
+    @MockitoBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
 
     @Test
@@ -68,7 +69,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequestBeforeProcessing)
 
-        `when`(mavenStaticDataProvider.getPom(any())).thenThrow(RuntimeException("Mocked getPom exception"))
+        `when`(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenThrow(RuntimeException("Mocked getPom exception"))
 
         val result = uut.processPackageQueue()
 
@@ -98,7 +99,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val kotlinToolingMetadata = mock<GradleMetadata>()
         `when`(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        `when`(mavenStaticDataProvider.getPom(any())).thenReturn(pom)
+        `when`(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(PomWithReleaseDate(pom, java.time.Instant.now()))
         `when`(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
 
         val result = uut.processPackageQueue()
@@ -140,7 +141,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
 
-        `when`(mavenStaticDataProvider.getPom(any())).thenReturn(pom)
+        `when`(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(PomWithReleaseDate(pom, java.time.Instant.now()))
         `when`(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
 
         // Act
@@ -208,7 +209,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val kotlinToolingMetadata = mock<GradleMetadata>()
         `when`(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        `when`(mavenStaticDataProvider.getPom(any())).thenReturn(pom)
+        `when`(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(PomWithReleaseDate(pom, java.time.Instant.now()))
         `when`(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
 
         // Process the indexing request

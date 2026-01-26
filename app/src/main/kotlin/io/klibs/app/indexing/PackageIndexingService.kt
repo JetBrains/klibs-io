@@ -133,14 +133,19 @@ class PackageIndexingService(
     }
 
     private fun indexArtifact(indexRequest: IndexingRequestEntity) {
-        val mavenArtifact = indexRequest.getMavenArtifact()
+        var mavenArtifact = indexRequest.getMavenArtifact()
 
         logger.trace("Getting pom of {}", mavenArtifact)
         val provider: MavenStaticDataProvider = providers[mavenArtifact.scraperType.name]
             ?: throw IllegalArgumentException("Unknown repository id ${mavenArtifact.scraperType.name}")
 
-        val pom =
-            provider.getPom(mavenArtifact) ?: error("Unable to find the .pom for ${provider.getPomUrl(mavenArtifact)}")
+        val (pom, releasedAt) =
+            provider.getPomWithReleaseDate(mavenArtifact)
+                ?: error("Unable to find the .pom for ${provider.getPomUrl(mavenArtifact)}")
+
+        if (mavenArtifact.releasedAt == null) {
+            mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
+        }
 
         logger.trace("Indexing GitHub info of {}", mavenArtifact)
         val gitHubRepoEntity = indexGitHubInfoIfPresent(pom)
@@ -177,9 +182,7 @@ class PackageIndexingService(
             scraperType = requireNotNull(this.repo) {
                 "Request's repoId is set to null, unable to convert to MavenArtifact: $this"
             },
-            releasedAt = requireNotNull(this.releasedAt) {
-                "Request's releasedAt is set to null, unable to convert to MavenArtifact: $this"
-            }
+            releasedAt = this.releasedAt
         )
     }
 

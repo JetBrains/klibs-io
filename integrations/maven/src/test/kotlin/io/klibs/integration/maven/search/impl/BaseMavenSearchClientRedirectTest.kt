@@ -18,6 +18,9 @@ import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -145,7 +148,14 @@ class BaseMavenSearchClientRedirectTest {
     ): Transport.Response {
         val response = mock<Transport.Response>()
         whenever(response.code).thenReturn(code)
-        whenever(response.headers).thenReturn(headers)
+
+        val finalHeaders = if (code == 200 && !headers.containsKey("last-modified")) {
+            headers + ("last-modified" to DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+        } else {
+            headers
+        }
+
+        whenever(response.headers).thenReturn(finalHeaders)
         val stream = ByteArrayInputStream((body ?: "").toByteArray(StandardCharsets.UTF_8))
         whenever(response.body).thenReturn(stream)
         return response

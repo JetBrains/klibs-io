@@ -142,14 +142,13 @@ class CentralSonatypeScraper(
                 if (metadata != null) {
                     val newVersions = metadata.versioning.versions.filter { it !in knownVersions }
                     for (version in newVersions) {
-                        val releasedAt = centralSonatypeSearchClient.getReleaseDate(groupId, artifactId, version)
                         emit(
                             MavenArtifact(
                                 groupId = groupId,
                                 artifactId = artifactId,
                                 version = version,
                                 scraperType = scraperType,
-                                releasedAt = releasedAt
+                                releasedAt = null
                             )
                         )
                     }

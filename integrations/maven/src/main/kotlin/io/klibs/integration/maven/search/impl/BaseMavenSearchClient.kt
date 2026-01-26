@@ -6,6 +6,7 @@ import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.MavenPom
 import io.klibs.integration.maven.MavenStaticDataProvider
+import io.klibs.integration.maven.PomWithReleaseDate
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.ModuleMetadataWrapper
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
@@ -42,9 +43,15 @@ abstract class BaseMavenSearchClient(
     override fun pageSize(): Int = DEFAULT_PAGE_SIZE
 
     override fun getPom(mavenArtifact: MavenArtifact): MavenPom? {
+        return getPomWithReleaseDate(mavenArtifact)?.pom
+    }
+
+    override fun getPomWithReleaseDate(mavenArtifact: MavenArtifact): PomWithReleaseDate? {
         val pomFileUrl = getPomUrl(mavenArtifact)
         return executeFetch(pomFileUrl) { response ->
-            mavenXpp3Reader.read(StringReader(response.body.readAllBytes().toString(StandardCharsets.UTF_8)))
+            val pom =
+                mavenXpp3Reader.read(StringReader(response.body.readAllBytes().toString(StandardCharsets.UTF_8)))
+            PomWithReleaseDate(pom, getReleasedAt(response))
         }
     }
 
@@ -53,13 +60,6 @@ abstract class BaseMavenSearchClient(
         val metadataUrl = "${getContentUrlPrefix()}$fileDir/maven-metadata.xml"
         return executeFetch(metadataUrl) { response ->
             xmlMapper.readValue(response.body, MavenMetadata::class.java)
-        }
-    }
-
-    override fun getReleaseDate(groupId: String, artifactId: String, version: String): Instant? {
-        val pomUrl = getRemoteFileUrl(groupId, artifactId, version, ".pom")
-        return executeHead(pomUrl) { response ->
-            getReleasedAt(response)
         }
     }
 
@@ -138,20 +138,6 @@ abstract class BaseMavenSearchClient(
             converter = converter,
             redirectCount = 0,
             requestExecutor = clientTransport::get
-        )
-    }
-
-    private fun <R> executeHead(
-        serviceUri: String,
-        headers: Map<String, String> = emptyMap(),
-        converter: (response: Transport.Response) -> R,
-    ): R? {
-        return followRedirects(
-            serviceUri = serviceUri,
-            headers = headers,
-            converter = converter,
-            redirectCount = 0,
-            requestExecutor = clientTransport::head,
         )
     }
 

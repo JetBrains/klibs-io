@@ -7,8 +7,12 @@ import java.time.Instant
 
 typealias MavenPom = org.apache.maven.model.Model
 
+data class PomWithReleaseDate(val pom: MavenPom, val releasedAt: Instant)
+
 interface MavenStaticDataProvider {
     fun getPom(mavenArtifact: MavenArtifact): MavenPom?
+
+    fun getPomWithReleaseDate(mavenArtifact: MavenArtifact): PomWithReleaseDate?
 
     fun getPomUrl(mavenArtifact: MavenArtifact): String
 
@@ -29,10 +33,4 @@ interface MavenStaticDataProvider {
         artifactId: String,
         version: String
     ): ModuleMetadataWrapper?
-
-    fun getReleaseDate(
-        groupId: String,
-        artifactId: String,
-        version: String
-    ): Instant?
 }
