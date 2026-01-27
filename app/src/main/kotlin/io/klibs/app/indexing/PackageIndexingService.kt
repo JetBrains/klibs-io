@@ -145,6 +145,7 @@ class PackageIndexingService(
 
         if (mavenArtifact.releasedAt == null) {
             mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
+            logger.trace("Set releasedAt for {}", mavenArtifact)
         }
 
         logger.trace("Indexing GitHub info of {}", mavenArtifact)

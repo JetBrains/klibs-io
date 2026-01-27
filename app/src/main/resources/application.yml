@@ -77,6 +77,8 @@ klibs:
       thread-count: 2
     central-sonatype:
       enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE:false}
+      scraper:
+        enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE_SCRAPER:false}
       last-updated-offset-hours: ${KLIBS_CENTRAL_SONATYPE_LAST_UPDATED_OFFSET_HOURS:3}
     gmaven:
       enabled: ${KLIBS_ENABLE_INDEXING_GMAVEN:false}

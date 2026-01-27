@@ -18,7 +18,7 @@ import java.time.Instant
 
 @Component
 @ConditionalOnProperty(
-    name = ["klibs.indexing-configuration.central-sonatype.enabled"],
+    name = ["klibs.indexing-configuration.central-sonatype.scraper.enabled"],
     havingValue = "true",
     matchIfMissing = false
 )
@@ -141,6 +141,8 @@ class CentralSonatypeScraper(
                 val metadata = centralSonatypeSearchClient.getMavenMetadata(groupId, artifactId)
                 if (metadata != null) {
                     val newVersions = metadata.versioning.versions.filter { it !in knownVersions }
+
+                    logger.trace("Found ${newVersions.size} new versions for $coordinates")
                     for (version in newVersions) {
                         emit(
                             MavenArtifact(
@@ -159,5 +161,9 @@ class CentralSonatypeScraper(
                 )
             }
         }
+    }
+
+    companion object {
+        private val logger = org.slf4j.LoggerFactory.getLogger(CentralSonatypeScraper::class.java)
     }
 }

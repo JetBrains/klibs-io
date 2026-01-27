@@ -34,6 +34,8 @@ klibs:
     executor:
       thread-count: 2
     central-sonatype:
+      scraper:
+        enabled: false
       enabled: false
       last-updated-offset-hours: 3
     gmaven:

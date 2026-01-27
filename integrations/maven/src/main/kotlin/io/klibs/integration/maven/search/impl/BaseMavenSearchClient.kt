@@ -162,7 +162,7 @@ abstract class BaseMavenSearchClient(
                         val location = requireNotNull(response.headers["location"]) {
                             "Location of a moved resource cannot be null"
                         }
-                        logger.debug("Redirecting to $location")
+                        logger.trace("Redirecting to $location")
                         if (redirectCount + 1 > MAX_REDIRECTS) {
                             throw IOException("Too many redirects when fetching $serviceUri -> $location")
                         }
