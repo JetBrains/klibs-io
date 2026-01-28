@@ -26,6 +26,19 @@ interface MavenCentralScraper {
     ): Flow<MavenArtifact>
 
     /**
+     * Fetches Kotlin Multiplatform (KMP) artifacts information from Maven Central based on already known artifacts.
+     * Includes functionality to report errors encountered
+     * during the discovery process.
+     *
+     * @param errorChannel A channel used to report errors encountered during the discovery process.
+     * @return A flow emitting discovered Maven artifacts.
+     */
+    suspend fun findNewVersions(
+        knownArtifacts: Map<String, Set<String>>,
+        errorChannel: Channel<Exception>
+    ): Flow<MavenArtifact>
+
+    /**
      * Fetches all available versions of a specified Maven artifact from a Maven Central repository.
      * Any errors encountered during the process are sent to the provided error channel.
      *

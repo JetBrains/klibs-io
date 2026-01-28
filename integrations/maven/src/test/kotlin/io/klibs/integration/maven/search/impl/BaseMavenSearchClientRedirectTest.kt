@@ -1,6 +1,8 @@
 package io.klibs.integration.maven.search.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.request.impl.UnlimitedRateLimiter
@@ -16,6 +18,9 @@ import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -143,13 +148,21 @@ class BaseMavenSearchClientRedirectTest {
     ): Transport.Response {
         val response = mock<Transport.Response>()
         whenever(response.code).thenReturn(code)
-        whenever(response.headers).thenReturn(headers)
+
+        val finalHeaders = if (code == 200 && !headers.containsKey("last-modified")) {
+            headers + ("last-modified" to DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+        } else {
+            headers
+        }
+
+        whenever(response.headers).thenReturn(finalHeaders)
         val stream = ByteArrayInputStream((body ?: "").toByteArray(StandardCharsets.UTF_8))
         whenever(response.body).thenReturn(stream)
         return response
     }
 
     private class TestClient(transport: Transport) : BaseMavenSearchClient(
+        xmlMapper = XmlMapper().apply { registerKotlinModule() },
         rateLimiter = UnlimitedRateLimiter(),
         logger = LoggerFactory.getLogger(TestClient::class.java),
         objectMapper = ObjectMapper(),

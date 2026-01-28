@@ -126,4 +126,44 @@ class CentralSonatypeScraper(
             currentPage++
         } while (totalHits > processedArtifactsCount)
     }
+
+    override suspend fun findNewVersions(
+        knownArtifacts: Map<String, Set<String>>,
+        errorChannel: Channel<Exception>
+    ): Flow<MavenArtifact> = flow {
+        for ((coordinates, knownVersions) in knownArtifacts) {
+            runCatching {
+                val parts = coordinates.split(":")
+                if (parts.size != 2) return@runCatching
+                val groupId = parts[0]
+                val artifactId = parts[1]
+
+                val metadata = centralSonatypeSearchClient.getMavenMetadata(groupId, artifactId)
+                if (metadata != null) {
+                    val newVersions = metadata.versioning.versions.filter { it !in knownVersions }
+
+                    logger.trace("Found ${newVersions.size} new versions for $coordinates")
+                    for (version in newVersions) {
+                        emit(
+                            MavenArtifact(
+                                groupId = groupId,
+                                artifactId = artifactId,
+                                version = version,
+                                scraperType = scraperType,
+                                releasedAt = null
+                            )
+                        )
+                    }
+                }
+            }.onFailure { exception ->
+                errorChannel.send(
+                    Exception("Could not process request for metadata of $coordinates", exception)
+                )
+            }
+        }
+    }
+
+    companion object {
+        private val logger = org.slf4j.LoggerFactory.getLogger(CentralSonatypeScraper::class.java)
+    }
 }
