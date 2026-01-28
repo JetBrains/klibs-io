@@ -18,7 +18,7 @@ import java.time.Instant
 
 @Component
 @ConditionalOnProperty(
-    name = ["klibs.indexing-configuration.central-sonatype.scraper.enabled"],
+    name = ["klibs.indexing-configuration.central-sonatype.enabled"],
     havingValue = "true",
     matchIfMissing = false
 )

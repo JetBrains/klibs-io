@@ -2,6 +2,7 @@ package io.klibs.app.configuration
 
 import com.fasterxml.jackson.databind.Module
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.springframework.context.annotation.Primary
@@ -28,5 +29,10 @@ class JacksonConfiguration {
     @Primary
     fun objectMapper(builder: Jackson2ObjectMapperBuilder): ObjectMapper {
         return builder.createXmlMapper(false).build()
+    }
+
+    @Bean
+    fun xmlMapper(builder: Jackson2ObjectMapperBuilder): XmlMapper {
+        return builder.createXmlMapper(true).build()
     }
 }

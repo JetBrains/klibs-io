@@ -43,3 +43,4 @@ cache
 localstack-data
 
 .junie/memory
+/.output.txt

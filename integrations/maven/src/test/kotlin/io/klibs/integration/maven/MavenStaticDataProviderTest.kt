@@ -1,6 +1,7 @@
 package io.klibs.integration.maven
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.configuration.MavenIntegrationConfiguration
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
 import io.klibs.integration.maven.search.impl.GoogleMavenSearchClient
@@ -30,6 +31,9 @@ class MavenStaticDataProviderTest {
     class MavenStaticDataProviderTestConfiguration {
         @Bean
         fun objectMapper(): ObjectMapper = ObjectMapper()
+
+        @Bean
+        fun xmlMapper(): XmlMapper = XmlMapper()
 
         @Bean
         fun restClientBuilder(): RestClient.Builder = RestClient.builder()

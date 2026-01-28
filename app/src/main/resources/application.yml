@@ -77,16 +77,13 @@ klibs:
       thread-count: 2
     central-sonatype:
       enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE:false}
-      scraper:
-        enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE_SCRAPER:false}
+      mode: ${KLIBS_CENTRAL_SONATYPE_INDEXING_MODE:DISCOVER_NEW}
       last-updated-offset-hours: ${KLIBS_CENTRAL_SONATYPE_LAST_UPDATED_OFFSET_HOURS:3}
     gmaven:
       enabled: ${KLIBS_ENABLE_INDEXING_GMAVEN:false}
       s3:
         bucket-name: ${BUCKET_NAME}
         prefix: ${KLIBS_GMAVEN_S3_PREFIX:gmaven}
-    updater:
-      enabled: ${KLIBS_ENABLE_INDEXING_UPDATER:false}
   ai: true
 
 management:

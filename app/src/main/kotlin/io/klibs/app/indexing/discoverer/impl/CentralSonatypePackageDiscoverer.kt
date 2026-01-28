@@ -26,6 +26,8 @@ class CentralSonatypePackageDiscoverer(
     private val packageRepository: PackageRepository,
     @Value("\${klibs.indexing-configuration.central-sonatype.last-updated-offset-hours:3}")
     private val lastUpdatedOffsetHours: Int,
+    @Value("\${klibs.indexing-configuration.central-sonatype.mode:UPDATE_KNOWN}")
+    private val mode: CentralSonatypeDiscoverMode,
 ) : PackageDiscoverer {
 
     private var lastPackageIndexTs: Instant
@@ -35,13 +37,23 @@ class CentralSonatypePackageDiscoverer(
             lastPackageIndexedRepository.save(value)
         }
 
-    private val lastPackageIndexTsRef: AtomicReference<Instant> = AtomicReference(
-        lastPackageIndexedRepository.retrieveLatest() ?: error("Unable to retrieve the last package index timestamp")
-    )
+    private val lastPackageIndexTsRef: AtomicReference<Instant> by lazy {
+        AtomicReference(
+            lastPackageIndexedRepository.retrieveLatest() ?: error("Unable to retrieve the last package index timestamp")
+        )
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun discover(errorChannel: Channel<Exception>): Flow<MavenArtifact> {
-        logger.info("--- Central sonatype packages discovering started. ---")
+        logger.info("--- Central sonatype packages discovering started in $mode mode. ---")
+        return when (mode) {
+            CentralSonatypeDiscoverMode.DISCOVER_NEW -> discoverNew(errorChannel)
+            CentralSonatypeDiscoverMode.UPDATE_KNOWN -> updateKnown(errorChannel)
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun discoverNew(errorChannel: Channel<Exception>): Flow<MavenArtifact> {
         val timestampBeforeIndexing = Instant.now()
         val existingPackages = collectAllKnownPackages(packageRepository)
         val seenCoordinates = mutableMapOf<String, MutableList<String>>()
@@ -79,6 +91,18 @@ class CentralSonatypePackageDiscoverer(
                 lastPackageIndexTs = timestampBeforeIndexing
                 logger.info("--- Central sonatype packages discovering finished. Last indexing time change to $lastPackageIndexTs ---")
             }
+    }
+
+    private suspend fun updateKnown(errorChannel: Channel<Exception>): Flow<MavenArtifact> {
+        val existingPackages = collectAllKnownPackages(packageRepository)
+
+        return centralSonatypeScraper.findNewVersions(
+            existingPackages,
+            errorChannel
+        )
+        .onCompletion {
+            logger.info("--- Central sonatype packages updating finished. ---")
+        }
     }
 
     private fun collectUnknownArtifacts(

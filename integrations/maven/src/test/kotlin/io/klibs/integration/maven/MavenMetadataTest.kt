@@ -1,12 +1,22 @@
 package io.klibs.integration.maven
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.klibs.integration.maven.dto.MavenMetadata
 import org.junit.jupiter.api.Test
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Primary
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import kotlin.test.assertEquals
 
 class MavenMetadataTest {
+
+    @Bean
+    @Primary
+    fun objectMapper(builder: Jackson2ObjectMapperBuilder): ObjectMapper {
+        return builder.createXmlMapper(true).build()
+    }
 
     @Test
     fun `test parsing maven-metadata xml`() {
