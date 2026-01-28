@@ -10,19 +10,23 @@ To add a dependency on navigationevent, you must add the Google Maven repository
 
 Add the dependencies for the artifacts you need in the `build.gradle` file for your app or module:
 
-### Groovy
-```
-dependencies {
-    implementation "androidx.navigationevent:navigationevent:1.0.1"
-}
-```
-
 ### Kotlin
 ```
 dependencies {
     implementation("androidx.navigationevent:navigationevent:1.0.1")
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+```
+dependencies {
+    implementation "androidx.navigationevent:navigationevent:1.0.1"
+}
+```
+
+</details>
 
 For more information about dependencies, see Add build dependencies.
 

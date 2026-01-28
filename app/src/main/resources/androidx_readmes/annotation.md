@@ -10,15 +10,6 @@ To add a dependency on Annotation, you must add the Google Maven repository to y
 
 Add the dependencies for the artifacts you need in the `build.gradle` file for your app or module:
 
-### Groovy
-```groovy
-dependencies {
-    implementation "androidx.annotation:annotation:1.9.1"
-    // To use the Java-compatible @androidx.annotation.OptIn API annotation
-    implementation "androidx.annotation:annotation-experimental:1.5.1"
-}
-```
-
 ### Kotlin
 ```kotlin
 dependencies {
@@ -27,6 +18,19 @@ dependencies {
     implementation("androidx.annotation:annotation-experimental:1.5.1")
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+```groovy
+dependencies {
+    implementation "androidx.annotation:annotation:1.9.1"
+    // To use the Java-compatible @androidx.annotation.OptIn API annotation
+    implementation "androidx.annotation:annotation-experimental:1.5.1"
+}
+```
+
+</details>
 
 For more information about dependencies, see Add build dependencies.
 

@@ -18,18 +18,6 @@ Add the dependencies for the implementation you need in the `build.gradle` file 
 
 Add the following lines to the dependencies part of your gradle file:
 
-#### Groovy
-
-```groovy
-dependencies {
-    // Preferences DataStore (SharedPreferences like APIs)
-    implementation "androidx.datastore:datastore-preferences:1.2.0"
-
-    // Alternatively - without an Android dependency.
-    implementation "androidx.datastore:datastore-preferences-core:1.2.0"
-}
-```
-
 #### Kotlin
 
 ```kotlin
@@ -42,19 +30,23 @@ dependencies {
 }
 ```
 
-To add optional RxJava support, add the following dependencies:
+<details>
+<summary><b>Groovy</b></summary>
 
-#### Groovy
 
 ```groovy
 dependencies {
-    // optional - RxJava2 support
-    implementation "androidx.datastore:datastore-preferences-rxjava2:1.2.0"
+    // Preferences DataStore (SharedPreferences like APIs)
+    implementation "androidx.datastore:datastore-preferences:1.2.0"
 
-    // optional - RxJava3 support
-    implementation "androidx.datastore:datastore-preferences-rxjava3:1.2.0"
+    // Alternatively - without an Android dependency.
+    implementation "androidx.datastore:datastore-preferences-core:1.2.0"
 }
 ```
+
+</details>
+
+To add optional RxJava support, add the following dependencies:
 
 #### Kotlin
 
@@ -68,21 +60,25 @@ dependencies {
 }
 ```
 
-### DataStore
+<details>
+<summary><b>Groovy</b></summary>
 
-Add the following lines to the dependencies part of your gradle file:
-
-#### Groovy
 
 ```groovy
 dependencies {
-    // Typed DataStore for custom data objects (for example, using Proto or JSON).
-    implementation "androidx.datastore:datastore:1.2.0"
+    // optional - RxJava2 support
+    implementation "androidx.datastore:datastore-preferences-rxjava2:1.2.0"
 
-    // Alternatively - without an Android dependency.
-    implementation "androidx.datastore:datastore-core:1.2.0"
+    // optional - RxJava3 support
+    implementation "androidx.datastore:datastore-preferences-rxjava3:1.2.0"
 }
 ```
+
+</details>
+
+### DataStore
+
+Add the following lines to the dependencies part of your gradle file:
 
 #### Kotlin
 
@@ -96,19 +92,23 @@ dependencies {
 }
 ```
 
-Add the following optional dependencies for RxJava support:
+<details>
+<summary><b>Groovy</b></summary>
 
-#### Groovy
 
 ```groovy
 dependencies {
-    // optional - RxJava2 support
-    implementation "androidx.datastore:datastore-rxjava2:1.2.0"
+    // Typed DataStore for custom data objects (for example, using Proto or JSON).
+    implementation "androidx.datastore:datastore:1.2.0"
 
-    // optional - RxJava3 support
-    implementation "androidx.datastore:datastore-rxjava3:1.2.0"
+    // Alternatively - without an Android dependency.
+    implementation "androidx.datastore:datastore-core:1.2.0"
 }
 ```
+
+</details>
+
+Add the following optional dependencies for RxJava support:
 
 #### Kotlin
 
@@ -122,23 +122,27 @@ dependencies {
 }
 ```
 
+<details>
+<summary><b>Groovy</b></summary>
+
+
+```groovy
+dependencies {
+    // optional - RxJava2 support
+    implementation "androidx.datastore:datastore-rxjava2:1.2.0"
+
+    // optional - RxJava3 support
+    implementation "androidx.datastore:datastore-rxjava3:1.2.0"
+}
+```
+
+</details>
+
 To serialize content, add dependencies for either Protocol Buffers or JSON serialization.
 
 #### JSON serialization
 
 To use JSON serialization, add the following to your Gradle file:
-
-##### Groovy
-
-```groovy
-plugins {
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
-}
-
-dependencies {
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
-}
-```
 
 ##### Kotlin
 
@@ -152,37 +156,25 @@ dependencies {
 }
 ```
 
-#### Protobuf serialization
+<details>
+<summary><b>Groovy</b></summary>
 
-To use Protobuf serialization, add the following to your Gradle file:
-
-##### Groovy
 
 ```groovy
 plugins {
-    id("com.google.protobuf") version "0.9.5"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
 }
 
 dependencies {
-    implementation "com.google.protobuf:protobuf-kotlin-lite:4.32.1"
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:4.32.1"
-    }
-    generateProtoTasks {
-        all().forEach { task ->
-            task.builtins {
-                create("java") {
-                    option("lite")
-                }
-                create("kotlin")
-            }
-        }
-    }
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
 }
 ```
+
+</details>
+
+#### Protobuf serialization
+
+To use Protobuf serialization, add the following to your Gradle file:
 
 ##### Kotlin
 
@@ -211,6 +203,38 @@ protobuf {
     }
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+
+```groovy
+plugins {
+    id("com.google.protobuf") version "0.9.5"
+}
+
+dependencies {
+    implementation "com.google.protobuf:protobuf-kotlin-lite:4.32.1"
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.32.1"
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+                create("kotlin")
+            }
+        }
+    }
+}
+```
+
+</details>
 
 ## Issue tracker
 [Issue Tracker](https://issuetracker.google.com/issues?q=componentid:907884)

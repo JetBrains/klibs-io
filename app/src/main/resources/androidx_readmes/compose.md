@@ -27,21 +27,6 @@ To add a dependency on Compose, you must add the Google Maven repository to your
 
 Add the dependencies for the artifacts you need in the `build.gradle` file for your app or module:
 
-### Groovy
-```groovy
-android {
-    buildFeatures {
-        compose true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-}
-```
-
 ### Kotlin
 ```kotlin
 android {
@@ -56,6 +41,25 @@ android {
     }
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+```groovy
+android {
+    buildFeatures {
+        compose true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.15"
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+```
+
+</details>
 
 For more information about dependencies, see [Add build dependencies](https://developer.android.com/studio/build/dependencies).
 

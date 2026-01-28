@@ -12,22 +12,6 @@ To add a dependency on Sqlite, you must add the Google Maven repository to your 
 
 Add the dependencies for the artifacts you need in the `build.gradle` file for your app or module:
 
-### Groovy
-```
-dependencies {
-    def sqlite_version = "2.6.2"
-
-    // Java language implementation
-    implementation "androidx.sqlite:sqlite:$sqlite_version"
-
-    // Kotlin
-    implementation "androidx.sqlite:sqlite-ktx:$sqlite_version"
-
-    // Implementation of the AndroidX SQLite interfaces via the Android framework APIs.
-    implementation "androidx.sqlite:sqlite-framework:$sqlite_version"
-}
-```
-
 ### Kotlin
 ```
 dependencies {
@@ -43,6 +27,26 @@ dependencies {
     implementation("androidx.sqlite:sqlite-framework:$sqlite_version")
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+```
+dependencies {
+    def sqlite_version = "2.6.2"
+
+    // Java language implementation
+    implementation "androidx.sqlite:sqlite:$sqlite_version"
+
+    // Kotlin
+    implementation "androidx.sqlite:sqlite-ktx:$sqlite_version"
+
+    // Implementation of the AndroidX SQLite interfaces via the Android framework APIs.
+    implementation "androidx.sqlite:sqlite-framework:$sqlite_version"
+}
+```
+
+</details>
 
 For more information about dependencies, see Add build dependencies.
 

@@ -12,17 +12,6 @@ To add a dependency on Savedstate, you must add the Google Maven repository to y
 
 Add the dependencies for the artifacts you need in the `build.gradle` file for your app or module:
 
-### Groovy
-```
-dependencies {
-    // Java language implementation
-    implementation "androidx.savedstate:savedstate:1.4.0"
-
-    // Kotlin
-    implementation "androidx.savedstate:savedstate-ktx:1.4.0"
-}
-```
-
 ### Kotlin
 ```
 dependencies {
@@ -33,6 +22,21 @@ dependencies {
     implementation("androidx.savedstate:savedstate-ktx:1.4.0")
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+```
+dependencies {
+    // Java language implementation
+    implementation "androidx.savedstate:savedstate:1.4.0"
+
+    // Kotlin
+    implementation "androidx.savedstate:savedstate-ktx:1.4.0"
+}
+```
+
+</details>
 
 For more information about dependencies, see Add build dependencies.
 

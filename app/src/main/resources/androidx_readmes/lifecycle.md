@@ -16,7 +16,54 @@ Add the dependencies for the artifacts you need in the `build.gradle` file for y
 
 ## Kotlin
 
-### Groovy
+### Kotlin
+```kotlin
+dependencies {
+        val lifecycle_version = "2.10.0"
+        val arch_version = "2.2.0"
+
+        // ViewModel
+        implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
+        // ViewModel utilities for Compose
+        implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
+        // LiveData
+        implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version")
+        // Lifecycles only (without ViewModel or LiveData)
+        implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
+        // Lifecycle utilities for Compose
+        implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycle_version")
+
+        // Saved state module for ViewModel
+        implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version")
+
+        // ViewModel integration with Navigation3
+        implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0")
+
+        // Annotation processor
+        kapt("androidx.lifecycle:lifecycle-compiler:$lifecycle_version")
+        // alternately - if using Java8, use the following instead of lifecycle-compiler
+        implementation("androidx.lifecycle:lifecycle-common-java8:$lifecycle_version")
+
+        // optional - helpers for implementing LifecycleOwner in a Service
+        implementation("androidx.lifecycle:lifecycle-service:$lifecycle_version")
+
+        // optional - ProcessLifecycleOwner provides a lifecycle for the whole application process
+        implementation("androidx.lifecycle:lifecycle-process:$lifecycle_version")
+
+        // optional - ReactiveStreams support for LiveData
+        implementation("androidx.lifecycle:lifecycle-reactivestreams-ktx:$lifecycle_version")
+
+        // optional - Test helpers for LiveData
+        testImplementation("androidx.arch.core:core-testing:$arch_version")
+
+        // optional - Test helpers for Lifecycle runtime
+        testImplementation("androidx.lifecycle:lifecycle-runtime-testing:$lifecycle_version")
+    }
+```
+
+<details>
+<summary><b>Groovy</b></summary>
+
 ```
 dependencies {
         def lifecycle_version = "2.10.0"
@@ -61,9 +108,51 @@ dependencies {
     }
 ```
 
+</details>
+
 ## Java
 
-### Groovy
+### Kotlin
+```kotlin
+dependencies {
+        val lifecycle_version = "2.10.0"
+        val arch_version = "2.2.0"
+
+        // ViewModel
+        implementation("androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version")
+        // LiveData
+        implementation("androidx.lifecycle:lifecycle-livedata:$lifecycle_version")
+        // Lifecycles only (without ViewModel or LiveData)
+        implementation("androidx.lifecycle:lifecycle-runtime:$lifecycle_version")
+
+        // Saved state module for ViewModel
+        implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version")
+
+        // Annotation processor
+        annotationProcessor("androidx.lifecycle:lifecycle-compiler:$lifecycle_version")
+        // alternately - if using Java8, use the following instead of lifecycle-compiler
+        implementation("androidx.lifecycle:lifecycle-common-java8:$lifecycle_version")
+
+        // optional - helpers for implementing LifecycleOwner in a Service
+        implementation("androidx.lifecycle:lifecycle-service:$lifecycle_version")
+
+        // optional - ProcessLifecycleOwner provides a lifecycle for the whole application process
+        implementation("androidx.lifecycle:lifecycle-process:$lifecycle_version")
+
+        // optional - ReactiveStreams support for LiveData
+        implementation("androidx.lifecycle:lifecycle-reactivestreams:$lifecycle_version")
+
+        // optional - Test helpers for LiveData
+        testImplementation("androidx.arch.core:core-testing:$arch_version")
+
+        // optional - Test helpers for Lifecycle runtime
+        testImplementation("androidx.lifecycle:lifecycle-runtime-testing:$lifecycle_version")
+    }
+```
+
+<details>
+<summary><b>Groovy</b></summary>
+
 ```
 dependencies {
         def lifecycle_version = "2.10.0"
@@ -100,6 +189,8 @@ dependencies {
         testImplementation "androidx.lifecycle:lifecycle-runtime-testing:$lifecycle_version"
     }
 ```
+
+</details>
 
 ## Issue tracker
 [Issue Tracker](https://issuetracker.google.com/issues?q=componentid:413132)

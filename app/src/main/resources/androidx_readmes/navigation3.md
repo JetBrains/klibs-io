@@ -10,14 +10,6 @@ To add a dependency on navigation3, you must add the Google Maven repository to 
 
 Add the dependencies for the artifacts you need in the `build.gradle` file for your app or module:
 
-### Groovy
-```
-dependencies {
-    implementation "androidx.navigation3:navigation3-runtime:1.1.0-alpha02"
-    implementation "androidx.navigation3:navigation3-ui:1.1.0-alpha02"
-}
-```
-
 ### Kotlin
 ```
 dependencies {
@@ -25,6 +17,18 @@ dependencies {
     implementation("androidx.navigation3:navigation3-ui:1.1.0-alpha02")
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+```
+dependencies {
+    implementation "androidx.navigation3:navigation3-runtime:1.1.0-alpha02"
+    implementation "androidx.navigation3:navigation3-ui:1.1.0-alpha02"
+}
+```
+
+</details>
 
 For more information about dependencies, see Add build dependencies.
 

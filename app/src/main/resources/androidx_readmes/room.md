@@ -34,7 +34,9 @@ dependencies {
 }
 ```
 
-### Groovy
+<details>
+<summary><b>Groovy</b></summary>
+
 ```groovy
 dependencies {
     def room_version = "2.8.4"
@@ -55,6 +57,8 @@ dependencies {
     implementation "androidx.room:room-paging:$room_version"
 }
 ```
+
+</details>
 
 For information on using the KAPT plugin, see the [KAPT documentation](https://kotlinlang.org/docs/kapt.html).
 
@@ -88,13 +92,6 @@ cacheable builds.
 To add the plugin, in your top-level Gradle build file, define the
 plugin and its version.
 
-### Groovy
-```groovy
-plugins {
-    id 'androidx.room' version "$room_version" apply false
-}
-```
-
 ### Kotlin
 ```kotlin
 plugins {
@@ -102,22 +99,19 @@ plugins {
 }
 ```
 
-In the module-level Gradle build file, apply the plugin and use the `room`
-extension.
+<details>
+<summary><b>Groovy</b></summary>
 
-### Groovy
 ```groovy
 plugins {
-    id 'androidx.room'
-}
-
-android {
-    // ...
-    room {
-        schemaDirectory "$projectDir/schemas"
-    }
+    id 'androidx.room' version "$room_version" apply false
 }
 ```
+
+</details>
+
+In the module-level Gradle build file, apply the plugin and use the `room`
+extension.
 
 ### Kotlin
 ```kotlin
@@ -132,6 +126,24 @@ android {
     }
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+```groovy
+plugins {
+    id 'androidx.room'
+}
+
+android {
+    // ...
+    room {
+        schemaDirectory "$projectDir/schemas"
+    }
+}
+```
+
+</details>
 
 Setting a `schemaDirectory` is required when using the Room Gradle Plugin. This
 will configure the Room compiler and the various compile tasks and its backends
@@ -160,31 +172,6 @@ annotation processor options, as described in
 [Add build dependencies](https://developer.android.com/studio/build/dependencies). How you
 specify annotation options depends on whether you use KSP or KAPT for Room.
 
-### Groovy
-```groovy
-// For KSP
-ksp {
-    arg("option_name", "option_value")
-    // other options...
-}
-
-// For javac and KAPT
-android {
-    // ...
-    defaultConfig {
-        // ...
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments += [
-                    "option_name":"option_value",
-                    // other options...
-                ]
-            }
-        }
-    }
-}
-```
-
 ### Kotlin
 ```kotlin
 // For KSP
@@ -209,6 +196,35 @@ android {
     }
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+```groovy
+// For KSP
+ksp {
+    arg("option_name", "option_value")
+    // other options...
+}
+
+// For javac and KAPT
+android {
+    // ...
+    defaultConfig {
+        // ...
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += [
+                    "option_name":"option_value",
+                    // other options...
+                ]
+            }
+        }
+    }
+}
+```
+
+</details>
 
 Because `room.schemaLocation` is a directory and not a primitive type, it is
 necessary to use a `CommandLineArgumentsProvider` when adding this option so

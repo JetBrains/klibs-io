@@ -10,14 +10,6 @@ To add a dependency on Collection, you must add the Google Maven repository to y
 
 Add the dependencies for the artifacts you need in the `build.gradle` file for your app or module:
 
-### Groovy
-```
-dependencies {
-    def collection_version = "1.5.0"
-    implementation "androidx.collection:collection:$collection_version"
-}
-```
-
 ### Kotlin
 ```
 dependencies {
@@ -25,6 +17,18 @@ dependencies {
     implementation("androidx.collection:collection:$collection_version")
 }
 ```
+
+<details>
+<summary><b>Groovy</b></summary>
+
+```
+dependencies {
+    def collection_version = "1.5.0"
+    implementation "androidx.collection:collection:$collection_version"
+}
+```
+
+</details>
 
 For more information about dependencies, see Add Build Dependencies.
 
