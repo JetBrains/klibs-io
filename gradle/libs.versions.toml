@@ -6,7 +6,7 @@ kotlin = "2.1.0"
 spring-boot = "3.5.9"
 spring-dependencyManagement = "1.1.7"
 spring-doc = "2.8.15"
-spring-ai = "1.0.3"
+spring-ai = "1.1.2"
 spring-cloud-aws = "3.4.2"
 
 # Job / scheduling
