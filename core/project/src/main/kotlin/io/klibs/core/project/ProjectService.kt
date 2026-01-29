@@ -120,9 +120,16 @@ class ProjectService(
             .toList()
 
         if (normalizedTags.isEmpty()) {
-            throw IllegalArgumentException("No one tag passed the normalization filter." +
-                    " Make sure that your tags are correctly normalized:" +
-                    " they should be lowercase, and words should be separated by a dash. Example: `compose-ui`")
+            if (tagsType == TagOrigin.GITHUB) {
+                projectTagRepository.deleteByProjectIdAndOrigin(projectId, tagsType)
+                return emptyList()
+            } else {
+                throw IllegalArgumentException(
+                    "No one tag passed the normalization filter." +
+                            " Make sure that your tags are correctly normalized:" +
+                            " they should be lowercase, and words should be separated by a dash. Example: `compose-ui`"
+                )
+            }
         }
 
         val invalidTags = mutableListOf<String>()
@@ -137,7 +144,7 @@ class ProjectService(
             }
         }
 
-        if (invalidTags.isNotEmpty()) {
+        if (invalidTags.isNotEmpty() && tagsType != TagOrigin.GITHUB) {
             throw IllegalArgumentException("Invalid tags were provided: ${invalidTags.joinToString(", ")}")
         }
 
