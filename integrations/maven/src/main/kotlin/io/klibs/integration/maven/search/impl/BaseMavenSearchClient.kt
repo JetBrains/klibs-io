@@ -1,9 +1,12 @@
 package io.klibs.integration.maven.search.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.MavenArtifact
+import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.MavenPom
 import io.klibs.integration.maven.MavenStaticDataProvider
+import io.klibs.integration.maven.PomWithReleaseDate
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.ModuleMetadataWrapper
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
@@ -28,6 +31,7 @@ private const val DEFAULT_PAGE_SIZE = 200
 internal const val MAX_REDIRECTS = 3
 
 abstract class BaseMavenSearchClient(
+    private val xmlMapper: XmlMapper,
     protected val rateLimiter: RequestRateLimiter,
     private val logger: Logger,
     private val objectMapper: ObjectMapper,
@@ -39,9 +43,23 @@ abstract class BaseMavenSearchClient(
     override fun pageSize(): Int = DEFAULT_PAGE_SIZE
 
     override fun getPom(mavenArtifact: MavenArtifact): MavenPom? {
+        return getPomWithReleaseDate(mavenArtifact)?.pom
+    }
+
+    override fun getPomWithReleaseDate(mavenArtifact: MavenArtifact): PomWithReleaseDate? {
         val pomFileUrl = getPomUrl(mavenArtifact)
         return executeFetch(pomFileUrl) { response ->
-            mavenXpp3Reader.read(StringReader(response.body.readAllBytes().toString(StandardCharsets.UTF_8)))
+            val pom =
+                mavenXpp3Reader.read(StringReader(response.body.readAllBytes().toString(StandardCharsets.UTF_8)))
+            PomWithReleaseDate(pom, getReleasedAt(response))
+        }
+    }
+
+    override fun getMavenMetadata(groupId: String, artifactId: String): MavenMetadata? {
+        val fileDir = groupId.replace(".", "/") + "/$artifactId"
+        val metadataUrl = "${getContentUrlPrefix()}$fileDir/maven-metadata.xml"
+        return executeFetch(metadataUrl) { response ->
+            xmlMapper.readValue(response.body, MavenMetadata::class.java)
         }
     }
 
@@ -114,17 +132,24 @@ abstract class BaseMavenSearchClient(
         headers: Map<String, String> = emptyMap(),
         converter: (response: Transport.Response) -> R,
     ): R? {
-        return executeFetchInternal(serviceUri, headers, converter, 0)
+        return followRedirects(
+            serviceUri = serviceUri,
+            headers = headers,
+            converter = converter,
+            redirectCount = 0,
+            requestExecutor = clientTransport::get
+        )
     }
 
-    private fun <R> executeFetchInternal(
+    private fun <R> followRedirects(
         serviceUri: String,
         headers: Map<String, String>,
         converter: (response: Transport.Response) -> R,
-        redirectCount: Int
+        redirectCount: Int,
+        requestExecutor: (String, Map<String, String>) -> Transport.Response
     ): R? {
         return executeWithThrottle {
-            clientTransport.get(serviceUri, headers).use { response ->
+            requestExecutor.invoke(serviceUri, headers).use { response ->
                 when (response.code) {
                     HttpURLConnection.HTTP_OK -> converter.invoke(response)
                     HttpURLConnection.HTTP_NOT_FOUND -> null
@@ -133,14 +158,15 @@ abstract class BaseMavenSearchClient(
                     HttpURLConnection.HTTP_SEE_OTHER,
                     307, // HTTP_TEMP_REDIRECT (not in HttpURLConnection constants)
                     308  // HTTP_PERM_REDIRECT (not in HttpURLConnection constants)
-                    -> {
+                        -> {
                         val location = requireNotNull(response.headers["location"]) {
                             "Location of a moved resource cannot be null"
                         }
+                        logger.trace("Redirecting to $location")
                         if (redirectCount + 1 > MAX_REDIRECTS) {
                             throw IOException("Too many redirects when fetching $serviceUri -> $location")
                         }
-                        executeFetchInternal(location, headers, converter, redirectCount + 1)
+                        followRedirects(location, headers, converter, redirectCount + 1, requestExecutor)
                     }
 
                     else -> throw IOException("Unexpected response: ${response.code}")

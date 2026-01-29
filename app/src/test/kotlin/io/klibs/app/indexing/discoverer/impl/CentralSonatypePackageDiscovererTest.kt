@@ -14,8 +14,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -24,13 +24,13 @@ import kotlin.test.assertTrue
 @ActiveProfiles("test")
 internal class CentralSonatypePackageDiscovererTest {
 
-    @MockBean
+    @MockitoBean
     lateinit var centralSonatypeScraper: MavenCentralScraper
 
-    @MockBean
+    @MockitoBean
     lateinit var lastPackageIndexedRepository: InstantRepository
 
-    @MockBean
+    @MockitoBean
     lateinit var packageRepository: PackageRepository
 
     lateinit var discoverer: CentralSonatypePackageDiscoverer
@@ -44,8 +44,54 @@ internal class CentralSonatypePackageDiscovererTest {
             centralSonatypeScraper,
             lastPackageIndexedRepository,
             packageRepository,
-            3
+            3,
+            CentralSonatypeDiscoverMode.DISCOVER_NEW
         )
+    }
+
+    @Test
+    fun `should discover new versions for known packages in UPDATE_KNOWN mode`() = runTest {
+        // Given
+        val knownPackage = Package(
+            groupId = "org.example",
+            artifactId = "test-lib",
+            versions = setOf("1.0.0")
+        )
+
+        val newVersion = MavenArtifact(
+            groupId = "org.example",
+            artifactId = "test-lib",
+            version = "1.1.0",
+            scraperType = ScraperType.CENTRAL_SONATYPE,
+            releasedAt = null
+        )
+
+        whenever(packageRepository.findAllKnownPackages()).thenReturn(listOf(knownPackage))
+        whenever(centralSonatypeScraper.findNewVersions(any(), any())).thenReturn(flowOf(newVersion))
+
+        val discoverer = CentralSonatypePackageDiscoverer(
+            centralSonatypeScraper,
+            lastPackageIndexedRepository,
+            packageRepository,
+            3,
+            CentralSonatypeDiscoverMode.UPDATE_KNOWN
+        )
+
+        val errorChannel = Channel<Exception>()
+
+        // When
+        val artifacts = discoverer.discover(errorChannel).toList()
+
+        // Then
+        assertEquals(1, artifacts.size)
+        assertEquals("1.1.0", artifacts[0].version)
+        assertEquals("test-lib", artifacts[0].artifactId)
+
+        verify(centralSonatypeScraper).findNewVersions(
+            argThat { containsKey("org.example:test-lib") },
+            any()
+        )
+        verify(lastPackageIndexedRepository, never()).save(any())
     }
 
     @Test
