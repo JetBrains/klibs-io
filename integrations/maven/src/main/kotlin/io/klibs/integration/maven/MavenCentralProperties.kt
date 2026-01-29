@@ -11,7 +11,7 @@ data class MavenIntegrationProperties(
         val rateLimitRefillAmount: Long,
         val rateLimitRefillPeriodSec: Long,
         val discoveryEndpoint: String,
-        val indexEndpoint: String = "https://repo1.maven.org/maven2",
-        val indexDir: String = "cache/maven-index",
+        val indexEndpoint: String,
+        val indexDir: String,
     )
 }
