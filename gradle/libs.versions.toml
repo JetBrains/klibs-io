@@ -76,6 +76,7 @@ spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
 spring-boot-docker-compose = { module = "org.springframework.boot:spring-boot-docker-compose" }
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml" }
 
 kohsuke-githubApi = { module = "org.kohsuke:github-api", version.ref = "kohsuke-githubApi" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }

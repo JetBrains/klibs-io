@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.spring.webflux)
 
     api(libs.xml.util)
+    api(libs.jackson.dataformat.xml)
 
     api(libs.kotlinx.serialization.json)
 
