@@ -17,6 +17,8 @@ class MavenMetricsTest {
                 rateLimitRefillAmount = 10,
                 rateLimitRefillPeriodSec = 60,
                 discoveryEndpoint = "http://localhost/discovery",
+                indexEndpoint = "http://localhost/index",
+                indexDir = "/tmp/maven-index"
             )
         )
         
