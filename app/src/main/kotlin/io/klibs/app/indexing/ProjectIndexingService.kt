@@ -39,7 +39,7 @@ class ProjectIndexingService(
         try {
             val project = projectRepository.findWithoutDescription() ?: return
             if (descriptionBackoffProvider.isBackedOff(project.idNotNull)) {
-                logger.debug("Selected projectId=${project.id} is in backoff; skipping this run")
+                logger.debug("Selected projectId=${project.id} is in backoff for description update; skipping this run")
                 return
             }
             selectedProjectId = project.idNotNull
@@ -69,7 +69,7 @@ class ProjectIndexingService(
         try {
             val project = projectRepository.findWithoutTags() ?: return
             if (tagsBackoffProvider.isBackedOff(project.idNotNull)) {
-                logger.debug("Selected projectId=${project.id} is in backoff; skipping this run")
+                logger.debug("Selected projectId=${project.id} is in backoff for the tags update; skipping this run")
                 return
             }
             selectedProjectId = project.idNotNull
