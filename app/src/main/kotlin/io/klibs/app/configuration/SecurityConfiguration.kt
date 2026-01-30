@@ -52,6 +52,9 @@ class SecurityConfiguration(
                 authorize(HttpMethod.GET, "/ping", permitAll)
                 authorize(HttpMethod.OPTIONS, "/ping", permitAll)
 
+                authorize("/actuator/metrics", permitAll)
+                authorize("/actuator/prometheus", permitAll)
+
                 authorize("/error", permitAll)
 
                 if (environment.matchesProfiles("prod")) {
