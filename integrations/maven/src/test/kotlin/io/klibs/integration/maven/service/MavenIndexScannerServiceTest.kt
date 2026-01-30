@@ -1,6 +1,7 @@
 package io.klibs.integration.maven.service
 
 import io.klibs.integration.maven.ScraperType
+import io.klibs.integration.maven.MavenIntegrationProperties
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.apache.maven.index.*
@@ -21,7 +22,6 @@ class MavenIndexScannerServiceTest {
     @Mock
     private lateinit var indexer: Indexer
 
-    @Mock
     private lateinit var indexingContextManager: MavenIndexingContextManager
 
     @Mock
@@ -37,6 +37,17 @@ class MavenIndexScannerServiceTest {
 
     @BeforeEach
     fun setup() {
+        val properties = MavenIntegrationProperties(
+            central = MavenIntegrationProperties.Central(
+                rateLimitCapacity = 100,
+                rateLimitRefillAmount = 10,
+                rateLimitRefillPeriodSec = 1,
+                discoveryEndpoint = "http://localhost",
+                indexEndpoint = "http://localhost",
+                indexDir = "build/tmp/maven-index"
+            )
+        )
+        indexingContextManager = MavenIndexingContextManager(properties, indexer, emptyList())
         uut = MavenIndexScannerService(indexer, indexingContextManager)
     }
 
@@ -46,10 +57,8 @@ class MavenIndexScannerServiceTest {
         val from = Instant.parse("2023-01-01T00:00:00Z")
         val to = Instant.parse("2023-01-02T00:00:00Z")
 
-        whenever(indexingContextManager.useCentralContext<Any>(any(), any())).thenAnswer { invocation ->
-            val block = invocation.getArgument<suspend (IndexingContext) -> Any>(1)
-            runBlocking { block(indexingContext) }
-        }
+        whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
+            .thenReturn(indexingContext)
 
         val artifactInfo = ArtifactInfo().apply {
             groupId = "io.klibs"
@@ -84,10 +93,8 @@ class MavenIndexScannerServiceTest {
         val from = Instant.parse("2023-01-01T00:00:00Z")
         val to = Instant.parse("2023-01-02T00:00:00Z")
 
-        whenever(indexingContextManager.useCentralContext<Any>(any(), any())).thenAnswer { invocation ->
-            val block = invocation.getArgument<suspend (IndexingContext) -> Any>(1)
-            runBlocking { block(indexingContext) }
-        }
+        whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
+            .thenReturn(indexingContext)
 
         whenever(indexer.searchIterator(any())).thenReturn(iteratorSearchResponse)
         whenever(iteratorSearchResponse.iterator()).thenReturn(iteratorResultSet)
@@ -106,10 +113,8 @@ class MavenIndexScannerServiceTest {
         val from = Instant.parse("2023-01-01T00:00:00Z")
         val to = Instant.parse("2023-01-02T00:00:00Z")
 
-        whenever(indexingContextManager.useCentralContext<Any>(any(), any())).thenAnswer { invocation ->
-            val block = invocation.getArgument<suspend (IndexingContext) -> Any>(1)
-            runBlocking { block(indexingContext) }
-        }
+        whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
+            .thenReturn(indexingContext)
 
         whenever(indexer.searchIterator(any())).thenThrow(RuntimeException("Search failed"))
 
