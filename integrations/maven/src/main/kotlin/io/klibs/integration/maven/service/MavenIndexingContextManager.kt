@@ -25,6 +25,14 @@ class MavenIndexingContextManager(
         }
     }
 
+    fun removeIndexFiles() {
+        val centralConfig = properties.central
+        val indexDir = File(centralConfig.indexDir)
+        if (indexDir.exists()) {
+            indexDir.deleteRecursively()
+        }
+    }
+
     private fun createCentralContext(contextId: String): IndexingContext {
         val centralConfig = properties.central
         val indexDir = File(centralConfig.indexDir)
