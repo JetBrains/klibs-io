@@ -93,7 +93,10 @@ class GitHubIndexingServiceTopicsTest {
         val project = ProjectEntity(
             id = 101,
             scmRepoId = repoId,
+            ownerId = 10,
+            name = "awesome-lib",
             description = null,
+            minimizedReadme = null,
             latestVersion = "1.0.0",
             latestVersionTs = Instant.now().minusSeconds(100),
         )
@@ -113,7 +116,7 @@ class GitHubIndexingServiceTopicsTest {
             arg.copy(id = repoId)
         }
 
-        whenever(projectRepository.findByScmRepoId(repoId)).thenReturn(project)
+        whenever(projectRepository.findByNameAndScmRepoId(any(), eq(repoId))).thenReturn(project)
         whenever(gitHubIntegration.getRepositoryTopics(ghNativeId)).thenReturn(topicsFromGh)
         whenever(projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB)).thenReturn(emptyList())
 

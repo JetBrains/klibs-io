@@ -18,11 +18,9 @@ INSERT INTO public.scm_repo (
     (20003, 20003, 20003, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 30, 0, 'repo-c', 'Repo C', NULL, 'mit', 'MIT License', 'main', 'readme C');
 
 -- project
-INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, description)
-VALUES
-    (30001, 20001, CURRENT_TIMESTAMP, '1.0.0', 'Project A'),
-    (30002, 20002, CURRENT_TIMESTAMP, '1.0.0', 'Project B'),
-    (30003, 20003, CURRENT_TIMESTAMP, '1.0.0', 'Project C');
+INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, description, name, minimized_readme, owner_id) VALUES (30001, 20001, CURRENT_TIMESTAMP, '1.0.0', 'Project A', 'repo-a', NULL, 20001),
+    (30002, 20002, CURRENT_TIMESTAMP, '1.0.0', 'Project B', 'repo-b', NULL, 20002),
+    (30003, 20003, CURRENT_TIMESTAMP, '1.0.0', 'Project C', 'repo-c', NULL, 20003);
 
 -- package (latest version should match project.latest_version)
 INSERT INTO public.package (

@@ -7,7 +7,7 @@ INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, 
 VALUES (7001, 7001, 7001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 0, 'unknown-repo', 'Repo for unknown target test', NULL, 'apache-2.0', 'Apache License 2.0', 'main', 'Readme content');
 
 -- Insert project
-INSERT INTO public.project VALUES (7001, 7001, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (7001, 7001, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'unknown-repo', NULL, 7001);
 
 -- Insert a package (single latest version)
 -- Columns as used in other tests to match schema

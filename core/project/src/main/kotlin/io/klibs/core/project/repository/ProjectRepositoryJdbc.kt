@@ -26,7 +26,10 @@ class ProjectRepositoryJdbc(
     override fun insert(projectEntity: ProjectEntity): ProjectEntity {
         val params = MapSqlParameterSource()
             .addValue("scm_repo_id", projectEntity.scmRepoId)
+            .addValue("owner_id", projectEntity.ownerId)
+            .addValue("name", projectEntity.name)
             .addValue("description", projectEntity.description)
+            .addValue("minimized_readme", projectEntity.minimizedReadme)
             .addValue("latest_version", projectEntity.latestVersion)
             .addValue("latest_version_ts", Timestamp.from(projectEntity.latestVersionTs))
 
@@ -57,11 +60,10 @@ class ProjectRepositoryJdbc(
         val sql = """
             UPDATE project 
             SET description = :description 
-            FROM scm_repo 
-            JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
-            WHERE scm_repo.name = :projectName 
+            FROM scm_owner
+            WHERE project.name = :projectName 
               AND scm_owner.login = :ownerLogin
-              AND project.scm_repo_id = scm_repo.id
+              AND project.owner_id = scm_owner.id
         """.trimIndent()
 
         val updated = jdbcClient.sql(sql)
@@ -96,7 +98,10 @@ class ProjectRepositoryJdbc(
         val sql = """
             SELECT id,
                    scm_repo_id,
+                   owner_id,
+                   name,
                    description,
+                   minimized_readme,
                    latest_version,
                    latest_version_ts
             FROM project
@@ -110,29 +115,14 @@ class ProjectRepositoryJdbc(
             .getOrNull()
     }
 
-    override fun findByScmRepoId(scmRepoId: Int): ProjectEntity? {
-        val sql = """
-            SELECT id,
-                   scm_repo_id,
-                   description,
-                   latest_version,
-                   latest_version_ts
-            FROM project
-            WHERE scm_repo_id = :scmRepoId
-        """.trimIndent()
-
-        return jdbcClient.sql(sql)
-            .param("scmRepoId", scmRepoId)
-            .query(PROJECT_ENTITY_ROW_MAPPER)
-            .optional()
-            .getOrNull()
-    }
-
     override fun findWithoutDescription(): ProjectEntity? {
         val sql = """
             SELECT project.id,
                    project.scm_repo_id,
+                   project.owner_id,
+                   project.name,
                    project.description,
+                   project.minimized_readme,
                    project.latest_version,
                    project.latest_version_ts
             FROM project
@@ -153,7 +143,10 @@ class ProjectRepositoryJdbc(
         val sql = """
             SELECT project.id,
                    project.scm_repo_id,
+                   project.owner_id,
+                   project.name,
                    project.description,
+                   project.minimized_readme,
                    project.latest_version,
                    project.latest_version_ts
             FROM project
@@ -192,12 +185,62 @@ class ProjectRepositoryJdbc(
             .set()
     }
 
+    override fun findByNameAndOwnerLogin(name: String, ownerLogin: String): ProjectEntity? {
+        val sql = """
+            SELECT project.id,
+                   project.scm_repo_id,
+                   project.owner_id,
+                   project.name,
+                   project.description,
+                   project.minimized_readme,
+                   project.latest_version,
+                   project.latest_version_ts
+            FROM project
+            JOIN scm_owner ON project.owner_id = scm_owner.id
+            WHERE project.name = :name
+              AND scm_owner.login = :ownerLogin
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("name", name)
+            .param("ownerLogin", ownerLogin)
+            .query(PROJECT_ENTITY_ROW_MAPPER)
+            .optional()
+            .getOrNull()
+    }
+
+    override fun findByNameAndScmRepoId(name: String, scmRepoId: Int): ProjectEntity? {
+        val sql = """
+            SELECT id,
+                   scm_repo_id,
+                   owner_id,
+                   name,
+                   description,
+                   minimized_readme,
+                   latest_version,
+                   latest_version_ts
+            FROM project
+            WHERE scm_repo_id = :scmRepoId
+              AND name = :name
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("scmRepoId", scmRepoId)
+            .param("name", name)
+            .query(PROJECT_ENTITY_ROW_MAPPER)
+            .optional()
+            .getOrNull()
+    }
+
     private companion object {
         private val PROJECT_ENTITY_ROW_MAPPER = RowMapper<ProjectEntity> { rs, _ ->
             ProjectEntity(
                 id = rs.getInt("id"),
                 scmRepoId = rs.getInt("scm_repo_id"),
+                ownerId = rs.getInt("owner_id"),
+                name = rs.getString("name"),
                 description = rs.getString("description"),
+                minimizedReadme = rs.getString("minimized_readme"),
                 latestVersion = rs.getString("latest_version"),
                 latestVersionTs = rs.getTimestamp("latest_version_ts").toInstant(),
             )

@@ -263,7 +263,7 @@ internal fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
         id = this.id,
         name = this.name,
         description = this.description,
-        scmLink = "https://github.com/${this.ownerLogin}/${this.name}",
+        scmLink = "https://github.com/${this.ownerLogin}/${this.repoName}",
         scmStars = this.vcsStars,
         ownerType = this.ownerType.serializableName,
         ownerLogin = this.ownerLogin,

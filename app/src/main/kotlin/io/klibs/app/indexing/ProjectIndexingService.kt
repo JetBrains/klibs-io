@@ -102,7 +102,7 @@ class ProjectIndexingService(
         mavenArtifact: MavenArtifact,
         scmRepositoryEntity: ScmRepositoryEntity,
     ): ProjectEntity {
-        val entity = projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)
+        val entity = projectRepository.findByNameAndScmRepoId(scmRepositoryEntity.name, scmRepositoryEntity.idNotNull)
         return if (entity == null) {
             persist(
                 mavenArtifact = mavenArtifact,
@@ -146,7 +146,10 @@ class ProjectIndexingService(
             ProjectEntity(
                 id = null, // to be set by the DB
                 scmRepoId = scmRepositoryEntity.idNotNull,
+                ownerId = scmRepositoryEntity.ownerId,
+                name = scmRepositoryEntity.name,
                 description = null, // to be set later
+                minimizedReadme = scmRepositoryEntity.minimizedReadme,
                 latestVersion = mavenArtifact.version,
                 latestVersionTs = requireNotNull(mavenArtifact.releasedAt),
             )
