@@ -4,6 +4,7 @@ import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.flow
 import org.apache.lucene.index.Term
 import org.apache.lucene.search.BooleanClause
 import org.apache.lucene.search.TermQuery
@@ -33,7 +34,7 @@ class MavenIndexScannerService(
      * @param to Top border for the last modified timestamp.
      * @return A Flow of MavenArtifact objects matching the search criteria.
      */
-    fun scanForKotlinToolingMetadata(from: Instant, to: Instant): Flow<MavenArtifact> = channelFlow {
+    fun scanForKotlinToolingMetadata(from: Instant, to: Instant): Flow<MavenArtifact> = flow {
         logger.info("Starting scan of local Maven index for Kotlin tooling metadata from {} to {}", from, to)
 
         try {
@@ -45,9 +46,9 @@ class MavenIndexScannerService(
 
                 val resultSet = indexer.searchIterator(request)
 
-                resultSet.use { iteratorSerachResponse ->
-                    for (artifactInfo in iteratorSerachResponse) {
-                        send(
+                resultSet.use { iteratorSearchResponse ->
+                    for (artifactInfo in iteratorSearchResponse) {
+                        emit(
                             MavenArtifact(
                                 groupId = artifactInfo.groupId,
                                 artifactId = artifactInfo.artifactId,
