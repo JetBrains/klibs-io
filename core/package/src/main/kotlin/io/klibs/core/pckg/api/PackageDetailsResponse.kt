@@ -44,8 +44,8 @@ data class PackageDetailsResponse(
     val releasedAtMillis: Long,
 
     @Schema(
-        description = "Name of the package. Might or might not be the same as artifactId, nullable",
-        example = "KStateMachine Core Main Package"
+        description = "Name of the package, the same as artifactId, nullable",
+        example = "kstatemachine"
     )
     val name: String?,
 
