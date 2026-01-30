@@ -47,13 +47,6 @@ class CentralSonatypeScraper(
         executeFindKmpArtifactsQuery(discoveryCentralSonatypeSearchClient, query, lastUpdatedSince, errorChannel)
     }
 
-    override suspend fun findAllVersionForArtifact(
-        mavenArtifact: MavenArtifact,
-        errorChannel: Channel<Exception>
-    ): Flow<MavenArtifact> = flow {
-        val searchQuery = createFindArtifactVersionsQuery(mavenArtifact.groupId, mavenArtifact.artifactId)
-        executeFindAllVersionForArtifactQuery(centralSonatypeSearchClient, searchQuery, errorChannel = errorChannel)
-    }
 
     private suspend fun FlowCollector<MavenArtifact>.executeFindKmpArtifactsQuery(
         client: MavenSearchClient,

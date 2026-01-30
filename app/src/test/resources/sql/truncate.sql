@@ -11,7 +11,7 @@ CREATE OR REPLACE FUNCTION truncate_all_tables()
         )
         FROM pg_tables
         WHERE schemaname = current_schema()
-          AND tablename NOT IN (''databasechangelog'');
+          AND tablename NOT IN (''databasechangelog'', ''maven_central_log'');
 
         IF stmt IS NOT NULL THEN
             EXECUTE stmt;

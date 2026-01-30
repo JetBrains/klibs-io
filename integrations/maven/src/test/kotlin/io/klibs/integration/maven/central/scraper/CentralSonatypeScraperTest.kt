@@ -1,20 +1,18 @@
 package io.klibs.integration.maven.central.scraper
 
-import io.klibs.integration.maven.MavenArtifact
-import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.ScraperType
-import io.klibs.integration.maven.scraper.impl.CentralSonatypeScraper
-import io.klibs.integration.maven.search.MavenSearchClient
+import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.scraper.MavenCentralScraper
-import io.klibs.integration.maven.search.MavenSearchResponse
+import io.klibs.integration.maven.scraper.impl.CentralSonatypeScraper
 import io.klibs.integration.maven.search.ArtifactData
+import io.klibs.integration.maven.search.MavenSearchClient
+import io.klibs.integration.maven.search.MavenSearchResponse
 import io.klibs.integration.maven.search.impl.BaseMavenSearchClient
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
-import org.apache.maven.search.api.request.BooleanQuery
 import org.apache.maven.search.api.request.Query
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -41,56 +39,9 @@ class CentralSonatypeScraperTest {
     fun setUp() {
         mockCentralSonatypeClient = mock<CentralSonatypeSearchClient>()
         mockDiscoveryClient = mock()
-        centralSonatypeScraper = CentralSonatypeScraper(mockDiscoveryClient, mockCentralSonatypeClient as CentralSonatypeSearchClient)
+        centralSonatypeScraper =
+            CentralSonatypeScraper(mockDiscoveryClient, mockCentralSonatypeClient as CentralSonatypeSearchClient)
         errorChannel = Channel(Channel.UNLIMITED)
-    }
-
-    @Test
-    fun `test findAllVersionForArtifact returns all versions of an artifact`() = runTest {
-        // Arrange
-        val artifact = MavenArtifact(
-            groupId = "org.example",
-            artifactId = "example-artifact",
-            version = "1.0.0",
-            scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = Instant.now()
-        )
-
-        val mockResponse = MavenSearchResponse(
-            totalHits = 3,
-            currentHits = 3,
-            page = listOf(
-                ArtifactData("org.example", "example-artifact", "1.0.0", Instant.ofEpochMilli(1000L)),
-                ArtifactData("org.example", "example-artifact", "1.1.0", Instant.ofEpochMilli(2000L)),
-                ArtifactData("org.example", "example-artifact", "1.2.0", Instant.ofEpochMilli(3000L))
-            )
-        )
-        whenever(mockCentralSonatypeClient.searchWithThrottle(any(), any(), any()))
-            .thenReturn(mockResponse)
-            .thenReturn(MavenSearchResponse(0, 0, emptyList()))
-
-        // Act
-        val result = centralSonatypeScraper.findAllVersionForArtifact(artifact, errorChannel).toList()
-
-        verify(mockCentralSonatypeClient).searchWithThrottle(any(), queryCaptor.capture(), any())
-        val query = queryCaptor.firstValue
-        assertTrue(query is BooleanQuery.And, "Query should be a BooleanQuery.And")
-
-        // Check that the query contains the expected parts
-        assertTrue(
-            query.left.value.contains("g:org.example") || query.right.value.contains("g:org.example"),
-            "Query should include group ID"
-        )
-        assertTrue(
-            query.left.value.contains("a:example-artifact") || query.right.value.contains("a:example-artifact"),
-            "Query should include artifact ID"
-        )
-
-        // Verify the result
-        assertEquals(3, result.size)
-        assertEquals("1.0.0", result[0].version)
-        assertEquals("1.1.0", result[1].version)
-        assertEquals("1.2.0", result[2].version)
     }
 
     @Test
@@ -125,7 +76,13 @@ class CentralSonatypeScraperTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `test error handling when search client throws exception`() = runTest {
-        whenever(mockDiscoveryClient.searchWithThrottle(any(), any(), any())).thenThrow(RuntimeException("Test exception"))
+        whenever(
+            mockDiscoveryClient.searchWithThrottle(
+                any(),
+                any(),
+                any()
+            )
+        ).thenThrow(RuntimeException("Test exception"))
 
         // Act
         val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()

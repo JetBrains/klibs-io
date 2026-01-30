@@ -34,9 +34,7 @@ klibs:
     executor:
       thread-count: 2
     central-sonatype:
-      mode: UPDATE_KNOWN
       enabled: false
-      last-updated-offset-hours: 3
     gmaven:
       enabled: true
       s3:
