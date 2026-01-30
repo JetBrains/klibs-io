@@ -3,7 +3,6 @@ package io.klibs.integration.maven.service
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
 import org.apache.lucene.index.Term
 import org.apache.lucene.search.BooleanClause
@@ -30,19 +29,15 @@ class MavenIndexScannerService(
      * Scans the local Maven index for artifacts containing Kotlin tooling metadata.
      * The scan is performed iteratively to keep memory usage low.
      *
-     * @param from Lower border for the last modified timestamp.
-     * @param to Top border for the last modified timestamp.
      * @return A Flow of MavenArtifact objects matching the search criteria.
      */
-    fun scanForKotlinToolingMetadata(from: Instant, to: Instant): Flow<MavenArtifact> = flow {
-        logger.info("Starting scan of local Maven index for Kotlin tooling metadata from {} to {}", from, to)
+    fun scanForNewKMPArtifacts(): Flow<MavenArtifact> = flow {
+        logger.info("Starting scan of local Maven index for Kotlin tooling metadata.")
 
         try {
             indexingContextManager.useCentralContext("maven-central-scan-context") { context ->
-                val fromMillis = from.toEpochMilli().toString()
-                val toMillis = to.toEpochMilli().toString()
 
-                val request = createSearchRequestForKMPPackages(fromMillis, toMillis, context)
+                val request = createSearchRequestForKMPPackages( context)
 
                 val resultSet = indexer.searchIterator(request)
 
@@ -68,12 +63,9 @@ class MavenIndexScannerService(
     }
 
     private fun createSearchRequestForKMPPackages(
-        fromMillis: String,
-        toMillis: String,
         context: IndexingContext
     ): IteratorSearchRequest = IteratorSearchRequest(
         BooleanQuery.Builder().add(TermQuery(Term("l", "kotlin-tooling-metadata")), BooleanClause.Occur.MUST)
-            .add(TermRangeQuery.newStringRange("m", fromMillis, toMillis, true, true), BooleanClause.Occur.MUST)
             .add(TermQuery(Term("p", "json")), BooleanClause.Occur.MUST)
             .build(), context
     )

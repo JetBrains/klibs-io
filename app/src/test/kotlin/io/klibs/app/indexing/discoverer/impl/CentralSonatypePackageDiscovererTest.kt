@@ -1,18 +1,26 @@
 package io.klibs.app.indexing.discoverer.impl
 
-import io.klibs.app.util.instant.InstantRepository
 import io.klibs.core.pckg.dto.projection.Package
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
+import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.scraper.MavenCentralScraper
+import io.klibs.integration.maven.service.MavenIndexDownloadingService
+import io.klibs.integration.maven.service.MavenIndexScannerService
+import io.klibs.integration.maven.service.MavenIndexingContextManager
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -25,10 +33,19 @@ import kotlin.test.assertTrue
 internal class CentralSonatypePackageDiscovererTest {
 
     @MockitoBean
+    lateinit var mavenIndexDownloadingService: MavenIndexDownloadingService
+
+    @MockitoBean
+    lateinit var mavenIndexScannerService: MavenIndexScannerService
+
+    @MockitoBean
+    lateinit var mavenIndexingContextManager: MavenIndexingContextManager
+
+    @MockitoBean
     lateinit var centralSonatypeScraper: MavenCentralScraper
 
     @MockitoBean
-    lateinit var lastPackageIndexedRepository: InstantRepository
+    lateinit var mavenCentralLogRepository: MavenCentralLogRepository
 
     @MockitoBean
     lateinit var packageRepository: PackageRepository
@@ -39,13 +56,15 @@ internal class CentralSonatypePackageDiscovererTest {
 
     @BeforeEach
     fun setUp() {
-        whenever(lastPackageIndexedRepository.retrieveLatest()).thenReturn(initialTimestamp)
+        whenever(mavenCentralLogRepository.retrieveMavenIndexTimestamp()).thenReturn(initialTimestamp)
+
         discoverer = CentralSonatypePackageDiscoverer(
+            mavenIndexDownloadingService,
+            mavenIndexScannerService,
+            mavenIndexingContextManager,
             centralSonatypeScraper,
-            lastPackageIndexedRepository,
-            packageRepository,
-            3,
-            CentralSonatypeDiscoverMode.DISCOVER_NEW
+            mavenCentralLogRepository,
+            packageRepository
         )
     }
 
@@ -68,14 +87,7 @@ internal class CentralSonatypePackageDiscovererTest {
 
         whenever(packageRepository.findAllKnownPackages()).thenReturn(listOf(knownPackage))
         whenever(centralSonatypeScraper.findNewVersions(any(), any())).thenReturn(flowOf(newVersion))
-
-        val discoverer = CentralSonatypePackageDiscoverer(
-            centralSonatypeScraper,
-            lastPackageIndexedRepository,
-            packageRepository,
-            3,
-            CentralSonatypeDiscoverMode.UPDATE_KNOWN
-        )
+        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(null)
 
         val errorChannel = Channel<Exception>()
 
@@ -91,7 +103,6 @@ internal class CentralSonatypePackageDiscovererTest {
             argThat { containsKey("org.example:test-lib") },
             any()
         )
-        verify(lastPackageIndexedRepository, never()).save(any())
     }
 
     @Test
@@ -114,9 +125,8 @@ internal class CentralSonatypePackageDiscovererTest {
         )
 
         whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
-        whenever(centralSonatypeScraper.findKmpArtifacts(any(), any())).thenReturn(flowOf(artifact1, artifact2))
-        whenever(centralSonatypeScraper.findAllVersionForArtifact(eq(artifact1), any())).thenReturn(flowOf(artifact1))
-        whenever(centralSonatypeScraper.findAllVersionForArtifact(eq(artifact2), any())).thenReturn(flowOf(artifact2))
+        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(initialTimestamp)
+        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(artifact1, artifact2))
 
         val errorChannel = Channel<Exception>()
 
@@ -138,7 +148,7 @@ internal class CentralSonatypePackageDiscovererTest {
         assertEquals(ScraperType.CENTRAL_SONATYPE, resultArtifact2?.scraperType)
         assertTrue(resultArtifact2?.releasedAt != null)
 
-        verify(lastPackageIndexedRepository, times(1)).save(any())
+        verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
     }
 
     @Test
@@ -167,13 +177,8 @@ internal class CentralSonatypePackageDiscovererTest {
         )
 
         whenever(packageRepository.findAllKnownPackages()).thenReturn(listOf(knownPackage))
-        whenever(centralSonatypeScraper.findKmpArtifacts(any(), any())).thenReturn(flowOf(knownArtifact, newArtifact))
-        whenever(
-            centralSonatypeScraper.findAllVersionForArtifact(
-                eq(newArtifact),
-                any()
-            )
-        ).thenReturn(flowOf(newArtifact))
+        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(initialTimestamp)
+        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(knownArtifact, newArtifact))
 
         val errorChannel = Channel<Exception>()
 
@@ -182,14 +187,14 @@ internal class CentralSonatypePackageDiscovererTest {
         assertEquals(1, artifacts.size)
         assertEquals("new-lib", artifacts[0].artifactId)
 
-        // Verify the timestamp was updated
-        verify(lastPackageIndexedRepository, times(1)).save(any())
+        // Verify the timestamp was updated with the latest artifact timestamp
+        verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
     }
 
     @Test
     fun `should find all versions for artifacts`() = runTest {
         // Given
-        val artifact = MavenArtifact(
+        val artifact1 = MavenArtifact(
             groupId = "org.example",
             artifactId = "test-lib",
             version = "1.0.0",
@@ -197,7 +202,7 @@ internal class CentralSonatypePackageDiscovererTest {
             releasedAt = initialTimestamp.plusSeconds(3600)
         )
 
-        val version2 = MavenArtifact(
+        val artifact2 = MavenArtifact(
             groupId = "org.example",
             artifactId = "test-lib",
             version = "2.0.0",
@@ -206,13 +211,8 @@ internal class CentralSonatypePackageDiscovererTest {
         )
 
         whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
-        whenever(centralSonatypeScraper.findKmpArtifacts(any(), any())).thenReturn(flowOf(artifact))
-        whenever(centralSonatypeScraper.findAllVersionForArtifact(eq(artifact), any())).thenReturn(
-            flowOf(
-                artifact,
-                version2
-            )
-        )
+        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(initialTimestamp)
+        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(artifact1, artifact2))
 
         val errorChannel = Channel<Exception>()
 
@@ -223,80 +223,21 @@ internal class CentralSonatypePackageDiscovererTest {
         val versions = artifacts.map { it.version }.sorted()
         assertEquals(listOf("1.0.0", "2.0.0"), versions)
 
-        verify(lastPackageIndexedRepository, times(1)).save(any())
+        verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
     }
 
     @Test
     fun `should handle empty results`() = runTest {
         whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
-        whenever(centralSonatypeScraper.findKmpArtifacts(any(), any())).thenReturn(flowOf())
+        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(initialTimestamp)
+        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf())
 
         val errorChannel = Channel<Exception>()
 
         val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
 
         assertEquals(0, artifacts.size)
-        verify(lastPackageIndexedRepository, times(1)).save(any())
+        verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
     }
 
-    /**
-     * Problem that is covered is that:
-     *  1. findKmpArtifacts can emit 2 versions of the same artifact
-     *  2. for each version, if findAllVersionForArtifact will be triggered -- that will cause flow to have duplicate versions
-     *  3. when we try to insert them later, we will hit unique groupId-artifactId-version constraint on package_index_request table
-     */
-    @Test
-    fun `should deduplicate equal artifacts from findKmpArtifacts`() = runTest {
-        val dup1 = MavenArtifact(
-            groupId = "org.example",
-            artifactId = "dup-lib",
-            version = "1.0.0",
-            scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = initialTimestamp.plusSeconds(3600)
-        )
-        val dup2 = dup1.copy()
-
-        whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
-        whenever(centralSonatypeScraper.findKmpArtifacts(any(), any())).thenReturn(flowOf(dup1, dup2))
-        whenever(centralSonatypeScraper.findAllVersionForArtifact(eq(dup1), any()))
-            .thenReturn(flowOf(dup1, dup2))
-
-        // shouldn't be called
-        whenever(centralSonatypeScraper.findAllVersionForArtifact(eq(dup2), any()))
-            .thenReturn(flowOf(dup1, dup2))
-
-        val errorChannel = Channel<Exception>()
-
-        val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
-
-        assertEquals(1, artifacts.size)
-
-        verify(centralSonatypeScraper, times(1)).findAllVersionForArtifact(eq(dup1), any())
-    }
-
-    @Test
-    fun `should deduplicate equal artifacts from findAllVersionForArtifact`() = runTest {
-        val base = MavenArtifact(
-            groupId = "org.example",
-            artifactId = "dup-lib-versions",
-            version = "1.0.0",
-            scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = initialTimestamp.plusSeconds(3600)
-        )
-        val duplicate = base.copy()
-
-        whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
-        whenever(centralSonatypeScraper.findKmpArtifacts(any(), any())).thenReturn(flowOf(base))
-
-        // findAllVersionForArtifact mistakenly returns duplicates
-        whenever(centralSonatypeScraper.findAllVersionForArtifact(eq(base), any()))
-            .thenReturn(flowOf(base, duplicate))
-
-        val errorChannel = Channel<Exception>()
-        val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
-
-        assertEquals(1, artifacts.size)
-
-        verify(centralSonatypeScraper, times(1)).findAllVersionForArtifact(eq(base), any())
-    }
 }
