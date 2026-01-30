@@ -16,13 +16,13 @@ INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, 
 VALUES (9004, 9004, 9001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 100, 10, 'test-repo-4', 'Test repository 4', NULL, 'mit', 'MIT License', 'main', 'Test readme content for repo 4');
 
 -- Insert test projects
-INSERT INTO public.project VALUES (9001, 9001, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (9001, 9001, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'test-repo-1', NULL, 9001);
 
-INSERT INTO public.project VALUES (9002, 9002, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (9002, 9002, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'test-repo-2', NULL, 9001);
 
-INSERT INTO public.project VALUES (9003, 9003, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (9003, 9003, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'test-repo-3', NULL, 9001);
 
-INSERT INTO public.project VALUES (9004, 9004, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (9004, 9004, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'test-repo-4', NULL, 9001);
 
 -- Insert test packages with duplicate descriptions
 -- First package with two versions - older version

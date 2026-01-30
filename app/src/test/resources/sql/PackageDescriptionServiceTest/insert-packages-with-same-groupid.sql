@@ -10,8 +10,8 @@ INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, 
 VALUES (8004, 8004, 8003, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 100, 10, 'test-repo-4', 'Test repository 4', NULL, 'mit', 'MIT License', 'main', 'Test readme content');
 
 -- Insert test projects
-INSERT INTO public.project VALUES (8003, 8003, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
-INSERT INTO public.project VALUES (8004, 8004, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (8003, 8003, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'test-repo-3', NULL, 8003);
+INSERT INTO public.project VALUES (8004, 8004, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'test-repo-4', NULL, 8003);
 
 -- Insert test packages with same groupId but different artifactIds
 INSERT INTO public.package VALUES (8004, 8003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-library', '1.0.0', 'org.example:test-library', 'Old description 1', 'https://example.com/test-library', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');

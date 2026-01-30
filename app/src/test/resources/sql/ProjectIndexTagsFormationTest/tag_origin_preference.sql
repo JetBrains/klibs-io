@@ -19,11 +19,9 @@ VALUES
   (10003, 10003, 10003, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 0, 'repo-10003', 'Repo 10003', NULL, 'mit', 'MIT License', 'main', 'readme');
 
 -- project
-INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, description)
-VALUES
-  (10001, 10001, CURRENT_TIMESTAMP, '1.0.0', 'P10001'),
-  (10002, 10002, CURRENT_TIMESTAMP, '1.0.0', 'P10002'),
-  (10003, 10003, CURRENT_TIMESTAMP, '1.0.0', 'P10003');
+INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, description, name, minimized_readme, owner_id) VALUES (10001, 10001, CURRENT_TIMESTAMP, '1.0.0', 'P10001', 'repo-10001', NULL, 10001),
+  (10002, 10002, CURRENT_TIMESTAMP, '1.0.0', 'P10002', 'repo-10002', NULL, 10002),
+  (10003, 10003, CURRENT_TIMESTAMP, '1.0.0', 'P10003', 'repo-10003', NULL, 10003);
 
 -- package
 -- minimal single package per project to ensure package_index entry exists

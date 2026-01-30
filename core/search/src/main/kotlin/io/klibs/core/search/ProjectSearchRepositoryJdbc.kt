@@ -17,6 +17,7 @@ class ProjectSearchRepositoryJdbc(
             SELECT project_id,
                    owner_type,
                    owner_login,
+                   repo_name,
                    name,
                    stars,
                    license_name,
@@ -52,6 +53,7 @@ class ProjectSearchRepositoryJdbc(
             SELECT project_id,
                    owner_type,
                    owner_login,
+                   repo_name,
                    name,
                    stars,
                    license_name,
@@ -108,7 +110,7 @@ class ProjectSearchRepositoryJdbc(
         val targetCondition = formTargetCondition(targetFilters)
 
         val sql = buildString {
-            append("SELECT project_id, owner_type, owner_login, name, stars, license_name, latest_version")
+            append("SELECT project_id, owner_type, owner_login, repo_name, name, stars, license_name, latest_version")
             append(", latest_version_ts, array_to_string(platforms, ',') AS platforms, plain_description, tags, markers")
 
             // For debugging and testing purposes
@@ -272,6 +274,7 @@ class ProjectSearchRepositoryJdbc(
             SearchProjectResult(
                 id = rs.getInt("project_id"),
                 name = rs.getString("name"),
+                repoName = rs.getString("repo_name"),
                 description = rs.getString("plain_description"),
                 vcsStars = rs.getInt("stars"),
                 ownerType = ScmOwnerType.findBySerializableName(rs.getString("owner_type")),

@@ -19,8 +19,8 @@ import org.mockito.Mockito.`when`
 import org.mockito.ArgumentMatchers.anyInt
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -33,31 +33,31 @@ class ProjectServiceSmokeTest {
     @Autowired
     private lateinit var uut: ProjectService
 
-    @MockBean
+    @MockitoBean
     private lateinit var packageService: PackageService
 
-    @MockBean
+    @MockitoBean
     private lateinit var readmeService: ReadmeService
 
-    @MockBean
+    @MockitoBean
     private lateinit var projectRepository: ProjectRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var packageRepository: PackageRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var markerRepository: MarkerRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var tagRepository: TagRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var projectTagRepository: ProjectTagRepository
 
-    @MockBean
+    @MockitoBean
     private lateinit var allowedProjectTagsRepository: AllowedProjectTagsRepository
 
     @Test
@@ -95,14 +95,17 @@ class ProjectServiceSmokeTest {
         val projectEntity = ProjectEntity(
             id = 1,
             scmRepoId = scmRepoId,
+            ownerId = 1,
+            name = projectName,
             description = "Test project description",
+            minimizedReadme = null,
             latestVersion = "1.0.0",
             latestVersionTs = now,
         )
 
         // Mock repository responses
-        `when`(scmRepositoryRepository.findByName(ownerLogin, projectName)).thenReturn(scmRepositoryEntity)
-        `when`(projectRepository.findByScmRepoId(scmRepoId)).thenReturn(projectEntity)
+        `when`(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(projectEntity)
+        `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
         `when`(packageRepository.existsByProjectId(projectEntity.idNotNull)).thenReturn(false)
 
         // Default stub for tags
@@ -148,7 +151,10 @@ class ProjectServiceSmokeTest {
         val projectEntity = ProjectEntity(
             id = projectId,
             scmRepoId = scmRepoId,
+            ownerId = 1,
+            name = "testProject",
             description = "Test project description",
+            minimizedReadme = null,
             latestVersion = "1.0.0",
             latestVersionTs = now,
         )
@@ -165,7 +171,6 @@ class ProjectServiceSmokeTest {
         `when`(packageRepository.findPlatformsOf(projectId)).thenReturn(platforms)
         `when`(markerRepository.findAllByProjectId(projectId)).thenReturn(projectMarkers)
 
-        // Default stub for tags
         `when`(tagRepository.getTagsByProjectId(anyInt())).thenReturn(emptyList())
 
         val foundProject = uut.getProjectDetailsById(projectId)
@@ -212,7 +217,10 @@ class ProjectServiceSmokeTest {
         val projectEntity = ProjectEntity(
             id = projectId,
             scmRepoId = scmRepoId,
+            ownerId = 1,
+            name = "testProject",
             description = "Test project description",
+            minimizedReadme = null,
             latestVersion = "1.0.0",
             latestVersionTs = now,
         )
@@ -225,8 +233,8 @@ class ProjectServiceSmokeTest {
         val platforms = listOf(PackagePlatform.JVM, PackagePlatform.JS)
 
         // Mock repository responses
-        `when`(scmRepositoryRepository.findByName(ownerLogin, projectName)).thenReturn(scmRepositoryEntity)
-        `when`(projectRepository.findByScmRepoId(scmRepoId)).thenReturn(projectEntity)
+        `when`(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(projectEntity)
+        `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
         `when`(packageRepository.existsByProjectId(projectEntity.idNotNull)).thenReturn(true)
         `when`(packageRepository.findPlatformsOf(projectEntity.idNotNull)).thenReturn(platforms)
         `when`(markerRepository.findAllByProjectId(projectEntity.idNotNull)).thenReturn(projectMarkers)

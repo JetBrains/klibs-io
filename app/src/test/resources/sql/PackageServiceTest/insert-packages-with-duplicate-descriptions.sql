@@ -10,8 +10,8 @@ INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, 
 VALUES (8002, 8002, 8001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 100, 10, 'test-repo-2', 'Test repository 2', NULL, 'mit', 'MIT License', 'main', 'Test readme content for repo 2');
 
 -- Insert test projects
-INSERT INTO public.project VALUES (8001, 8001, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
-INSERT INTO public.project VALUES (8002, 8002, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (8001, 8001, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'test-repo-1', NULL, 8001);
+INSERT INTO public.project VALUES (8002, 8002, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'test-repo-2', NULL, 8001);
 
 -- Insert test packages with duplicate descriptions
 -- First package
