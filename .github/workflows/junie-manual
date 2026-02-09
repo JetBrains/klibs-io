@@ -1,0 +1,34 @@
+name: Junie (manual prompt)
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "What should Junie do?"
+        required: true
+        type: string
+      base_branch:
+        description: "Base branch"
+        required: false
+        default: "release"
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  junie:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: JetBrains/junie-github-action@v0
+        with:
+          junie_api_key: ${{ secrets.JUNIE_API_KEY }}
+          prompt: ${{ inputs.prompt }}
+          base_branch: ${{ inputs.base_branch }}
+          use_single_comment: true
