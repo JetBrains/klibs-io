@@ -1,7 +1,8 @@
 package io.klibs.integration.maven.index
 
-import io.klibs.integration.maven.MavenIntegrationProperties
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
+import io.klibs.integration.maven.service.MavenIndexingContextManager
+import kotlinx.coroutines.runBlocking
 import org.apache.maven.index.Indexer
 import org.apache.maven.index.context.IndexingContext
 import org.apache.maven.index.updater.IndexUpdateResult
@@ -16,7 +17,6 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -43,44 +43,37 @@ class MavenIndexDownloadingServiceTest {
     @Mock
     private lateinit var indexUpdateResult: IndexUpdateResult
 
-    private val properties = MavenIntegrationProperties(
-        central = MavenIntegrationProperties.Central(
-            rateLimitCapacity = 100,
-            rateLimitRefillAmount = 10,
-            rateLimitRefillPeriodSec = 1,
-            discoveryEndpoint = "",
-            indexEndpoint = "",
-            indexDir = ""
-        )
-    )
+    @Mock
+    private lateinit var indexingContextManager: MavenIndexingContextManager
 
     private lateinit var service: MavenIndexDownloadingService
 
     @BeforeEach
     fun setup() {
         service = MavenIndexDownloadingService(
-            properties.copy(central = properties.central.copy(indexDir = File(tempDir, "maven-index").absolutePath)),
-            indexer,
             indexUpdater,
-            emptyList(),
-            resourceFetcher
+            resourceFetcher,
+            indexingContextManager
         )
     }
 
     @Test
     @DisplayName("Indexer should be always fully downloaded, because incremental updates are broken and could not contain all the libraries.")
     fun `should download full index with force flag`() {
-        whenever(
-            indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any())
-        ).thenReturn(indexingContext)
+        runBlocking {
+            whenever(indexingContextManager.useCentralContext<Any>(any(), any())).thenAnswer { invocation ->
+                val block = invocation.getArgument<suspend (IndexingContext) -> Any>(1)
+                runBlocking { block(indexingContext) }
+            }
 
-        whenever(indexUpdateResult.isFullUpdate).thenReturn(true)
-        whenever(indexUpdater.fetchAndUpdateIndex(any())).thenReturn(indexUpdateResult)
+            whenever(indexUpdateResult.isFullUpdate).thenReturn(true)
+            whenever(indexUpdater.fetchAndUpdateIndex(any())).thenReturn(indexUpdateResult)
 
-        service.downloadFullIndex()
+            service.downloadFullIndex()
 
-        verify(indexUpdater).fetchAndUpdateIndex(check {
-            assertTrue(it.isForceFullUpdate, "Should have forceFullUpdate flag set to true")
-        })
+            verify(indexUpdater).fetchAndUpdateIndex(check {
+                assertTrue(it.isForceFullUpdate, "Should have forceFullUpdate flag set to true")
+            })
+        }
     }
 }

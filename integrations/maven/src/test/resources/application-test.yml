@@ -13,3 +13,5 @@ klibs:
         rate-limit-refill-amount: 100
         rate-limit-refill-period-sec: 5
         discovery-endpoint: http://localhost:8080/discovery
+        indexEndpoint: http://localhost:8080/index
+        indexDir: /tmp/maven-index
