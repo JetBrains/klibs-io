@@ -52,6 +52,11 @@ class SecurityConfiguration(
                 authorize(HttpMethod.GET, "/ping", permitAll)
                 authorize(HttpMethod.OPTIONS, "/ping", permitAll)
 
+                // NOTE:
+                //  - /actuator/metrics and /actuator/prometheus are intentionally OPEN at the application level
+                //  - They are CLOSED at the nginx level
+                // The reason is to let the common Prometheus scraper fetch metrics without app-level auth,
+                // while still preventing external/public access via the edge proxy.
                 authorize("/actuator/metrics", permitAll)
                 authorize("/actuator/prometheus", permitAll)
 
@@ -59,6 +64,8 @@ class SecurityConfiguration(
 
                 if (environment.matchesProfiles("prod")) {
                     authorize("/blacklist/**", hasRole("ADMIN"))
+                    // All other actuator endpoints require the "actuator" role in prod
+                    // (the metrics/prometheus endpoints above remain permitAll for Prometheus scraping).
                     authorize("/actuator/**", hasRole("actuator"))
                     authorize("/api-docs/**", hasRole("api-docs"))
                     authorize("/package-description/**", hasRole("ADMIN"))
