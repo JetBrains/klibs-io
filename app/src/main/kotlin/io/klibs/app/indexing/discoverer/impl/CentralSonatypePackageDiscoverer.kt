@@ -40,9 +40,11 @@ class CentralSonatypePackageDiscoverer(
     override suspend fun discover(errorChannel: Channel<Exception>): Flow<MavenArtifact> {
         var newIndexTs: Instant? = null
         try {
-            newIndexTs = mavenIndexDownloadingService.downloadFullIndex(withContext(Dispatchers.IO) {
+            val localIndexTimestamp = withContext(Dispatchers.IO) {
                 mavenCentralLogRepository.retrieveMavenIndexTimestamp()
-            })
+            }
+
+            newIndexTs = mavenIndexDownloadingService.downloadIndexIfNewer(localIndexTimestamp)
         } catch (e: Exception) {
             errorChannel.send(Exception("Failed to download Maven index", e))
         }
@@ -68,6 +70,7 @@ class CentralSonatypePackageDiscoverer(
             }
             .onCompletion {
                 mavenCentralLogRepository.saveMavenIndexTimestamp(newIndexTs)
+                // TODO(Dmitrii Krasnov): now it is used because of the ephemeral storage, remove in KTL-4027.
                 mavenIndexingContextManager.removeIndexFiles()
                 logger.info(
                     "--- Central sonatype packages discovering finished. Last Maven Central index timestamp changed to $newIndexTs. ---"

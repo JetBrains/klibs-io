@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.body
-import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.*
@@ -35,7 +34,7 @@ class MavenIndexDownloadingService(
         .baseUrl("${properties.central.indexEndpoint}/.index/")
         .build()
 
-    suspend fun downloadFullIndex(localIndexTimestamp: Instant): Instant? {
+    suspend fun downloadIndexIfNewer(localIndexTimestamp: Instant): Instant? {
         logger.info("Checking for Maven Central index updates")
 
         var resultTimestamp: Instant? = null

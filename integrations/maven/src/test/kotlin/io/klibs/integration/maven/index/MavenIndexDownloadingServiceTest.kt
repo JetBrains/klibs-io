@@ -23,7 +23,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.body
 import java.io.File
-import java.io.InputStream
 import java.time.Instant
 import kotlin.test.assertTrue
 
@@ -109,7 +108,7 @@ class MavenIndexDownloadingServiceTest {
             whenever(indexUpdateResult.isFullUpdate).thenReturn(true)
             whenever(indexUpdater.fetchAndUpdateIndex(any())).thenReturn(indexUpdateResult)
 
-            service.downloadFullIndex(Instant.EPOCH)
+            service.downloadIndexIfNewer(Instant.EPOCH)
 
             verify(indexUpdater).fetchAndUpdateIndex(check {
                 assertTrue(it.isForceFullUpdate, "Should have forceFullUpdate flag set to true")

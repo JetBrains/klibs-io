@@ -17,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
-import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -87,7 +86,7 @@ internal class CentralSonatypePackageDiscovererTest {
 
         whenever(packageRepository.findAllKnownPackages()).thenReturn(listOf(knownPackage))
         whenever(centralSonatypeScraper.findNewVersions(any(), any())).thenReturn(flowOf(newVersion))
-        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(null)
+        whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(null)
 
         val errorChannel = Channel<Exception>()
 
@@ -125,7 +124,7 @@ internal class CentralSonatypePackageDiscovererTest {
         )
 
         whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
-        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(initialTimestamp)
+        whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(initialTimestamp)
         whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(artifact1, artifact2))
 
         val errorChannel = Channel<Exception>()
@@ -177,7 +176,7 @@ internal class CentralSonatypePackageDiscovererTest {
         )
 
         whenever(packageRepository.findAllKnownPackages()).thenReturn(listOf(knownPackage))
-        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(initialTimestamp)
+        whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(initialTimestamp)
         whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(knownArtifact, newArtifact))
 
         val errorChannel = Channel<Exception>()
@@ -211,7 +210,7 @@ internal class CentralSonatypePackageDiscovererTest {
         )
 
         whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
-        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(initialTimestamp)
+        whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(initialTimestamp)
         whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(artifact1, artifact2))
 
         val errorChannel = Channel<Exception>()
@@ -229,7 +228,7 @@ internal class CentralSonatypePackageDiscovererTest {
     @Test
     fun `should handle empty results`() = runTest {
         whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
-        whenever(mavenIndexDownloadingService.downloadFullIndex(any())).thenReturn(initialTimestamp)
+        whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(initialTimestamp)
         whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf())
 
         val errorChannel = Channel<Exception>()
