@@ -84,7 +84,7 @@ internal class CentralSonatypePackageDiscovererTest {
             releasedAt = null
         )
 
-        whenever(packageRepository.findAllKnownPackages()).thenReturn(listOf(knownPackage))
+        whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(listOf(knownPackage))
         whenever(centralSonatypeScraper.findNewVersions(any(), any())).thenReturn(flowOf(newVersion))
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(null)
 
@@ -123,7 +123,7 @@ internal class CentralSonatypePackageDiscovererTest {
             releasedAt = initialTimestamp.plusSeconds(7200)
         )
 
-        whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
+        whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(emptyList())
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(initialTimestamp)
         whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(artifact1, artifact2))
 
@@ -175,7 +175,7 @@ internal class CentralSonatypePackageDiscovererTest {
             versions = setOf("1.0.0")
         )
 
-        whenever(packageRepository.findAllKnownPackages()).thenReturn(listOf(knownPackage))
+        whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(listOf(knownPackage))
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(initialTimestamp)
         whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(knownArtifact, newArtifact))
 
@@ -209,7 +209,7 @@ internal class CentralSonatypePackageDiscovererTest {
             releasedAt = initialTimestamp.plusSeconds(7200)
         )
 
-        whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
+        whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(emptyList())
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(initialTimestamp)
         whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(artifact1, artifact2))
 
@@ -227,7 +227,7 @@ internal class CentralSonatypePackageDiscovererTest {
 
     @Test
     fun `should handle empty results`() = runTest {
-        whenever(packageRepository.findAllKnownPackages()).thenReturn(emptyList())
+        whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(emptyList())
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any())).thenReturn(initialTimestamp)
         whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf())
 

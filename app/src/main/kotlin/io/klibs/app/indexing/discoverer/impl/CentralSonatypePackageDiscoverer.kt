@@ -1,7 +1,7 @@
 package io.klibs.app.indexing.discoverer.impl
 
 import io.klibs.app.indexing.discoverer.PackageDiscoverer
-import io.klibs.app.indexing.discoverer.collectAllKnownPackages
+import io.klibs.app.indexing.discoverer.collectAllKnownMavenCentralPackages
 import io.klibs.app.indexing.discoverer.createArtifactCoordinates
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.maven.MavenArtifact
@@ -60,7 +60,7 @@ class CentralSonatypePackageDiscoverer(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun fullDiscover(newIndexTs: Instant): Flow<MavenArtifact> {
-        val existingPackages = collectAllKnownPackages(packageRepository)
+        val existingPackages = collectAllKnownMavenCentralPackages(packageRepository)
 
         return mavenIndexScannerService
             .scanForNewKMPArtifacts()
@@ -70,8 +70,6 @@ class CentralSonatypePackageDiscoverer(
             }
             .onCompletion {
                 mavenCentralLogRepository.saveMavenIndexTimestamp(newIndexTs)
-                // TODO(Dmitrii Krasnov): now it is used because of the ephemeral storage, remove in KTL-4027.
-                mavenIndexingContextManager.removeIndexFiles()
                 logger.info(
                     "--- Central sonatype packages discovering finished. Last Maven Central index timestamp changed to $newIndexTs. ---"
                 )
@@ -80,7 +78,7 @@ class CentralSonatypePackageDiscoverer(
     }
 
     private suspend fun updateKnown(errorChannel: Channel<Exception>): Flow<MavenArtifact> {
-        val existingPackages = collectAllKnownPackages(packageRepository)
+        val existingPackages = collectAllKnownMavenCentralPackages(packageRepository)
 
         return centralSonatypeScraper
             .findNewVersions(existingPackages, errorChannel)

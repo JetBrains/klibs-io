@@ -50,6 +50,7 @@ class MavenIndexDownloadingService(
                 logger.info("New index version available (Remote: $remoteIndexTimestamp, Local: $localIndexTimestamp). Starting full index download.")
                 val updateRequest = IndexUpdateRequest(context, resourceFetcher)
                 updateRequest.isForceFullUpdate = true
+                updateRequest.indexTempDir = indexingContextManager.getIndexTmpDir()
 
                 val result = indexUpdater.fetchAndUpdateIndex(updateRequest)
 

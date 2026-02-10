@@ -12,6 +12,7 @@ class MavenIndexingContextManager(
     private val properties: MavenIntegrationProperties,
     private val indexer: Indexer,
     private val indexCreators: List<IndexCreator>,
+    private val indexDir: File = File("${properties.central.indexDir}/maven-central-index")
 ) {
     suspend fun <T> useCentralContext(
         contextId: String,
@@ -26,16 +27,14 @@ class MavenIndexingContextManager(
     }
 
     fun removeIndexFiles() {
-        val centralConfig = properties.central
-        val indexDir = File(centralConfig.indexDir)
         if (indexDir.exists()) {
             indexDir.deleteRecursively()
         }
     }
 
+    fun getIndexTmpDir(): File = File("${properties.central.indexDir}/tmp")
+
     private fun createCentralContext(contextId: String): IndexingContext {
-        val centralConfig = properties.central
-        val indexDir = File(centralConfig.indexDir)
         if (!indexDir.exists()) {
             indexDir.mkdirs()
         }
@@ -45,7 +44,7 @@ class MavenIndexingContextManager(
             "central",
             indexDir,
             indexDir,
-            centralConfig.indexEndpoint,
+            properties.central.indexEndpoint,
             null,
             true,
             true,

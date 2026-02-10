@@ -24,6 +24,7 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.body
 import java.io.File
 import java.time.Instant
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @ExtendWith(MockitoExtension::class)
@@ -112,6 +113,7 @@ class MavenIndexDownloadingServiceTest {
 
             verify(indexUpdater).fetchAndUpdateIndex(check {
                 assertTrue(it.isForceFullUpdate, "Should have forceFullUpdate flag set to true")
+                assertEquals(indexingContext.indexDirectoryFile, it.indexTempDir, "Should use context index directory as temp dir")
             })
         }
     }
