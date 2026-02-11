@@ -1,0 +1,12 @@
+product: jvm/lib
+
+apply:
+  - ../../build-logic/templates/base.module-template.yaml
+  - ../../build-logic/templates/kotlin-jvm.module-template.yaml
+  - ../../build-logic/templates/spring.module-template.yaml
+  - ../../build-logic/templates/mock.module-template.yaml
+
+dependencies:
+  - $libs.kohsuke.githubApi
+  - $libs.okhttp
+  - $libs.caffeine
