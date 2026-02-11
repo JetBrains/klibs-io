@@ -83,8 +83,10 @@ class GitHubIndexingService(
         }
 
         val ownerId = updateRepositoryOwnerIfChanged(repoToUpdate, ghRepo)
+        val projectEntity = projectRepository.findByNameAndScmRepoId(repoToUpdate.name, repoToUpdate.idNotNull)
+            ?: error("Unable to find project entity for repoId=${repoToUpdate.idNotNull}")
 
-        val hasReadme = updateReadme(repoToUpdate, ghRepo)
+        val hasReadme = updateReadme(projectEntity, ghRepo, repoToUpdate.updatedAtTs)
         val license = gitHubIntegration.getLicense(ghRepo.nativeId)
 
         val scmRepositoryEntity = repoToUpdate.copy(
@@ -103,7 +105,7 @@ class GitHubIndexingService(
             stars = ghRepo.stars,
             openIssues = ghRepo.openIssues,
             lastActivityTs = ghRepo.lastActivity,
-            minimizedReadme = repoToUpdate.minimizedReadme
+            minimizedReadme = projectEntity.minimizedReadme
         )
 
         logger.info("Updating ${ghRepo.owner}/${ghRepo.name}")
@@ -115,7 +117,6 @@ class GitHubIndexingService(
 
         // After repository is persisted, fetch and update GitHub tags for the linked project (if any)
         try {
-            val projectEntity = projectRepository.findByNameAndScmRepoId(scmRepositoryEntity.name, persistedRepo.idNotNull)
             updateGithubTagsForProject(projectEntity, persistedRepo)
         } catch (e: Exception) {
             logger.error("Failed to update GitHub tags for repoId=${persistedRepo.idNotNull}", e)
@@ -154,19 +155,24 @@ class GitHubIndexingService(
     /**
      * @return true if the repo has readme and it's been saved, false otherwise
      */
-    private fun updateReadme(repoToUpdate: ScmRepositoryEntity, ghRepo: GitHubRepository): Boolean {
+    private fun updateReadme(
+        projectEntity: ProjectEntity,
+        ghRepo: GitHubRepository,
+        lastUpdatedTs: Instant
+    ): Boolean {
         return when (val result = gitHubIntegration.getReadmeWithModifiedSinceCheck(
             ghRepo.nativeId,
-            repoToUpdate.updatedAtTs
+            lastUpdatedTs
         )) {
             is ReadmeFetchResult.Content -> {
                 val readmeContent = buildReadmeContentFromMd(result.markdown, ghRepo)
                 readmeService.writeReadmeFiles(
-                    scmRepositoryId = repoToUpdate.idNotNull,
+                    projectId = projectEntity.idNotNull,
                     mdContent = readmeContent.markdown,
                     htmlContent = readmeContent.html
                 )
-                repoToUpdate.minimizedReadme = readmeContent.minimized
+                projectEntity.minimizedReadme = readmeContent.minimized
+                projectRepository.updateMinimizedReadme(projectEntity.idNotNull, readmeContent.minimized)
                 true
             }
             is ReadmeFetchResult.NotModified -> {
@@ -244,11 +250,16 @@ class GitHubIndexingService(
         )
 
         if (readmeContent != null) {
-            readmeService.writeReadmeFiles(
-                scmRepositoryId = persistedEntity.idNotNull,
-                mdContent = readmeContent.markdown,
-                htmlContent = readmeContent.html
-            )
+            if (ownerLogin != "androidx") {
+                val projectId = projectRepository.findByScmRepoId(persistedEntity.idNotNull)?.idNotNull
+                projectId?.let {
+                    readmeService.writeReadmeFiles(
+                        projectId = it,
+                        mdContent = readmeContent.markdown,
+                        htmlContent = readmeContent.html
+                    )
+                }
+            }
         }
 
         return persistedEntity

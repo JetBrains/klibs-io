@@ -94,6 +94,23 @@ class ProjectRepositoryJdbc(
         }
     }
 
+    override fun updateMinimizedReadme(id: Int, minimizedReadme: String?) {
+        val sql = """
+            UPDATE project
+            SET minimized_readme = :minimizedReadme
+            WHERE id = :id
+        """.trimIndent()
+
+        val updated = jdbcClient.sql(sql)
+            .param("id", id)
+            .param("minimizedReadme", minimizedReadme)
+            .update()
+
+        require(updated == 1) {
+            "Did not update the project minimized readme of id: $id"
+        }
+    }
+
     override fun findById(id: Int): ProjectEntity? {
         val sql = """
             SELECT id,
@@ -110,6 +127,27 @@ class ProjectRepositoryJdbc(
 
         return jdbcClient.sql(sql)
             .param("id", id)
+            .query(PROJECT_ENTITY_ROW_MAPPER)
+            .optional()
+            .getOrNull()
+    }
+
+    override fun findByScmRepoId(scmRepoId: Int): ProjectEntity? {
+        val sql = """
+            SELECT id,
+                   scm_repo_id,
+                   owner_id,
+                   name,
+                   description,
+                   minimized_readme,
+                   latest_version,
+                   latest_version_ts
+            FROM project
+            WHERE scm_repo_id = :scmRepoId
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("scmRepoId", scmRepoId)
             .query(PROJECT_ENTITY_ROW_MAPPER)
             .optional()
             .getOrNull()

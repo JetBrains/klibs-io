@@ -47,7 +47,7 @@ class ProjectIndexingService(
             val repo = scmRepositoryRepository.findById(project.scmRepoId) ?: error("Unable to find the repo: $project")
             logger.trace("Generating an AI description for projectId=${project.id}")
 
-            val readmeMd = readmeService.readReadmeMd(project.scmRepoId)
+            val readmeMd = readmeService.readReadmeMd(project.idNotNull, project.scmRepoId)
                 ?: error("Unable to generate the description due to missing or empty README.md for $project")
 
             // there can be some very long readmes... see https://github.com/robstoll/atrium
