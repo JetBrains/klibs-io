@@ -8,7 +8,7 @@ data class ProjectEntity(
     val ownerId: Int,
     val name: String,
     val description: String?,
-    val minimizedReadme: String?,
+    var minimizedReadme: String?,
 
     val latestVersion: String,
     val latestVersionTs: Instant,
