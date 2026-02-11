@@ -12,6 +12,7 @@ import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.integration.ai.ProjectTagsGenerator
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -120,7 +121,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         uut().addAiTags()
 
         verify(scmRepositoryRepository, never()).findById(any<Int>())
-        verify(readmeService, never()).readReadmeMd(any<Int>())
+        verify(readmeService, never()).readReadmeMd(anyOrNull(), anyOrNull())
         verify(projectTagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
         verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
     }

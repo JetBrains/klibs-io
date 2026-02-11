@@ -13,7 +13,11 @@ interface ProjectRepository {
 
     fun updateDescription(id: Int, description: String)
 
+    fun updateMinimizedReadme(id: Int, minimizedReadme: String?)
+
     fun findById(id: Int): ProjectEntity?
+
+    fun findByScmRepoId(scmRepoId: Int): ProjectEntity?
 
     fun findByNameAndScmRepoId(name: String, scmRepoId: Int): ProjectEntity?
 

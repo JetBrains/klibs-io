@@ -2,6 +2,14 @@
 
 This document provides guidelines and instructions for developing and testing the klibs.io project.
 
+## Junie Task Protocol
+
+- Ask clarifying questions whenever requirements are ambiguous or incomplete.
+- Ask for plan approval only after presenting a concrete plan.
+- If no edits are proposed (analysis-only), skip plan approval and provide the answer.
+- Do not request confirmation when there is no plan shown.
+- Summarize the agreed plan before making changes and wait for approval.
+
 ## Build/Configuration Instructions
 
 ### Prerequisites

@@ -2,7 +2,6 @@ package io.klibs.core.scm.repository.readme
 
 import io.klibs.core.storage.S3StorageService
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -30,39 +29,44 @@ class S3ReadmeServiceTest {
     }
 
     @Test
-    fun `readReadmeMd returns content when object exists`() {
+    fun `readReadmeMdByAnyId returns content when project object exists`() {
+        val projectId = 456
         val scmRepositoryId = 123
-        val key = "readme/readme-123.md"
+        val key = "readme/project/readme-456.md"
         val content = "README content"
         
         whenever(s3StorageService.readText("test-bucket", key)).thenReturn(content)
 
-        val result = uut.readReadmeMd(scmRepositoryId)
+        val result = uut.readReadmeMd(projectId, scmRepositoryId)
 
         assertEquals(content, result)
     }
 
     @Test
-    fun `readReadmeMd returns null when object does not exist`() {
+    fun `readReadmeMdByAnyId falls back to repo key when project key is missing`() {
+        val projectId = 456
         val scmRepositoryId = 123
-        val key = "readme/readme-123.md"
+        val projectKey = "readme/project/readme-456.md"
+        val repoKey = "readme/readme-123.md"
+        val content = "README content"
         
-        whenever(s3StorageService.readText("test-bucket", key)).thenReturn(null)
+        whenever(s3StorageService.readText("test-bucket", projectKey)).thenReturn(null)
+        whenever(s3StorageService.readText("test-bucket", repoKey)).thenReturn(content)
 
-        val result = uut.readReadmeMd(scmRepositoryId)
+        val result = uut.readReadmeMd(projectId, scmRepositoryId)
 
-        assertNull(result)
+        assertEquals(content, result)
     }
 
     @Test
-    fun `writeReadmeFiles uploads both md and html files`() {
-        val scmRepositoryId = 123
+    fun `writeReadmeFilesByProjectId uploads both md and html files`() {
+        val projectId = 456
         val mdContent = "MD content"
         val htmlContent = "HTML content"
         
-        uut.writeReadmeFiles(scmRepositoryId, mdContent, htmlContent)
+        uut.writeReadmeFiles(projectId, mdContent, htmlContent)
 
-        verify(s3StorageService).writeText("test-bucket", "readme/readme-123.md", mdContent)
-        verify(s3StorageService).writeText("test-bucket", "readme/readme-123.html", htmlContent)
+        verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456.md", mdContent)
+        verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456.html", htmlContent)
     }
 }
