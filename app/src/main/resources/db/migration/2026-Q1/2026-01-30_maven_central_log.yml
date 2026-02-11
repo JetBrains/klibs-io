@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: rename last_package_indexed to maven_central_log and add maven_index_timestamp
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - renameTable:
+            oldTableName: last_package_indexed
+            newTableName: maven_central_log
+        - addColumn:
+            tableName: maven_central_log
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  defaultValueNumeric: 1
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: maven_index_timestamp
+                  type: timestamp
+                  defaultValueComputed: "current_date - interval '10 years'"
+                  constraints:
+                    nullable: false
+        - dropColumn:
+            tableName: maven_central_log
+            columnName: instant_value

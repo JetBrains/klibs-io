@@ -10,18 +10,19 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
 
     @Query(value = """
         SELECT
-          combined.group_id     AS groupId,
-          combined.artifact_id  AS artifactId,
-          ARRAY_AGG(combined.version ORDER BY combined.version) AS versions
+            combined.group_id     AS groupId,
+            combined.artifact_id  AS artifactId,
+            ARRAY_AGG(combined.version ORDER BY combined.version) AS versions
         FROM (
-          SELECT group_id, artifact_id, version FROM package
-          UNION ALL
-          SELECT group_id, artifact_id, version FROM package_index_request
-        ) AS combined
-        GROUP BY combined.group_id, combined.artifact_id
+                 SELECT group_id, artifact_id, version, scraper_type FROM package
+                 UNION ALL
+                 SELECT group_id, artifact_id, version, scraper_type FROM package_index_request
+             ) AS combined
+        WHERE scraper_type != 'GOOGLE_MAVEN'
+        GROUP BY combined.group_id, combined.artifact_id;
         """,
         nativeQuery = true)
-    fun findAllKnownPackages(): List<PackageVersionsView>
+    fun findAllKnownMavenCentralPackages(): List<PackageVersionsView>
 
     @Query(value = """
             WITH LatestVersions AS (
