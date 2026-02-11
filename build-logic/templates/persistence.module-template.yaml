@@ -1,0 +1,16 @@
+# should depend on the 'spring' template, but we can't do this in Amper yet. See AMPER-5098
+
+# Kotlin JPA is added by default by springBoot: enabled (via no-arg with JPA preset)
+
+dependencies:
+  - $libs.spring.boot.starter.jdbc
+  - $libs.spring.boot.starter.data.jpa
+  - $libs.liquibase.core
+  - $libs.postgresql
+
+# from libs.bundles.testcontainers
+test-dependencies:
+  - $libs.testcontainers
+  - $libs.testcontainers.postgresql
+  - $libs.testcontainers.jdbc
+  - $libs.testcontainers.database.commons

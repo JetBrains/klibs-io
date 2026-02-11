@@ -1,0 +1,8 @@
+product: jvm/amper-plugin
+
+dependencies:
+  - org.eclipse.jgit:org.eclipse.jgit:7.5.0.202512021534-r
+  - org.slf4j:slf4j-simple:2.0.17
+
+pluginInfo:
+  settingsClass: org.amper.gitcommitid.GitCommitIdSettings
