@@ -38,19 +38,6 @@ interface MavenCentralScraper {
         errorChannel: Channel<Exception>
     ): Flow<MavenArtifact>
 
-    /**
-     * Fetches all available versions of a specified Maven artifact from a Maven Central repository.
-     * Any errors encountered during the process are sent to the provided error channel.
-     *
-     * @param mavenArtifact The Maven artifact for which to fetch all available versions.
-     * @param errorChannel A channel used to report errors encountered during version discovery.
-     * @return A flow emitting Maven artifacts, each representing a version of the given artifact.
-     */
-    suspend fun findAllVersionForArtifact(
-        mavenArtifact: MavenArtifact,
-        errorChannel: Channel<Exception>
-    ): Flow<MavenArtifact>
-
 
     /**
      * Specifies the type of scraper used for interacting with Maven Central repositories.

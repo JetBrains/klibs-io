@@ -1,5 +1,6 @@
 plugins {
     id("klibs.spring")
+    id("klibs.persistence")
 
     alias(libs.plugins.serialization)
 }

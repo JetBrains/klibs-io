@@ -13,7 +13,7 @@ interface PackageDiscoverer {
     ): Flow<MavenArtifact>
 }
 
-fun collectAllKnownPackages(packageRepository: PackageRepository): Map<String, Set<String>> = packageRepository.findAllKnownPackages()
+fun collectAllKnownMavenCentralPackages(packageRepository: PackageRepository): Map<String, Set<String>> = packageRepository.findAllKnownMavenCentralPackages()
     .associateBy({ createArtifactCoordinates(it.groupId, it.artifactId) }) { it.versions }
 
 fun createArtifactCoordinates(groupId: String, artifactId: String): String = "$groupId:$artifactId"

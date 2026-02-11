@@ -77,8 +77,6 @@ klibs:
       thread-count: 2
     central-sonatype:
       enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE:false}
-      mode: ${KLIBS_CENTRAL_SONATYPE_INDEXING_MODE:DISCOVER_NEW}
-      last-updated-offset-hours: ${KLIBS_CENTRAL_SONATYPE_LAST_UPDATED_OFFSET_HOURS:3}
     gmaven:
       enabled: ${KLIBS_ENABLE_INDEXING_GMAVEN:false}
       s3:

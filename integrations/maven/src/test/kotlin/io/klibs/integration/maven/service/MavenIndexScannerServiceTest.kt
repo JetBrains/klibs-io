@@ -1,17 +1,23 @@
 package io.klibs.integration.maven.service
 
-import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.MavenIntegrationProperties
+import io.klibs.integration.maven.ScraperType
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.apache.maven.index.*
+import org.apache.maven.index.ArtifactInfo
+import org.apache.maven.index.Indexer
+import org.apache.maven.index.IteratorResultSet
+import org.apache.maven.index.IteratorSearchResponse
 import org.apache.maven.index.context.IndexingContext
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -73,7 +79,7 @@ class MavenIndexScannerServiceTest {
         whenever(iteratorResultSet.next()).thenReturn(artifactInfo)
 
         // When
-        val result = uut.scanForKotlinToolingMetadata(from, to).toList()
+        val result = uut.scanForNewKMPArtifacts().toList()
 
         // Then
         assertEquals(1, result.size)
@@ -101,7 +107,7 @@ class MavenIndexScannerServiceTest {
         whenever(iteratorResultSet.hasNext()).thenReturn(false)
 
         // When
-        val result = uut.scanForKotlinToolingMetadata(from, to).toList()
+        val result = uut.scanForNewKMPArtifacts().toList()
 
         // Then
         assertEquals(0, result.size)
@@ -120,7 +126,7 @@ class MavenIndexScannerServiceTest {
 
         // When & Then
         assertFailsWith<RuntimeException> {
-            uut.scanForKotlinToolingMetadata(from, to).toList()
+            uut.scanForNewKMPArtifacts().toList()
         }
     }
 }
