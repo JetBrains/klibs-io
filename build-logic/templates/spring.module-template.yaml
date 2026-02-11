@@ -1,0 +1,25 @@
+# depends on kotlin-jvm template
+
+repositories:
+  - url: https://repo.spring.io/milestone
+  - url: https://repo.spring.io/snapshot
+
+dependencies:
+  - $spring.boot.starter
+  - $spring.boot.starter.logging
+  - $spring.boot.starter.actuator
+  - $spring.boot.docker.compose
+  - $libs.prometheus
+
+  - $libs.kotlinx.coroutines.jvm
+  - $libs.kotlin.reflect
+  - $libs.jackson.module.kotlin
+
+test-dependencies:
+  - $libs.kotlinx.coroutines.test.jvm
+  - $spring.boot.starter.test
+
+settings:
+  springBoot:
+    enabled: true # also sets -Xjsr305=strict, no-arg (with JPA preset), and all-open (with Spring preset)
+    version: 3.5.9

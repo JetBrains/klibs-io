@@ -1,0 +1,5 @@
+# depends on spring template
+
+test-dependencies:
+  - $libs.mockito
+  - $libs.mockito.kotlin

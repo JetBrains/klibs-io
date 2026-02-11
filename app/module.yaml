@@ -1,0 +1,33 @@
+product: jvm/app
+
+# https://youtrack.jetbrains.com/issue/AMPER-5097/Maven-like-layout-cannot-be-set-in-a-template
+layout: maven-like
+
+apply:
+  - ../build-logic/templates/base.module-template.yaml
+  - ../build-logic/templates/kotlin-jvm.module-template.yaml
+  - ../build-logic/templates/spring.module-template.yaml
+  - ../build-logic/templates/spring-web.module-template.yaml
+  - ../build-logic/templates/persistence.module-template.yaml
+  - ../build-logic/templates/mock.module-template.yaml
+  - ../build-logic/templates/spring-scheduling.module-template.yaml
+  - ../build-logic/templates/spring-cloud.module-template.yaml
+
+dependencies:
+  - ../core/package
+  - ../core/project
+  - ../core/scm-owner
+  - ../core/scm-repository
+  - ../core/search
+  - ../core/storage
+  - ../integrations/ai
+  - ../integrations/maven
+  - ../integrations/github
+
+test-dependencies:
+  - $libs.okhttp
+  - $libs.kohsuke.githubApi
+
+settings:
+  jvm:
+    mainClass: io.klibs.app.ApplicationKt

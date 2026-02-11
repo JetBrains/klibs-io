@@ -1,0 +1,4 @@
+# depends on spring template
+
+dependencies:
+  - $libs.spring.cloud.aws.starter.s3
