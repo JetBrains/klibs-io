@@ -67,6 +67,16 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
         nativeQuery = true)
     fun findPlatformsOf(projectId: Int): List<PackagePlatform>
 
+    /**
+     * Retrieves the latest packages by project ID directly from the table.
+     *
+     * Note: Prefer using PackageIndexRepository.findByProjectId for standard read operations.
+     * This method is retained specifically for logic requiring immediate consistency
+     * (e.g., inside BlacklistService transactions) where the package_index Materialized View might contain stale data.
+     */
+    @Deprecated(
+        message = "Use PackageIndexRepository.findByProjectId for standard queries. This method is kept for BlacklistService to avoid stale data from Materialized Views during transactions."
+    )
     @Query(value = """
             WITH latest_package_ids AS (SELECT DISTINCT ON (group_id, artifact_id) id
                                         FROM package
@@ -79,17 +89,4 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
         """,
         nativeQuery = true)
     fun findLatestByProjectId(projectId: Int): List<PackageEntity>
-
-    @Query(value = """
-            WITH latest_package_ids AS (SELECT DISTINCT ON (group_id, artifact_id) id
-                                        FROM package
-                                        WHERE group_id = :groupId
-                                        ORDER BY group_id, artifact_id, release_ts DESC)
-            SELECT *
-            FROM package
-            WHERE id IN (SELECT id FROM latest_package_ids)
-            ORDER BY group_id, artifact_id;
-         """,
-        nativeQuery = true)
-    fun findLatestByGroupId(groupId: String): List<PackageEntity>
 }
