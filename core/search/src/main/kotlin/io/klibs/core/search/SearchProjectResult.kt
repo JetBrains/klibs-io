@@ -7,6 +7,7 @@ import java.time.Instant
 data class SearchProjectResult(
     val id: Int,
     val name: String,
+    val repoName: String,
     val description: String?,
 
     val vcsStars: Int,

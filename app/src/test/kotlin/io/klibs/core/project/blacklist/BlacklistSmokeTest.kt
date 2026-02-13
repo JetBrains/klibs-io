@@ -137,7 +137,10 @@ class BlacklistSmokeTest : SmokeTestBase() {
         val projectEntity = ProjectEntity(
             id = null,
             scmRepoId = savedRepo.idNotNull,
+            ownerId = savedRepo.ownerId,
+            name = savedRepo.name,
             description = "Test project for smoke test",
+            minimizedReadme = null,
             latestVersion = "1.0.0",
             latestVersionTs = Instant.now(),
         )
