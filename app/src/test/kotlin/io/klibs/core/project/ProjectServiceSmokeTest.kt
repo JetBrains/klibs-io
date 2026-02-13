@@ -88,8 +88,7 @@ class ProjectServiceSmokeTest {
             stars = 0,
             openIssues = 0,
             lastActivityTs = now,
-            updatedAtTs = now,
-            minimizedReadme = null
+            updatedAtTs = now
         )
 
         val projectEntity = ProjectEntity(
@@ -144,8 +143,7 @@ class ProjectServiceSmokeTest {
             stars = 0,
             openIssues = 0,
             lastActivityTs = now,
-            updatedAtTs = now,
-            minimizedReadme = null
+            updatedAtTs = now
         )
 
         val projectEntity = ProjectEntity(
@@ -210,8 +208,7 @@ class ProjectServiceSmokeTest {
             stars = 0,
             openIssues = 0,
             lastActivityTs = now,
-            updatedAtTs = now,
-            minimizedReadme = null
+            updatedAtTs = now
         )
 
         val projectEntity = ProjectEntity(

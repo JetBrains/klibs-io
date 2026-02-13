@@ -10,7 +10,6 @@ import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.scm.repository.readme.ReadmeProcessor
 import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
@@ -27,7 +26,7 @@ class GitHubIndexingServiceTopicsTest {
     private val readmeService: ReadmeService = mock()
     private val projectRepository: ProjectRepository = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
-    private val readmeProcessors: List<ReadmeProcessor> = emptyList()
+    private val readmeContentBuilder: ReadmeContentBuilder = mock()
     private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mock()
     private val ownerBackoffProvider: BackoffProvider = mock()
     private val projectService: ProjectService = mock()
@@ -37,7 +36,7 @@ class GitHubIndexingServiceTopicsTest {
         scmRepositoryRepository = scmRepositoryRepository,
         scmOwnerRepository = scmOwnerRepository,
         readmeService = readmeService,
-        readmeProcessors = readmeProcessors,
+        readmeContentBuilder = readmeContentBuilder,
         projectRepository = projectRepository,
         ownerBackoffProvider = ownerBackoffProvider,
         projectService = projectService,
@@ -71,7 +70,6 @@ class GitHubIndexingServiceTopicsTest {
             openIssues = 0,
             lastActivityTs = Instant.now().minusSeconds(1800),
             updatedAtTs = Instant.now().minusSeconds(300),
-            minimizedReadme = null,
         )
 
         val ghRepo = GitHubRepository(

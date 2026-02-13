@@ -3,8 +3,8 @@ INSERT INTO public.scm_owner (id, id_native, followers, updated_at, login, type,
 VALUES (8101, 8101, 0, CURRENT_TIMESTAMP, 'test-owner', 'author', 'Test Owner', 'Owner desc', NULL, NULL, NULL, NULL, NULL);
 
 -- Insert test scm_repo
-INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, has_wiki, has_readme, created_ts, updated_at, last_activity_ts, stars, open_issues, name, description, homepage, license_key, license_name, default_branch, minimized_readme)
-VALUES (8101, 8101, 8101, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 0, 'sample-repo', 'Repo desc', NULL, 'mit', 'MIT License', 'main', 'README');
+INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, has_wiki, has_readme, created_ts, updated_at, last_activity_ts, stars, open_issues, name, description, homepage, license_key, license_name, default_branch)
+VALUES (8101, 8101, 8101, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 0, 'sample-repo', 'Repo desc', NULL, 'mit', 'MIT License', 'main');
 
 -- Insert test project
 INSERT INTO public.project VALUES (8101, 8101, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'sample-repo', NULL, 8101);

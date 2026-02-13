@@ -228,7 +228,6 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
             licenseName = updatedLicenseValue,
             openIssues = ghRepo.openIssues,
             hasReadme = true,
-            minimizedReadme = "Updated readme",
         )
         assertEquals(expectedRepositoryAfterTest, repositoryAfterTest)
 
