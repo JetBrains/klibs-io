@@ -21,9 +21,13 @@ databaseChangeLog:
       changes:
         - sql:
             sql: |
-              UPDATE project SET name = (SELECT name FROM scm_repo WHERE scm_repo.id = project.scm_repo_id);
-              UPDATE project SET minimized_readme = (SELECT minimized_readme FROM scm_repo WHERE scm_repo.id = project.scm_repo_id);
-              UPDATE project SET owner_id = (SELECT owner_id FROM scm_repo WHERE scm_repo.id = project.scm_repo_id);
+              UPDATE project
+              SET
+                name = scm_repo.name,
+                minimized_readme = scm_repo.minimized_readme,
+                owner_id = scm_repo.owner_id
+              FROM scm_repo
+              WHERE scm_repo.id = project.scm_repo_id;
   - changeSet:
       id: Add new project constraints and indices
       author: nikita.vlaev@jetbrains.com

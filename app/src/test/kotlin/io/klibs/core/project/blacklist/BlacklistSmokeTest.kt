@@ -127,8 +127,7 @@ class BlacklistSmokeTest : SmokeTestBase() {
             stars = 0,
             openIssues = 0,
             lastActivityTs = Instant.now(),
-            updatedAtTs = Instant.now(),
-            minimizedReadme = null
+            updatedAtTs = Instant.now()
         )
         val savedRepo = scmRepositoryRepository.upsert(repoEntity)
         savedRepoId = savedRepo.idNotNull

@@ -147,7 +147,6 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         val beforeUpdated = before.copy(
             description = ghRepo.description,
             updatedAtTs = after.updatedAtTs,
-            minimizedReadme = after.minimizedReadme,
         )
         assertEquals(beforeUpdated, after)
     }
@@ -200,7 +199,6 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
             ownerId = repoAfter.ownerId,
             ownerLogin = newOwnerLogin,
             updatedAtTs = repoAfter.updatedAtTs,
-            minimizedReadme = "Updated readme",
         )
 
         assertEquals(repoAfterExpected, repoAfter)
@@ -261,7 +259,6 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         val repoAfterExpected = repoBefore.copy(
             ownerLogin = renamedLogin,
             updatedAtTs = repoAfter.updatedAtTs,
-            minimizedReadme = "Updated readme",
         )
         assertEquals(repoAfterExpected, repoAfter)
 
@@ -309,7 +306,6 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         val expectedAfter = repoBefore.copy(
             name = newName,
             updatedAtTs = after.updatedAtTs,
-            minimizedReadme = "Updated readme",
         )
         assertEquals(expectedAfter, after)
     }

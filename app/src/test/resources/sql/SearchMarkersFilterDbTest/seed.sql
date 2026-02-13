@@ -11,11 +11,11 @@ INSERT INTO public.scm_owner (
 -- scm_repo
 INSERT INTO public.scm_repo (
     id_native, id, owner_id, has_gh_pages, has_issues, has_wiki, has_readme, created_ts, updated_at, last_activity_ts,
-    stars, open_issues, name, description, homepage, license_key, license_name, default_branch, minimized_readme
+    stars, open_issues, name, description, homepage, license_key, license_name, default_branch
 ) VALUES
-    (20001, 20001, 20001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 10, 0, 'repo-a', 'Repo A', NULL, 'mit', 'MIT License', 'main', 'readme A'),
-    (20002, 20002, 20002, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 20, 0, 'repo-b', 'Repo B', NULL, 'mit', 'MIT License', 'main', 'readme B'),
-    (20003, 20003, 20003, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 30, 0, 'repo-c', 'Repo C', NULL, 'mit', 'MIT License', 'main', 'readme C');
+    (20001, 20001, 20001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 10, 0, 'repo-a', 'Repo A', NULL, 'mit', 'MIT License', 'main'),
+    (20002, 20002, 20002, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 20, 0, 'repo-b', 'Repo B', NULL, 'mit', 'MIT License', 'main'),
+    (20003, 20003, 20003, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 30, 0, 'repo-c', 'Repo C', NULL, 'mit', 'MIT License', 'main');
 
 -- project
 INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, description, name, minimized_readme, owner_id) VALUES (30001, 20001, CURRENT_TIMESTAMP, '1.0.0', 'Project A', 'repo-a', NULL, 20001),

@@ -5,14 +5,24 @@
 -- Test owner
 INSERT INTO public.scm_owner VALUES (999991, 9991, 0, CURRENT_TIMESTAMP, 'test-readme-user', 'author', 'Test Readme User', 'Test user description', NULL, NULL, NULL, NULL, NULL);
 
--- Test repos
-INSERT INTO public.scm_repo VALUES (999991, 9991, 9991, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 100, 0, 'test-readme-repo', 'Test repository description', NULL, 'mit', 'MIT License', 'main', 'This is a unique readme content that should be searchable');
+INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, has_wiki, has_readme, created_ts, updated_at,
+                             last_activity_ts, stars, open_issues, name, description, homepage, license_key, license_name,
+                             default_branch)
+VALUES (999991, 9991, 9991, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 100, 0,
+        'test-readme-repo', 'Test repository description', NULL, 'mit', 'MIT License', 'main');
 
-INSERT INTO public.scm_repo VALUES (999992, 9992, 9991, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 50, 0, 'test-readme-repo-2', 'Another test repository', NULL, 'mit', 'MIT License', 'main', 'Different content that should not match the search');
+INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, has_wiki, has_readme, created_ts, updated_at,
+                             last_activity_ts, stars, open_issues, name, description, homepage, license_key, license_name,
+                             default_branch)
+VALUES (999992, 9992, 9991, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 50, 0,
+        'test-readme-repo-2', 'Another test repository', NULL, 'mit', 'MIT License', 'main');
 
--- Test projects
-INSERT INTO public.project VALUES (9991, 9991, '2024-11-14 02:41:08.679', '1.0.0', CURRENT_TIMESTAMP, 'test-readme-repo', NULL, 9991);
-INSERT INTO public.project VALUES (9992, 9992, '2024-11-14 02:41:08.679', '1.0.0', CURRENT_TIMESTAMP, 'test-readme-repo-2', NULL, 9991);
+INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, description, name, minimized_readme, owner_id)
+VALUES (9991, 9991, '2024-11-14 02:41:08.679', '1.0.0', NULL, 'test-readme-repo',
+        'This is a unique readme content that should be searchable', 9991);
+INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, description, name, minimized_readme, owner_id)
+VALUES (9992, 9992, '2024-11-14 02:41:08.679', '1.0.0', NULL, 'test-readme-repo-2',
+        'Different content that should not match the search', 9991);
 
 -- Test packages
 INSERT INTO public.package VALUES (9991, 9991, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.test', 'test-readme-lib', '1.0.0', 'test-readme-lib', NULL, NULL, 'gradle', '8.5', '1.9.0', '{}', '[]', '[]');

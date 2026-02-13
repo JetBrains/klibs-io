@@ -1,0 +1,71 @@
+databaseChangeLog:
+  - changeSet:
+      id: recreate project_index with project minimized readme
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: HALT
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*)
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'project_index'
+      changes:
+        - sqlFile:
+            path: 2026-02-13_recreate_project_index_with_project_minimized_readme.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: recreate_project_index_fts_gin_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts);
+
+  - changeSet:
+      id: recreate_project_index_platforms_vector_gin_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: recreate_project_index_stars_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: project_index_stars_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: stars
+
+  - changeSet:
+      id: recreate_project_index_project_id_idx
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: project_index_project_id_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: recreate unique index to project_index for concurrent refresh
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - createIndex:
+            indexName: project_index_unique
+            tableName: project_index
+            unique: true
+            columns:
+              - column:
+                  name: project_id
+      rollback:
+        - dropIndex:
+            indexName: project_index_unique
+            tableName: project_index

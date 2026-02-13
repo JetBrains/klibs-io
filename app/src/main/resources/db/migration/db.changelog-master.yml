@@ -123,3 +123,7 @@ databaseChangeLog:
       file: db/migration/2026-Q1/2026-01-28_remove_suggestion_words.yml
   - include:
       file: db/migration/2026-Q1/2026-01-30_decouple_projects_from_scm_repo.yml
+  - include:
+      file: db/migration/2026-Q1/2026-02-13_recreate_project_index_with_project_minimized_readme.yml
+  - include:
+      file: db/migration/2026-Q1/2026-02-13_drop_scm_repo_minimized_readme.yml
