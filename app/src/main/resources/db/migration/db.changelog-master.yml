@@ -119,3 +119,7 @@ databaseChangeLog:
       file: db/migration/2026-Q1/2026-01-21_add_all_categories_markers.yml
   - include:
       file: db/migration/2026-Q1/2026-01-30_maven_central_log.yml
+  - include:
+      file: db/migration/2026-Q1/2026-01-28_remove_suggestion_words.yml
+  - include:
+      file: db/migration/2026-Q1/2026-01-30_decouple_projects_from_scm_repo.yml

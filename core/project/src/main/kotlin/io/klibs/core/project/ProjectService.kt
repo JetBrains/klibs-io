@@ -35,9 +35,9 @@ class ProjectService(
 ) {
     @Transactional(readOnly = true)
     fun getProjectDetailsByName(ownerLogin: String, projectName: String): ProjectDetails? {
-        val scmRepositoryEntity = scmRepositoryRepository.findByName(ownerLogin, projectName) ?: return null
-        val projectEntity = requireNotNull(projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)) {
-            "Unable to find the corresponding project for an existing SCM repo: $scmRepositoryEntity"
+        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
+        val scmRepositoryEntity = requireNotNull(scmRepositoryRepository.findById(projectEntity.scmRepoId)) {
+            "Unable to find the corresponding scm repository for an existing project: $projectEntity"
         }
 
         // Check if project has any packages
@@ -75,11 +75,7 @@ class ProjectService(
 
     @Transactional(readOnly = true)
     fun getLatestProjectPackages(ownerLogin: String, projectName: String): List<PackageOverview> {
-        // TODO can be optimized into a single request
-        val scmRepositoryEntity = scmRepositoryRepository.findByName(ownerLogin, projectName) ?: return emptyList()
-        val projectEntity = requireNotNull(projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)) {
-            "Unable to find the corresponding project for an existing SCM repo: $scmRepositoryEntity"
-        }
+        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return emptyList()
         return packageService.getLatestPackagesByProjectId(projectEntity.idNotNull)
     }
 
@@ -107,9 +103,7 @@ class ProjectService(
         tags: List<String>,
         tagsType: TagOrigin
     ): List<String> {
-        val scmRepositoryEntity = scmRepositoryRepository.findByName(ownerLogin, projectName)
-            ?: throw IllegalArgumentException("Project $ownerLogin/$projectName not found")
-        val projectEntity = projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)
+        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)
             ?: throw IllegalArgumentException("Project $ownerLogin/$projectName not found")
         val projectId = projectEntity.idNotNull
 
@@ -180,7 +174,8 @@ private fun ProjectEntity.toDetails(
         id = this.idNotNull,
         ownerType = scmRepositoryEntity.ownerType,
         ownerLogin = scmRepositoryEntity.ownerLogin,
-        name = scmRepositoryEntity.name,
+        repoName = scmRepositoryEntity.name,
+        name = this.name,
         description = projectEntity.description ?: scmRepositoryEntity.description,
         platforms = projectPlatforms,
         latestReleaseVersion = projectEntity.latestVersion,

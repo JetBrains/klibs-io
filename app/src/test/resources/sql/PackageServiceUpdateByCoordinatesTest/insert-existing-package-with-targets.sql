@@ -7,7 +7,7 @@ INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, 
 VALUES (8101, 8101, 8101, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 0, 'sample-repo', 'Repo desc', NULL, 'mit', 'MIT License', 'main', 'README');
 
 -- Insert test project
-INSERT INTO public.project VALUES (8101, 8101, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (8101, 8101, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'sample-repo', NULL, 8101);
 
 -- Insert existing package (matches entity fields used by repository and service)
 -- Columns order (from existing fixtures): id, project_id, created_at, release_ts, group_id, artifact_id, version,

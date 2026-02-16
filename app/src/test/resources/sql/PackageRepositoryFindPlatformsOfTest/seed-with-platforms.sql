@@ -7,7 +7,7 @@ INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, 
 VALUES (9001, 9001, 9001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 10, 1, 'repo-9001', 'Repo 9001', NULL, 'mit', 'MIT License', 'main', 'readme');
 
 -- Insert test project
-INSERT INTO public.project VALUES (9001, 9001, CURRENT_TIMESTAMP, '2.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (9001, 9001, CURRENT_TIMESTAMP, '2.0.0', CURRENT_TIMESTAMP, 'repo-9001', NULL, 9001);
 
 -- Insert packages for artifact libA (older and newer)
 -- Older version for libA

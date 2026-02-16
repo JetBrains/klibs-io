@@ -6,8 +6,6 @@ import io.klibs.core.search.dto.api.SearchPackageResultDTOTargetList
 import io.klibs.core.search.dto.api.SearchPackagesRequest
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
 import io.klibs.core.search.dto.api.SearchProjectsRequest
-import io.klibs.core.search.suggest.SuggestService
-import io.klibs.core.search.suggest.WordSuggestionDTO
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
@@ -29,7 +27,6 @@ import org.springframework.web.bind.annotation.RestController
 @Validated
 class SearchController(
     private val searchService: SearchService,
-    private val suggestService: SuggestService,
 ) {
     @Operation(summary = "Search projects")
     @GetMapping("/projects")
@@ -259,30 +256,6 @@ class SearchController(
             return res.map { it.toDTO() }
         }
     }
-
-    @Operation(summary = "Suggest keywords")
-    @GetMapping("/suggest")
-    fun suggestKeywords(
-        @RequestParam(required = false)
-        @Parameter(
-            description = "Arbitrary full text search query",
-            example = "kotlinx"
-        )
-        query: String?,
-
-        @RequestParam("limit", required = false, defaultValue = "5")
-        @Parameter(
-            description = "The size of the page to be returned",
-            schema = Schema(type = "integer", minimum = "1", maximum = "100", defaultValue = "5")
-        )
-        limit: Int
-    ): WordSuggestionDTO {
-        require(limit in 1..100) {
-            "Limit must be in 1..100"
-        }
-
-        return WordSuggestionDTO(suggestService.suggestWords(query, limit))
-    }
 }
 
 internal fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
@@ -290,7 +263,7 @@ internal fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
         id = this.id,
         name = this.name,
         description = this.description,
-        scmLink = "https://github.com/${this.ownerLogin}/${this.name}",
+        scmLink = "https://github.com/${this.ownerLogin}/${this.repoName}",
         scmStars = this.vcsStars,
         ownerType = this.ownerType.serializableName,
         ownerLogin = this.ownerLogin,
