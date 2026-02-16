@@ -10,6 +10,7 @@ data class ProjectDetails(
 
     val ownerType: ScmOwnerType,
     val ownerLogin: String,
+    val repoName: String,
 
     val name: String,
     val description: String?,
@@ -38,26 +39,26 @@ data class ProjectDetails(
     val markers: List<MarkerType>,
 ) {
     fun getGitHubRepositoryLink(): String {
-        return "https://github.com/${this.ownerLogin}/${this.name}"
+        return "https://github.com/${this.ownerLogin}/${this.repoName}"
     }
 
     fun getGitHubPagesLink(): String? {
         return when {
-            this.hasGhPages -> "https://${this.ownerLogin}.github.io/${this.name}"
+            this.hasGhPages -> "https://${this.ownerLogin}.github.io/${this.repoName}"
             else -> null
         }
     }
 
     fun getIssuesLink(): String? {
         return when {
-            this.hasIssues -> "https://github.com/${this.ownerLogin}/${this.name}/issues"
+            this.hasIssues -> "https://github.com/${this.ownerLogin}/${this.repoName}/issues"
             else -> null
         }
     }
 
     fun getWikiLink(): String? {
         return when {
-            this.hasWiki -> "https://github.com/${this.ownerLogin}/${this.name}/wiki"
+            this.hasWiki -> "https://github.com/${this.ownerLogin}/${this.repoName}/wiki"
             else -> null
         }
     }

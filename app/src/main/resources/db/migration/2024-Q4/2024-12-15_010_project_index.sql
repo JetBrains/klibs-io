@@ -14,7 +14,7 @@ WITH package_info AS (
 SELECT project.id AS project_id,
        owner.type AS owner_type,
        owner.login AS owner_login,
-       repo.name,
+       repo.name, -- We still need this to form GH repo link and GH pages link, because androidx projects have diffent names for repository and project.
        repo.stars,
        repo.license_name,
        project.latest_version,

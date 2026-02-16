@@ -7,4 +7,4 @@ INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, 
 VALUES (9100, 9100, 9100, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 10, 1, 'repo-9100', 'Repo 9100', NULL, 'mit', 'MIT License', 'main', 'readme');
 
 -- Insert test project without packages
-INSERT INTO public.project VALUES (9100, 9100, CURRENT_TIMESTAMP, '0.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (9100, 9100, CURRENT_TIMESTAMP, '0.0.0', CURRENT_TIMESTAMP, 'repo-9100', NULL, 9100);

@@ -115,7 +115,7 @@ class GitHubIndexingService(
 
         // After repository is persisted, fetch and update GitHub tags for the linked project (if any)
         try {
-            val projectEntity = projectRepository.findByScmRepoId(persistedRepo.idNotNull)
+            val projectEntity = projectRepository.findByNameAndScmRepoId(scmRepositoryEntity.name, persistedRepo.idNotNull)
             updateGithubTagsForProject(projectEntity, persistedRepo)
         } catch (e: Exception) {
             logger.error("Failed to update GitHub tags for repoId=${persistedRepo.idNotNull}", e)

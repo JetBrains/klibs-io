@@ -7,7 +7,7 @@ INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, 
 VALUES (9001, 9001, 9001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 100, 10, 'test-repo-3', 'Test repository 3', NULL, 'mit', 'MIT License', 'main', 'Test readme content');
 
 -- Insert test project
-INSERT INTO public.project VALUES (9001, 9001, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (9001, 9001, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'test-repo-3', NULL, 9001);
 
 -- Insert test package
 INSERT INTO public.package VALUES (9001, 9001, CURRENT_TIMESTAMP - INTERVAL '1 month', CURRENT_TIMESTAMP - INTERVAL '1 month', 'com.example', 'test-library-gen', '1.0.0', 'test-library-gen', 'This is a description for version 1.0.0', 'https://example.com/test-library', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'CENTRAL_SONATYPE');

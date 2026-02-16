@@ -49,7 +49,10 @@ class ProjectIndexingServiceAddAiTagsTest {
         val project = ProjectEntity(
             id = projectId,
             scmRepoId = scmRepoId,
+            ownerId = 1,
+            name = "test-repo",
             description = "Project long description",
+            minimizedReadme = null,
             latestVersion = "1.0.0",
             latestVersionTs = Instant.parse("2024-01-01T00:00:00Z")
         )
@@ -129,7 +132,10 @@ class ProjectIndexingServiceAddAiTagsTest {
         val project = ProjectEntity(
             id = projectId,
             scmRepoId = scmRepoId,
+            ownerId = 1,
+            name = "test-repo",
             description = "Desc",
+            minimizedReadme = null,
             latestVersion = "1.0.0",
             latestVersionTs = Instant.parse("2024-01-01T00:00:00Z")
         )

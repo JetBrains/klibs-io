@@ -11,8 +11,8 @@ INSERT INTO public.scm_repo VALUES (999991, 9991, 9991, false, true, true, true,
 INSERT INTO public.scm_repo VALUES (999992, 9992, 9991, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 50, 0, 'test-readme-repo-2', 'Another test repository', NULL, 'mit', 'MIT License', 'main', 'Different content that should not match the search');
 
 -- Test projects
-INSERT INTO public.project VALUES (9991, 9991, '2024-11-14 02:41:08.679', '1.0.0', CURRENT_TIMESTAMP);
-INSERT INTO public.project VALUES (9992, 9992, '2024-11-14 02:41:08.679', '1.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (9991, 9991, '2024-11-14 02:41:08.679', '1.0.0', CURRENT_TIMESTAMP, 'test-readme-repo', NULL, 9991);
+INSERT INTO public.project VALUES (9992, 9992, '2024-11-14 02:41:08.679', '1.0.0', CURRENT_TIMESTAMP, 'test-readme-repo-2', NULL, 9991);
 
 -- Test packages
 INSERT INTO public.package VALUES (9991, 9991, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.test', 'test-readme-lib', '1.0.0', 'test-readme-lib', NULL, NULL, 'gradle', '8.5', '1.9.0', '{}', '[]', '[]');
@@ -137,56 +137,56 @@ INSERT INTO public.scm_repo VALUES (346815703, 123, 96, false, true, true, true,
 -- Data for Name: project; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.project VALUES (1, 1, '2024-11-14 02:41:08.679', '0.65.0', 'sdfs');
-INSERT INTO public.project VALUES (45, 118, '2024-11-25 22:31:22', '1.0.2', 'A testing API for Kotlin projects, offering fluent assertion methods inspired by Google Truth. Unique feature includes `assertAll` for batch assertions.');
-INSERT INTO public.project VALUES (5, 5, '2024-11-13 23:04:31.118', '0.14.0', 'sdfs');
-INSERT INTO public.project VALUES (32, 105, '2024-11-26 16:00:52.995', '0.21.0', 'Cryptocurrency library for Kotlin Multiplatform. Implements Bitcoin protocol features like transaction handling, script execution, BIP standards, and wallet functionalities. Supports various platforms and integrates with a lightning engine.');
-INSERT INTO public.project VALUES (6, 6, '2024-11-13 21:31:21', '1.3.21', 'sdfs');
-INSERT INTO public.project VALUES (3, 3, '2024-11-13 23:35:57', '3.60.0', 'sdfs');
-INSERT INTO public.project VALUES (4, 4, '2024-11-17 23:39:28.163', '0.10.0', 'sdfs');
-INSERT INTO public.project VALUES (10, 16, '2024-11-17 19:30:55', '8.1.0', 'A coroutine-based client for LavaLink, Lavakord provides event handling, track loading, and compatibility with Kord, JDA, and Java using CompletableFuture API.');
-INSERT INTO public.project VALUES (9, 15, '2024-11-18 07:22:30', '0.0.11', 'Collection of utility methods enhancing Jetpack Compose UI and Foundation packages, providing APIs for common UI interactions like sticky headers, collapsing headers, pointer offset scroll, drag to dismiss, and more.');
-INSERT INTO public.project VALUES (11, 17, '2024-11-17 17:33:21', '1.0.0', NULL);
-INSERT INTO public.project VALUES (12, 18, '2024-11-17 16:44:47', '0.9.3', NULL);
-INSERT INTO public.project VALUES (14, 23, '2024-11-17 11:11:08', '0.9.4', 'A framework for building UI using MVI pattern with Unidirectional Data Flow. Provides components like ViceView, Intent, Compositor, and Effects, simplifying UI code structuring.');
-INSERT INTO public.project VALUES (15, 30, '2024-11-17 10:19:09', '0.0.3', NULL);
-INSERT INTO public.project VALUES (16, 32, '2024-11-17 00:50:02.92', '1.0.0', NULL);
-INSERT INTO public.project VALUES (17, 35, '2024-11-16 23:45:13', '2.1.1', 'Efficiently implements Symmetric Delete spelling correction algorithm with bigram support, offering fast and language-independent fuzzy search capabilities. Includes a sample desktop application for testing.');
-INSERT INTO public.project VALUES (18, 37, '2024-10-21 17:48:42.257', '0.26.0', 'Efficiently handle atomic operations in Kotlin with **AtomicFU** library. Supports multiplatform usage, Kotlin-specific extensions, arrays of atomic values, user-defined extensions, and debugging features.');
-INSERT INTO public.project VALUES (7, 7, '2024-11-18 10:28:31', '0.0.1', 'A health-focused library offering a Kotlin Multiplatform wrapper for Android''s Health Connect and Apple''s HealthKit APIs. Provides easy consumption in a Kotlin/Compose environment with support for various health data types.');
-INSERT INTO public.project VALUES (21, 94, '2024-11-26 22:58:00', '0.1.0', NULL);
-INSERT INTO public.project VALUES (2, 2, '2024-11-26 20:54:04', '1.3.83', 'sdfs');
-INSERT INTO public.project VALUES (20, 93, '2024-11-26 23:45:11', '2.3.0', 'Essenty offers essential functionalities for handling lifecycle events, preserving state, managing instances, and back button events in Kotlin Multiplatform development. It includes Android, iOS, and other platform extensions.');
-INSERT INTO public.project VALUES (22, 95, '2024-11-26 22:29:44.085', '0.6.0', 'A compiler plugin that embeds file information in Kotlin code, providing constants for filename, enclosing class, function, and line number. Supported across Kotlin targets.');
-INSERT INTO public.project VALUES (19, 92, '2024-11-27 03:57:52', '36.0.0', 'Simulation tool for pervasive, aggregate, and nature-inspired computing. Documented with a DIVIO system. License requires academic attribution. Rich CI/CD and code quality tool integrations.');
-INSERT INTO public.project VALUES (23, 96, '2024-11-26 20:05:02.875', '0.5.0', NULL);
-INSERT INTO public.project VALUES (24, 97, '2024-11-26 20:03:02', '0.77.0', NULL);
-INSERT INTO public.project VALUES (25, 98, '2024-11-26 19:42:06', '2.0.0', NULL);
-INSERT INTO public.project VALUES (26, 99, '2024-11-26 19:39:29', '12.1.33', NULL);
-INSERT INTO public.project VALUES (28, 101, '2024-11-26 16:55:00', '0.1.1', NULL);
-INSERT INTO public.project VALUES (29, 102, '2024-11-26 16:31:11', '2.6.0', NULL);
-INSERT INTO public.project VALUES (13, 19, '2024-11-26 16:26:43', '6.1.93', NULL);
-INSERT INTO public.project VALUES (30, 103, '2024-11-26 16:07:40', '0.13.4', NULL);
-INSERT INTO public.project VALUES (31, 104, '2024-11-26 16:07:14.327', '4.5.2-alpha1', 'Multiplatform plotting library based on Grammar of Graphics principles. Create tailored statistical graphics with powerful customization, LaTeX support, and interactive features like panning and clickable links.');
-INSERT INTO public.project VALUES (33, 106, '2024-11-26 15:25:36', '1.0.0', NULL);
-INSERT INTO public.project VALUES (34, 107, '2024-11-26 14:08:17', '2.1.2', NULL);
-INSERT INTO public.project VALUES (35, 108, '2024-11-26 13:23:01', '0.3.1', NULL);
-INSERT INTO public.project VALUES (36, 109, '2024-11-26 12:48:52.866', '0.4.1', NULL);
-INSERT INTO public.project VALUES (37, 110, '2024-11-26 12:45:28', '1.3.0', NULL);
-INSERT INTO public.project VALUES (38, 111, '2024-11-26 12:06:47.467', '0.1.0-RC5', NULL);
-INSERT INTO public.project VALUES (27, 100, '2024-11-26 18:44:22.428', '2.0.1', 'A multiplatform library for Bluetooth BLE connections across iOS, Android, MacOS, Raspberry Pi, and JavaScript. Provides a unified API for BLE actions, simplifying development across platforms.');
-INSERT INTO public.project VALUES (39, 112, '2024-11-26 11:39:51.324', '0.16.0', NULL);
-INSERT INTO public.project VALUES (42, 115, '2024-11-26 04:30:27', '1.5.28', NULL);
-INSERT INTO public.project VALUES (43, 116, '2024-11-26 03:24:07.028', '1.2.0', NULL);
-INSERT INTO public.project VALUES (40, 113, '2024-11-26 07:49:58.848', '2.4.4', 'A highly optimized image loading library for Jetpack Compose and Kotlin Multiplatform. Supports Glide, Coil, and Fresco with customizations, animations, and plugin support. Trace image loading states and compose custom implementations.');
-INSERT INTO public.project VALUES (44, 117, '2024-11-26 03:11:59', '0.6.0', NULL);
-INSERT INTO public.project VALUES (48, 121, '2024-11-25 12:22:47.998', '0.23.1', NULL);
-INSERT INTO public.project VALUES (46, 119, '2024-11-25 22:20:12.364', '3.0.4', 'Efficiently loads and caches images for Android and Compose Multiplatform using modern Kotlin features. Lightweight, with seamless integration and easy-to-use API for image loading.');
-INSERT INTO public.project VALUES (47, 120, '2024-11-25 20:22:34', '1.12.1-beta18', 'Framework for unidirectional data flow, enabling state machines for business and UI logic. Supports composability, scalability, and testing. Available for Kotlin and Swift.');
-INSERT INTO public.project VALUES (49, 122, '2024-11-25 11:10:37', '0.10.17', NULL);
-INSERT INTO public.project VALUES (41, 114, '2024-11-26 04:55:14', '1.9.40', 'A multiplatform library that provides WebView functionalities for JetBrains Compose. Supports Android, iOS, and Desktop with unique features like WebViewState and WebViewNavigator.');
-INSERT INTO public.project VALUES (50, 123, '2024-11-25 10:57:31', '2.3.0', NULL);
-INSERT INTO public.project VALUES (8, 8, '2024-11-25 08:26:13.844', '5.4.5-pre.838', 'JavaScript library Kotlin wrappers providing a variety of APIs for popular libraries. Simplifies integration with Kotlin projects. Requires JDK 11 for usage.');
+INSERT INTO public.project VALUES (1, 1, '2024-11-14 02:41:08.679', '0.65.0', 'sdfs', 'kaml', NULL, 1);
+INSERT INTO public.project VALUES (45, 118, '2024-11-25 22:31:22', '1.0.2', 'A testing API for Kotlin projects, offering fluent assertion methods inspired by Google Truth. Unique feature includes `assertAll` for batch assertions.', 'truthish', NULL, 91);
+INSERT INTO public.project VALUES (5, 5, '2024-11-13 23:04:31.118', '0.14.0', 'sdfs', 'telephoto', NULL, 5);
+INSERT INTO public.project VALUES (32, 105, '2024-11-26 16:00:52.995', '0.21.0', 'Cryptocurrency library for Kotlin Multiplatform. Implements Bitcoin protocol features like transaction handling, script execution, BIP standards, and wallet functionalities. Supports various platforms and integrates with a lightning engine.', 'bitcoin-kmp', NULL, 82);
+INSERT INTO public.project VALUES (6, 6, '2024-11-13 21:31:21', '1.3.21', 'sdfs', 'smithy-kotlin', NULL, 6);
+INSERT INTO public.project VALUES (3, 3, '2024-11-13 23:35:57', '3.60.0', 'sdfs', 'seskar', NULL, 3);
+INSERT INTO public.project VALUES (4, 4, '2024-11-17 23:39:28.163', '0.10.0', 'sdfs', 'konform', NULL, 4);
+INSERT INTO public.project VALUES (10, 16, '2024-11-17 19:30:55', '8.1.0', 'A coroutine-based client for LavaLink, Lavakord provides event handling, track loading, and compatibility with Kord, JDA, and Java using CompletableFuture API.', 'Lavalink.kt', NULL, 16);
+INSERT INTO public.project VALUES (9, 15, '2024-11-18 07:22:30', '0.0.11', 'Collection of utility methods enhancing Jetpack Compose UI and Foundation packages, providing APIs for common UI interactions like sticky headers, collapsing headers, pointer offset scroll, drag to dismiss, and more.', 'composables', NULL, 15);
+INSERT INTO public.project VALUES (11, 17, '2024-11-17 17:33:21', '1.0.0', NULL, 'vyreka', NULL, 17);
+INSERT INTO public.project VALUES (12, 18, '2024-11-17 16:44:47', '0.9.3', NULL, 'anthropic-sdk-kotlin', NULL, 18);
+INSERT INTO public.project VALUES (14, 23, '2024-11-17 11:11:08', '0.9.4', 'A framework for building UI using MVI pattern with Unidirectional Data Flow. Provides components like ViceView, Intent, Compositor, and Effects, simplifying UI code structuring.', 'vice', NULL, 20);
+INSERT INTO public.project VALUES (15, 30, '2024-11-17 10:19:09', '0.0.3', NULL, 'compose-material3-navigation', NULL, 20);
+INSERT INTO public.project VALUES (16, 32, '2024-11-17 00:50:02.92', '1.0.0', NULL, 'kmp-commons', NULL, 21);
+INSERT INTO public.project VALUES (17, 35, '2024-11-16 23:45:13', '2.1.1', 'Efficiently implements Symmetric Delete spelling correction algorithm with bigram support, offering fast and language-independent fuzzy search capabilities. Includes a sample desktop application for testing.', 'SymSpellKt', NULL, 22);
+INSERT INTO public.project VALUES (18, 37, '2024-10-21 17:48:42.257', '0.26.0', 'Efficiently handle atomic operations in Kotlin with **AtomicFU** library. Supports multiplatform usage, Kotlin-specific extensions, arrays of atomic values, user-defined extensions, and debugging features.', 'kotlinx-atomicfu', NULL, 23);
+INSERT INTO public.project VALUES (7, 7, '2024-11-18 10:28:31', '0.0.1', 'A health-focused library offering a Kotlin Multiplatform wrapper for Android''s Health Connect and Apple''s HealthKit APIs. Provides easy consumption in a Kotlin/Compose environment with support for various health data types.', 'KHealth', NULL, 7);
+INSERT INTO public.project VALUES (21, 94, '2024-11-26 22:58:00', '0.1.0', NULL, 'fluxo-io', NULL, 73);
+INSERT INTO public.project VALUES (2, 2, '2024-11-26 20:54:04', '1.3.83', 'sdfs', 'aws-sdk-kotlin', NULL, 2);
+INSERT INTO public.project VALUES (20, 93, '2024-11-26 23:45:11', '2.3.0', 'Essenty offers essential functionalities for handling lifecycle events, preserving state, managing instances, and back button events in Kotlin Multiplatform development. It includes Android, iOS, and other platform extensions.', 'Essenty', NULL, 72);
+INSERT INTO public.project VALUES (22, 95, '2024-11-26 22:29:44.085', '0.6.0', 'A compiler plugin that embeds file information in Kotlin code, providing constants for filename, enclosing class, function, and line number. Supported across Kotlin targets.', 'cite', NULL, 74);
+INSERT INTO public.project VALUES (19, 92, '2024-11-27 03:57:52', '36.0.0', 'Simulation tool for pervasive, aggregate, and nature-inspired computing. Documented with a DIVIO system. License requires academic attribution. Rich CI/CD and code quality tool integrations.', 'Alchemist', NULL, 71);
+INSERT INTO public.project VALUES (23, 96, '2024-11-26 20:05:02.875', '0.5.0', NULL, 'khronicle', NULL, 75);
+INSERT INTO public.project VALUES (24, 97, '2024-11-26 20:03:02', '0.77.0', NULL, 'ultra', NULL, 76);
+INSERT INTO public.project VALUES (25, 98, '2024-11-26 19:42:06', '2.0.0', NULL, 'maven-central-portal-kotlin-api', NULL, 77);
+INSERT INTO public.project VALUES (26, 99, '2024-11-26 19:39:29', '12.1.33', NULL, 'testmints', NULL, 19);
+INSERT INTO public.project VALUES (28, 101, '2024-11-26 16:55:00', '0.1.1', NULL, 'oauth-kmp', NULL, 79);
+INSERT INTO public.project VALUES (29, 102, '2024-11-26 16:31:11', '2.6.0', NULL, 'czan', NULL, 80);
+INSERT INTO public.project VALUES (13, 19, '2024-11-26 16:26:43', '6.1.93', NULL, 'jsmints', NULL, 19);
+INSERT INTO public.project VALUES (30, 103, '2024-11-26 16:07:40', '0.13.4', NULL, 'kotzilla-sdk-sample', NULL, 81);
+INSERT INTO public.project VALUES (31, 104, '2024-11-26 16:07:14.327', '4.5.2-alpha1', 'Multiplatform plotting library based on Grammar of Graphics principles. Create tailored statistical graphics with powerful customization, LaTeX support, and interactive features like panning and clickable links.', 'lets-plot', NULL, 8);
+INSERT INTO public.project VALUES (33, 106, '2024-11-26 15:25:36', '1.0.0', NULL, 'twirp-kmp', NULL, 79);
+INSERT INTO public.project VALUES (34, 107, '2024-11-26 14:08:17', '2.1.2', NULL, 'LazyPeopleHttp', NULL, 83);
+INSERT INTO public.project VALUES (35, 108, '2024-11-26 13:23:01', '0.3.1', NULL, 'kmp-sse', NULL, 84);
+INSERT INTO public.project VALUES (36, 109, '2024-11-26 12:48:52.866', '0.4.1', NULL, 'loxone-client-kotlin', NULL, 85);
+INSERT INTO public.project VALUES (37, 110, '2024-11-26 12:45:28', '1.3.0', NULL, 'alarmee', NULL, 80);
+INSERT INTO public.project VALUES (38, 111, '2024-11-26 12:06:47.467', '0.1.0-RC5', NULL, 'ort-server', NULL, 86);
+INSERT INTO public.project VALUES (27, 100, '2024-11-26 18:44:22.428', '2.0.1', 'A multiplatform library for Bluetooth BLE connections across iOS, Android, MacOS, Raspberry Pi, and JavaScript. Provides a unified API for BLE actions, simplifying development across platforms.', 'blue-falcon', NULL, 78);
+INSERT INTO public.project VALUES (39, 112, '2024-11-26 11:39:51.324', '0.16.0', NULL, 'secp256k1-kmp', NULL, 82);
+INSERT INTO public.project VALUES (42, 115, '2024-11-26 04:30:27', '1.5.28', NULL, 'ze-great-tools', NULL, 19);
+INSERT INTO public.project VALUES (43, 116, '2024-11-26 03:24:07.028', '1.2.0', NULL, 'stream-android-push', NULL, 89);
+INSERT INTO public.project VALUES (40, 113, '2024-11-26 07:49:58.848', '2.4.4', 'A highly optimized image loading library for Jetpack Compose and Kotlin Multiplatform. Supports Glide, Coil, and Fresco with customizations, animations, and plugin support. Trace image loading states and compose custom implementations.', 'landscapist', NULL, 87);
+INSERT INTO public.project VALUES (44, 117, '2024-11-26 03:11:59', '0.6.0', NULL, 'kmp-core', NULL, 90);
+INSERT INTO public.project VALUES (48, 121, '2024-11-25 12:22:47.998', '0.23.1', NULL, 'MicroUtils', NULL, 94);
+INSERT INTO public.project VALUES (46, 119, '2024-11-25 22:20:12.364', '3.0.4', 'Efficiently loads and caches images for Android and Compose Multiplatform using modern Kotlin features. Lightweight, with seamless integration and easy-to-use API for image loading.', 'coil', NULL, 92);
+INSERT INTO public.project VALUES (47, 120, '2024-11-25 20:22:34', '1.12.1-beta18', 'Framework for unidirectional data flow, enabling state machines for business and UI logic. Supports composability, scalability, and testing. Available for Kotlin and Swift.', 'workflow', NULL, 93);
+INSERT INTO public.project VALUES (49, 122, '2024-11-25 11:10:37', '0.10.17', NULL, 'wirespec', NULL, 95);
+INSERT INTO public.project VALUES (41, 114, '2024-11-26 04:55:14', '1.9.40', 'A multiplatform library that provides WebView functionalities for JetBrains Compose. Supports Android, iOS, and Desktop with unique features like WebViewState and WebViewNavigator.', 'compose-webview-multiplatform', NULL, 88);
+INSERT INTO public.project VALUES (50, 123, '2024-11-25 10:57:31', '2.3.0', NULL, 'kInject2', NULL, 96);
+INSERT INTO public.project VALUES (8, 8, '2024-11-25 08:26:13.844', '5.4.5-pre.838', 'JavaScript library Kotlin wrappers providing a variety of APIs for popular libraries. Simplifies integration with Kotlin projects. Requires JDK 11 for usage.', 'kotlin-wrappers', NULL, 8);
 
 -- Backfill project_tags for tests based on known repo-to-tags mapping
 INSERT INTO public.project_tags VALUES (1, 'USER', 'Compose UI');

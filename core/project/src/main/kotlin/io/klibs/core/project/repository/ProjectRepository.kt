@@ -15,7 +15,9 @@ interface ProjectRepository {
 
     fun findById(id: Int): ProjectEntity?
 
-    fun findByScmRepoId(scmRepoId: Int): ProjectEntity?
+    fun findByNameAndScmRepoId(name: String, scmRepoId: Int): ProjectEntity?
+
+    fun findByNameAndOwnerLogin(name: String, ownerLogin: String): ProjectEntity?
 
     fun findWithoutDescription(): ProjectEntity?
 
