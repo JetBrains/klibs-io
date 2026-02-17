@@ -11,11 +11,14 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.ai.ProjectTagsGenerator
+import io.klibs.integration.github.GitHubIntegration
+import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenArtifact
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -28,6 +31,8 @@ class ProjectIndexingService(
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val projectTagsGenerator: ProjectTagsGenerator,
     private val projectTagRepository: ProjectTagRepository,
+    private val gitHubIntegration: GitHubIntegration,
+    private val readmeContentBuilder: ReadmeContentBuilder,
     @Qualifier("aiDescriptionBackoffProvider")
     private val descriptionBackoffProvider: BackoffProvider,
     @Qualifier("aiTagsBackoffProvider")
@@ -47,7 +52,7 @@ class ProjectIndexingService(
             val repo = scmRepositoryRepository.findById(project.scmRepoId) ?: error("Unable to find the repo: $project")
             logger.trace("Generating an AI description for projectId=${project.id}")
 
-            val readmeMd = readmeService.readReadmeMd(project.scmRepoId)
+            val readmeMd = readmeService.readReadmeMd(project.idNotNull, project.scmRepoId)
                 ?: error("Unable to generate the description due to missing or empty README.md for $project")
 
             // there can be some very long readmes... see https://github.com/robstoll/atrium
@@ -80,7 +85,7 @@ class ProjectIndexingService(
                 repo.name,
                 project.description ?: "",
                 repo.description ?: "",
-                repo.minimizedReadme ?: ""
+                project.minimizedReadme ?: ""
             ).map {
                 TagEntity(
                     projectId = project.idNotNull,
@@ -141,19 +146,54 @@ class ProjectIndexingService(
         mavenArtifact: MavenArtifact,
         scmRepositoryEntity: ScmRepositoryEntity,
     ): ProjectEntity {
+        val readmeContent = fetchReadmeContent(scmRepositoryEntity)
+
         logger.debug("Persisting a new project for {}", mavenArtifact)
-        return projectRepository.insert(
+        val persistedEntity = projectRepository.insert(
             ProjectEntity(
                 id = null, // to be set by the DB
                 scmRepoId = scmRepositoryEntity.idNotNull,
                 ownerId = scmRepositoryEntity.ownerId,
                 name = scmRepositoryEntity.name,
                 description = null, // to be set later
-                minimizedReadme = scmRepositoryEntity.minimizedReadme,
+                minimizedReadme = readmeContent?.minimized,
                 latestVersion = mavenArtifact.version,
                 latestVersionTs = requireNotNull(mavenArtifact.releasedAt),
             )
         )
+
+        if (readmeContent != null) {
+            scmRepositoryRepository.update(
+                scmRepositoryEntity.copy(
+                    hasReadme = readmeContent.markdown.isNotBlank()
+                )
+            )
+
+            if (scmRepositoryEntity.ownerLogin != "androidx") {
+                readmeService.writeReadmeFiles(
+                    projectId = persistedEntity.idNotNull,
+                    mdContent = readmeContent.markdown,
+                    htmlContent = readmeContent.html
+                )
+            }
+        }
+
+        return persistedEntity
+    }
+
+    private fun fetchReadmeContent(scmRepositoryEntity: ScmRepositoryEntity): GitHubIndexingReadmeContent? {
+        return when (val result = gitHubIntegration.getReadmeWithModifiedSinceCheck(
+            scmRepositoryEntity.nativeId, Instant.EPOCH
+        )) {
+            is ReadmeFetchResult.Content -> readmeContentBuilder.buildFromMarkdown(
+                readmeMd = result.markdown,
+                nativeId = scmRepositoryEntity.nativeId,
+                ownerLogin = scmRepositoryEntity.ownerLogin,
+                repoName = scmRepositoryEntity.name,
+                defaultBranch = scmRepositoryEntity.defaultBranch,
+            )
+            is ReadmeFetchResult.NotModified, is ReadmeFetchResult.Error, is ReadmeFetchResult.NotFound -> null
+        }
     }
 
     private companion object {

@@ -4,7 +4,10 @@ import BaseUnitWithDbLayerTest
 import io.klibs.app.util.BackoffProvider
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.owner.ScmOwnerType
+import io.klibs.core.project.ProjectService
+import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryRepository
+import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubLicense
 import io.klibs.integration.github.model.GitHubRepository
@@ -18,9 +21,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import java.time.Instant
 import kotlin.test.assertContains
@@ -41,10 +44,19 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
 
-    @MockBean
+    @Autowired
+    private lateinit var projectRepository: ProjectRepository
+
+    @MockitoBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
-    @MockBean(name = "ownerBackoffProvider")
+    @MockitoBean
+    private lateinit var readmeService: ReadmeService
+
+    @MockitoBean
+    private lateinit var projectService: ProjectService
+
+    @MockitoBean(name = "ownerBackoffProvider")
     private lateinit var ownerBackoffProvider: BackoffProvider
 
     @Test
@@ -187,6 +199,7 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
         ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
         whenever(gitHubIntegration.markdownToHtml("Updated readme", repositoryNativeId)).thenReturn("<p>Updated readme</p>")
         whenever(gitHubIntegration.markdownRender("Updated readme", repositoryNativeId)).thenReturn("Updated readme (rendered)")
+        whenever(gitHubIntegration.getRepositoryTopics(repositoryNativeId)).thenReturn(emptyList())
 
         uut.updateRepo(repositoryBeforeTest)
 
@@ -194,6 +207,10 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         val repositoryAfterTest = scmRepositoryRepository.findByNativeId(repositoryNativeId)
         assertNotNull(repositoryAfterTest, "Repository entity should exist after test")
+
+        val projectAfterTest = projectRepository.findByScmRepoId(repositoryAfterTest.idNotNull)
+        assertNotNull(projectAfterTest, "Project entity should exist after test")
+        assertEquals("Updated readme", projectAfterTest.minimizedReadme)
 
         val expectedRepositoryAfterTest = repositoryBeforeTest.copy(
             name = ghRepo.name,
@@ -211,7 +228,6 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
             licenseName = updatedLicenseValue,
             openIssues = ghRepo.openIssues,
             hasReadme = true,
-            minimizedReadme = repositoryAfterTest.minimizedReadme,
         )
         assertEquals(expectedRepositoryAfterTest, repositoryAfterTest)
 

@@ -12,11 +12,11 @@ VALUES
   (10003, 10003, 0, CURRENT_TIMESTAMP, 'owner-10003', 'author', 'Owner 10003', NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- scm_repo
-INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, has_wiki, has_readme, created_ts, updated_at, last_activity_ts, stars, open_issues, name, description, homepage, license_key, license_name, default_branch, minimized_readme)
+INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, has_wiki, has_readme, created_ts, updated_at, last_activity_ts, stars, open_issues, name, description, homepage, license_key, license_name, default_branch)
 VALUES
-  (10001, 10001, 10001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 0, 'repo-10001', 'Repo 10001', NULL, 'mit', 'MIT License', 'main', 'readme'),
-  (10002, 10002, 10002, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 0, 'repo-10002', 'Repo 10002', NULL, 'mit', 'MIT License', 'main', 'readme'),
-  (10003, 10003, 10003, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 0, 'repo-10003', 'Repo 10003', NULL, 'mit', 'MIT License', 'main', 'readme');
+  (10001, 10001, 10001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 0, 'repo-10001', 'Repo 10001', NULL, 'mit', 'MIT License', 'main'),
+  (10002, 10002, 10002, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 0, 'repo-10002', 'Repo 10002', NULL, 'mit', 'MIT License', 'main'),
+  (10003, 10003, 10003, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 0, 'repo-10003', 'Repo 10003', NULL, 'mit', 'MIT License', 'main');
 
 -- project
 INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, description, name, minimized_readme, owner_id) VALUES (10001, 10001, CURRENT_TIMESTAMP, '1.0.0', 'P10001', 'repo-10001', NULL, 10001),

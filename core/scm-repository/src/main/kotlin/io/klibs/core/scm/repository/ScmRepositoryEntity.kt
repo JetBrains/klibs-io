@@ -52,8 +52,7 @@ data class ScmRepositoryEntity(
     val openIssues: Int?,
 
     val lastActivityTs: Instant,
-    val updatedAtTs: Instant,
-    var minimizedReadme: String?
+    val updatedAtTs: Instant
 ) {
     val idNotNull: Int get() = requireNotNull(id)
 }

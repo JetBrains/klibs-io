@@ -10,8 +10,10 @@ import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.integration.ai.ProjectTagsGenerator
+import io.klibs.integration.github.GitHubIntegration
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -28,6 +30,8 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
     private val projectTagsGenerator: ProjectTagsGenerator = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
+    private val gitHubIntegration: GitHubIntegration = mock()
+    private val readmeContentBuilder: ReadmeContentBuilder = mock()
     private val descriptionBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
     private val tagsBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
 
@@ -38,6 +42,8 @@ class ProjectIndexingServiceAddAiTagsTest {
             scmRepositoryRepository = scmRepositoryRepository,
             projectTagsGenerator = projectTagsGenerator,
             projectTagRepository = projectTagRepository,
+            gitHubIntegration = gitHubIntegration,
+            readmeContentBuilder = readmeContentBuilder,
             descriptionBackoffProvider = descriptionBackoffProvider,
             tagsBackoffProvider = tagsBackoffProvider,
         )
@@ -46,19 +52,19 @@ class ProjectIndexingServiceAddAiTagsTest {
     fun `addAiTags should generate tags and save them with AI origin`() {
         val projectId = 101
         val scmRepoId = 202
+        val readme = "# Awesome lib\nSome README content"
         val project = ProjectEntity(
             id = projectId,
             scmRepoId = scmRepoId,
             ownerId = 1,
             name = "test-repo",
             description = "Project long description",
-            minimizedReadme = null,
+            minimizedReadme = readme,
             latestVersion = "1.0.0",
             latestVersionTs = Instant.parse("2024-01-01T00:00:00Z")
         )
         whenever(projectRepository.findWithoutTags()).thenReturn(project)
 
-        val readme = "# Awesome lib\nSome README content"
         val repo = ScmRepositoryEntity(
             id = scmRepoId,
             nativeId = 9999,
@@ -79,8 +85,7 @@ class ProjectIndexingServiceAddAiTagsTest {
             stars = 42,
             openIssues = 0,
             lastActivityTs = Instant.parse("2024-06-01T00:00:00Z"),
-            updatedAtTs = Instant.parse("2024-06-01T00:00:00Z"),
-            minimizedReadme = readme
+            updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
         whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
 
@@ -120,7 +125,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         uut().addAiTags()
 
         verify(scmRepositoryRepository, never()).findById(any<Int>())
-        verify(readmeService, never()).readReadmeMd(any<Int>())
+        verify(readmeService, never()).readReadmeMd(anyOrNull(), anyOrNull())
         verify(projectTagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
         verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
     }
@@ -163,8 +168,7 @@ class ProjectIndexingServiceAddAiTagsTest {
             stars = 0,
             openIssues = 0,
             lastActivityTs = Instant.parse("2024-06-01T00:00:00Z"),
-            updatedAtTs = Instant.parse("2024-06-01T00:00:00Z"),
-            minimizedReadme = "readme"
+            updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
         whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
 
