@@ -1,0 +1,6 @@
+tag_rules:
+  - name: compose-ui
+    tag_synonyms: ["compose ui", "compose_ui"]
+
+  - name: kotlin-flow
+    tag_synonyms: ["flow"]
