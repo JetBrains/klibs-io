@@ -1,7 +1,6 @@
 package io.klibs.core.pckg.service
 
 import io.klibs.core.pckg.entity.PackageEntity
-import io.klibs.core.pckg.entity.PackageIndexEntity
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.ai.PackageDescriptionGenerator
@@ -79,7 +78,7 @@ class PackageDescriptionService(
             val packageEntity = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
                 ?: throw IllegalArgumentException("No package found with groupId=$groupId, artifactId=$artifactId, version=$version")
 
-            return generatePackageDescription(packageEntity)
+            return generateDescriptionAndSave(packageEntity.groupId, packageEntity.artifactId, packageEntity.version, packageEntity)
         }
 
         // Case 2: groupId and artifactId are provided (get latest version)
@@ -88,7 +87,7 @@ class PackageDescriptionService(
                 packageRepository.findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId, artifactId)
                     ?: throw IllegalArgumentException("No package found with groupId=$groupId, artifactId=$artifactId")
 
-            return generatePackageDescription(packageEntity)
+            return generateDescriptionAndSave(packageEntity.groupId, packageEntity.artifactId, packageEntity.version, packageEntity)
         }
 
         // Case 3: only groupId is provided (get all latest versions)
@@ -99,7 +98,10 @@ class PackageDescriptionService(
 
         val descriptions = mutableMapOf<String, String>()
         for (pkg in latestPackages) {
-            val description = generatePackageDescription(pkg)
+            val packageEntity = packageRepository.findById(pkg.latestPackageId)
+                .orElseThrow { IllegalArgumentException("No package found with groupId=${pkg.id.groupId}, artifactId=${pkg.id.artifactId}")}
+
+            val description = generateDescriptionAndSave(pkg.id.groupId, pkg.id.artifactId, pkg.latestVersion, packageEntity)
             descriptions["${pkg.id.groupId}:${pkg.id.artifactId}:${pkg.latestVersion}"] = description
         }
 
@@ -119,29 +121,6 @@ class PackageDescriptionService(
         } else {
             summary
         }
-    }
-
-    /**
-     * Generates the description of a package.
-     *
-     * @param packageEntity The package entity to update
-     * @return The generated description
-     */
-    private fun generatePackageDescription(packageEntity: PackageEntity): String {
-        return generateDescriptionAndSave(packageEntity.groupId, packageEntity.artifactId, packageEntity.version, packageEntity)
-    }
-
-    /**
-     * Generates the description of a package.
-     *
-     * @param packageIndexEntity The package entity to update
-     * @return The generated description
-     */
-    private fun generatePackageDescription(packageIndexEntity: PackageIndexEntity): String {
-        val packageEntity = packageRepository.findById(packageIndexEntity.latestPackageId)
-            .orElseThrow { IllegalArgumentException("No package found with groupId=$packageIndexEntity.id.groupId, artifactId=$packageIndexEntity.id.artifactId")}
-
-        return generateDescriptionAndSave(packageIndexEntity.id.groupId, packageIndexEntity.id.artifactId, packageIndexEntity.latestVersion, packageEntity)
     }
 
     /**

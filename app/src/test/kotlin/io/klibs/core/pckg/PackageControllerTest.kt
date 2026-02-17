@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.core.pckg.api.PackageOverviewResponse
 import io.klibs.core.pckg.api.PackageTargetResponse
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.SearchService
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
@@ -21,6 +23,14 @@ class PackageControllerTest : SmokeTestBase() {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    private lateinit var searchService: SearchService
+
+    @BeforeEach
+    fun setup() {
+        searchService.refreshSearchViews()
+    }
 
     @Test
     fun `should return target groups mapping`() {
@@ -61,9 +71,9 @@ class PackageControllerTest : SmokeTestBase() {
     }
 
     @Test
-    @Sql(scripts = ["classpath:sql/PackageIndexTest/seed-project-with-packages.sql"])
+    @Sql(scripts = ["classpath:sql/PackageControllerTest/seed-project-with-packages.sql"])
     @Sql(
-        scripts = ["classpath:sql/PackageIndexTest/seed-project-with-packages-cleanup.sql"],
+        scripts = ["classpath:sql/PackageControllerTest/seed-project-with-packages-cleanup.sql"],
         executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD
     )
     fun `should return latest packages by group ID`() {

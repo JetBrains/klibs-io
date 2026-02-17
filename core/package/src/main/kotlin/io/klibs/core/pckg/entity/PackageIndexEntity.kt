@@ -46,21 +46,44 @@ class PackageIndexEntity(
     @Column(name = "targets", columnDefinition = "text[]")
     val targets: Array<String>
 ) {
+
+    @Transient
+    @Volatile
+    private var _parsedTargetsCache: List<PackageTarget>? = null
+
     @get:Transient
     val parsedTargets: List<PackageTarget>
         get() {
-            val existingTargets = targets.map { raw ->
-                parseTargetOrThrow(raw)
+            val cached = _parsedTargetsCache
+            if (cached != null) {
+                return cached
             }
 
-            val platformsInTargets = existingTargets.map { it.platform }.toSet()
-
-            val missingTargets = platforms
-                .filter { it !in platformsInTargets }
-                .map { platform -> PackageTarget(platform = platform, target = null) }
-
-            return existingTargets + missingTargets
+            return synchronized(this) {
+                val cachedSync = _parsedTargetsCache
+                if (cachedSync != null) {
+                    cachedSync
+                } else {
+                    val computed = computeParsedTargets()
+                    _parsedTargetsCache = computed
+                    computed
+                }
+            }
         }
+
+    private fun computeParsedTargets(): List<PackageTarget> {
+        val existingTargets = targets.map { raw ->
+            parseTargetOrThrow(raw)
+        }
+
+        val platformsInTargets = existingTargets.map { it.platform }.toSet()
+
+        val missingTargets = platforms
+            .filter { it !in platformsInTargets }
+            .map { platform -> PackageTarget(platform = platform, target = null) }
+
+        return existingTargets + missingTargets
+    }
 
     private fun parseTargetOrThrow(raw: String): PackageTarget {
         val parts = raw.split('_', limit = 2)

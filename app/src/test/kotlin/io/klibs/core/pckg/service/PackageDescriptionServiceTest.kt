@@ -3,7 +3,9 @@ package io.klibs.core.pckg.service
 import BaseUnitWithDbLayerTest
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.search.SearchService
 import io.klibs.integration.ai.PackageDescriptionGenerator
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
@@ -32,6 +34,14 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
 
     @MockBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
+
+    @Autowired
+    private lateinit var searchService: SearchService
+
+    @BeforeEach
+    fun setup() {
+        searchService.refreshSearchViews()
+    }
 
     @Test
     @Sql(value = ["classpath:sql/PackageDescriptionServiceTest/insert-package-with-specific-version.sql"])

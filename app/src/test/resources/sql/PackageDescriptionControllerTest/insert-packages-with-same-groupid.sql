@@ -30,5 +30,3 @@ INSERT INTO public.package VALUES (10003, 10003, CURRENT_TIMESTAMP, CURRENT_TIME
 
 INSERT INTO public.package_target (package_id, platform, target) VALUES (10002, 'JVM', '1.8');
 INSERT INTO public.package_target (package_id, platform, target) VALUES (10003, 'JVM', '1.8');
-
-REFRESH MATERIALIZED VIEW package_index;

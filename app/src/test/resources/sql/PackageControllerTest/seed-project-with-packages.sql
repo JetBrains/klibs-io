@@ -48,6 +48,3 @@ INSERT INTO public.package_target (package_id, platform, target) VALUES (19004, 
 
 -- Targets for second project
 INSERT INTO public.package_target (package_id, platform, target) VALUES (18002, 'JS', NULL);
-
--- Refresh the materialized view to reflect the inserts
-REFRESH MATERIALIZED VIEW package_index;

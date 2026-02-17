@@ -2,7 +2,9 @@ package io.klibs.core.pckg.controller
 
 import BaseUnitWithDbLayerTest
 import io.klibs.core.pckg.service.PackageDescriptionService
+import io.klibs.core.search.SearchService
 import io.klibs.integration.ai.PackageDescriptionGenerator
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
@@ -22,6 +24,9 @@ import kotlin.test.assertTrue
 class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
+    private lateinit var searchService: SearchService
+
+    @Autowired
     private lateinit var mockMvc: MockMvc
 
     @SpyBean
@@ -29,6 +34,11 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
 
     @MockBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
+
+    @BeforeEach
+    fun setup() {
+        searchService.refreshSearchViews()
+    }
 
     @Test
     @Sql(value = ["classpath:sql/PackageDescriptionControllerTest/insert-package-with-specific-version.sql"])
