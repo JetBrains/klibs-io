@@ -12,6 +12,3 @@ DELETE FROM public.scm_repo WHERE id IN (19001, 18001, 19100);
 
 -- Remove scm owner
 DELETE FROM public.scm_owner WHERE id = 19001;
-
--- Refresh the materialized view to reflect the deletions
-REFRESH MATERIALIZED VIEW package_index;
