@@ -1,6 +1,8 @@
 package io.klibs.core.pckg.repository
 
 import BaseUnitWithDbLayerTest
+import io.klibs.core.search.SearchService
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
@@ -17,8 +19,16 @@ class PackageIndexRepositoryTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var packageRepository: PackageRepository
 
+    @Autowired
+    private lateinit var searchService: SearchService
+
+    @BeforeEach
+    fun setup() {
+        searchService.refreshSearchViews()
+    }
+
     @Test
-    @Sql("classpath:sql/PackageIndexTest/seed-project-with-packages.sql")
+    @Sql("classpath:sql/PackageIndexRepositoryTest/seed-project-with-packages.sql")
     fun `should return latest packages by project id`() {
         val projectId = 19001
 
@@ -36,7 +46,7 @@ class PackageIndexRepositoryTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    @Sql("classpath:sql/PackageIndexTest/seed-project-with-packages.sql")
+    @Sql("classpath:sql/PackageIndexRepositoryTest/seed-project-with-packages.sql")
     fun `should return empty list when project has no packages`() {
         val projectId = 19100
 
@@ -46,7 +56,7 @@ class PackageIndexRepositoryTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    @Sql("classpath:sql/PackageIndexTest/seed-project-with-packages.sql")
+    @Sql("classpath:sql/PackageIndexRepositoryTest/seed-project-with-packages.sql")
     fun `should return latest packages by group id`() {
         val groupId = "org.example"
 
