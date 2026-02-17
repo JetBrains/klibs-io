@@ -15,13 +15,13 @@ INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, 
 VALUES (19100, 19100, 19001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 10, 1, 'repo-9100', 'Repo 9100', NULL, 'mit', 'MIT License', 'main', 'readme');
 
 -- Insert test project
-INSERT INTO public.project VALUES (19001, 19001, CURRENT_TIMESTAMP, '2.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (19001, 19001, CURRENT_TIMESTAMP, '2.0.0', CURRENT_TIMESTAMP, 'repo-9001', 'readme', 19001);
 
 -- Insert different project
-INSERT INTO public.project VALUES (18001, 18001, CURRENT_TIMESTAMP, '2.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (18001, 18001, CURRENT_TIMESTAMP, '2.0.0', CURRENT_TIMESTAMP, 'repo-8001', 'readme', 19001);
 
 -- Insert test project without packages
-INSERT INTO public.project VALUES (19100, 19100, CURRENT_TIMESTAMP, '0.0.0', CURRENT_TIMESTAMP);
+INSERT INTO public.project VALUES (19100, 19100, CURRENT_TIMESTAMP, '0.0.0', CURRENT_TIMESTAMP, 'repo-9100', 'readme', 19001);
 
 -- Insert packages for artifact libA (older and newer)
 -- Older version for libA
