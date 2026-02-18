@@ -31,6 +31,7 @@ include(
 
     ":core:package",
     ":core:project",
+    ":core:readme",
     ":core:scm-owner",
     ":core:scm-repository",
     ":core:search",

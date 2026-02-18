@@ -10,7 +10,7 @@ import io.klibs.core.project.repository.MarkerRepository
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.scm.repository.readme.ReadmeService
+import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
@@ -37,7 +37,7 @@ class ProjectServiceSmokeTest {
     private lateinit var packageService: PackageService
 
     @MockitoBean
-    private lateinit var readmeService: ReadmeService
+    private lateinit var readmeServiceDispatcher: ReadmeServiceDispatcher
 
     @MockitoBean
     private lateinit var projectRepository: ProjectRepository

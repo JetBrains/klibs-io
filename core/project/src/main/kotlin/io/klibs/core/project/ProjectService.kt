@@ -13,9 +13,9 @@ import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.project.utils.normalizeTag
+import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,8 +23,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class ProjectService(
     private val packageService: PackageService,
-    private val readmeService: ReadmeService,
-
+    private val readmeServiceDispatcher: ReadmeServiceDispatcher,
     private val projectRepository: ProjectRepository,
     private val packageRepository: PackageRepository,
     private val scmRepositoryRepository: ScmRepositoryRepository,
@@ -82,13 +81,27 @@ class ProjectService(
     @Transactional(readOnly = true)
     fun getProjectReadmeMd(ownerLogin: String, projectName: String): String? {
         val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
-        return readmeService.readReadmeMd(projectEntity.idNotNull, projectEntity.scmRepoId)
+        return readmeServiceDispatcher.readReadmeMd(
+            ReadmeServiceDispatcher.ProjectInfo(
+                projectEntity.idNotNull,
+                projectEntity.scmRepoId,
+                projectName,
+                ownerLogin
+            )
+        )
     }
 
     @Transactional(readOnly = true)
     fun getProjectReadmeHtml(ownerLogin: String, projectName: String): String? {
         val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
-        return readmeService.readReadmeHtml(projectEntity.idNotNull, projectEntity.scmRepoId)
+        return readmeServiceDispatcher.readReadmeHtml(
+            ReadmeServiceDispatcher.ProjectInfo(
+                projectEntity.idNotNull,
+                projectEntity.scmRepoId,
+                projectName,
+                ownerLogin
+            )
+        )
     }
 
     @Transactional

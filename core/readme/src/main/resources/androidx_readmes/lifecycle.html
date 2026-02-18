@@ -1,0 +1,172 @@
+<h1>Lifecycle</h1>
+<p>Lifecycle-aware components perform actions in response to a change in the lifecycle status of another component, such as activities and fragments. These components help you produce better-organized, and often lighter-weight code, that is easier to maintain.</p>
+<p>[<a href="https://developer.android.com/topic/libraries/architecture/lifecycle" rel="nofollow">User Guide</a>]</p>
+<p>[<a href="https://github.com/android/architecture-components-samples">Code Sample</a>]</p>
+<p>[<a href="https://developer.android.com/reference/kotlin/androidx/lifecycle/package-summary" rel="nofollow">API Reference</a>]</p>
+<h2>Declaring dependencies</h2>
+<p>To add a dependency on Lifecycle, you must add the Google Maven repository to your project. Read <a href="https://developer.android.com/studio/build/dependencies#google-maven" rel="nofollow">Google's Maven repository</a> for more information.</p>
+<p>Add the dependencies for the artifacts you need in the <code class="notranslate">build.gradle</code> file for your app or module:</p>
+<h2>Kotlin</h2>
+<h3>Kotlin</h3>
+<div class="highlight highlight-source-kotlin"><pre class="notranslate">dependencies {
+        <span class="pl-k">val</span> lifecycle_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>2.10.0<span class="pl-pds">"</span></span>
+        <span class="pl-k">val</span> arch_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>2.2.0<span class="pl-pds">"</span></span>
+
+        <span class="pl-c"><span class="pl-c">//</span> ViewModel</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-viewmodel-ktx:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+        <span class="pl-c"><span class="pl-c">//</span> ViewModel utilities for Compose</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-viewmodel-compose:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+        <span class="pl-c"><span class="pl-c">//</span> LiveData</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-livedata-ktx:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+        <span class="pl-c"><span class="pl-c">//</span> Lifecycles only (without ViewModel or LiveData)</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-runtime-ktx:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+        <span class="pl-c"><span class="pl-c">//</span> Lifecycle utilities for Compose</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-runtime-compose:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> Saved state module for ViewModel</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-viewmodel-savedstate:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> ViewModel integration with Navigation3</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0<span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> Annotation processor</span>
+        kapt(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-compiler:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+        <span class="pl-c"><span class="pl-c">//</span> alternately - if using Java8, use the following instead of lifecycle-compiler</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-common-java8:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - helpers for implementing LifecycleOwner in a Service</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-service:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - ProcessLifecycleOwner provides a lifecycle for the whole application process</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-process:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - ReactiveStreams support for LiveData</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-reactivestreams-ktx:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - Test helpers for LiveData</span>
+        testImplementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.arch.core:core-testing:<span class="pl-e">$arch_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - Test helpers for Lifecycle runtime</span>
+        testImplementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-runtime-testing:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+    }</pre></div>
+<details>
+<summary><b>Groovy</b></summary>
+<pre class="notranslate"><code class="notranslate">dependencies {
+        def lifecycle_version = "2.10.0"
+        def arch_version = "2.2.0"
+
+        // ViewModel
+        implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+        // ViewModel utilities for Compose
+        implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
+        // LiveData
+        implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
+        // Lifecycles only (without ViewModel or LiveData)
+        implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
+        // Lifecycle utilities for Compose
+        implementation "androidx.lifecycle:lifecycle-runtime-compose:$lifecycle_version"
+
+        // Saved state module for ViewModel
+        implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version"
+
+        // ViewModel integration with Navigation3
+        implementation "androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0"
+
+        // Annotation processor
+        kapt "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
+        // alternately - if using Java8, use the following instead of lifecycle-compiler
+        implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
+
+        // optional - helpers for implementing LifecycleOwner in a Service
+        implementation "androidx.lifecycle:lifecycle-service:$lifecycle_version"
+
+        // optional - ProcessLifecycleOwner provides a lifecycle for the whole application process
+        implementation "androidx.lifecycle:lifecycle-process:$lifecycle_version"
+
+        // optional - ReactiveStreams support for LiveData
+        implementation "androidx.lifecycle:lifecycle-reactivestreams-ktx:$lifecycle_version"
+
+        // optional - Test helpers for LiveData
+        testImplementation "androidx.arch.core:core-testing:$arch_version"
+
+        // optional - Test helpers for Lifecycle runtime
+        testImplementation "androidx.lifecycle:lifecycle-runtime-testing:$lifecycle_version"
+    }
+</code></pre>
+</details>
+<h2>Java</h2>
+<h3>Kotlin</h3>
+<div class="highlight highlight-source-kotlin"><pre class="notranslate">dependencies {
+        <span class="pl-k">val</span> lifecycle_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>2.10.0<span class="pl-pds">"</span></span>
+        <span class="pl-k">val</span> arch_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>2.2.0<span class="pl-pds">"</span></span>
+
+        <span class="pl-c"><span class="pl-c">//</span> ViewModel</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-viewmodel:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+        <span class="pl-c"><span class="pl-c">//</span> LiveData</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-livedata:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+        <span class="pl-c"><span class="pl-c">//</span> Lifecycles only (without ViewModel or LiveData)</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-runtime:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> Saved state module for ViewModel</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-viewmodel-savedstate:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> Annotation processor</span>
+        annotationProcessor(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-compiler:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+        <span class="pl-c"><span class="pl-c">//</span> alternately - if using Java8, use the following instead of lifecycle-compiler</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-common-java8:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - helpers for implementing LifecycleOwner in a Service</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-service:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - ProcessLifecycleOwner provides a lifecycle for the whole application process</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-process:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - ReactiveStreams support for LiveData</span>
+        implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-reactivestreams:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - Test helpers for LiveData</span>
+        testImplementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.arch.core:core-testing:<span class="pl-e">$arch_version</span><span class="pl-pds">"</span></span>)
+
+        <span class="pl-c"><span class="pl-c">//</span> optional - Test helpers for Lifecycle runtime</span>
+        testImplementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.lifecycle:lifecycle-runtime-testing:<span class="pl-e">$lifecycle_version</span><span class="pl-pds">"</span></span>)
+    }</pre></div>
+<details>
+<summary><b>Groovy</b></summary>
+<pre class="notranslate"><code class="notranslate">dependencies {
+        def lifecycle_version = "2.10.0"
+        def arch_version = "2.2.0"
+
+        // ViewModel
+        implementation "androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version"
+        // LiveData
+        implementation "androidx.lifecycle:lifecycle-livedata:$lifecycle_version"
+        // Lifecycles only (without ViewModel or LiveData)
+        implementation "androidx.lifecycle:lifecycle-runtime:$lifecycle_version"
+
+        // Saved state module for ViewModel
+        implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version"
+
+        // Annotation processor
+        annotationProcessor "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
+        // alternately - if using Java8, use the following instead of lifecycle-compiler
+        implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
+
+        // optional - helpers for implementing LifecycleOwner in a Service
+        implementation "androidx.lifecycle:lifecycle-service:$lifecycle_version"
+
+        // optional - ProcessLifecycleOwner provides a lifecycle for the whole application process
+        implementation "androidx.lifecycle:lifecycle-process:$lifecycle_version"
+
+        // optional - ReactiveStreams support for LiveData
+        implementation "androidx.lifecycle:lifecycle-reactivestreams:$lifecycle_version"
+
+        // optional - Test helpers for LiveData
+        testImplementation "androidx.arch.core:core-testing:$arch_version"
+
+        // optional - Test helpers for Lifecycle runtime
+        testImplementation "androidx.lifecycle:lifecycle-runtime-testing:$lifecycle_version"
+    }
+</code></pre>
+</details>
+<h2>Issue tracker</h2>
+<p><a href="https://issuetracker.google.com/issues?q=componentid:413132" rel="nofollow">Issue Tracker</a></p>

@@ -1,0 +1,120 @@
+<h1>Navigation</h1>
+<p>Navigation is a framework for navigating between 'destinations' within an Android application that provides a consistent API whether destinations are implemented as Fragments, Activities, or other components.</p>
+<p>[<a href="https://developer.android.com/guide/navigation" rel="nofollow">User Guide</a>]</p>
+<p>[<a href="https://github.com/android/architecture-components-samples">Code Sample</a>]</p>
+<p>[<a href="https://developer.android.com/reference/kotlin/androidx/navigation/package-summary" rel="nofollow">API Reference</a>]</p>
+<h2>Declaring dependencies</h2>
+<p>To add a dependency on Navigation, you must add the Google Maven repository to your project. Read <a href="https://developer.android.com/studio/build/dependencies#google-maven" rel="nofollow">Google's Maven repository</a> for more information.</p>
+<p>Add the dependencies for the artifacts you need in the <code class="notranslate">build.gradle</code> file for your app or module:</p>
+<h3>Kotlin</h3>
+<pre class="notranslate"><code class="notranslate">plugins {
+  // Kotlin serialization plugin for type safe routes and navigation arguments
+  kotlin("plugin.serialization") version "2.0.21"
+}
+
+dependencies {
+  val nav_version = "2.9.6"
+
+  // Jetpack Compose integration
+  implementation("androidx.navigation:navigation-compose:$nav_version")
+
+  // Views/Fragments integration
+  implementation("androidx.navigation:navigation-fragment:$nav_version")
+  implementation("androidx.navigation:navigation-ui:$nav_version")
+
+  // Feature module support for Fragments
+  implementation("androidx.navigation:navigation-dynamic-features-fragment:$nav_version")
+
+  // Testing Navigation
+  androidTestImplementation("androidx.navigation:navigation-testing:$nav_version")
+
+  // JSON serialization library, works with the Kotlin serialization plugin
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+}
+</code></pre>
+<details>
+<summary><b>Groovy</b></summary>
+<pre class="notranslate"><code class="notranslate">plugins {
+  // Kotlin serialization plugin for type safe routes and navigation arguments
+  id 'org.jetbrains.kotlin.plugin.serialization' version '2.0.21'
+}
+  
+dependencies {
+  def nav_version = "2.9.6"
+
+  // Jetpack Compose Integration
+  implementation "androidx.navigation:navigation-compose:$nav_version"
+
+  // Views/Fragments Integration
+  implementation "androidx.navigation:navigation-fragment:$nav_version"
+  implementation "androidx.navigation:navigation-ui:$nav_version"
+
+  // Feature module support for Fragments
+  implementation "androidx.navigation:navigation-dynamic-features-fragment:$nav_version"
+
+  // Testing Navigation
+  androidTestImplementation "androidx.navigation:navigation-testing:$nav_version"
+
+  // JSON serialization library, works with the Kotlin serialization plugin.
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3"
+}
+</code></pre>
+</details>
+<h2>Safe Args</h2>
+<p>To add Safe Args to your project, include the following <code class="notranslate">classpath</code> in your top level <code class="notranslate">build.gradle</code> file:</p>
+<h3>Kotlin</h3>
+<pre class="notranslate"><code class="notranslate">buildscript {
+  repositories {
+    google()
+  }
+  dependencies {
+    val nav_version = "2.9.6"
+    classpath("androidx.navigation:navigation-safe-args-gradle-plugin:$nav_version")
+  }
+}
+</code></pre>
+<details>
+<summary><b>Groovy</b></summary>
+<pre class="notranslate"><code class="notranslate">buildscript {
+  repositories {
+    google()
+  }
+  dependencies {
+    def nav_version = "2.9.6"
+    classpath "androidx.navigation:navigation-safe-args-gradle-plugin:$nav_version"
+  }
+}
+</code></pre>
+</details>
+<p>You must also apply one of two available plugins.</p>
+<p>To generate Java language code suitable for Java or mixed Java and Kotlin modules, add this line to <strong>your app or module's</strong> <code class="notranslate">build.gradle</code> file:</p>
+<h3>Kotlin</h3>
+<pre class="notranslate"><code class="notranslate">plugins {
+  id("androidx.navigation.safeargs")
+}
+</code></pre>
+<details>
+<summary><b>Groovy</b></summary>
+<pre class="notranslate"><code class="notranslate">plugins {
+  id 'androidx.navigation.safeargs'
+}
+</code></pre>
+</details>
+<p>Alternatively, to generate Kotlin code suitable for Kotlin-only modules, add:</p>
+<h3>Kotlin</h3>
+<pre class="notranslate"><code class="notranslate">plugins {
+  id("androidx.navigation.safeargs.kotlin")
+}
+</code></pre>
+<details>
+<summary><b>Groovy</b></summary>
+<pre class="notranslate"><code class="notranslate">plugins {
+  id 'androidx.navigation.safeargs.kotlin'
+}
+</code></pre>
+</details>
+<p>You must have <code class="notranslate">android.useAndroidX=true</code> in your <a href="https://developer.android.com/studio/build#properties-files" rel="nofollow"><code class="notranslate">gradle.properties</code> file</a> as per <a href="https://developer.android.com/jetpack/androidx/migrate" rel="nofollow">Migrating to AndroidX</a>.</p>
+<p>For information on using Kotlin extensions, see the <a href="https://developer.android.com/kotlin/ktx" rel="nofollow">ktx documentation</a>.</p>
+<p>For more information about dependencies, see <a href="https://developer.android.com/studio/build/dependencies" rel="nofollow">Add Build Dependencies</a>.</p>
+<h2>Issue tracker</h2>
+<p><a href="https://issuetracker.google.com/issues?q=componentid:409828" rel="nofollow">Issue Tracker</a></p>

@@ -6,7 +6,7 @@ import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.project.ProjectService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.scm.repository.readme.ReadmeService
+import io.klibs.core.readme.service.S3ReadmeService
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubLicense
 import io.klibs.integration.github.model.GitHubRepository
@@ -37,7 +37,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
     private lateinit var gitHubIntegration: GitHubIntegration
 
     @MockitoBean
-    private lateinit var readmeService: ReadmeService
+    private lateinit var s3ReadmeService: S3ReadmeService
 
     @MockitoBean
     private lateinit var projectService: ProjectService
