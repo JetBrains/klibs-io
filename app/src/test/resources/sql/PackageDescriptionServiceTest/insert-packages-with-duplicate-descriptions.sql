@@ -26,19 +26,19 @@ INSERT INTO public.project VALUES (9004, 9004, CURRENT_TIMESTAMP, '1.0.0', CURRE
 
 -- Insert test packages with duplicate descriptions
 -- First package with two versions - older version
-INSERT INTO public.package VALUES (9001, 9001, CURRENT_TIMESTAMP - INTERVAL '1 year', CURRENT_TIMESTAMP - INTERVAL '1 year', 'com.example', 'http-client', '1.0.0', 'HTTP Client', 'Kotlin library for HTTP requests', 'https://example.com/http-client', 'https://example.com/http-client', 'gradle', '7.0', '1.6.0', null, '[]'::jsonb,'[]'::jsonb,  'SEARCH_MAVEN', false);
+INSERT INTO public.package VALUES (9001, 9001, CURRENT_TIMESTAMP - INTERVAL '1 year', CURRENT_TIMESTAMP - INTERVAL '1 year', 'com.example', 'http-client', '1.0.0', 'Kotlin library for HTTP requests', 'https://example.com/http-client', 'https://example.com/http-client', 'gradle', '7.0', '1.6.0', null, '[]'::jsonb,'[]'::jsonb,  'SEARCH_MAVEN', false);
 
 -- First package with two versions - newer version
-INSERT INTO public.package VALUES (9005, 9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'http-client', '2.0.0', 'HTTP Client', 'Kotlin library for HTTP requests', 'https://example.com/http-client', 'https://example.com/http-client','gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false);
+INSERT INTO public.package VALUES (9005, 9001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'http-client', '2.0.0', 'Kotlin library for HTTP requests', 'https://example.com/http-client', 'https://example.com/http-client','gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false);
 
 -- Second package with two versions - older version
-INSERT INTO public.package VALUES (9002, 9002, CURRENT_TIMESTAMP - INTERVAL '1 year', CURRENT_TIMESTAMP - INTERVAL '1 year', 'com.example', 'http-lib', '1.0.0', 'HTTP Library', 'Kotlin library for HTTP requests', 'https://example.com/http-client','https://example.com/http-lib', 'gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb,  'SEARCH_MAVEN', false);
+INSERT INTO public.package VALUES (9002, 9002, CURRENT_TIMESTAMP - INTERVAL '1 year', CURRENT_TIMESTAMP - INTERVAL '1 year', 'com.example', 'http-lib', '1.0.0', 'Kotlin library for HTTP requests', 'https://example.com/http-client','https://example.com/http-lib', 'gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb,  'SEARCH_MAVEN', false);
 
 -- Second package with two versions - newer version
-INSERT INTO public.package VALUES (9006, 9002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'http-lib', '2.0.0', 'HTTP Library', 'Kotlin library for HTTP requests', 'https://example.com/http-lib', 'https://example.com/http-client','gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false);
+INSERT INTO public.package VALUES (9006, 9002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'http-lib', '2.0.0', 'Kotlin library for HTTP requests', 'https://example.com/http-lib', 'https://example.com/http-client','gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false);
 
 -- Third package with a different description
-INSERT INTO public.package VALUES (9003, 9003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'json-lib', '1.0.0', 'JSON Library', 'JSON serialization library', 'https://example.com/json-lib', 'https://example.com/http-client','gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false);
+INSERT INTO public.package VALUES (9003, 9003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'json-lib', '1.0.0','JSON serialization library', 'https://example.com/json-lib', 'https://example.com/http-client','gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false);
 
 -- Fourth package with a unique description
-INSERT INTO public.package VALUES (9004, 9004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'unique-lib', '1.0.0', 'Unique Library', 'A unique library with no duplicates', 'https://example.com/unique-lib','https://example.com/http-client', 'gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false);
+INSERT INTO public.package VALUES (9004, 9004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'unique-lib', '1.0.0','A unique library with no duplicates', 'https://example.com/unique-lib','https://example.com/http-client', 'gradle', '7.0', '1.6.0', null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false);
