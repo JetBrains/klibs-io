@@ -48,8 +48,6 @@ class ProjectIndexingService(
                 return
             }
             selectedProjectId = project.idNotNull
-
-            val repo = scmRepositoryRepository.findById(project.scmRepoId) ?: error("Unable to find the repo: $project")
             logger.trace("Generating an AI description for projectId=${project.id}: ${project.name}")
 
             val readmeMd = readmeService.readReadmeMd(project.idNotNull, project.scmRepoId)
@@ -58,7 +56,10 @@ class ProjectIndexingService(
             // there can be some very long readmes... see https://github.com/robstoll/atrium
             val shortenedReadme = if (readmeMd.length >= 25_000) readmeMd.take(25_000) else readmeMd
 
-            val description = projectDescriptionGenerator.generateProjectDescription(repo.name, shortenedReadme)
+            val description = projectDescriptionGenerator.generateProjectDescription(
+                project.name,
+                shortenedReadme
+            )
             projectRepository.updateDescription(project.idNotNull, description)
             logger.debug("Updated AI description for projectId=${project.id}: ${project.name}")
 
@@ -82,7 +83,7 @@ class ProjectIndexingService(
             logger.debug("Generating AI tags for projectId=${project.id}: ${project.name}")
 
             val tags = projectTagsGenerator.generateTagsForProject(
-                repo.name,
+                project.name,
                 project.description ?: "",
                 repo.description ?: "",
                 project.minimizedReadme ?: ""
@@ -94,7 +95,7 @@ class ProjectIndexingService(
                 )
             }
             projectTagRepository.saveAll(tags)
-            logger.debug("Updated AI tags for projectId=${project.id} ${project.name}: ${tags.joinToString(",") { it.value }})")
+            logger.debug("Updated AI tags for projectId=${project.id} ${project.name}: ${tags.joinToString(",") { it.value }}")
             tagsBackoffProvider.onSuccess(project.idNotNull)
         } catch (e: Exception) {
             logger.error("Exception while updating AI tags", e)

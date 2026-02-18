@@ -92,7 +92,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         val generatedTags = listOf("kotlin", "testing", "http-client")
         whenever(
             projectTagsGenerator.generateTagsForProject(
-                eq(repo.name),
+                eq(project.name),
                 eq(project.description ?: ""),
                 eq(repo.description ?: ""),
                 eq(readme)
