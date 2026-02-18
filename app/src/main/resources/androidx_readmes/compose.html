@@ -1,11 +1,11 @@
-<div class="markdown-heading"><h1 class="heading-element">Compose</h1><a id="user-content-compose" class="anchor" aria-label="Permalink: Compose" href="#compose"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<h1>Compose</h1>
 <p>Define your UI programmatically with composable functions that describe its shape and data dependencies.</p>
 <p>[<a href="https://developer.android.com/jetpack/compose/tutorial" rel="nofollow">User Guide</a>]</p>
 <p>[<a href="https://github.com/android/compose-samples">Code Sample</a>]</p>
-<div class="markdown-heading"><h2 class="heading-element">Structure</h2><a id="user-content-structure" class="anchor" aria-label="Permalink: Structure" href="#structure"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
-<p>Compose is combination of 7 Maven Group Ids within <code>androidx</code>. Each Group contains a targeted subset of functionality, each with its own set of release notes.
+<h2>Structure</h2>
+<p>Compose is combination of 7 Maven Group Ids within <code class="notranslate">androidx</code>. Each Group contains a targeted subset of functionality, each with its own set of release notes.<br>
 This table explains the groups and links to each set of release notes.</p>
-<table>
+<markdown-accessiblity-table><table role="table">
 <thead>
 <tr>
 <th>Group</th>
@@ -19,7 +19,7 @@ This table explains the groups and links to each set of release notes.</p>
 </tr>
 <tr>
 <td><a href="https://developer.android.com/jetpack/androidx/releases/compose-compiler" rel="nofollow">androidx.compose.compiler</a></td>
-<td>Transform @Composable functions and enable optimizations with a Kotlin compiler plugin.</td>
+<td>Transform <a class="user-mention notranslate" data-hovercard-type="organization" data-hovercard-url="/orgs/composable/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/composable">@composable</a> functions and enable optimizations with a Kotlin compiler plugin.</td>
 </tr>
 <tr>
 <td><a href="https://developer.android.com/jetpack/androidx/releases/compose-foundation" rel="nofollow">androidx.compose.foundation</a></td>
@@ -42,12 +42,12 @@ This table explains the groups and links to each set of release notes.</p>
 <td>Fundamental components of compose UI needed to interact with the device, including layout, drawing, and input.</td>
 </tr>
 </tbody>
-</table>
-<div class="markdown-heading"><h2 class="heading-element">Declaring dependencies</h2><a id="user-content-declaring-dependencies" class="anchor" aria-label="Permalink: Declaring dependencies" href="#declaring-dependencies"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+</table></markdown-accessiblity-table>
+<h2>Declaring dependencies</h2>
 <p>To add a dependency on Compose, you must add the Google Maven repository to your project. Read <a href="https://developer.android.com/studio/build/dependencies#google-maven" rel="nofollow">Google's Maven repository</a> for more information.</p>
-<p>Add the dependencies for the artifacts you need in the <code>build.gradle</code> file for your app or module:</p>
-<div class="markdown-heading"><h3 class="heading-element">Kotlin</h3><a id="user-content-kotlin" class="anchor" aria-label="Permalink: Kotlin" href="#kotlin"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
-<div class="highlight highlight-source-kotlin"><pre>android {
+<p>Add the dependencies for the artifacts you need in the <code class="notranslate">build.gradle</code> file for your app or module:</p>
+<h3>Kotlin</h3>
+<div class="highlight highlight-source-kotlin"><pre class="notranslate">android {
     buildFeatures {
         compose <span class="pl-k">=</span> <span class="pl-c1">true</span>
     }
@@ -60,7 +60,7 @@ This table explains the groups and links to each set of release notes.</p>
 }</pre></div>
 <details>
 <summary><b>Groovy</b></summary>
-<div class="highlight highlight-source-groovy"><pre>android {
+<div class="highlight highlight-source-groovy"><pre class="notranslate">android {
     buildFeatures {
         compose <span class="pl-c1">true</span>
     }
@@ -73,7 +73,7 @@ This table explains the groups and links to each set of release notes.</p>
 }</pre></div>
 </details>
 <p>For more information about dependencies, see <a href="https://developer.android.com/studio/build/dependencies" rel="nofollow">Add build dependencies</a>.</p>
-<div class="markdown-heading"><h2 class="heading-element">BOMs</h2><a id="user-content-boms" class="anchor" aria-label="Permalink: BOMs" href="#boms"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<h2>BOMs</h2>
 <p>For the latest BOM releases, visit <a href="https://developer.android.com/jetpack/compose/bom/bom-mapping" rel="nofollow">Compose BOM Mapping Page</a>.</p>
-<div class="markdown-heading"><h2 class="heading-element">Issue tracker</h2><a id="user-content-issue-tracker" class="anchor" aria-label="Permalink: Issue tracker" href="#issue-tracker"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<h2>Issue tracker</h2>
 <p><a href="https://issuetracker.google.com/issues?q=componentid:610764" rel="nofollow">Issue Tracker</a></p>

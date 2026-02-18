@@ -50,7 +50,7 @@ class ProjectIndexingService(
             selectedProjectId = project.idNotNull
 
             val repo = scmRepositoryRepository.findById(project.scmRepoId) ?: error("Unable to find the repo: $project")
-            logger.trace("Generating an AI description for projectId=${project.id}")
+            logger.trace("Generating an AI description for projectId=${project.id}: ${project.name}")
 
             val readmeMd = readmeService.readReadmeMd(project.idNotNull, project.scmRepoId)
                 ?: error("Unable to generate the description due to missing or empty README.md for $project")
@@ -60,7 +60,7 @@ class ProjectIndexingService(
 
             val description = projectDescriptionGenerator.generateProjectDescription(repo.name, shortenedReadme)
             projectRepository.updateDescription(project.idNotNull, description)
-            logger.debug("Updated AI description for projectId=${project.id}")
+            logger.debug("Updated AI description for projectId=${project.id}: ${project.name}")
 
             descriptionBackoffProvider.onSuccess(project.idNotNull)
         } catch (e: Exception) {
@@ -79,7 +79,7 @@ class ProjectIndexingService(
             }
             selectedProjectId = project.idNotNull
             val repo = scmRepositoryRepository.findById(project.scmRepoId) ?: error("Unable to find the repo: $project")
-            logger.debug("Generating AI tags for projectId=${project.id}: ${repo.name}")
+            logger.debug("Generating AI tags for projectId=${project.id}: ${project.name}")
 
             val tags = projectTagsGenerator.generateTagsForProject(
                 repo.name,
@@ -94,7 +94,7 @@ class ProjectIndexingService(
                 )
             }
             projectTagRepository.saveAll(tags)
-            logger.debug("Updated AI tags for projectId=${project.id} ${repo.name}: ${tags.joinToString(",") { it.value }})")
+            logger.debug("Updated AI tags for projectId=${project.id} ${project.name}: ${tags.joinToString(",") { it.value }})")
             tagsBackoffProvider.onSuccess(project.idNotNull)
         } catch (e: Exception) {
             logger.error("Exception while updating AI tags", e)
