@@ -10,7 +10,7 @@ import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.scm.repository.readme.ReadmeService
+import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
 import kotlin.test.assertEquals
@@ -19,7 +19,7 @@ import kotlin.test.assertFailsWith
 class ProjectServiceTest {
 
     private val packageService: PackageService = mock()
-    private val readmeService: ReadmeService = mock()
+    private val readmeServiceDispatcher: ReadmeServiceDispatcher = mock()
     private val projectRepository: ProjectRepository = mock()
     private val packageRepository: PackageRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
@@ -31,7 +31,7 @@ class ProjectServiceTest {
 
     private val uut = ProjectService(
         packageService,
-        readmeService,
+        readmeServiceDispatcher,
         projectRepository,
         packageRepository,
         scmRepositoryRepository,

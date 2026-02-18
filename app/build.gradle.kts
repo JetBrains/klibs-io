@@ -17,6 +17,7 @@ springBoot {
 dependencies {
     implementation(projects.core.`package`)
     implementation(projects.core.project)
+    implementation(projects.core.readme)
     implementation(projects.core.scmOwner)
     implementation(projects.core.scmRepository)
     implementation(projects.core.search)

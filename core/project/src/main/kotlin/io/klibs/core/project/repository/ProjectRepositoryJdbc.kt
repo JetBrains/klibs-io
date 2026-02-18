@@ -164,8 +164,7 @@ class ProjectRepositoryJdbc(
                    project.latest_version,
                    project.latest_version_ts
             FROM project
-                     JOIN scm_repo repo on project.scm_repo_id = repo.id
-            WHERE repo.has_readme = true
+            WHERE project.minimized_readme IS NOT NULL
               AND project.description IS NULL
             ORDER BY random()
             LIMIT 1
@@ -188,8 +187,7 @@ class ProjectRepositoryJdbc(
                    project.latest_version,
                    project.latest_version_ts
             FROM project
-                     JOIN scm_repo repo on project.scm_repo_id = repo.id
-            WHERE repo.has_readme = true
+            WHERE project.minimized_readme IS NOT NULL
               AND NOT EXISTS (
                     SELECT 1 FROM project_tags pt WHERE pt.project_id = project.id
               )

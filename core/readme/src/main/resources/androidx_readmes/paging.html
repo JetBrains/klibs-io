@@ -1,0 +1,56 @@
+<h1>Paging</h1>
+<p>The Paging Library makes it easier for you to load data gradually and gracefully within your app's RecyclerView.</p>
+<p>[<a href="https://developer.android.com/topic/libraries/architecture/paging/v3-overview" rel="nofollow">User Guide</a>]</p>
+<p>[<a href="https://github.com/android/architecture-components-samples">Code Sample</a>]</p>
+<p>[<a href="https://developer.android.com/reference/kotlin/androidx/paging/package-summary" rel="nofollow">API Reference</a>]</p>
+<h2>Declaring dependencies</h2>
+<p>To add a dependency on Paging, you must add the Google Maven repository to your project. Read <a href="https://developer.android.com/studio/build/dependencies#google-maven" rel="nofollow">Google's Maven repository</a> for more information.</p>
+<p>Add the dependencies for the artifacts you need in the <code class="notranslate">build.gradle</code> file for your app or module:</p>
+<h3>Kotlin</h3>
+<pre class="notranslate"><code class="notranslate">dependencies {
+  val paging_version = "3.3.6"
+
+  implementation("androidx.paging:paging-runtime:$paging_version")
+
+  // alternatively - without Android dependencies for tests
+  testImplementation("androidx.paging:paging-common:$paging_version")
+
+  // optional - RxJava2 support
+  implementation("androidx.paging:paging-rxjava2:$paging_version")
+
+  // optional - RxJava3 support
+  implementation("androidx.paging:paging-rxjava3:$paging_version")
+
+  // optional - Guava ListenableFuture support
+  implementation("androidx.paging:paging-guava:$paging_version")
+
+  // optional - Jetpack Compose integration
+  implementation("androidx.paging:paging-compose:3.4.0-rc01")
+}
+</code></pre>
+<details>
+<summary><b>Groovy</b></summary>
+<pre class="notranslate"><code class="notranslate">dependencies {
+  def paging_version = "3.3.6"
+
+  implementation "androidx.paging:paging-runtime:$paging_version"
+
+  // alternatively - without Android dependencies for tests
+  testImplementation "androidx.paging:paging-common:$paging_version"
+
+  // optional - RxJava2 support
+  implementation "androidx.paging:paging-rxjava2:$paging_version"
+
+  // optional - RxJava3 support
+  implementation "androidx.paging:paging-rxjava3:$paging_version"
+
+  // optional - Guava ListenableFuture support
+  implementation "androidx.paging:paging-guava:$paging_version"
+
+  // optional - Jetpack Compose integration
+  implementation "androidx.paging:paging-compose:3.4.0-rc01"
+}
+</code></pre>
+</details>
+<h2>Issue tracker</h2>
+<p><a href="https://issuetracker.google.com/issues?q=componentid:413106" rel="nofollow">Issue Tracker</a></p>
