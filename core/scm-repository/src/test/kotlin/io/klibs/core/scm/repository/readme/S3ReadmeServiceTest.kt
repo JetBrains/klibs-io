@@ -25,7 +25,7 @@ class S3ReadmeServiceTest {
             )
         )
         s3StorageService = mock()
-        uut = S3ReadmeService(readmeProperties, s3StorageService)
+        uut = S3ReadmeService(readmeProperties, s3StorageService, androidxReadmeProvider = null)
     }
 
     @Test
@@ -34,10 +34,10 @@ class S3ReadmeServiceTest {
         val scmRepositoryId = 123
         val key = "readme/project/readme-456.md"
         val content = "README content"
-        
+
         whenever(s3StorageService.readText("test-bucket", key)).thenReturn(content)
 
-        val result = uut.readReadmeMd(projectId, scmRepositoryId)
+        val result = uut.readReadmeMd(projectId, scmRepositoryId, "test-owner")
 
         assertEquals(content, result)
     }
@@ -49,11 +49,11 @@ class S3ReadmeServiceTest {
         val projectKey = "readme/project/readme-456.md"
         val repoKey = "readme/readme-123.md"
         val content = "README content"
-        
+
         whenever(s3StorageService.readText("test-bucket", projectKey)).thenReturn(null)
         whenever(s3StorageService.readText("test-bucket", repoKey)).thenReturn(content)
 
-        val result = uut.readReadmeMd(projectId, scmRepositoryId)
+        val result = uut.readReadmeMd(projectId, scmRepositoryId, "test-owner")
 
         assertEquals(content, result)
     }

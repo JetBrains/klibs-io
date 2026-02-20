@@ -6,21 +6,28 @@ import org.springframework.stereotype.Service
 @Service
 class S3ReadmeService(
     private val readmeProperties: ReadmeConfigurationProperties,
-    private val s3StorageService: S3StorageService
+    private val s3StorageService: S3StorageService,
+    private val androidxReadmeProvider: AndroidxReadmeProvider?,
 ) : ReadmeService {
     private val bucketName = readmeProperties.s3.bucketName ?: throw IllegalArgumentException("Bucket name is required for S3 mode")
 
-    override fun readReadmeMd(projectId: Int?, scmRepositoryId: Int?): String? =
-        getReadmeContent(projectId = projectId, scmRepositoryId = scmRepositoryId, format = "md")
+    override fun readReadmeMd(projectId: Int?, scmRepositoryId: Int?, ownerLogin: String): String? =
+        getReadmeContent(projectId = projectId, scmRepositoryId = scmRepositoryId, ownerLogin, format = "md")
 
-    override fun readReadmeHtml(projectId: Int?, scmRepositoryId: Int?): String? =
-        getReadmeContent(projectId = projectId, scmRepositoryId = scmRepositoryId, format = "html")
+    override fun readReadmeHtml(projectId: Int?, scmRepositoryId: Int?, ownerLogin: String): String? =
+        getReadmeContent(projectId = projectId, scmRepositoryId = scmRepositoryId, ownerLogin, format = "html")
 
-    private fun getReadmeContent(projectId: Int?, scmRepositoryId: Int?, format: String): String? {
+    private fun getReadmeContent(projectId: Int?, scmRepositoryId: Int?, ownerLogin: String, format: String) : String? {
         require(projectId != null || scmRepositoryId != null) {
             "Either projectId or scmRepositoryId must be provided"
         }
-        return readReadmeWithFallback(projectId = projectId, scmRepositoryId = scmRepositoryId, format = format)
+        return if (ownerLogin == "androidx") {
+            projectId?.let { id ->
+                androidxReadmeProvider?.resolve(id, format)
+            }
+        } else {
+            readReadmeWithFallback(projectId = projectId, scmRepositoryId = scmRepositoryId, format = format)
+        }
     }
 
     private fun readReadmeWithFallback(projectId: Int?, scmRepositoryId: Int?, format: String): String? {

@@ -125,3 +125,7 @@ databaseChangeLog:
       file: db/migration/2026-Q1/2026-01-30_decouple_projects_from_scm_repo.yml
   - include:
       file: db/migration/2026-Q1/2026-02-13_drop_scm_repo_minimized_readme.yml
+  - include:
+      file: db/migration/2026-Q1/2026-02-17_create_stub_androidx_projects.yml
+  - include:
+      file: db/migration/2026-Q1/2026-02-19_fill_androidx_metadata.yml
