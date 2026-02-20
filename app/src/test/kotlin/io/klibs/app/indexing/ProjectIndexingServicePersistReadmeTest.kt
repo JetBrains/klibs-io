@@ -7,6 +7,7 @@ import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.readme.ReadmeService
+import io.klibs.core.scm.repository.readme.impl.ReadmeMinimizationProcessor
 import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.ai.ProjectTagsGenerator
 import io.klibs.integration.github.GitHubIntegration
@@ -28,10 +29,12 @@ class ProjectIndexingServicePersistReadmeTest {
     private val projectDescriptionGenerator: ProjectDescriptionGenerator = mock()
     private val projectRepository: ProjectRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
+    private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
     private val projectTagsGenerator: ProjectTagsGenerator = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
     private val gitHubIntegration: GitHubIntegration = mock()
     private val readmeContentBuilder: ReadmeContentBuilder = mock()
+    private val readmeMinimizer: ReadmeMinimizationProcessor = mock()
     private val descriptionBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
     private val tagsBackoffProvider: BackoffProvider = BackoffProvider("tagsBackoff", mock())
 
@@ -40,10 +43,12 @@ class ProjectIndexingServicePersistReadmeTest {
         projectDescriptionGenerator = projectDescriptionGenerator,
         projectRepository = projectRepository,
         scmRepositoryRepository = scmRepositoryRepository,
+        scmOwnerRepository = scmOwnerRepository,
         projectTagsGenerator = projectTagsGenerator,
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
         readmeContentBuilder = readmeContentBuilder,
+        readmeMinimizer = readmeMinimizer,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
     )

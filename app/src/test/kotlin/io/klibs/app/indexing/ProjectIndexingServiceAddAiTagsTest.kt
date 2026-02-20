@@ -9,6 +9,7 @@ import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.readme.ReadmeService
+import io.klibs.core.scm.repository.readme.impl.ReadmeMinimizationProcessor
 import io.klibs.integration.ai.ProjectTagsGenerator
 import io.klibs.integration.github.GitHubIntegration
 import org.junit.jupiter.api.Test
@@ -28,10 +29,12 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val projectDescriptionGenerator: io.klibs.integration.ai.ProjectDescriptionGenerator = mock()
     private val projectRepository: ProjectRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
+    private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
     private val projectTagsGenerator: ProjectTagsGenerator = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
     private val gitHubIntegration: GitHubIntegration = mock()
     private val readmeContentBuilder: ReadmeContentBuilder = mock()
+    private val readmeMinimizer: ReadmeMinimizationProcessor = mock()
     private val descriptionBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
     private val tagsBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
 
@@ -40,10 +43,12 @@ class ProjectIndexingServiceAddAiTagsTest {
             projectDescriptionGenerator = projectDescriptionGenerator,
             projectRepository = projectRepository,
             scmRepositoryRepository = scmRepositoryRepository,
+            scmOwnerRepository = scmOwnerRepository,
             projectTagsGenerator = projectTagsGenerator,
             projectTagRepository = projectTagRepository,
             gitHubIntegration = gitHubIntegration,
             readmeContentBuilder = readmeContentBuilder,
+            readmeMinimizer = readmeMinimizer,
             descriptionBackoffProvider = descriptionBackoffProvider,
             tagsBackoffProvider = tagsBackoffProvider,
         )
@@ -88,6 +93,7 @@ class ProjectIndexingServiceAddAiTagsTest {
             updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
         whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
+        whenever(readmeService.readReadmeMd(projectId, scmRepoId, "octocat")).thenReturn(readme)
 
         val generatedTags = listOf("kotlin", "testing", "http-client")
         whenever(
@@ -125,7 +131,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         uut().addAiTags()
 
         verify(scmRepositoryRepository, never()).findById(any<Int>())
-        verify(readmeService, never()).readReadmeMd(anyOrNull(), anyOrNull())
+        verify(readmeService, never()).readReadmeMd(anyOrNull(), anyOrNull(), any<String>())
         verify(projectTagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
         verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
     }
@@ -171,6 +177,7 @@ class ProjectIndexingServiceAddAiTagsTest {
             updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
         whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
+        whenever(readmeService.readReadmeMd(projectId, scmRepoId, "owner")).thenReturn("# Test README")
 
         // Force a failure during tag generation
         whenever(

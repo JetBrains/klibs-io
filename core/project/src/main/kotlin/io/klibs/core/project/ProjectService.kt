@@ -82,13 +82,13 @@ class ProjectService(
     @Transactional(readOnly = true)
     fun getProjectReadmeMd(ownerLogin: String, projectName: String): String? {
         val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
-        return readmeService.readReadmeMd(projectEntity.idNotNull, projectEntity.scmRepoId)
+        return readmeService.readReadmeMd(projectEntity.idNotNull, projectEntity.scmRepoId, ownerLogin)
     }
 
     @Transactional(readOnly = true)
     fun getProjectReadmeHtml(ownerLogin: String, projectName: String): String? {
         val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
-        return readmeService.readReadmeHtml(projectEntity.idNotNull, projectEntity.scmRepoId)
+        return readmeService.readReadmeHtml(projectEntity.idNotNull, projectEntity.scmRepoId, ownerLogin)
     }
 
     @Transactional
