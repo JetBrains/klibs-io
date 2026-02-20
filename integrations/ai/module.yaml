@@ -1,0 +1,14 @@
+product: jvm/lib
+
+# https://youtrack.jetbrains.com/issue/AMPER-5097/Maven-like-layout-cannot-be-set-in-a-template
+layout: maven-like
+
+apply:
+  - ../../build-logic/templates/base.module-template.yaml
+  - ../../build-logic/templates/kotlin-jvm.module-template.yaml
+  - ../../build-logic/templates/spring.module-template.yaml
+  - ../../build-logic/templates/mock.module-template.yaml
+
+dependencies:
+  - bom: $libs.spring.ai.bom
+  - $libs.spring.ai.starter.model.openai: exported

@@ -1,0 +1,10 @@
+# depends on spring template
+
+dependencies:
+  - $libs.spring.boot.starter.web
+  - $libs.spring.boot.starter.security
+  - $libs.spring.boot.starter.validation
+
+  - $libs.kotlinx.coroutines.reactor
+
+  - $libs.springdoc.openapi.starter

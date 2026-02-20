@@ -1,0 +1,12 @@
+# depends on base template
+
+# TODO Jib plugin
+
+settings:
+  kotlin:
+    version: 2.1.10 # should be 2.1.0 to match the Gradle setup, but the lowest Amper supports is 2.1.10
+    serialization:
+      version: 1.6.3 # to match the Gradle setup
+  jvm:
+    jdk:
+      version: 21
