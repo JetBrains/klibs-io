@@ -25,6 +25,7 @@ data class ProjectDetails(
     val hasGhPages: Boolean,
     val hasIssues: Boolean,
     val hasWiki: Boolean,
+    val hasReadme: Boolean,
 
     val stars: Int,
     val createdAt: Instant,
@@ -38,14 +39,28 @@ data class ProjectDetails(
     val tags: List<String>,
     val markers: List<MarkerType>,
 ) {
+    private val isAndroidx: Boolean get() = ownerLogin == ANDROIDX_OWNER
+
     fun getGitHubRepositoryLink(): String {
-        return "https://github.com/${this.ownerLogin}/${this.repoName}"
+        return if (isAndroidx) {
+            "https://github.com/$ANDROIDX_OWNER/$ANDROIDX_OWNER/tree/androidx-main/${this.name}"
+        } else {
+            "https://github.com/${this.ownerLogin}/${this.repoName}"
+        }
     }
 
     fun getGitHubPagesLink(): String? {
+        if (isAndroidx) return null
         return when {
             this.hasGhPages -> "https://${this.ownerLogin}.github.io/${this.repoName}"
             else -> null
+        }
+    }
+
+    fun getHomepageLink(): String? {
+        return when {
+            isAndroidx -> "https://developer.android.com/jetpack/androidx/releases/${this.name}"
+            else -> linkHomepage
         }
     }
 
@@ -61,5 +76,9 @@ data class ProjectDetails(
             this.hasWiki -> "https://github.com/${this.ownerLogin}/${this.repoName}/wiki"
             else -> null
         }
+    }
+
+    private companion object {
+        private const val ANDROIDX_OWNER = "androidx"
     }
 }

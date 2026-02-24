@@ -131,7 +131,7 @@ private fun ProjectDetails.toDTO(): ProjectDetailsDTO {
         platforms = this.platforms.map { it.serializableName },
         latestReleaseVersion = this.latestReleaseVersion,
         latestReleasePublishedAtMillis = this.latestReleasePublishedAt?.toEpochMilli(),
-        linkHomepage = this.linkHomepage,
+        linkHomepage = this.getHomepageLink(),
         linkScm = this.getGitHubRepositoryLink(),
         linkGitHubPages = this.getGitHubPagesLink(),
         linkIssues = this.getIssuesLink(),
