@@ -9,7 +9,6 @@ import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.readme.impl.ReadmeMinimizationProcessor
 import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import io.klibs.integration.ai.ProjectTagsGenerator
 import io.klibs.integration.github.GitHubIntegration
@@ -34,7 +33,6 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val projectTagRepository: ProjectTagRepository = mock()
     private val gitHubIntegration: GitHubIntegration = mock()
     private val readmeContentBuilder: ReadmeContentBuilder = mock()
-    private val readmeMinimizer: ReadmeMinimizationProcessor = mock()
     private val descriptionBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
     private val tagsBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
 
@@ -48,8 +46,6 @@ class ProjectIndexingServiceAddAiTagsTest {
             projectTagRepository = projectTagRepository,
             gitHubIntegration = gitHubIntegration,
             readmeContentBuilder = readmeContentBuilder,
-            androidxReadmeProvider = mock(),
-            readmeMinimizer = readmeMinimizer,
             descriptionBackoffProvider = descriptionBackoffProvider,
             tagsBackoffProvider = tagsBackoffProvider,
         )

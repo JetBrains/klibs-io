@@ -13,7 +13,6 @@ import io.klibs.core.readme.AndroidxReadmeProvider
 import io.klibs.core.readme.GitHubIndexingReadmeContent
 import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.readme.service.ReadmeServiceDispatcher
-import io.klibs.core.readme.impl.ReadmeMinimizationProcessor
 import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.ai.ProjectTagsGenerator
 import io.klibs.integration.github.GitHubIntegration
@@ -40,8 +39,6 @@ class ProjectIndexingService(
     private val projectTagRepository: ProjectTagRepository,
     private val gitHubIntegration: GitHubIntegration,
     private val readmeContentBuilder: ReadmeContentBuilder,
-    private val androidxReadmeProvider: AndroidxReadmeProvider,
-    private val readmeMinimizer: ReadmeMinimizationProcessor,
     @Qualifier("aiDescriptionBackoffProvider")
     private val descriptionBackoffProvider: BackoffProvider,
     @Qualifier("aiTagsBackoffProvider")
@@ -140,7 +137,8 @@ class ProjectIndexingService(
         mavenArtifact: MavenArtifact,
         scmRepositoryEntity: ScmRepositoryEntity,
     ): ProjectEntity {
-        val entity = projectRepository.findByNameAndScmRepoId(scmRepositoryEntity.name, scmRepositoryEntity.idNotNull)
+        val projectName = resolveProjectName(mavenArtifact, scmRepositoryEntity)
+        val entity = projectRepository.findByNameAndScmRepoId(projectName, scmRepositoryEntity.idNotNull)
         return if (entity == null) {
             persist(
                 mavenArtifact = mavenArtifact,
@@ -158,7 +156,6 @@ class ProjectIndexingService(
         entity: ProjectEntity,
         mavenArtifact: MavenArtifact,
     ): ProjectEntity {
-        // TODO KTL-4038 support androidx in the next commit
         val isVersionMismatch = mavenArtifact.version != entity.latestVersion
         if (!isVersionMismatch) return entity
 
@@ -185,8 +182,6 @@ class ProjectIndexingService(
         }
 
         val readmeContent = fetchReadmeContent(scmRepositoryEntity)
-
-        // TODO KTL-4038 check if able to merge with persistAndroidxProject
 
         logger.debug("Persisting a new project for {}", mavenArtifact)
         val persistedEntity = projectRepository.insert(
@@ -223,18 +218,13 @@ class ProjectIndexingService(
         mavenArtifact: MavenArtifact,
         scmRepositoryEntity: ScmRepositoryEntity,
     ): ProjectEntity {
-        val projectName = mavenArtifact.groupId.split('.').getOrNull(1)
-            ?: error("Unable to extract the project name from the groupId: ${mavenArtifact.groupId}")
+        val projectName = resolveProjectName(mavenArtifact, scmRepositoryEntity)
 
-        val readmeRaw = androidxReadmeProvider.resolve(projectName, "md.raw")
-        val minimizedReadme = readmeRaw?.let {
-            readmeMinimizer.process(
-                readmeContent = it,
-                readmeOwner = AndroidxReadmeProvider.OWNER_NAME,
-                readmeRepositoryName = projectName,
-                repositoryDefaultBranch = "master"
-            )
-        }
+//      There used to be a code here to fetch and minimize readme to add minimizedReadme.
+//      However, it will never trigger correctly.
+//      A new androidx project will be persisted here if authors publish a new unknown androidx package.
+//      For minimizedReadme to be updated, we would need to place README into resources folder beforehand.
+//      I'd say it is very unlikely, and probably a new project will be persisted without minimizedReadme.
 
         logger.debug("Persisting a new androidx project {} by {}", projectName, mavenArtifact)
 
@@ -244,8 +234,8 @@ class ProjectIndexingService(
                 scmRepoId = scmRepositoryEntity.idNotNull,
                 ownerId = scmRepositoryEntity.ownerId,
                 name = projectName,
-                description = if (minimizedReadme == null) ANDROIDX_DEFAULT_DESCRIPTION else null,
-                minimizedReadme = minimizedReadme,
+                description = ANDROIDX_DEFAULT_DESCRIPTION,
+                minimizedReadme = null,
                 latestVersion = mavenArtifact.version,
                 latestVersionTs = requireNotNull(mavenArtifact.releasedAt),
             )
@@ -266,6 +256,17 @@ class ProjectIndexingService(
 
             is ReadmeFetchResult.NotModified, is ReadmeFetchResult.Error, is ReadmeFetchResult.NotFound -> null
         }
+    }
+
+    private fun resolveProjectName(
+        mavenArtifact: MavenArtifact,
+        scmRepositoryEntity: ScmRepositoryEntity,
+    ): String {
+        if (scmRepositoryEntity.ownerLogin != AndroidxReadmeProvider.OWNER_NAME) {
+            return scmRepositoryEntity.name
+        }
+        return mavenArtifact.groupId.split('.').getOrNull(1)
+            ?: error("Unable to extract the project name from the groupId: ${mavenArtifact.groupId}")
     }
 
     companion object {

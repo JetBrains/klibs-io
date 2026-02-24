@@ -15,6 +15,7 @@ import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.project.utils.normalizeTag
+import io.klibs.core.readme.AndroidxReadmeProvider
 import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -201,7 +202,11 @@ private fun ProjectEntity.toDetails(
         stars = scmRepositoryEntity.stars,
         createdAt = scmRepositoryEntity.createdTs,
         openIssues = scmRepositoryEntity.openIssues,
-        lastActivityAt = scmRepositoryEntity.lastActivityTs,
+        lastActivityAt = if (scmRepositoryEntity.ownerLogin == AndroidxReadmeProvider.OWNER_NAME) {
+            projectEntity.latestVersionTs
+        } else {
+            scmRepositoryEntity.lastActivityTs
+        },
         licenseName = scmRepositoryEntity.licenseName,
         updatedAt = scmRepositoryEntity.updatedAtTs,
         tags = projectTags,

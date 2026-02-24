@@ -54,8 +54,6 @@ class ProjectIndexingServicePersistReadmeTest {
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
         readmeContentBuilder = readmeContentBuilder,
-        androidxReadmeProvider = androidxReadmeProvider,
-        readmeMinimizer = readmeMinimizer,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
     )
@@ -145,77 +143,6 @@ class ProjectIndexingServicePersistReadmeTest {
     }
 
     @Test
-    fun `save persists androidx project with minimized readme when readme exists`() {
-        val scmRepoId = 202
-        val mavenArtifact = MavenArtifact(
-            groupId = "androidx.compose",
-            artifactId = "compose-runtime",
-            version = "1.5.0",
-            scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = Instant.parse("2024-06-01T00:00:00Z")
-        )
-        val scmRepositoryEntity = ScmRepositoryEntity(
-            id = scmRepoId,
-            nativeId = 8080L,
-            name = "androidx-repo",
-            description = "AndroidX repo",
-            defaultBranch = "main",
-            createdTs = Instant.parse("2020-01-01T00:00:00Z"),
-            ownerId = 1,
-            ownerType = io.klibs.core.owner.ScmOwnerType.AUTHOR,
-            ownerLogin = "androidx",
-            homepage = null,
-            hasGhPages = false,
-            hasIssues = true,
-            hasWiki = false,
-            hasReadme = false,
-            licenseKey = null,
-            licenseName = null,
-            stars = 0,
-            openIssues = 0,
-            lastActivityTs = Instant.parse("2024-01-01T00:00:00Z"),
-            updatedAtTs = Instant.parse("2024-01-01T00:00:00Z")
-        )
-        val persistedProject = ProjectEntity(
-            id = 404,
-            scmRepoId = scmRepoId,
-            ownerId = 1,
-            name = "compose",
-            description = null,
-            minimizedReadme = "minimized readme",
-            latestVersion = mavenArtifact.version,
-            latestVersionTs = requireNotNull(mavenArtifact.releasedAt)
-        )
-
-        whenever(projectRepository.findByNameAndScmRepoId("compose", scmRepoId)).thenReturn(null)
-        whenever(androidxReadmeProvider.resolve("compose", "md.raw")).thenReturn("# Compose raw readme")
-        whenever(readmeMinimizer.process(
-            readmeContent = "# Compose raw readme",
-            readmeOwner = "androidx",
-            readmeRepositoryName = "compose",
-            repositoryDefaultBranch = "master"
-        )).thenReturn("minimized readme")
-        whenever(projectRepository.insert(any())).thenReturn(persistedProject)
-
-        val result = uut().save(mavenArtifact, scmRepositoryEntity)
-
-        assertEquals(404, result.idNotNull)
-
-        val projectCaptor = argumentCaptor<ProjectEntity>()
-        verify(projectRepository).insert(projectCaptor.capture())
-        val inserted = projectCaptor.firstValue
-        assertEquals("compose", inserted.name)
-        assertEquals("minimized readme", inserted.minimizedReadme)
-        assertNull(inserted.description)
-        assertEquals(scmRepoId, inserted.scmRepoId)
-        assertEquals(mavenArtifact.version, inserted.latestVersion)
-
-        verify(readmeServiceDispatcher, never()).writeReadmeFiles(any(), any(), any())
-        verify(scmRepositoryRepository, never()).update(any())
-        verify(gitHubIntegration, never()).getReadmeWithModifiedSinceCheck(any(), any())
-    }
-
-    @Test
     fun `save persists androidx project with default description when no readme`() {
         val scmRepoId = 202
         val mavenArtifact = MavenArtifact(
@@ -225,28 +152,7 @@ class ProjectIndexingServicePersistReadmeTest {
             scraperType = ScraperType.CENTRAL_SONATYPE,
             releasedAt = Instant.parse("2024-06-01T00:00:00Z")
         )
-        val scmRepositoryEntity = ScmRepositoryEntity(
-            id = scmRepoId,
-            nativeId = 8080L,
-            name = "androidx-repo",
-            description = "AndroidX repo",
-            defaultBranch = "main",
-            createdTs = Instant.parse("2020-01-01T00:00:00Z"),
-            ownerId = 1,
-            ownerType = io.klibs.core.owner.ScmOwnerType.AUTHOR,
-            ownerLogin = "androidx",
-            homepage = null,
-            hasGhPages = false,
-            hasIssues = true,
-            hasWiki = false,
-            hasReadme = false,
-            licenseKey = null,
-            licenseName = null,
-            stars = 0,
-            openIssues = 0,
-            lastActivityTs = Instant.parse("2024-01-01T00:00:00Z"),
-            updatedAtTs = Instant.parse("2024-01-01T00:00:00Z")
-        )
+        val scmRepositoryEntity = androidxScmRepoEntity(scmRepoId)
         val persistedProject = ProjectEntity(
             id = 405,
             scmRepoId = scmRepoId,
@@ -281,4 +187,79 @@ class ProjectIndexingServicePersistReadmeTest {
         verify(scmRepositoryRepository, never()).update(any())
         verify(gitHubIntegration, never()).getReadmeWithModifiedSinceCheck(any(), any())
     }
+
+    @Test
+    fun `save updates existing androidx project when new artifact arrives`() {
+        val scmRepoId = 202
+        val mavenArtifact = MavenArtifact(
+            groupId = "androidx.compose.animation",
+            artifactId = "animation-core",
+            version = "1.7.0",
+            scraperType = ScraperType.CENTRAL_SONATYPE,
+            releasedAt = Instant.parse("2025-03-01T00:00:00Z")
+        )
+        val scmRepositoryEntity = androidxScmRepoEntity(scmRepoId)
+        val existingProject = ProjectEntity(
+            id = 404,
+            scmRepoId = scmRepoId,
+            ownerId = 1,
+            name = "compose",
+            description = null,
+            minimizedReadme = "minimized readme",
+            latestVersion = "1.5.0",
+            latestVersionTs = Instant.parse("2024-06-01T00:00:00Z")
+        )
+        val updatedProject = existingProject.copy(
+            latestVersion = mavenArtifact.version,
+            latestVersionTs = requireNotNull(mavenArtifact.releasedAt)
+        )
+
+        whenever(projectRepository.findByNameAndScmRepoId("compose", scmRepoId)).thenReturn(existingProject)
+        whenever(
+            projectRepository.updateLatestVersion(
+                id = existingProject.idNotNull,
+                latestVersion = mavenArtifact.version,
+                latestVersionTs = requireNotNull(mavenArtifact.releasedAt)
+            )
+        ).thenReturn(updatedProject)
+
+        val result = uut().save(mavenArtifact, scmRepositoryEntity)
+
+        assertEquals(existingProject.idNotNull, result.idNotNull)
+        assertEquals("1.7.0", result.latestVersion)
+        assertEquals(Instant.parse("2025-03-01T00:00:00Z"), result.latestVersionTs)
+
+        verify(projectRepository).findByNameAndScmRepoId("compose", scmRepoId)
+        verify(projectRepository).updateLatestVersion(
+            id = existingProject.idNotNull,
+            latestVersion = "1.7.0",
+            latestVersionTs = Instant.parse("2025-03-01T00:00:00Z")
+        )
+        verify(projectRepository, never()).insert(any())
+        verify(androidxReadmeProvider, never()).resolve(any(), any())
+        verify(projectRepository, never()).updateMinimizedReadme(any(), any())
+    }
+
+    private fun androidxScmRepoEntity(scmRepoId: Int) = ScmRepositoryEntity(
+        id = scmRepoId,
+        nativeId = 8080L,
+        name = "androidx-repo",
+        description = "AndroidX repo",
+        defaultBranch = "main",
+        createdTs = Instant.parse("2020-01-01T00:00:00Z"),
+        ownerId = 1,
+        ownerType = io.klibs.core.owner.ScmOwnerType.AUTHOR,
+        ownerLogin = "androidx",
+        homepage = null,
+        hasGhPages = false,
+        hasIssues = true,
+        hasWiki = false,
+        hasReadme = false,
+        licenseKey = null,
+        licenseName = null,
+        stars = 0,
+        openIssues = 0,
+        lastActivityTs = Instant.parse("2024-01-01T00:00:00Z"),
+        updatedAtTs = Instant.parse("2024-01-01T00:00:00Z")
+    )
 }
