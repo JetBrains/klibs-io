@@ -85,6 +85,15 @@ class ProjectDetailsLinkTest {
     }
 
     @Test
+    fun `androidx room project github link points to room3 subfolder in monorepo`() {
+        val details = createDetails(ownerLogin = "androidx", repoName = "androidx", name = "room")
+        assertEquals(
+            "https://github.com/androidx/androidx/tree/androidx-main/room3",
+            details.getGitHubRepositoryLink()
+        )
+    }
+
+    @Test
     fun `androidx project github pages link is always null`() {
         val details = createDetails(ownerLogin = "androidx", repoName = "androidx", name = "annotation", hasGhPages = true)
         assertNull(details.getGitHubPagesLink())

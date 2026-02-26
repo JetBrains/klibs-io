@@ -43,7 +43,11 @@ data class ProjectDetails(
 
     fun getGitHubRepositoryLink(): String {
         return if (isAndroidx) {
-            "https://github.com/$ANDROIDX_OWNER/$ANDROIDX_OWNER/tree/androidx-main/${this.name}"
+            val folderName = if (name == "room") {
+                "room3"
+            } else name
+
+            "https://github.com/$ANDROIDX_OWNER/$ANDROIDX_OWNER/tree/androidx-main/$folderName"
         } else {
             "https://github.com/${this.ownerLogin}/${this.repoName}"
         }
