@@ -51,6 +51,13 @@ This block describees working on a new feature flow.
 7. After successful testing, merge the feature branch into the `release`.
 8. Move task to `Ready for Deploy` state in YouTrack.
 
+## Project tag updates
+When updating project tags via `/content/project/tags`, the allowed tags list comes from
+`integrations/ai/src/main/resources/ai/prompts/tag_rules.yaml`.
+
+1. If a new tag is required, add a new entry to `tag_rules` with the canonical `name` and its metadata.
+2. If the tag is just a synonym of an existing one, add it to that tag's `tag_synonyms` list instead.
+
 ## Hotfix Flow
 1. Create a branch from `master`:
     ```bash
