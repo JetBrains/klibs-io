@@ -1,0 +1,178 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop project_index before updating package_index
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'project_index'
+      changes:
+        - sql:
+            sql: |
+              DROP MATERIALIZED VIEW IF EXISTS project_index;
+
+  - changeSet:
+      id: recreate package_index materialized view with latest_package_id
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'package_index'
+      changes:
+        - sqlFile:
+            path: 2026-01-16_package_index_add_latest_package_id.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: recreate package_index_fts_gin_idx
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_fts_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_fts_gin_idx ON package_index USING GIN (fts);
+
+  - changeSet:
+      id: recreate package_index_platforms_vector_gin_idx
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_platforms_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_platforms_vector_gin_idx ON package_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: recreate package_index_unique
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_unique
+      changes:
+        - createIndex:
+            indexName: package_index_unique
+            tableName: package_index
+            unique: true
+            columns:
+              - column:
+                  name: group_id
+              - column:
+                  name: artifact_id
+      rollback:
+        - dropIndex:
+            indexName: package_index_unique
+            tableName: package_index
+
+  - changeSet:
+      id: recreate project_index materialized view after package_index update
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - sqlFile:
+            path: ../2025-Q3/2025-09-30_recreate_project_index_with_project_tags.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: recreate project_index_fts_gin_idx
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_fts_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts);
+
+  - changeSet:
+      id: recreate project_index_platforms_vector_gin_idx
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_platforms_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: recreate project_index_stars_idx
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_stars_idx
+      changes:
+        - createIndex:
+            tableName: project_index
+            indexName: project_index_stars_idx
+            columns:
+              - column:
+                  name: stars
+
+  - changeSet:
+      id: recreate project_index_project_id_idx
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_project_id_idx
+      changes:
+        - createIndex:
+            tableName: project_index
+            indexName: project_index_project_id_idx
+            columns:
+              - column:
+                  name: project_id
+
+  - changeSet:
+      id: recreate unique index to project_index for concurrent refresh
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: project_index
+              indexName: project_index_unique
+      changes:
+        - createIndex:
+            indexName: project_index_unique
+            tableName: project_index
+            unique: true
+            columns:
+              - column:
+                  name: project_id
+      rollback:
+        - dropIndex:
+            indexName: project_index_unique
+            tableName: project_index

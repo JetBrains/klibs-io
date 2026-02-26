@@ -116,7 +116,11 @@ databaseChangeLog:
   - include:
       file: db/migration/2026-Q1/2026-01-11_update_devlog_kotlin_description.yml
   - include:
+      file: db/migration/2026-Q1/2026-01-16_package_index_add_latest_package_id.yml
+  - include:
       file: db/migration/2026-Q1/2026-01-21_add_all_categories_markers.yml
+  - include:
+      file: db/migration/2026-Q1/2026-01-26_package_drop_column_name.yml
   - include:
       file: db/migration/2026-Q1/2026-01-30_maven_central_log.yml
   - include:

@@ -3,11 +3,13 @@ package io.klibs.core.pckg.service
 import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.entity.PackageTargetEntity
 import io.klibs.core.pckg.dto.PackageDTO
+import io.klibs.core.pckg.entity.PackageIndexEntity
 import io.klibs.core.pckg.model.PackageDetails
 import io.klibs.core.pckg.model.PackageDeveloper
 import io.klibs.core.pckg.model.PackageLicense
 import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackageTarget
+import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,7 +17,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional(readOnly = true)
 class PackageService(
-    private val packageRepository: PackageRepository
+    private val packageRepository: PackageRepository,
+    private val packageIndexRepository: PackageIndexRepository
 ) {
     @Transactional(readOnly = false)
     fun updateByCoordinates(packageDTO: PackageDTO): PackageDTO? {
@@ -61,11 +64,10 @@ class PackageService(
         packageRepository.findByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId, artifactId).map { it.toOverview() }
 
     fun getLatestPackagesByGroupId(groupId: String): List<PackageOverview> =
-        packageRepository.findLatestByGroupId(groupId).map { it.toOverview() }
+        packageIndexRepository.findByIdGroupId(groupId).map { it.toOverview() }
 
-    fun getLatestPackagesByProjectId(projectId: Int): List<PackageOverview> {
-        return packageRepository.findLatestByProjectId(projectId).map { it.toOverview() }
-    }
+    fun getLatestPackagesByProjectId(projectId: Int): List<PackageOverview> =
+        packageIndexRepository.findByProjectId(projectId).map { it.toOverview() }
 }
 
 
@@ -77,7 +79,6 @@ private fun PackageEntity.toModel(): PackageDetails {
         artifactId = this.artifactId,
         version = this.version,
         releasedAt = this.releaseTs,
-        name = this.name,
         description = this.description,
         targets = this.targets.map { PackageTarget(it.platform, it.target) },
         licenses = this.licenses.map { PackageLicense(it.name, it.url) },
@@ -99,5 +100,17 @@ private fun PackageEntity.toOverview(): PackageOverview {
         releasedAt = this.releaseTs,
         description = this.description,
         targets = this.targets.map { PackageTarget(it.platform, it.target) }
+    )
+}
+
+private fun PackageIndexEntity.toOverview(): PackageOverview {
+    return PackageOverview(
+        id = this.latestPackageId,
+        groupId = this.id.groupId,
+        artifactId = this.id.artifactId,
+        version = this.latestVersion,
+        releasedAt = this.releaseTs,
+        description = this.latestDescription,
+        targets = this.parsedTargets
     )
 }

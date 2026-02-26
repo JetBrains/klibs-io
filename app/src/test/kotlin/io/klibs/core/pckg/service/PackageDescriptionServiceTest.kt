@@ -1,8 +1,11 @@
 package io.klibs.core.pckg.service
 
 import BaseUnitWithDbLayerTest
+import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.search.SearchService
 import io.klibs.integration.ai.PackageDescriptionGenerator
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
@@ -24,10 +27,21 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
     private lateinit var packageRepository: PackageRepository
 
     @Autowired
+    private lateinit var packageIndexRepository: PackageIndexRepository
+
+    @Autowired
     private lateinit var packageService: PackageService
 
     @MockBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
+
+    @Autowired
+    private lateinit var searchService: SearchService
+
+    @BeforeEach
+    fun setup() {
+        searchService.refreshSearchViews()
+    }
 
     @Test
     @Sql(value = ["classpath:sql/PackageDescriptionServiceTest/insert-package-with-specific-version.sql"])
@@ -35,7 +49,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         val groupId = "org.example"
         val artifactId = "test-library"
         val version = "1.0.0"
-        val packageName = "$groupId:$artifactId"
         val expectedDescription = "This is a test library for demonstration purposes."
 
         val packageEntity = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
@@ -44,7 +57,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
 
         `when`(
             packageDescriptionGenerator.generatePackageDescription(
-                packageName,
                 groupId,
                 artifactId,
                 version
@@ -62,7 +74,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         val groupId = "org.example"
         val artifactId = "test-library"
         val version = "2.0.0" // Latest version
-        val packageName = "$groupId:$artifactId"
         val expectedDescription = "This is a description for the org.example:test-library package."
 
         val packageEntity = packageRepository.findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId, artifactId)
@@ -72,7 +83,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
 
         `when`(
             packageDescriptionGenerator.generatePackageDescription(
-                packageName,
                 groupId,
                 artifactId,
                 version
@@ -91,24 +101,21 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
         val artifactId1 = "test-library"
         val artifactId2 = "test-utils"
         val version = "1.0.0"
-        val packageName1 = "$groupId:$artifactId1"
-        val packageName2 = "$groupId:$artifactId2"
         val expectedDescription = "This is a description for the org.example group."
 
-        val packages = packageRepository.findLatestByGroupId(groupId)
+        val packages = packageIndexRepository.findByIdGroupId(groupId)
         assertEquals(2, packages.size, "Should find 2 packages with the same groupId")
 
-        val package1 = packages.find { it.artifactId == artifactId1 }
+        val package1 = packages.find { it.id.artifactId == artifactId1 }
         assertNotNull(package1, "Package with artifactId $artifactId1 should exist")
-        assertEquals("Old description 1", package1.description, "Package should have the initial description")
+        assertEquals("Old description 1", package1.latestDescription, "Package should have the initial description")
 
-        val package2 = packages.find { it.artifactId == artifactId2 }
+        val package2 = packages.find { it.id.artifactId == artifactId2 }
         assertNotNull(package2, "Package with artifactId $artifactId2 should exist")
-        assertEquals("Old description 2", package2.description, "Package should have the initial description")
+        assertEquals("Old description 2", package2.latestDescription, "Package should have the initial description")
 
         `when`(
             packageDescriptionGenerator.generatePackageDescription(
-                packageName1,
                 groupId,
                 artifactId1,
                 version
@@ -117,7 +124,6 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
 
         `when`(
             packageDescriptionGenerator.generatePackageDescription(
-                packageName2,
                 groupId,
                 artifactId2,
                 version
@@ -144,7 +150,7 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
             packageRepository.findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId, artifactId)
         assertEquals(null, packageWithoutVersion, "No package should exist with the specified groupId and artifactId")
 
-        val packagesWithGroupId = packageRepository.findLatestByGroupId(groupId)
+        val packagesWithGroupId = packageIndexRepository.findByIdGroupId(groupId)
         assertTrue(packagesWithGroupId.isEmpty(), "No packages should exist with the specified groupId")
 
         assertThrows<IllegalArgumentException> {
@@ -184,12 +190,11 @@ class PackageDescriptionServiceTest : BaseUnitWithDbLayerTest() {
             if (packageEntity != null) {
                 `when`(
                     packageDescriptionGenerator.generatePackageDescription(
-                        packageEntity.name,
                         packageEntity.groupId,
                         packageEntity.artifactId,
                         packageEntity.version
                     )
-                ).thenReturn("Placeholder description for ${packageEntity.name} ${packageEntity.version}")
+                ).thenReturn("Placeholder description for ${packageEntity.artifactId} ${packageEntity.version}")
             }
         }
 

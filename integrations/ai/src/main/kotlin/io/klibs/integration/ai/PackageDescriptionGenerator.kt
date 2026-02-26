@@ -17,7 +17,6 @@ class PackageDescriptionGenerator(
     private val aiService: AiService
 ) {
     fun generatePackageDescription(
-        packageName: String,
         groupId: String,
         artifactId: String?,
         version: String?,
@@ -27,7 +26,7 @@ class PackageDescriptionGenerator(
         val systemMessage = SystemPromptTemplate(packageDescriptionPrompt)
             .createMessage(
                 mapOf(
-                    "packageName" to packageName,
+                    "packageName" to artifactId,
                     "minWords" to minDescriptionWordCount,
                     "maxWords" to maxDescriptionWordCount
                 )

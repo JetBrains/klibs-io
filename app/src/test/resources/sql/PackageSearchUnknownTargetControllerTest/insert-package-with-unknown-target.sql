@@ -20,7 +20,6 @@ VALUES (
   'org.example.unknown', -- group_id
   'unknown-target-lib',  -- artifact_id
   '1.0.0',          -- version
-  'Unknown Target Lib', -- name
   'Library with unknown native target', -- description
   'https://example.com/unknown',        -- homepage
   'https://example.com/unknown',        -- scm_link (or similar extra url)

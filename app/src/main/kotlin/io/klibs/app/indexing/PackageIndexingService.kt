@@ -221,7 +221,6 @@ class PackageIndexingService(
             releaseTs = requireNotNull(mavenArtifact.releasedAt) {
                 "releasedAt is null for $mavenArtifact"
             },
-            name = pom.name ?: pom.artifactId,
             description = description,
             url = pom.url?.let { normalizeGitHubLink(it) },
             scmUrl = pom.scm?.url?.let { normalizeGitHubLink(it) },
@@ -249,7 +248,6 @@ class PackageIndexingService(
         if (previousVersion != null && previousVersion.generatedDescription) {
             try {
                 description = packageDescriptionGenerator.generatePackageDescription(
-                    pom.name ?: pom.artifactId,
                     pom.groupId,
                     pom.artifactId,
                     pom.version
