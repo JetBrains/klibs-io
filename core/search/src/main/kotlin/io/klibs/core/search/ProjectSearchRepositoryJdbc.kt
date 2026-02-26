@@ -94,9 +94,9 @@ class ProjectSearchRepositoryJdbc(
         val isQueryPresent = rawQuery?.isBlank() == false
         val offset = limit * (page - 1)
         val orderBy = when {
-            sortBy == SearchSort.RELEVANCY && isQueryPresent -> "weighted_rank DESC"
-            sortBy == SearchSort.MOST_STARS -> "stars DESC"
-            else -> "stars DESC"
+            sortBy == SearchSort.RELEVANCY && isQueryPresent -> "weighted_rank DESC, project_id ASC"
+            sortBy == SearchSort.MOST_STARS -> "stars DESC, project_id ASC"
+            else -> "stars DESC, project_id ASC"
         }
 
         val exactMatchQuery = rawQuery?.normalizeSearchQuery()

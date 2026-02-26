@@ -96,8 +96,8 @@ class PackageSearchRepositoryJdbc(
             }
 
             val orderBy = when {
-                sortBy == SearchSort.RELEVANCY && isQueryPresent -> "weighted_rank DESC"
-                else -> "release_ts DESC"
+                sortBy == SearchSort.RELEVANCY && isQueryPresent -> "weighted_rank DESC, group_id ASC, artifact_id ASC"
+                else -> "release_ts DESC, group_id ASC, artifact_id ASC"
             }
             appendLine(" ORDER BY $orderBy")
             appendLine(" LIMIT $limit")
