@@ -4,6 +4,7 @@ import BaseUnitWithDbLayerTest
 import io.klibs.core.owner.ScmOwnerEntity
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.project.ProjectService
+import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.S3ReadmeService
@@ -32,6 +33,9 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
+
+    @Autowired
+    private lateinit var projectRepository: ProjectRepository
 
     @MockitoBean
     private lateinit var gitHubIntegration: GitHubIntegration
@@ -214,6 +218,10 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         )
 
         assertEquals(newOwnerExpected, newOwner)
+
+        // Verify project.owner_id is also updated to the new owner
+        val projectAfter = requireNotNull(projectRepository.findByNameAndScmRepoId(repoBefore.name, repoBefore.idNotNull))
+        assertEquals(repoAfter.ownerId, projectAfter.ownerId)
     }
 
     @Test
