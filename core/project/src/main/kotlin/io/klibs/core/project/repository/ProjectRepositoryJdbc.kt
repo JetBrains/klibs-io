@@ -111,6 +111,23 @@ class ProjectRepositoryJdbc(
         }
     }
 
+    override fun updateOwnerId(projectId: Int, newOwnerId: Int) {
+        val sql = """
+            UPDATE project
+            SET owner_id = :newOwnerId
+            WHERE id = :projectId
+        """.trimIndent()
+
+        val updated = jdbcClient.sql(sql)
+            .param("projectId", projectId)
+            .param("newOwnerId", newOwnerId)
+            .update()
+
+        require(updated == 1) {
+            "Did not update the project owner_id for projectId: $projectId"
+        }
+    }
+
     override fun findById(id: Int): ProjectEntity? {
         val sql = """
             SELECT id,

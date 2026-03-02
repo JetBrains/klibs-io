@@ -77,6 +77,11 @@ class GitHubIndexingService(
         val projectEntity = projectRepository.findByNameAndScmRepoId(repoToUpdate.name, repoToUpdate.idNotNull)
             ?: error("Unable to find project entity for repoId=${repoToUpdate.idNotNull}")
 
+        if (projectEntity.ownerId != ownerId) {
+            logger.info("Updating project owner from ${projectEntity.ownerId} to $ownerId for projectId=${projectEntity.idNotNull}")
+            projectRepository.updateOwnerId(projectEntity.idNotNull, ownerId)
+        }
+
         val hasReadme = updateReadme(projectEntity, ghRepo, repoToUpdate.updatedAtTs)
         val license = gitHubIntegration.getLicense(ghRepo.nativeId)
 

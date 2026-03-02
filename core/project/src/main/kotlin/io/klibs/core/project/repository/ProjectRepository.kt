@@ -15,6 +15,8 @@ interface ProjectRepository {
 
     fun updateMinimizedReadme(id: Int, minimizedReadme: String?)
 
+    fun updateOwnerId(projectId: Int, newOwnerId: Int)
+
     fun findById(id: Int): ProjectEntity?
 
     fun findByScmRepoId(scmRepoId: Int): ProjectEntity?
