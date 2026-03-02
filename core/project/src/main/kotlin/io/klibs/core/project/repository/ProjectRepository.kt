@@ -37,4 +37,6 @@ interface ProjectRepository {
      * Returns null if project is not in project_index (i.e., has no packages).
      */
     fun findPlatformsById(projectId: Int): List<PackagePlatform>?
+
+    fun findAllForSitemap(): List<SitemapProjectEntry>
 }
