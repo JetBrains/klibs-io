@@ -2,6 +2,7 @@ package io.klibs.core.pckg.repository
 
 import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.dto.projection.PackageVersionsView
+import io.klibs.core.pckg.dto.projection.SitemapPackageView
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 
@@ -79,4 +80,15 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
          """,
         nativeQuery = true)
     fun findLatestByGroupId(groupId: String): List<PackageEntity>
+
+    @Query(value = """
+            SELECT DISTINCT ON (group_id, artifact_id)
+                group_id  AS groupId,
+                artifact_id AS artifactId,
+                release_ts AS releaseTs
+            FROM package
+            ORDER BY group_id, artifact_id, release_ts DESC
+        """,
+        nativeQuery = true)
+    fun findAllPackagesForSitemap(): List<SitemapPackageView>
 }

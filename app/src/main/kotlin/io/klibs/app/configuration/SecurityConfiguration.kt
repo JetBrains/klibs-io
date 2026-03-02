@@ -32,6 +32,7 @@ class SecurityConfiguration(
 
             authorizeHttpRequests {
                 authorize(HttpMethod.GET, "/categories.json", permitAll)
+                authorize(HttpMethod.GET, "/sitemap.xml", permitAll)
 
                 authorize(HttpMethod.GET, "/tags/**", permitAll)
                 authorize(HttpMethod.OPTIONS, "/tags/**", permitAll)

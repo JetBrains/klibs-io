@@ -9,6 +9,7 @@ import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.MarkerRepository
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
+import io.klibs.core.project.repository.SitemapProjectEntry
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
@@ -91,6 +92,9 @@ class ProjectService(
             )
         )
     }
+
+    @Transactional(readOnly = true)
+    fun findAllForSitemap(): List<SitemapProjectEntry> = projectRepository.findAllForSitemap()
 
     @Transactional
     fun updateProjectDescription(projectName: String, ownerLogin: String, description: String) {

@@ -8,6 +8,7 @@ import io.klibs.core.pckg.model.PackageDeveloper
 import io.klibs.core.pckg.model.PackageLicense
 import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackageTarget
+import io.klibs.core.pckg.dto.projection.SitemapPackageView
 import io.klibs.core.pckg.repository.PackageRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -66,6 +67,9 @@ class PackageService(
     fun getLatestPackagesByProjectId(projectId: Int): List<PackageOverview> {
         return packageRepository.findLatestByProjectId(projectId).map { it.toOverview() }
     }
+
+    fun findAllPackagesForSitemap(): List<SitemapPackageView> =
+        packageRepository.findAllPackagesForSitemap()
 }
 
 

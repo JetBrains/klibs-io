@@ -304,6 +304,26 @@ class ProjectRepositoryJdbc(
             .getOrNull()
     }
 
+    override fun findAllForSitemap(): List<SitemapProjectEntry> {
+        val sql = """
+            SELECT scm_owner.login AS owner_login, p.name AS project_name, sr.updated_at
+            FROM project p
+            JOIN scm_repo sr ON sr.id = p.scm_repo_id
+            JOIN scm_owner ON p.owner_id = scm_owner.id
+            ORDER BY p.id
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .query { rs, _ ->
+                SitemapProjectEntry(
+                    ownerLogin = rs.getString("owner_login"),
+                    projectName = rs.getString("project_name"),
+                    updatedAt = rs.getTimestamp("updated_at").toInstant(),
+                )
+            }
+            .list()
+    }
+
     private companion object {
         private val PROJECT_ENTITY_ROW_MAPPER = RowMapper<ProjectEntity> { rs, _ ->
             ProjectEntity(
