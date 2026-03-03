@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: recreate project_index excluding wasm and js for room
+      author: nikita.vlaev@jetbrains.com
+      comment: >
+        KTL-4191: Recreate project_index to exclude WASM and JS platforms
+        for the androidx/room project.
+      changes:
+        - sqlFile:
+            path: 2026-03-03_exclude_wasm_js_from_room_project_index.sql
+            relativeToChangelogFile: true
+  - changeSet:
+      id: recreate project_index indices after wasm js exclusion
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts)
+        - sql:
+            sql: CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector)
+        - createIndex:
+            indexName: project_index_stars_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: stars
+        - createIndex:
+            indexName: project_index_project_id_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: project_id
+        - createIndex:
+            indexName: project_index_unique
+            tableName: project_index
+            unique: true
+            columns:
+              - column:
+                  name: project_id
