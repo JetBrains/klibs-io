@@ -30,15 +30,15 @@ INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, 
 
 -- package (one per project)
 INSERT INTO public.package (
-    id, project_id, release_ts, created_at, group_id, artifact_id, version, name, description,
+    id, project_id, release_ts, created_at, group_id, artifact_id, version, description,
     url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses
 ) VALUES
-    (51001, 50001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p1', '1.0.0', 'lib-p1', 'desc P1', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51002, 50002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p2', '1.0.0', 'lib-p2', 'desc P2', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51003, 50003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p3', '1.0.0', 'lib-p3', 'desc P3', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51004, 50004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p4', '1.0.0', 'lib-p4', 'desc P4', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51005, 50005, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p5', '1.0.0', 'lib-p5', 'desc P5', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51006, 50006, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p6', '1.0.0', 'lib-p6', 'desc P6', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]');
+    (51001, 50001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p1', '1.0.0', 'desc P1', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51002, 50002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p2', '1.0.0', 'desc P2', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51003, 50003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p3', '1.0.0', 'desc P3', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51004, 50004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p4', '1.0.0', 'desc P4', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51005, 50005, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p5', '1.0.0', 'desc P5', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51006, 50006, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p6', '1.0.0', 'desc P6', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]');
 
 -- package_target (one JVM platform per package)
 INSERT INTO public.package_target (package_id, platform, target) VALUES
