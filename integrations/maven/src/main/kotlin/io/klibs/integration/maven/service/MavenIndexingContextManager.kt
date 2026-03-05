@@ -36,8 +36,8 @@ class MavenIndexingContextManager(
         return indexer.createIndexingContext(
             contextId,
             "central",
-            indexDir,
-            indexDir,
+            indexDir.resolve("central-cache"),
+            indexDir.resolve("central-index"),
             properties.central.indexEndpoint,
             null,
             true,

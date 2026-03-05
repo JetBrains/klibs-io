@@ -1,6 +1,7 @@
 package io.klibs.integration.maven.service
 
 import io.klibs.integration.maven.MavenIntegrationProperties
+import org.apache.maven.index.context.IndexingContext
 import org.apache.maven.index.updater.IndexUpdateRequest
 import org.apache.maven.index.updater.IndexUpdater
 import org.apache.maven.index.updater.ResourceFetcher
@@ -48,23 +49,32 @@ class MavenIndexDownloadingService(
 
             if (remoteIndexTimestamp.isAfter(localIndexTimestamp)) {
                 logger.info("New index version available (Remote: $remoteIndexTimestamp, Local: $localIndexTimestamp). Starting full index download.")
-                val updateRequest = IndexUpdateRequest(context, resourceFetcher)
-                updateRequest.isForceFullUpdate = true
-                updateRequest.indexTempDir = indexingContextManager.getIndexTmpDir()
 
-                val result = indexUpdater.fetchAndUpdateIndex(updateRequest)
+                downloadUsingMavenFetcher(context)
 
-                if (result.isFullUpdate) {
-                    logger.info("Full index update completed successfully")
-                } else {
-                    logger.warn("Index update completed, but it was not a full update as requested")
-                }
                 resultTimestamp = remoteIndexTimestamp
             } else {
                 logger.info("Local index is up to date (Timestamp: $localIndexTimestamp). Skipping download.")
             }
         }
         return resultTimestamp
+    }
+
+    private fun downloadUsingMavenFetcher(context: IndexingContext) {
+        logger.info("Starting full index update using MavenFetcher")
+        val updateRequest = IndexUpdateRequest(context, resourceFetcher)
+        updateRequest.isForceFullUpdate = true
+        updateRequest.indexTempDir = indexingContextManager.getIndexTmpDir()
+        updateRequest.threads = Runtime.getRuntime().availableProcessors()
+        logger.info("Using ${updateRequest.threads} threads for index update")
+
+        val result = indexUpdater.fetchAndUpdateIndex(updateRequest)
+
+        if (result.isFullUpdate) {
+            logger.info("Full index update completed successfully")
+        } else {
+            logger.warn("Index update completed, but it was not a full update as requested")
+        }
     }
 
     private fun fetchRemoteIndexTimestamp(): Instant? {

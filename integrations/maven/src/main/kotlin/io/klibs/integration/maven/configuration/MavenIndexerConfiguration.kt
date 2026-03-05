@@ -51,6 +51,7 @@ class MavenIndexerConfiguration {
 
 class HttpClientResourceFetcher : ResourceFetcher {
     private val client: HttpClient = HttpClient.newBuilder()
+        .version(HttpClient.Version.HTTP_1_1)
         .followRedirects(HttpClient.Redirect.NEVER)
         .build()
 
@@ -68,7 +69,7 @@ class HttpClientResourceFetcher : ResourceFetcher {
 
     @Throws(IOException::class, FileNotFoundException::class)
     override fun retrieve(name: String?): InputStream? {
-        if(uri == null) throw IOException("Not connected")
+        if (uri == null) throw IOException("Not connected")
 
         val request =
             HttpRequest.newBuilder().uri(uri!!.resolve(name!!)).GET().build()
