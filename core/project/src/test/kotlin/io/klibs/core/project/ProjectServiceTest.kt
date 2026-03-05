@@ -1,6 +1,5 @@
 package io.klibs.core.project
 
-import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
@@ -21,7 +20,6 @@ class ProjectServiceTest {
     private val packageService: PackageService = mock()
     private val readmeServiceDispatcher: ReadmeServiceDispatcher = mock()
     private val projectRepository: ProjectRepository = mock()
-    private val packageRepository: PackageRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
     private val markerRepository: MarkerRepository = mock()
     private val tagRepository: TagRepository = mock()
@@ -33,7 +31,6 @@ class ProjectServiceTest {
         packageService,
         readmeServiceDispatcher,
         projectRepository,
-        packageRepository,
         scmRepositoryRepository,
         markerRepository,
         tagRepository,

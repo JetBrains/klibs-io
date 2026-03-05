@@ -1,5 +1,6 @@
 package io.klibs.core.project.repository
 
+import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.project.ProjectEntity
 import java.time.Instant
 
@@ -30,4 +31,10 @@ interface ProjectRepository {
     fun findWithoutTags(): ProjectEntity?
 
     fun findProjectsByPackages(groupId: String, artifactId: String?): Set<Int>
+
+    /**
+     * Returns platforms from project_index materialized view.
+     * Returns null if project is not in project_index (i.e., has no packages).
+     */
+    fun findPlatformsById(projectId: Int): List<PackagePlatform>?
 }

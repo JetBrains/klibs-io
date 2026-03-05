@@ -1,6 +1,5 @@
 package io.klibs.core.project
 
-import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackagePlatform
@@ -26,7 +25,6 @@ class ProjectService(
     private val packageService: PackageService,
     private val readmeServiceDispatcher: ReadmeServiceDispatcher,
     private val projectRepository: ProjectRepository,
-    private val packageRepository: PackageRepository,
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val markerRepository: MarkerRepository,
     private val tagRepository: TagRepository,
@@ -36,33 +34,22 @@ class ProjectService(
     @Transactional(readOnly = true)
     fun getProjectDetailsByName(ownerLogin: String, projectName: String): ProjectDetails? {
         val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
-        val scmRepositoryEntity = requireNotNull(scmRepositoryRepository.findById(projectEntity.scmRepoId)) {
-            "Unable to find the corresponding scm repository for an existing project: $projectEntity"
-        }
-
-        // Check if project has any packages
-        if (!packageRepository.existsByProjectId(projectEntity.idNotNull)) {
-            return null
-        }
-
-        val projectPlatforms = packageRepository.findPlatformsOf(projectEntity.idNotNull)
-
-        return projectEntity.toDetails(
-            projectEntity = projectEntity,
-            scmRepositoryEntity = scmRepositoryEntity,
-            projectPlatforms = projectPlatforms,
-            projectMarkers = markerRepository.findAllByProjectId(projectEntity.idNotNull),
-            projectTags = tagRepository.getTagsByProjectId(projectEntity.idNotNull)
-        )
+        return buildProjectDetails(projectEntity)
     }
 
     @Transactional(readOnly = true)
     fun getProjectDetailsById(projectId: Int): ProjectDetails? {
         val projectEntity = projectRepository.findById(projectId) ?: return null
+        return buildProjectDetails(projectEntity)
+    }
+
+    private fun buildProjectDetails(projectEntity: ProjectEntity): ProjectDetails? {
         val scmRepositoryEntity = requireNotNull(scmRepositoryRepository.findById(projectEntity.scmRepoId)) {
             "Unable to find the corresponding scm repository for an existing project: $projectEntity"
         }
-        val projectPlatforms = packageRepository.findPlatformsOf(projectEntity.idNotNull)
+
+        // Fetch platforms from project_index; returns null if project has no packages
+        val projectPlatforms = projectRepository.findPlatformsById(projectEntity.idNotNull) ?: return null
 
         return projectEntity.toDetails(
             projectEntity = projectEntity,
