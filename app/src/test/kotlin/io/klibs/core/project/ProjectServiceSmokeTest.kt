@@ -1,7 +1,6 @@
 package io.klibs.core.project
 
 import io.klibs.core.owner.ScmOwnerType
-import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.project.entity.Marker
@@ -41,9 +40,6 @@ class ProjectServiceSmokeTest {
 
     @MockitoBean
     private lateinit var projectRepository: ProjectRepository
-
-    @MockitoBean
-    private lateinit var packageRepository: PackageRepository
 
     @MockitoBean
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
@@ -105,10 +101,8 @@ class ProjectServiceSmokeTest {
         // Mock repository responses
         `when`(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(projectEntity)
         `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
-        `when`(packageRepository.existsByProjectId(projectEntity.idNotNull)).thenReturn(false)
-
-        // Default stub for tags
-        `when`(tagRepository.getTagsByProjectId(anyInt())).thenReturn(emptyList())
+        // Return null to simulate project not in project_index (no packages)
+        `when`(projectRepository.findPlatformsById(projectEntity.idNotNull)).thenReturn(null)
 
         // Act
         val result = uut.getProjectDetailsByName(ownerLogin, projectName)
@@ -166,7 +160,7 @@ class ProjectServiceSmokeTest {
 
         `when`(projectRepository.findById(projectId)).thenReturn(projectEntity)
         `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
-        `when`(packageRepository.findPlatformsOf(projectId)).thenReturn(platforms)
+        `when`(projectRepository.findPlatformsById(projectId)).thenReturn(platforms)
         `when`(markerRepository.findAllByProjectId(projectId)).thenReturn(projectMarkers)
 
         `when`(tagRepository.getTagsByProjectId(anyInt())).thenReturn(emptyList())
@@ -232,8 +226,7 @@ class ProjectServiceSmokeTest {
         // Mock repository responses
         `when`(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(projectEntity)
         `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
-        `when`(packageRepository.existsByProjectId(projectEntity.idNotNull)).thenReturn(true)
-        `when`(packageRepository.findPlatformsOf(projectEntity.idNotNull)).thenReturn(platforms)
+        `when`(projectRepository.findPlatformsById(projectEntity.idNotNull)).thenReturn(platforms)
         `when`(markerRepository.findAllByProjectId(projectEntity.idNotNull)).thenReturn(projectMarkers)
 
         val result = uut.getProjectDetailsByName(ownerLogin, projectName)

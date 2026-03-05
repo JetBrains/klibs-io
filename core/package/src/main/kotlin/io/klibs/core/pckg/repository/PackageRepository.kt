@@ -2,7 +2,6 @@ package io.klibs.core.pckg.repository
 
 import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.dto.projection.PackageVersionsView
-import io.klibs.core.pckg.model.PackagePlatform
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 
@@ -54,18 +53,6 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
     fun findByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId: String, artifactId: String): List<PackageEntity>
 
     fun findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId: String, artifactId: String): PackageEntity?
-
-    @Query(value = """
-            WITH latest_package_ids AS (SELECT DISTINCT ON (group_id, artifact_id) id
-            FROM package
-            WHERE project_id = :projectId
-            ORDER BY group_id, artifact_id, release_ts DESC)
-            SELECT DISTINCT platform
-            FROM package_target
-            WHERE package_id IN (SELECT id FROM latest_package_ids)
-        """,
-        nativeQuery = true)
-    fun findPlatformsOf(projectId: Int): List<PackagePlatform>
 
     @Query(value = """
             WITH latest_package_ids AS (SELECT DISTINCT ON (group_id, artifact_id) id

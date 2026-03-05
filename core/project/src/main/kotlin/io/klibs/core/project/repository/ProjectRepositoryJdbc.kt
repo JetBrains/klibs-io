@@ -1,5 +1,6 @@
 package io.klibs.core.project.repository
 
+import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.project.ProjectEntity
 import org.hibernate.type.SqlTypes
 import org.springframework.jdbc.core.JdbcTemplate
@@ -281,6 +282,24 @@ class ProjectRepositoryJdbc(
             .param("scmRepoId", scmRepoId)
             .param("name", name)
             .query(PROJECT_ENTITY_ROW_MAPPER)
+            .optional()
+            .getOrNull()
+    }
+
+    override fun findPlatformsById(projectId: Int): List<PackagePlatform>? {
+        val sql = """
+            SELECT platforms
+            FROM project_index
+            WHERE project_id = :projectId
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("projectId", projectId)
+            .query { rs, _ ->
+                @Suppress("UNCHECKED_CAST")
+                (rs.getArray("platforms").array as Array<String>)
+                    .map { PackagePlatform.valueOf(it) }
+            }
             .optional()
             .getOrNull()
     }
