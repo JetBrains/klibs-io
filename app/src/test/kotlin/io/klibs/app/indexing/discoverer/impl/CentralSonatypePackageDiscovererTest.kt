@@ -8,7 +8,6 @@ import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.scraper.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
-import io.klibs.integration.maven.service.MavenIndexingContextManager
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
@@ -38,9 +37,6 @@ internal class CentralSonatypePackageDiscovererTest {
     lateinit var mavenIndexScannerService: MavenIndexScannerService
 
     @MockitoBean
-    lateinit var mavenIndexingContextManager: MavenIndexingContextManager
-
-    @MockitoBean
     lateinit var centralSonatypeScraper: MavenCentralScraper
 
     @MockitoBean
@@ -60,7 +56,6 @@ internal class CentralSonatypePackageDiscovererTest {
         discoverer = CentralSonatypePackageDiscoverer(
             mavenIndexDownloadingService,
             mavenIndexScannerService,
-            mavenIndexingContextManager,
             centralSonatypeScraper,
             mavenCentralLogRepository,
             packageRepository

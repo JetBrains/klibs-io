@@ -9,7 +9,6 @@ import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.scraper.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
-import io.klibs.integration.maven.service.MavenIndexingContextManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -30,7 +29,6 @@ import java.time.Instant
 class CentralSonatypePackageDiscoverer(
     private val mavenIndexDownloadingService: MavenIndexDownloadingService,
     private val mavenIndexScannerService: MavenIndexScannerService,
-    private val mavenIndexingContextManager: MavenIndexingContextManager,
     private val centralSonatypeScraper: MavenCentralScraper,
     private val mavenCentralLogRepository: MavenCentralLogRepository,
     private val packageRepository: PackageRepository,
