@@ -1,6 +1,6 @@
 package io.klibs.core.pckg
 
-import SmokeTestBase
+import BaseUnitWithDbLayerTest
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.core.pckg.api.PackageOverviewResponse
@@ -12,17 +12,20 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
+import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
-import kotlin.collections.map
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @ActiveProfiles("test")
-class PackageControllerTest : SmokeTestBase() {
+class PackageControllerTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    private lateinit var mockMvc : MockMvc
 
     @Autowired
     private lateinit var searchService: SearchService
@@ -70,12 +73,8 @@ class PackageControllerTest : SmokeTestBase() {
         }
     }
 
-    @Test
+     @Test
     @Sql(scripts = ["classpath:sql/PackageControllerTest/seed-project-with-packages.sql"])
-    @Sql(
-        scripts = ["classpath:sql/PackageControllerTest/seed-project-with-packages-cleanup.sql"],
-        executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD
-    )
     fun `should return latest packages by group ID`() {
         val groupId = "org.example"
 
