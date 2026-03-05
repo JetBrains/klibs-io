@@ -12,12 +12,12 @@ import java.util.concurrent.TimeUnit
 @ConditionalOnProperty("klibs.indexing", havingValue = "true")
 class ProcessPackageIndexRequestJob(val packageIndexingService: PackageIndexingService) {
 
-    @Scheduled(initialDelay = 0, fixedRate = 4, timeUnit = TimeUnit.HOURS)
-    @SchedulerLock(name = "processPackageIndexRequestsLock", lockAtMostFor = "4h")
-    fun processPackageIndexRequests() {
-        LockAssert.assertLocked();
-        while (packageIndexingService.processPackageQueue()) {
-
-        }
-    }
+//    @Scheduled(initialDelay = 0, fixedRate = 4, timeUnit = TimeUnit.HOURS)
+//    @SchedulerLock(name = "processPackageIndexRequestsLock", lockAtMostFor = "4h")
+//    fun processPackageIndexRequests() {
+//        LockAssert.assertLocked();
+//        while (packageIndexingService.processPackageQueue()) {
+//
+//        }
+//    }
 }

@@ -9,11 +9,11 @@ import java.util.concurrent.TimeUnit
 
 @Component
 class MaterializedViewUpdatingJob(val searchService: SearchService) {
-
-    @Scheduled(initialDelay = 0, fixedRate = 10, timeUnit = TimeUnit.MINUTES)
-    @SchedulerLock(name = "updateMaterializedViewsLock", lockAtMostFor = "10m")
-    fun updateMaterializedViews() {
-        LockAssert.assertLocked();
-        searchService.refreshSearchViews()
-    }
+//
+//    @Scheduled(initialDelay = 0, fixedRate = 10, timeUnit = TimeUnit.MINUTES)
+//    @SchedulerLock(name = "updateMaterializedViewsLock", lockAtMostFor = "10m")
+//    fun updateMaterializedViews() {
+//        LockAssert.assertLocked();
+//        searchService.refreshSearchViews()
+//    }
 }

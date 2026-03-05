@@ -11,10 +11,9 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(value = ["klibs.indexing", "klibs.ai"], havingValue = "true")
 class IndexNewPackagesJob(val packageIndexingService: PackageIndexingService) {
 
-    @Scheduled(cron = "0 0 2 * * *") // Every day at 2AM
-    @SchedulerLock(name = "indexNewPackagesLock", lockAtMostFor = "23h")
+    @Scheduled(initialDelay = 0) // Every day at 2AM
     fun indexNewPackages() {
-        LockAssert.assertLocked()
+//        LockAssert.assertLocked()
         packageIndexingService.indexNewPackages()
     }
 }
