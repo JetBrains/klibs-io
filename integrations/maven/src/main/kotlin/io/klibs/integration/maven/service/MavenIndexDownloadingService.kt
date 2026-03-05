@@ -65,7 +65,7 @@ class MavenIndexDownloadingService(
         val updateRequest = IndexUpdateRequest(context, resourceFetcher)
         updateRequest.isForceFullUpdate = true
         updateRequest.indexTempDir = indexingContextManager.getIndexTmpDir()
-        updateRequest.threads = Runtime.getRuntime().availableProcessors()
+        updateRequest.threads = 4
         logger.info("Using ${updateRequest.threads} threads for index update")
 
         val result = indexUpdater.fetchAndUpdateIndex(updateRequest)
