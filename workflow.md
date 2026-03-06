@@ -25,7 +25,7 @@ This document describes the branching strategy and release flow for our backend 
 
   * Feature branches, created from the current `release` branch.
 
-  * Tested on the `test` environment before merging.
+  * Tested on the `features` environment before merging.
 
   * Naming: `feature/KTL-<task-id>-<short-description>`
 
@@ -37,7 +37,9 @@ This document describes the branching strategy and release flow for our backend 
   * Naming: `hotfix/KTL-<task-id>-<short-description>`
 
 ## Feature development flow
-This block describees working on a new feature flow.
+This block describes working on a new feature flow.
+
+### Single-issue feature (regular path)
 
 1. Create a branch from the current `release`:
     ```bash
@@ -45,11 +47,39 @@ This block describees working on a new feature flow.
     ```
 2. Implement your changes in this branch.
 3. Move task to `Code Review` state in YouTrack.
-4. Open a Merge Request to a `release` branch. 
+4. Open a Merge Request to the `release` branch.
 5. After review approval: [Deploy the feature](#how-to-deploy-a-feature-to-the-features-environment) branch to the `features` environment and move task to `Ready for Testing` state in YouTrack.
 6. When start testing, move a task to `Testing` state in YouTrack.
 7. After successful testing, merge the feature branch into the `release`.
 8. Move task to `Ready for Deploy` state in YouTrack.
+
+### Multi-part feature (meta-issue path)
+
+For features consisting of multiple sub-tasks, use a main feature branch with sub-task branches merged into it. **Only a complete feature can be merged to `release`.**
+
+1. Create a main feature branch from the current `release`:
+    ```bash
+    git checkout -b feature/KTL-<meta-task-id>-<short-description> release
+    ```
+2. For each sub-task, create a branch from the main feature branch:
+    ```bash
+    git checkout -b feature/KTL-<sub-task-id>-<short-description> feature/KTL-<meta-task-id>-<short-description>
+    ```
+3. Implement the sub-task changes.
+4. Move sub-task to `Code Review` state in YouTrack.
+5. Open a Merge Request from the sub-task branch to the **main feature branch** (not `release`).
+6. After review approval: [Deploy the sub-task](#how-to-deploy-a-feature-to-the-features-environment) branch to the `features` environment and move sub-task to `Ready for Testing` state in YouTrack.
+7. When start testing, move sub-task to `Testing` state in YouTrack.
+8. After successful testing, merge the sub-task branch into the main feature branch.
+9. Move sub-task to `Done` state in YouTrack.
+10. Repeat steps 2–9 for all sub-tasks.
+11. Once all sub-tasks are merged into the main feature branch:
+   1. Move meta-task to `Code Review` state in YouTrack.
+   2. Open a Merge Request from the main feature branch to the `release` branch.
+   3. After review approval: [Deploy the feature](#how-to-deploy-a-feature-to-the-features-environment) branch to the `features` environment and move meta-task to `Ready for Testing` state in YouTrack.
+   4. When start testing, move meta-task to `Testing` state in YouTrack.
+   5. After successful testing, merge the main feature branch into the `release`.
+   6. Move meta-task to `Ready for Deploy` state in YouTrack.
 
 ## Hotfix Flow
 1. Create a branch from `master`:
@@ -90,7 +120,8 @@ This block describes working on a release flow.
 8. Monitor production logs for suspicious exceptions.
 9. Perform manual smoke tests in production.
 10. Create and push tag for the current release format: `release-yyyy.mm.dd`.
-11. Announce deployment completion in Slack: [#ked-websites-private](https://jetbrains.slack.com/archives/G017S6Z1P5Y) channel
+11. Force push `master` branch to `release`.
+12. Announce deployment completion in Slack: [#ked-websites-private](https://jetbrains.slack.com/archives/G017S6Z1P5Y) channel
 
 ## How to deploy a feature to the features environment
 #### Prerequisites:
