@@ -90,7 +90,7 @@ databaseChangeLog:
       author: zofia.zuzanna.wiora@jetbrains.com
       changes:
         - sqlFile:
-            path: ../2025-Q3/2025-09-30_recreate_project_index_with_project_tags.sql
+            path: 2026-01-16_recreate_project_index.sql
             relativeToChangelogFile: true
 
   - changeSet:
