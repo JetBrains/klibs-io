@@ -36,3 +36,12 @@ databaseChangeLog:
             columns:
               - column:
                   name: project_id
+  - changeSet:
+      id: add gin index on project_index markers
+      author: nikita.vlaev@jetbrains.com
+      comment: >
+        KTL-4229: Add GIN index on project_index.markers to speed up
+        the categories/projects LATERAL query using ANY() / && operators.
+      changes:
+        - sql:
+            sql: CREATE INDEX project_index_markers_gin_idx ON project_index USING GIN (markers)

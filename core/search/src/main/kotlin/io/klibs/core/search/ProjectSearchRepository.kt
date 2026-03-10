@@ -30,5 +30,7 @@ interface ProjectSearchRepository {
         limit: Int
     ): List<SearchProjectResult>
 
+    fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>>
+
     fun refreshIndex()
 }

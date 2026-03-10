@@ -88,6 +88,11 @@ class SearchService(
     }
 
 
+    @Transactional(readOnly = true)
+    fun searchByCategories(limit: Int): Map<Category, List<SearchProjectResult>> {
+        return projectSearchRepository.findCategoriesWithProjects(limit)
+    }
+
     private fun refreshProjectIndexView() {
         val refreshProjectsNanosTaken = measureNanoTime {
             projectSearchRepository.refreshIndex()
