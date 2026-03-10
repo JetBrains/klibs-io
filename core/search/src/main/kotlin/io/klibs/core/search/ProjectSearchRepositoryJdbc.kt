@@ -264,6 +264,46 @@ class ProjectSearchRepositoryJdbc(
 
     private fun String.addWildcardPostfix(): String = "$this:*"
 
+    override fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
+        val sql = """
+            SELECT c.id AS category_id, c.name AS category_name, c.markers AS category_markers,
+                   pi.project_id, pi.owner_type, pi.owner_login, pi.repo_name, pi.name,
+                   pi.stars, pi.license_name, pi.latest_version, pi.latest_version_ts,
+                   array_to_string(pi.platforms, ',') AS platforms,
+                   pi.plain_description, pi.tags, pi.markers, pi.targets_vector
+            FROM category c
+            LEFT JOIN LATERAL (
+                SELECT * FROM project_index
+                WHERE project_index.markers && c.markers
+                ORDER BY stars DESC, project_id
+                LIMIT :limit
+            ) pi ON true
+            ORDER BY c.id, pi.stars DESC NULLS LAST, pi.project_id NULLS LAST
+        """.trimIndent()
+
+        val result = linkedMapOf<Category, MutableList<SearchProjectResult>>()
+
+        jdbcClient.sql(sql)
+            .param("limit", limit)
+            .query { rs, _ ->
+                val category = Category(
+                    name = rs.getString("category_name"),
+                    markers = rs.getArray("category_markers")?.array
+                        ?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList()
+                )
+                val project = if (rs.getObject("project_id") != null) {
+                    PROJECT_OVERVIEW_ROW_MAPPER.mapRow(rs, 0)
+                } else null
+
+                result.getOrPut(category) { mutableListOf() }.also { list ->
+                    project?.let { list.add(it) }
+                }
+            }
+            .list()
+
+        return result
+    }
+
     override fun refreshIndex() {
         jdbcClient.sql("REFRESH MATERIALIZED VIEW CONCURRENTLY project_index")
             .update()
@@ -283,10 +323,9 @@ class ProjectSearchRepositoryJdbc(
                 latestVersion = rs.getString("latest_version"),
                 latestVersionPublishedAt = rs.getTimestamp("latest_version_ts").toInstant(),
                 platforms = rs.getString("platforms")
-                    .split(",")
-                    .map { PackagePlatform.valueOf(it) },
+                    .let { if (it.isNullOrEmpty()) emptyList() else it.split(",").map { p -> PackagePlatform.valueOf(p) } },
                 markers = rs.getArray("markers")?.array?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList(),
-                targets = rs.getString("targets_vector").split(" ").map { it.trim('\'') },
+                targets = rs.getString("targets_vector")?.split(" ")?.map { it.trim('\'') } ?: emptyList(),
                 tags = rs.getArray("tags")?.array?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList()
             )
         }
