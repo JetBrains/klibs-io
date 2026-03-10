@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: create category table
+      author: nikita.vlaev@jetbrains.com
+      comment: >
+        KTL-4229: Create category table and seed with initial categories.
+        Each category maps to one or more project markers.
+      changes:
+        - createTable:
+            tableName: category
+            columns:
+              - column:
+                  name: id
+                  type: SERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: TEXT
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: markers
+                  type: VARCHAR[]
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: |
+              INSERT INTO category (name, markers) VALUES
+                  ('Featured', ARRAY['FEATURED']),
+                  ('Grant winners', ARRAY['GRANT_WINNER_2023', 'GRANT_WINNER_2024']),
+                  ('Local Storage', ARRAY['LOCAL_STORAGE']),
+                  ('Compose UI', ARRAY['COMPOSE_UI']),
+                  ('Navigation', ARRAY['NAVIGATION']),
+                  ('Logging and testing', ARRAY['LOGGING_AND_TESTING']),
+                  ('Utilities', ARRAY['UTILITIES']),
+                  ('Networking', ARRAY['NETWORKING']),
+                  ('Media', ARRAY['MEDIA']),
+                  ('Image loading', ARRAY['IMAGE_LOADING']),
+                  ('Dependency Injection', ARRAY['DEPENDENCY_INJECTION']),
+                  ('Remote data', ARRAY['REMOTE_DATA']),
+                  ('Preferences', ARRAY['PREFERENCES']),
+                  ('Web and HTML', ARRAY['WEB_AND_HTML']),
+                  ('Architectural', ARRAY['ARCHITECTURAL']),
+                  ('Extended iOS support', ARRAY['EXTENDED_IOS_SUPPORT']);

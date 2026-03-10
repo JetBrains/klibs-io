@@ -6,6 +6,7 @@ import io.klibs.core.search.dto.api.SearchPackageResultDTOTargetList
 import io.klibs.core.search.dto.api.SearchPackagesRequest
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
 import io.klibs.core.search.dto.api.SearchProjectsRequest
+import io.klibs.core.search.dto.api.toDTO
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
@@ -256,24 +257,6 @@ class SearchController(
             return res.map { it.toDTO() }
         }
     }
-}
-
-internal fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
-    return SearchProjectResultDTO(
-        id = this.id,
-        name = this.name,
-        description = this.description,
-        scmLink = "https://github.com/${this.ownerLogin}/${this.repoName}",
-        scmStars = this.vcsStars,
-        ownerType = this.ownerType.serializableName,
-        ownerLogin = this.ownerLogin,
-        licenseName = this.licenseName,
-        latestReleaseVersion = this.latestVersion,
-        latestReleasePublishedAtMillis = this.latestVersionPublishedAt.toEpochMilli(),
-        platforms = this.platforms.map { it.serializableName },
-        tags = this.tags,
-        markers = markers
-    )
 }
 
 internal fun SearchPackageResult.toDTO(): SearchPackageResultDTO {
