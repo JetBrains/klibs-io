@@ -10,7 +10,7 @@ It aggregates data from Maven Central and GitHub, enriched with AI-powered metad
 ### Prerequisites
 
 - JDK 21+
-- Docker (for local PostgreSQL via docker-compose)
+- Docker (for local PostgreSQL via docker-compose and LocalStack for S3)
 
 ### Build & test
 
@@ -30,7 +30,13 @@ Output: `app/build/libs/app.jar`
 
 ### Run locally
 
-Run the `main` function from `Application` — it will load the Spring Boot application with the `local` profile.
+From CLI:
+
+```bash
+./gradlew :app:bootRun
+```
+
+Or run the `main` function from `Application` in IntelliJ — both use the `local` profile.
 
 ### Configuration
 
@@ -63,28 +69,11 @@ See [troubleshooting.md](troubleshooting.md).
 
 ## Modules
 
-The project follows a "module by feature" approach, encapsulating distinct parts of the app in separate modules.
+The project follows a "module by feature" approach:
 
-* `app` — the main server module. High-level configurations, glue for all other modules. Runnable.
-
-Core modules:
-
-* `core/package` — Maven packages (artifacts).
-  For example, [kotlinx-coroutines-core](https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/)
-* `core/project` — Most high-level aggregating entity. Maps to an `scm-repository`, consists of a number of packages.
-* `core/scm-owner` — Owners of `scm-repository` entities, be it organizations or individual authors.
-  For example, [github.com/Kotlin](https://github.com/Kotlin)
-* `core/scm-repository` — (Git) repositories of `project` entities.
-  For example, [github.com/Kotlin/kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines).
-* `core/readme` — README file processing: fetching from GitHub, S3 storage, local caching.
-* `core/search` — Search functionality across all data (projects, packages, owners, repositories)
-* `core/storage` — S3 storage abstraction
-
-Integrations:
-
-* `integrations/ai` — OpenAI integration for generating descriptions of libraries.
-* `integrations/github` — GitHub integration for `scm-repository` and `scm-owner` data.
-* `integrations/maven` — Maven Central integration for scanning new `package` entities.
+* `app` — main Spring Boot module. Configurations, scheduled jobs, glue for all other modules. Runnable.
+* `core/*` — domain modules (package, project, scm-owner, scm-repository, readme, search, storage).
+* `integrations/*` — third-party integrations (ai, github, maven).
 
 ## Architecture
 

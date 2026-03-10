@@ -14,6 +14,10 @@ springBoot {
     mainClass.set("io.klibs.app.ApplicationKt")
 }
 
+tasks.bootRun {
+    workingDir = rootProject.projectDir
+}
+
 dependencies {
     implementation(projects.core.`package`)
     implementation(projects.core.project)
