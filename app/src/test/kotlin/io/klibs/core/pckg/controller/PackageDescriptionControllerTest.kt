@@ -2,7 +2,9 @@ package io.klibs.core.pckg.controller
 
 import BaseUnitWithDbLayerTest
 import io.klibs.core.pckg.service.PackageDescriptionService
+import io.klibs.core.search.SearchService
 import io.klibs.integration.ai.PackageDescriptionGenerator
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
@@ -10,7 +12,6 @@ import org.mockito.Mockito.timeout
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.mock.mockito.SpyBean
-import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.servlet.MockMvc
@@ -23,6 +24,9 @@ import kotlin.test.assertTrue
 class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
+    private lateinit var searchService: SearchService
+
+    @Autowired
     private lateinit var mockMvc: MockMvc
 
     @SpyBean
@@ -31,17 +35,20 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
     @MockBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
 
+    @BeforeEach
+    fun setup() {
+        searchService.refreshSearchViews()
+    }
+
     @Test
     @Sql(value = ["classpath:sql/PackageDescriptionControllerTest/insert-package-with-specific-version.sql"])
     fun `should generate description for a specific package with all parameters`() {
         val groupId = "org.example"
         val artifactId = "test-library"
         val version = "1.0.0"
-        val packageName = "$groupId:$artifactId"
         val expectedDescription = "This is a test library for demonstration purposes."
 
         `when`(packageDescriptionGenerator.generatePackageDescription(
-            packageName,
             groupId,
             artifactId,
             version
@@ -64,19 +71,15 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
         val artifactId1 = "test-library"
         val artifactId2 = "test-utils"
         val version = "1.0.0"
-        val packageName1 = "$groupId:$artifactId1"
-        val packageName2 = "$groupId:$artifactId2"
         val expectedDescription = "This is a description for the org.example group."
 
         `when`(packageDescriptionGenerator.generatePackageDescription(
-            packageName1,
             groupId,
             artifactId1,
             version
         )).thenReturn(expectedDescription)
 
         `when`(packageDescriptionGenerator.generatePackageDescription(
-            packageName2,
             groupId,
             artifactId2,
             version
@@ -100,11 +103,9 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
         val groupId = "org.example"
         val artifactId = "test-library"
         val version = "2.0.0" // Latest version
-        val packageName = "$groupId:$artifactId"
         val expectedDescription = "This is a description for the org.example:test-library package."
 
         `when`(packageDescriptionGenerator.generatePackageDescription(
-            packageName,
             groupId,
             artifactId,
             version
