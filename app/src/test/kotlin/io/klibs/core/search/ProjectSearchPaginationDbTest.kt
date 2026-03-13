@@ -1,6 +1,9 @@
 package io.klibs.core.search
 
 import BaseUnitWithDbLayerTest
+import io.klibs.core.search.controller.SearchSort
+import io.klibs.core.search.repository.ProjectSearchRepositoryJdbc
+import io.klibs.core.search.service.SearchService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test

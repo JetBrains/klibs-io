@@ -1,6 +1,6 @@
 package io.klibs.core.search.dto.api
 
-import io.klibs.core.search.SearchProjectResult
+import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(

@@ -1,6 +1,7 @@
 package io.klibs.core.search
 
 import SmokeTestBase
+import io.klibs.core.search.service.SearchService
 import org.hamcrest.Matchers.`is`
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

@@ -18,7 +18,7 @@ import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
-import io.klibs.core.search.SearchService
+import io.klibs.core.search.service.SearchService
 import io.klibs.integration.maven.ScraperType
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
