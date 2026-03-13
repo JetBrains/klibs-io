@@ -6,7 +6,7 @@ import io.klibs.app.api.UpdateProjectTagsRequest
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.klibs.core.project.ProjectService
 import io.klibs.core.project.enums.TagOrigin
-import io.klibs.core.search.SearchService
+import io.klibs.core.search.service.SearchService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid

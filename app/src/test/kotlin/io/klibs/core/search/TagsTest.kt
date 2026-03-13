@@ -3,6 +3,7 @@ package io.klibs.core.search
 import SmokeTestBase
 import io.klibs.core.project.tags.TagData
 import io.klibs.core.project.tags.TagService
+import io.klibs.core.search.service.SearchService
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

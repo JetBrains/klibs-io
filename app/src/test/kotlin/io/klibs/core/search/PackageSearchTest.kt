@@ -3,6 +3,7 @@ package io.klibs.core.search
 import SmokeTestBase
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.core.search.dto.api.SearchPackageResultDTOTargetList
+import io.klibs.core.search.service.SearchService
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

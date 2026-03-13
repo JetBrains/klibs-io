@@ -1,4 +1,4 @@
-package io.klibs.core.search
+package io.klibs.core.search.controller
 
 enum class SearchSort(
     val serializableName: String

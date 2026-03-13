@@ -1,6 +1,6 @@
 package io.klibs.app.job
 
-import io.klibs.core.search.SearchService
+import io.klibs.core.search.service.SearchService
 import net.javacrumbs.shedlock.core.LockAssert
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.springframework.scheduling.annotation.Scheduled
