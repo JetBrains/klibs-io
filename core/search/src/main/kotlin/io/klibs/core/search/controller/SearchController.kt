@@ -1,4 +1,4 @@
-package io.klibs.core.search
+package io.klibs.core.search.controller
 
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.search.dto.api.SearchPackageResultDTO
@@ -7,6 +7,8 @@ import io.klibs.core.search.dto.api.SearchPackagesRequest
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
 import io.klibs.core.search.dto.api.SearchProjectsRequest
 import io.klibs.core.search.dto.api.toDTO
+import io.klibs.core.search.dto.repository.SearchPackageResult
+import io.klibs.core.search.service.SearchService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema

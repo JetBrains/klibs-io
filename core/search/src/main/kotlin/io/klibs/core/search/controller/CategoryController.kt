@@ -1,9 +1,10 @@
-package io.klibs.core.search
+package io.klibs.core.search.controller
 
 import io.klibs.core.search.dto.api.CategoriesProjectsResponse
 import io.klibs.core.search.dto.api.CategoryDTO
 import io.klibs.core.search.dto.api.CategoryWithProjectsDTO
 import io.klibs.core.search.dto.api.toDTO
+import io.klibs.core.search.service.SearchService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Max
@@ -33,10 +34,10 @@ class CategoryController(
         val results = searchService.searchByCategories(limit)
 
         return CategoriesProjectsResponse(
-            categories = results.map { (category, projects) ->
+            categories = results.map { cwp ->
                 CategoryWithProjectsDTO(
-                    category = CategoryDTO(name = category.name, markers = category.markers),
-                    projects = projects.map { it.toDTO() }
+                    category = CategoryDTO(name = cwp.categoryName, markers = cwp.categoryMarkers),
+                    projects = cwp.projects.map { it.toDTO() }
                 )
             }
         )

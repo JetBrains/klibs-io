@@ -1,6 +1,7 @@
 package io.klibs.core.search
 
 import BaseUnitWithDbLayerTest
+import io.klibs.core.search.service.SearchService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -27,13 +28,13 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
     fun `each category returns projects sorted by stars`() {
         val results = searchService.searchByCategories(limit = 10)
 
-        val featured = results.entries.first { it.key.name == "Featured" }
-        assertEquals(3, featured.value.size, "FEATURED has 3 projects (50001, 50002, 50006)")
-        assertEquals(listOf(100, 90, 80), featured.value.map { it.vcsStars }, "Projects sorted by stars DESC")
+        val featured = results.first { it.categoryName == "Featured" }
+        assertEquals(3, featured.projects.size, "FEATURED has 3 projects (50001, 50002, 50006)")
+        assertEquals(listOf(100, 90, 80), featured.projects.map { it.vcsStars }, "Projects sorted by stars DESC")
 
-        val compose = results.entries.first { it.key.name == "Compose UI" }
-        assertEquals(2, compose.value.size, "COMPOSE_UI has 2 projects (50005, 50006)")
-        assertEquals(listOf(90, 40), compose.value.map { it.vcsStars })
+        val compose = results.first { it.categoryName == "Compose UI" }
+        assertEquals(2, compose.projects.size, "COMPOSE_UI has 2 projects (50005, 50006)")
+        assertEquals(listOf(90, 40), compose.projects.map { it.vcsStars })
     }
 
     @Test
@@ -42,9 +43,9 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
     fun `multi-marker category merges markers`() {
         val results = searchService.searchByCategories(limit = 10)
 
-        val grantWinners = results.entries.first { it.key.name == "Grant winners" }
-        assertEquals(2, grantWinners.value.size, "Grant winners merges GRANT_WINNER_2023 + GRANT_WINNER_2024")
-        assertEquals(listOf(60, 50), grantWinners.value.map { it.vcsStars }, "Sorted by stars DESC")
+        val grantWinners = results.first { it.categoryName == "Grant winners" }
+        assertEquals(2, grantWinners.projects.size, "Grant winners merges GRANT_WINNER_2023 + GRANT_WINNER_2024")
+        assertEquals(listOf(60, 50), grantWinners.projects.map { it.vcsStars }, "Sorted by stars DESC")
     }
 
     @Test
@@ -53,9 +54,9 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
     fun `limit is respected per category`() {
         val results = searchService.searchByCategories(limit = 2)
 
-        val featured = results.entries.first { it.key.name == "Featured" }
-        assertEquals(2, featured.value.size, "FEATURED capped at limit=2")
-        assertEquals(listOf(100, 90), featured.value.map { it.vcsStars }, "Top-2 by stars")
+        val featured = results.first { it.categoryName == "Featured" }
+        assertEquals(2, featured.projects.size, "FEATURED capped at limit=2")
+        assertEquals(listOf(100, 90), featured.projects.map { it.vcsStars }, "Top-2 by stars")
     }
 
     @Test
@@ -64,7 +65,7 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
     fun `empty categories return empty list`() {
         val results = searchService.searchByCategories(limit = 10)
 
-        val networking = results.entries.first { it.key.name == "Networking" }
-        assertTrue(networking.value.isEmpty(), "No projects have NETWORKING marker in seed data")
+        val networking = results.first { it.categoryName == "Networking" }
+        assertTrue(networking.projects.isEmpty(), "No projects have NETWORKING marker in seed data")
     }
 }

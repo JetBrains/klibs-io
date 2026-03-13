@@ -1,8 +1,11 @@
-package io.klibs.core.search
+package io.klibs.core.search.repository
 
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.controller.SearchSort
+import io.klibs.core.search.dto.repository.Category
+import io.klibs.core.search.dto.repository.SearchProjectResult
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
@@ -323,7 +326,9 @@ class ProjectSearchRepositoryJdbc(
                 latestVersion = rs.getString("latest_version"),
                 latestVersionPublishedAt = rs.getTimestamp("latest_version_ts").toInstant(),
                 platforms = rs.getString("platforms")
-                    .let { if (it.isNullOrEmpty()) emptyList() else it.split(",").map { p -> PackagePlatform.valueOf(p) } },
+                    .let {
+                        if (it.isNullOrEmpty()) emptyList() else it.split(",").map { p -> PackagePlatform.valueOf(p) }
+                    },
                 markers = rs.getArray("markers")?.array?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList(),
                 targets = rs.getString("targets_vector")?.split(" ")?.map { it.trim('\'') } ?: emptyList(),
                 tags = rs.getArray("tags")?.array?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList()
