@@ -1,4 +1,4 @@
-package io.klibs.core.search
+package io.klibs.core.search.dto.repository
 
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.pckg.model.PackagePlatform

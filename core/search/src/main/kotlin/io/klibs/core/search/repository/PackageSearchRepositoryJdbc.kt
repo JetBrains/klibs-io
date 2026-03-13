@@ -1,9 +1,11 @@
-package io.klibs.core.search
+package io.klibs.core.search.repository
 
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.controller.SearchSort
+import io.klibs.core.search.dto.repository.SearchPackageResult
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
@@ -190,8 +192,8 @@ class PackageSearchRepositoryJdbc(
                     .map { PackagePlatform.valueOf(it) },
                 targetsList = packageTargets,
                 targetsMap = packageTargets.filter {
-                        it.target != null
-                    }
+                    it.target != null
+                }
                     .groupBy(
                         keySelector = { it: PackageTarget ->
                             TargetGroup.fromPlatformAndTarget(it.platform.name, it.target!!)

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
 import io.klibs.core.search.dto.api.SearchProjectsRequest
+import io.klibs.core.search.service.SearchService
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName

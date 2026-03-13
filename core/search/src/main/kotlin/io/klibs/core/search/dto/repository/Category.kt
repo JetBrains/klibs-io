@@ -1,4 +1,4 @@
-package io.klibs.core.search
+package io.klibs.core.search.dto.repository
 
 data class Category(
     val name: String,

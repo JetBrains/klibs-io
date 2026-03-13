@@ -1,7 +1,13 @@
-package io.klibs.core.search
+package io.klibs.core.search.service
 
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.repository.PackageSearchRepository
+import io.klibs.core.search.repository.ProjectSearchRepository
+import io.klibs.core.search.controller.SearchSort
+import io.klibs.core.search.dto.repository.SearchPackageResult
+import io.klibs.core.search.dto.repository.SearchProjectResult
+import io.klibs.core.search.dto.service.CategoryWithProjects
 import io.micrometer.core.annotation.Timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -89,8 +95,15 @@ class SearchService(
 
 
     @Transactional(readOnly = true)
-    fun searchByCategories(limit: Int): Map<Category, List<SearchProjectResult>> {
+    fun searchByCategories(limit: Int): List<CategoryWithProjects> {
         return projectSearchRepository.findCategoriesWithProjects(limit)
+            .map { (category, projects) ->
+                CategoryWithProjects(
+                    categoryName = category.name,
+                    categoryMarkers = category.markers,
+                    projects = projects,
+                )
+            }
     }
 
     private fun refreshProjectIndexView() {
