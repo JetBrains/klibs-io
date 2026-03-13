@@ -1,7 +1,9 @@
-package io.klibs.core.search
+package io.klibs.core.search.repository
 
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.controller.SearchSort
+import io.klibs.core.search.dto.repository.SearchPackageResult
 
 interface PackageSearchRepository {
     /**

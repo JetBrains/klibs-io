@@ -5,7 +5,7 @@ import io.klibs.app.api.UpdateProjectDescriptionRequest
 import io.klibs.app.api.UpdateProjectTagsRequest
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.klibs.core.project.ProjectService
-import io.klibs.core.search.SearchService
+import io.klibs.core.search.service.SearchService
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import org.mockito.kotlin.any
