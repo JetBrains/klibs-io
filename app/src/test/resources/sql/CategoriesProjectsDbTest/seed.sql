@@ -1,21 +1,5 @@
 -- Seed data for testing GET /categories/projects (CategoriesProjectsDbTest)
 
--- categories (truncated between tests, so must be re-inserted)
-INSERT INTO public.category (id, name, markers) VALUES
-    (1, 'Featured', ARRAY['FEATURED']),
-    (2, 'Grant winners', ARRAY['GRANT_WINNER_2023', 'GRANT_WINNER_2024']),
-    (3, 'Compose UI', ARRAY['COMPOSE_UI']),
-    (4, 'Networking', ARRAY['NETWORKING']);
-
---
--- Projects layout:
---   50001  FEATURED                 100 stars
---   50002  FEATURED                  80 stars
---   50003  GRANT_WINNER_2023         60 stars
---   50004  GRANT_WINNER_2024         50 stars
---   50005  COMPOSE_UI                40 stars
---   50006  FEATURED + COMPOSE_UI     90 stars  (belongs to two categories)
-
 -- scm_owner
 INSERT INTO public.scm_owner (id, id_native, followers, updated_at, login, type, name, description, homepage, twitter_handle, email, location, company)
 VALUES
