@@ -1,7 +1,7 @@
 package io.klibs.core.pckg.repository
 
 import BaseUnitWithDbLayerTest
-import io.klibs.core.search.SearchService
+import io.klibs.core.search.service.SearchService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

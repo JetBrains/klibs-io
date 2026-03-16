@@ -3,7 +3,7 @@ package io.klibs.core.pckg.service
 import BaseUnitWithDbLayerTest
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
-import io.klibs.core.search.SearchService
+import io.klibs.core.search.service.SearchService
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertThrows

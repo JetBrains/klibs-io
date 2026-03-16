@@ -3,7 +3,7 @@ package io.klibs.core.project
 import BaseUnitWithDbLayerTest
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.core.pckg.api.PackageOverviewResponse
-import io.klibs.core.search.SearchService
+import io.klibs.core.search.service.SearchService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

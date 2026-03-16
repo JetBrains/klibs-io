@@ -2,7 +2,7 @@ package io.klibs.core.pckg.controller
 
 import BaseUnitWithDbLayerTest
 import io.klibs.core.pckg.service.PackageDescriptionService
-import io.klibs.core.search.SearchService
+import io.klibs.core.search.service.SearchService
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
