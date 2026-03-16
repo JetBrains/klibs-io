@@ -9,11 +9,61 @@ import io.klibs.core.search.dto.repository.SearchPackageResult
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 
 @Repository
 class PackageSearchRepositoryJdbc(
-    private val jdbcClient: JdbcClient
+    private val jdbcClient: JdbcClient,
+    private val objectMapper: ObjectMapper
 ) : PackageSearchRepository {
+
+    private val packageOverviewRowMapper = RowMapper<SearchPackageResult> { rs, _ ->
+        val targetsJson = rs.getString("targets")
+
+        val packageTargets = if (!targetsJson.isNullOrBlank()) {
+            val typeRef = object : TypeReference<Map<PackagePlatform, List<String>>>() {}
+            val parsedMap = objectMapper.readValue(targetsJson, typeRef)
+
+            parsedMap.flatMap { (platform, targets) ->
+                if (targets.isEmpty()) {
+                    listOf(PackageTarget(platform, null))
+                } else {
+                    targets.map { target ->
+                        PackageTarget(platform, target)
+                    }
+                }
+            }
+        } else {
+            emptyList()
+        }
+
+        SearchPackageResult(
+            groupId = rs.getString("group_id"),
+            artifactId = rs.getString("artifact_id"),
+            description = rs.getString("latest_description"),
+            ownerType = ScmOwnerType.findBySerializableName(rs.getString("owner_type")),
+            ownerLogin = rs.getString("owner_login"),
+            licenseName = rs.getString("latest_license_name"),
+            latestVersion = rs.getString("latest_version"),
+            releaseTs = rs.getTimestamp("release_ts").toInstant(),
+            platforms = rs.getString("platforms")
+                .split(",")
+                .filter { it.isNotBlank() }
+                .map { PackagePlatform.valueOf(it) },
+            targetsList = packageTargets,
+            targetsMap = packageTargets.filter { it.target != null }
+                .groupBy(
+                    keySelector = { it: PackageTarget ->
+                        TargetGroup.fromPlatformAndTarget(it.platform.name, it.target!!)
+                    },
+                    valueTransform = { it: PackageTarget ->
+                        it.target!!
+                    }
+                )
+                .mapValues { it.value.toSet() }
+        )
+    }
 
     /**
      * This implementation uses the package_index materialized view for efficient searching.
@@ -45,7 +95,7 @@ class PackageSearchRepositoryJdbc(
         val sql = buildString {
             append("SELECT group_id, artifact_id, latest_version, latest_description, release_ts, ")
             append("owner_type, owner_login, latest_license_name, array_to_string(platforms, ',') AS platforms, ")
-            append("array_to_string(targets, ',') AS targets")
+            append("targets")
 
             // For debugging and testing purposes
             append(", targets_vector")
@@ -116,7 +166,7 @@ class PackageSearchRepositoryJdbc(
             .param("wildcardQueryWithoutSpecialSymbols", wildcardQueryWithoutSpecialSymbols)
             .param("ownerLogin", ownerLogin)
 
-        return query.query(PACKAGE_OVERVIEW_ROW_MAPPER).list()
+        return query.query(packageOverviewRowMapper).list()
     }
 
     /**
@@ -163,47 +213,4 @@ class PackageSearchRepositoryJdbc(
             .update()
     }
 
-    private companion object {
-        private val PACKAGE_OVERVIEW_ROW_MAPPER = RowMapper<SearchPackageResult> { rs, _ ->
-            val packageTargets = rs.getString("targets")
-                .takeIf { it.isNotBlank() }
-                ?.split(",")
-                ?.map {
-                    val parts = it.split("_", limit = 2)
-                    val platform = PackagePlatform.valueOf (parts[0])
-
-                    PackageTarget(
-                        platform = platform,
-                        target = parts.getOrNull(1)
-                    )
-                } ?: emptyList()
-
-            SearchPackageResult(
-                groupId = rs.getString("group_id"),
-                artifactId = rs.getString("artifact_id"),
-                description = rs.getString("latest_description"),
-                ownerType = ScmOwnerType.findBySerializableName(rs.getString("owner_type")),
-                ownerLogin = rs.getString("owner_login"),
-                licenseName = rs.getString("latest_license_name"),
-                latestVersion = rs.getString("latest_version"),
-                releaseTs = rs.getTimestamp("release_ts").toInstant(),
-                platforms = rs.getString("platforms")
-                    .split(",")
-                    .map { PackagePlatform.valueOf(it) },
-                targetsList = packageTargets,
-                targetsMap = packageTargets.filter {
-                    it.target != null
-                }
-                    .groupBy(
-                        keySelector = { it: PackageTarget ->
-                            TargetGroup.fromPlatformAndTarget(it.platform.name, it.target!!)
-                        },
-                        valueTransform = { it: PackageTarget ->
-                            it.target!!
-                        }
-                    )
-                    .mapValues { it.value.toSet() }
-            )
-        }
-    }
 }

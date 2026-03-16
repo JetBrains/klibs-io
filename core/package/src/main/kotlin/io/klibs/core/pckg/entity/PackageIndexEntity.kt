@@ -1,8 +1,10 @@
 package io.klibs.core.pckg.entity
 
 import io.klibs.core.pckg.model.PackagePlatform
-import io.klibs.core.pckg.model.PackageTarget
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.EmbeddedId
+import jakarta.persistence.Entity
+import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
@@ -43,71 +45,7 @@ class PackageIndexEntity(
     @Column(name = "platforms")
     val platforms: List<PackagePlatform>,
 
-    @Column(name = "targets", columnDefinition = "text[]")
-    val targets: Array<String>
-) {
-
-    @Transient
-    @Volatile
-    private var _parsedTargetsCache: List<PackageTarget>? = null
-
-    @get:Transient
-    val parsedTargets: List<PackageTarget>
-        get() {
-            val cached = _parsedTargetsCache
-            if (cached != null) {
-                return cached
-            }
-
-            return synchronized(this) {
-                val cachedSync = _parsedTargetsCache
-                if (cachedSync != null) {
-                    cachedSync
-                } else {
-                    val computed = computeParsedTargets()
-                    _parsedTargetsCache = computed
-                    computed
-                }
-            }
-        }
-
-    private fun computeParsedTargets(): List<PackageTarget> {
-        val existingTargets = targets.map { raw ->
-            parseTargetOrThrow(raw)
-        }
-
-        val platformsInTargets = existingTargets.map { it.platform }.toSet()
-
-        val missingTargets = platforms
-            .filter { it !in platformsInTargets }
-            .map { platform -> PackageTarget(platform = platform, target = null) }
-
-        return existingTargets + missingTargets
-    }
-
-    private fun parseTargetOrThrow(raw: String): PackageTarget {
-        val parts = raw.split('_', limit = 2)
-        require(parts.size == 2) {
-            "Invalid package_index.targets entry '$raw' for ${id.groupId}:${id.artifactId}. " +
-                    "Expected format '<PLATFORM>_<TARGET>'."
-        }
-
-        val platformRaw = parts[0].trim()
-        val targetRaw = parts[1].trim()
-
-        val platform = try {
-            PackagePlatform.valueOf(platformRaw)
-        } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException(
-                "Invalid platform '$platformRaw' in package_index.targets entry '$raw' for ${id.groupId}:${id.artifactId}. " +
-                        "Expected one of: ${PackagePlatform.entries.joinToString { it.name }}",
-                e
-            )
-        }
-
-        return PackageTarget(
-            platform = platform,
-            target = targetRaw.ifBlank { null }
-        )
-    }
-}
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "targets")
+    val targets: Map<PackagePlatform, List<String>>
+)

@@ -101,8 +101,8 @@ class PackageControllerTest : BaseUnitWithDbLayerTest() {
                 releasedAtMillis = IGNORED, // ignored
                 description = "New A",
                 targets = listOf(
-                    PackageTargetResponse(platform = "jvm", target = "1.8"),
                     PackageTargetResponse(platform = "js", target = null),
+                    PackageTargetResponse(platform = "jvm", target = "1.8"),
                 ),
             ),
             PackageOverviewResponse(
