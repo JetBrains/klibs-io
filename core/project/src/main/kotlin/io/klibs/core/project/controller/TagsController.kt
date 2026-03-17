@@ -1,5 +1,7 @@
-package io.klibs.core.project.tags
+package io.klibs.core.project.controller
 
+import io.klibs.core.project.service.TagService
+import io.klibs.core.project.tags.TagStatisticsDTO
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema

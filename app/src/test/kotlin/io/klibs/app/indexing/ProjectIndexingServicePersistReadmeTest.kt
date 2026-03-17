@@ -1,5 +1,6 @@
 package io.klibs.app.indexing
 
+import io.klibs.app.service.TagsGenerationService
 import io.klibs.app.util.BackoffProvider
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
@@ -9,7 +10,6 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import io.klibs.core.readme.impl.ReadmeMinimizationProcessor
 import io.klibs.integration.ai.ProjectDescriptionGenerator
-import io.klibs.integration.ai.ProjectTagsGenerator
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenArtifact
@@ -35,7 +35,7 @@ class ProjectIndexingServicePersistReadmeTest {
     private val projectRepository: ProjectRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
     private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
-    private val projectTagsGenerator: ProjectTagsGenerator = mock()
+    private val tagsGenerator: TagsGenerationService = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
     private val gitHubIntegration: GitHubIntegration = mock()
     private val readmeContentBuilder: ReadmeContentBuilder = mock()
@@ -50,7 +50,7 @@ class ProjectIndexingServicePersistReadmeTest {
         projectRepository = projectRepository,
         scmRepositoryRepository = scmRepositoryRepository,
         scmOwnerRepository = scmOwnerRepository,
-        projectTagsGenerator = projectTagsGenerator,
+        tagsGenerationService = tagsGenerator,
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
         readmeContentBuilder = readmeContentBuilder,

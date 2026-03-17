@@ -1,5 +1,6 @@
 package io.klibs.app.indexing
 
+import io.klibs.app.service.TagsGenerationService
 import io.klibs.app.util.BackoffProvider
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.project.ProjectEntity
@@ -14,7 +15,6 @@ import io.klibs.core.readme.GitHubIndexingReadmeContent
 import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import io.klibs.integration.ai.ProjectDescriptionGenerator
-import io.klibs.integration.ai.ProjectTagsGenerator
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenArtifact
@@ -35,7 +35,7 @@ class ProjectIndexingService(
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val scmOwnerRepository: ScmOwnerRepository,
 
-    private val projectTagsGenerator: ProjectTagsGenerator,
+    private val tagsGenerationService: TagsGenerationService,
     private val projectTagRepository: ProjectTagRepository,
     private val gitHubIntegration: GitHubIntegration,
     private val readmeContentBuilder: ReadmeContentBuilder,
@@ -111,7 +111,7 @@ class ProjectIndexingService(
             // there can be some very long readmes... see https://github.com/robstoll/atrium
             val shortenedReadme = if (readmeMd.length >= 25_000) readmeMd.take(25_000) else readmeMd
 
-            val tags = projectTagsGenerator.generateTagsForProject(
+            val tags = tagsGenerationService.generateTagsForProject(
                 project.name,
                 project.description ?: "",
                 repo.description ?: "",

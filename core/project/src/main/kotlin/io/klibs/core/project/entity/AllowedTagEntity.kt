@@ -9,7 +9,7 @@ import org.hibernate.type.SqlTypes
 
 @Entity
 @Table(name = "allowed_project_tags")
-data class AllowedProjectTagEntity(
+data class AllowedTagEntity(
     @Id
     @Column(name = "name")
     val name: String,
