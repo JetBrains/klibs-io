@@ -30,7 +30,7 @@ databaseChangeLog:
             tableName: project_tags
       changes:
         - loadData:
-            file: 'db/migration/csv_data/project_tags.csv'
+            file: 'db/migration/2024-Q4/2024-12-15-project_tags.csv'
             separator: ','
             tableName: project_tags
             columns:

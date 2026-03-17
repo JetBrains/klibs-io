@@ -1,28 +1,30 @@
-package io.klibs.integration.ai
+package io.klibs.app.service.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.klibs.app.service.TagsGenerationService
+import io.klibs.core.project.dto.AllowedTag
+import io.klibs.core.project.service.TagService
+import io.klibs.integration.ai.AiService
 import org.springframework.ai.chat.messages.Message
-import org.springframework.ai.chat.messages.UserMessage
 import org.springframework.ai.chat.messages.SystemMessage
+import org.springframework.ai.chat.messages.UserMessage
 import org.springframework.ai.chat.prompt.Prompt
 import org.springframework.ai.openai.OpenAiChatOptions
 import org.springframework.ai.openai.api.ResponseFormat
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Service
-import org.yaml.snakeyaml.Yaml
 
 @Service
-class ProjectTagsGenerator(
+internal class ProjectTagsGenerationService(
     @Value("classpath:/ai/prompts/project-tags.md")
     private val tagsPrompt: Resource,
-    @Value("classpath:/ai/prompts/tag_rules.yaml")
-    private val tagRulesResource: Resource,
+    private val tagService: TagService,
     private val aiService: AiService,
     private val objectMapper: ObjectMapper
-) {
-    fun generateTagsForProject(
+) : TagsGenerationService {
+    override fun generateTagsForProject(
         projectName: String,
         projectDescription: String,
         repoDescription: String,
@@ -58,15 +60,6 @@ class ProjectTagsGenerator(
         val picked = parsed.indices.mapNotNull { idx -> tagRules.getOrNull(idx)?.name }
         return picked
     }
-
-    data class TagRule(
-        val name: String,
-        val definition: String?,
-        val positive_cues: List<String>?,
-        val hard_negatives: List<String>?,
-        val synonyms: List<String>?,
-        val tag_synonyms: List<String>?,
-    )
 
     data class TagSelection(val indices: List<Int>)
 
@@ -104,33 +97,16 @@ class ProjectTagsGenerator(
             .build()
     }
 
-    private val tagRules: List<TagRule> by lazy {
-        val yaml = Yaml()
-
-        tagRulesResource.inputStream.use { input ->
-            val root = yaml.load<Any>(input)
-
-            val map = root as? Map<*, *>
-            val rules = (map?.get("tag_rules") as? List<*>)?.mapNotNull { it as? Map<*, *> } ?: emptyList()
-            rules.map { ruleMap ->
-                TagRule(
-                    name = ruleMap["name"] as? String ?: "",
-                    definition = ruleMap["definition"] as? String,
-                    positive_cues = (ruleMap["positive_cues"] as? List<*>)?.mapNotNull { it as? String },
-                    hard_negatives = (ruleMap["hard_negatives"] as? List<*>)?.mapNotNull { it as? String },
-                    synonyms = (ruleMap["synonyms"] as? List<*>)?.mapNotNull { it as? String },
-                    tag_synonyms = (ruleMap["tag_synonyms"] as? List<*>)?.mapNotNull { it as? String },
-                )
-            }
-        }
+    private val tagRules: List<AllowedTag> by lazy {
+        return@lazy tagService.getAllowedProjectTags()
     }
 
     private val tagRulesString: String by lazy {
         tagRules.withIndex().joinToString("\n") { (i, r) ->
             val def = r.definition ?: ""
-            val pos = (r.positive_cues ?: emptyList()).joinToString(", ", prefix = "[", postfix = "]") { it }
-            val neg = (r.hard_negatives ?: emptyList()).joinToString(", ", prefix = "[", postfix = "]") { it }
-            val syn = (r.synonyms ?: emptyList()).joinToString(", ", prefix = "[", postfix = "]") { it }
+            val pos = r.positiveCues.joinToString(", ", prefix = "[", postfix = "]") { it }
+            val neg = r.negativesCues.joinToString(", ", prefix = "[", postfix = "]") { it }
+            val syn = r.synonyms.joinToString(", ", prefix = "[", postfix = "]") { it }
             "${i}:{name:\"${r.name}\", definition:\"${def.replace("\"","\\\"")}\", positive_cues:${pos}, hard_negatives:${neg}, synonyms:${syn}}"
         }
     }
@@ -144,7 +120,7 @@ class ProjectTagsGenerator(
     }
 
     private val systemPrompt: String by lazy {
-       StringBuilder().apply {
+        StringBuilder().apply {
             append(prompt.trim())
             append("\n\nALLOWED TAGS (NUMBERED OBJECTS)\n")
             append(tagRulesString)
