@@ -14,7 +14,18 @@ data class AllowedProjectTagEntity(
     @Column(name = "name")
     val name: String,
 
+    @Column(name = "definition")
+    val definition: String?,
+
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "tag_synonyms", columnDefinition = "jsonb")
-    val tagSynonyms: List<String> = emptyList(),
+    @Column(name = "positive_cues", columnDefinition = "jsonb")
+    val positiveCues: List<String> = emptyList(),
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "negative_cues", columnDefinition = "jsonb")
+    val negativesCues: List<String> = emptyList(),
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "synonyms", columnDefinition = "jsonb")
+    val synonyms: List<String> = emptyList(),
 )

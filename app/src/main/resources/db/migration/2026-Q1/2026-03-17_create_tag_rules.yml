@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-03-17-exted-allowed-project-tags
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - addColumn:
+            tableName: allowed_project_tags
+            columns:
+              - column:
+                  name: definition
+                  type: text
+              - column:
+                  name: positive_cues
+                  type: JSONB
+              - column:
+                  name: negative_cues
+                  type: JSONB
+        - addPrimaryKey:
+            tableName: allowed_project_tags
+            columnNames: name
+            constraintName: pk_allowed_project_tags
+        - renameColumn:
+            tableName: allowed_project_tags
+            oldColumnName: tag_synonyms
+            newColumnName: synonyms
+
+  - changeSet:
+      id: 2026-03-17-remove-maven-and-gradle-tags
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - delete:
+            tableName: allowed_project_tags
+            where: name in ('maven', 'gradle')
+
+  - changeSet:
+      id: 2026-03-13-fill-allowed-project-tags
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - sqlFile:
+            path: db/migration/2026-Q1/2026-03-17_fill_tag_rules.sql
+            relativeToChangelogFile: false
