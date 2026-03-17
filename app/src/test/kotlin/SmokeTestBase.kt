@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.testcontainers.containers.PostgreSQLContainer
 
@@ -31,10 +32,10 @@ import org.testcontainers.containers.PostgreSQLContainer
 @Import(SmokeTestBase.TestConfig::class)
 abstract class SmokeTestBase {
 
-    @MockBean
+    @MockitoBean
     private lateinit var aiService: AiService
 
-    @MockBean
+    @MockitoBean
     private lateinit var s3Template: S3Template
 
     @Autowired
