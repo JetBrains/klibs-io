@@ -141,4 +141,6 @@ databaseChangeLog:
       file: db/migration/2026-Q1/2026-03-06_package_index_fix_targets.yml
   - include:
       file: db/migration/2026-Q1/2026-03-10_create_category_table.yml
+  - include:
+      file: db/migration/2026-Q1/2026-03-17_create_tag_rules.yml
 
