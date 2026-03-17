@@ -1,23 +1,30 @@
-package io.klibs.integration.ai
+package io.klibs.app.service
 
+import BaseUnitWithDbLayerTest
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.klibs.app.service.impl.ProjectTagsGenerationService
+import io.klibs.core.project.service.TagService
+import io.klibs.integration.ai.AiService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.ClassPathResource
 import kotlin.test.assertEquals
 
-class ProjectTagsGeneratorTest {
+class ProjectTagsGeneratorTest : BaseUnitWithDbLayerTest() {
 
-    private fun newGenerator(mockAi: AiService): ProjectTagsGenerator {
+    @Autowired
+    private lateinit var tagService: TagService
+
+    private fun newGenerator(mockAi: AiService): TagsGenerationService {
         val tagsPrompt = ClassPathResource("ai/prompts/project-tags.md")
-        val tagRules = ClassPathResource("ai/prompts/tag_rules.yaml")
-        return ProjectTagsGenerator(
+        return ProjectTagsGenerationService(
             tagsPrompt = tagsPrompt,
-            tagRulesResource = tagRules,
+            tagService = tagService,
             aiService = mockAi,
             objectMapper = jacksonObjectMapper()
         )
@@ -49,7 +56,7 @@ class ProjectTagsGeneratorTest {
             ai.executeOpenAiRequest(
                 any(),
                 eq("generateProjectTags"),
-                eq(AiService.DEFAULT_GPT)
+                eq(AiService.Companion.DEFAULT_GPT)
             )
         ).thenReturn("{" + "\"indices\":[0,2,5]}")
 

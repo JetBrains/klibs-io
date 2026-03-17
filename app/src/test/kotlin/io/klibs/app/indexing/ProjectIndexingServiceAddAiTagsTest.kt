@@ -1,5 +1,6 @@
 package io.klibs.app.indexing
 
+import io.klibs.app.service.TagsGenerationService
 import io.klibs.app.util.BackoffProvider
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.entity.TagEntity
@@ -10,7 +11,6 @@ import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeServiceDispatcher
-import io.klibs.integration.ai.ProjectTagsGenerator
 import io.klibs.integration.github.GitHubIntegration
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -29,7 +29,7 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val projectRepository: ProjectRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
     private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
-    private val projectTagsGenerator: ProjectTagsGenerator = mock()
+    private val tagsGenerator: TagsGenerationService = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
     private val gitHubIntegration: GitHubIntegration = mock()
     private val readmeContentBuilder: ReadmeContentBuilder = mock()
@@ -42,7 +42,7 @@ class ProjectIndexingServiceAddAiTagsTest {
             projectRepository = projectRepository,
             scmRepositoryRepository = scmRepositoryRepository,
             scmOwnerRepository = scmOwnerRepository,
-            projectTagsGenerator = projectTagsGenerator,
+            tagsGenerationService = tagsGenerator,
             projectTagRepository = projectTagRepository,
             gitHubIntegration = gitHubIntegration,
             readmeContentBuilder = readmeContentBuilder,
@@ -96,7 +96,7 @@ class ProjectIndexingServiceAddAiTagsTest {
 
         val generatedTags = listOf("kotlin", "testing", "http-client")
         whenever(
-            projectTagsGenerator.generateTagsForProject(
+            tagsGenerator.generateTagsForProject(
                 eq(project.name),
                 eq(project.description ?: ""),
                 eq(repo.description ?: ""),
@@ -131,7 +131,7 @@ class ProjectIndexingServiceAddAiTagsTest {
 
         verify(scmRepositoryRepository, never()).findById(any<Int>())
         verify(readmeServiceDispatcher, never()).readReadmeMd(any())
-        verify(projectTagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
+        verify(tagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
         verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
     }
 
@@ -182,7 +182,7 @@ class ProjectIndexingServiceAddAiTagsTest {
 
         // Force a failure during tag generation
         whenever(
-            projectTagsGenerator.generateTagsForProject(any(), any(), any(), any())
+            tagsGenerator.generateTagsForProject(any(), any(), any(), any())
         ).thenThrow(RuntimeException("AI tags generation failure"))
 
         val service = uut()
@@ -194,7 +194,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         service.addAiTags()
 
         // Generator should be invoked only once (first run). Second run should skip early.
-        verify(projectTagsGenerator).generateTagsForProject(any(), any(), any(), any())
+        verify(tagsGenerator).generateTagsForProject(any(), any(), any(), any())
 
         // No tags should be saved at all due to failure and then skip
         verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
