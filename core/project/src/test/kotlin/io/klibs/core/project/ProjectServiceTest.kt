@@ -51,7 +51,7 @@ class ProjectServiceTest {
 
         val result = uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
 
-        assertEquals(emptyList<String>(), result)
+        assertEquals(emptyList(), result)
         verify(projectTagRepository).deleteByProjectIdAndOrigin(projectId, tagsType)
         verify(projectTagRepository, never()).saveAll(any<List<TagEntity>>())
     }
@@ -84,13 +84,33 @@ class ProjectServiceTest {
         whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
         whenever(project.idNotNull).thenReturn(projectId)
 
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("valid-tag")).thenReturn("Valid Tag")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("another-tag")).thenReturn("Another Tag")
+        whenever(allowedProjectTagsRepository.existsById("valid-tag")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("another-tag")).thenReturn(true)
 
         val result = uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
 
-        assertEquals(listOf("Valid Tag", "Another Tag"), result)
+        assertEquals(listOf("valid-tag", "another-tag"), result)
         verify(projectTagRepository).deleteByProjectIdAndOrigin(projectId, tagsType)
         verify(projectTagRepository).saveAll(any<List<TagEntity>>())
     }
+
+    @Test
+    fun `updateProjectTags throws exception for USER tags when tags are not allowed`() {
+        val projectName = "test-project"
+        val ownerLogin = "test-owner"
+        val projectId = 1
+        val tags = listOf("invalid-tag")
+        val tagsType = TagOrigin.USER
+
+        whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
+        whenever(project.idNotNull).thenReturn(projectId)
+        whenever(allowedProjectTagsRepository.existsById("invalid-tag")).thenReturn(false)
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
+        }
+        assertEquals("Invalid tags were provided. After normalization they are: invalid-tag", exception.message)
+        verify(projectTagRepository, never()).deleteByProjectIdAndOrigin(any(), any())
+    }
+
 }

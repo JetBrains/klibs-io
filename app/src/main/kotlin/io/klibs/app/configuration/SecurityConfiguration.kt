@@ -74,12 +74,16 @@ class SecurityConfiguration(
                     authorize("/api-docs/**", hasRole("api-docs"))
                     authorize("/package-description/**", hasRole("ADMIN"))
                     authorize(HttpMethod.PATCH, "/content/**", hasRole("content-manager"))
+                    authorize(HttpMethod.POST, "/tags/allowed/**", hasRole("ADMIN"))
+                    authorize(HttpMethod.DELETE, "/tags/allowed/**", hasRole("ADMIN"))
                 } else {
                     authorize("/blacklist/**", permitAll)
                     authorize("/actuator/**", permitAll)
                     authorize("/api-docs/**", permitAll)
                     authorize(HttpMethod.PATCH, "/content/**", permitAll)
                     authorize("/package-description/**", permitAll)
+                    authorize(HttpMethod.POST, "/tags/allowed/**", permitAll)
+                    authorize(HttpMethod.DELETE, "/tags/allowed/**", permitAll)
                 }
 
                 authorize(anyRequest, authenticated)

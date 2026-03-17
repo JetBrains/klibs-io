@@ -102,7 +102,6 @@ class GitHubIndexingServiceTopicsTest {
 
         // Topics with mixed case, blanks, and duplicates
         val topicsFromGh = listOf("Kotlin", "kotlin", "  SPRING  ", "", "Web", "compose UI", "flow")
-        val expectedNormalized = listOf("kotlin", "spring", "web", "compose-ui", "kotlin-flow")
 
         whenever(gitHubIntegration.getRepository(ghNativeId)).thenReturn(ghRepo)
         whenever(gitHubIntegration.getLicense(ghNativeId)).thenReturn(null)
@@ -119,12 +118,12 @@ class GitHubIndexingServiceTopicsTest {
         whenever(gitHubIntegration.getRepositoryTopics(ghNativeId)).thenReturn(topicsFromGh)
         whenever(projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB)).thenReturn(emptyList())
 
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue(any<String>())).thenReturn(null)
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("kotlin")).thenReturn("kotlin")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("spring")).thenReturn("spring")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("web")).thenReturn("web")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("compose-ui")).thenReturn("compose-ui")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("flow")).thenReturn("kotlin-flow")
+        whenever(allowedProjectTagsRepository.existsById(any<String>())).thenReturn(false)
+        whenever(allowedProjectTagsRepository.existsById("kotlin")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("spring")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("web")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("compose-ui")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("flow")).thenReturn(false)
 
         uut().updateRepo(existingRepo)
 
