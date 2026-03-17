@@ -9,10 +9,14 @@ interface AllowedProjectTagsRepository : JpaRepository<AllowedProjectTagEntity, 
     @Query(
         value = """
             SELECT name
-            FROM allowed_project_tags
+            FROM allowed_project_tags apt
             WHERE name = :value
-               OR tag_synonyms @> to_jsonb(ARRAY[:value])
-            LIMIT 1
+               OR EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements_text(apt.synonyms) AS synonyms(synonym)
+                WHERE lower(replace(synonym, ' ', '-')) = lower(replace(:value, ' ', '-'))
+            )
+            LIMIT 1;
         """,
         nativeQuery = true
     )
