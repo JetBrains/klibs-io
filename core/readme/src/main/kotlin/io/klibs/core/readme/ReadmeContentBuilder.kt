@@ -4,6 +4,7 @@ import io.klibs.integration.github.GitHubIntegration
 import org.springframework.stereotype.Service
 
 data class GitHubIndexingReadmeContent(
+    val raw: String,
     val markdown: String,
     val html: String,
     val minimized: String,
@@ -32,6 +33,7 @@ class ReadmeContentBuilder(
         val minimizedReadme = processReadme(readmeMd, ownerLogin, repoName, defaultBranch, ReadmeType.MINIMIZED_MARKDOWN)
 
         return GitHubIndexingReadmeContent(
+            raw = readmeMd,
             markdown = processedMarkdownReadme,
             html = processedReadmeHtml,
             minimized = minimizedReadme,

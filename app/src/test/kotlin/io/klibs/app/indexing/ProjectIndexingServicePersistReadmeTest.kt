@@ -118,6 +118,7 @@ class ProjectIndexingServicePersistReadmeTest {
             )
         ).thenReturn(
             GitHubIndexingReadmeContent(
+                raw = "# Title",
                 markdown = "# Title",
                 html = "<h1>Title</h1>",
                 minimized = "# Title",
@@ -129,6 +130,7 @@ class ProjectIndexingServicePersistReadmeTest {
         assertEquals(persistedProject.idNotNull, result.idNotNull)
         verify(readmeServiceDispatcher).writeReadmeFiles(
             projectId = persistedProject.idNotNull,
+            rawContent = "# Title",
             mdContent = "# Title",
             htmlContent = "<h1>Title</h1>"
         )
@@ -183,7 +185,7 @@ class ProjectIndexingServicePersistReadmeTest {
         )
 
         verify(readmeMinimizer, never()).process(any(), any(), any(), any())
-        verify(readmeServiceDispatcher, never()).writeReadmeFiles(any(), any(), any())
+        verify(readmeServiceDispatcher, never()).writeReadmeFiles(any(), any(), any(), any())
         verify(scmRepositoryRepository, never()).update(any())
         verify(gitHubIntegration, never()).getReadmeWithModifiedSinceCheck(any(), any())
     }

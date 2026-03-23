@@ -9,6 +9,13 @@ class S3ReadmeService(
 ) : ReadmeService {
     private val bucketName = readmeProperties.s3.bucketName ?: throw IllegalArgumentException("Bucket name is required for S3 mode")
 
+    override fun readReadmeRaw(projectId: Int?, scmRepositoryId: Int?): String? {
+        require(projectId != null || scmRepositoryId != null) {
+            "Either projectId or scmRepositoryId must be provided"
+        }
+        return readReadmeWithFallback(projectId, scmRepositoryId, "raw")
+    }
+
     override fun readReadmeMd(projectId: Int?, scmRepositoryId: Int?): String? {
         require(projectId != null || scmRepositoryId != null) {
             "Either projectId or scmRepositoryId must be provided"
@@ -38,7 +45,8 @@ class S3ReadmeService(
 
     private fun readReadme(key: String): String? = s3StorageService.readText(bucketName, key)
 
-    override fun writeReadmeFiles(projectId: Int, mdContent: String, htmlContent: String) {
+    override fun writeReadmeFiles(projectId: Int, rawContent: String, mdContent: String, htmlContent: String) {
+        writeReadmeContent(projectId = projectId, format = "raw", content = rawContent)
         writeReadmeContent(projectId = projectId, format = "md", content = mdContent)
         writeReadmeContent(projectId = projectId, format = "html", content = htmlContent)
     }
@@ -61,8 +69,8 @@ class S3ReadmeService(
     }
 
     private fun validateFormat(format: String) {
-        require(format == "md" || format == "html") {
-            "Format can only be \"md\" or \"html\""
+        require(format == "raw" || format == "md" || format == "html") {
+            "Format can only be \"raw\", \"md\" or \"html\""
         }
     }
 }

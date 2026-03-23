@@ -169,6 +169,7 @@ class GitHubIndexingService(
                 )
                 readmeService.writeReadmeFiles(
                     projectId = projectEntity.idNotNull,
+                    rawContent = readmeContent.raw,
                     mdContent = readmeContent.markdown,
                     htmlContent = readmeContent.html
                 )
