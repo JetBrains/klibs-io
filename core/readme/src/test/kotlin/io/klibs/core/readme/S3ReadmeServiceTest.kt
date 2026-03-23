@@ -60,12 +60,13 @@ class S3ReadmeServiceTest {
     }
 
     @Test
-    fun `writeReadmeFilesByProjectId uploads both md and html files`() {
+    fun `writeReadmeFilesByProjectId uploads raw, md and html files`() {
         val projectId = 456
+        val rawContent = "raw content"
         val mdContent = "MD content"
         val htmlContent = "HTML content"
 
-        uut.writeReadmeFiles(projectId, mdContent, htmlContent)
+        uut.writeReadmeFiles(projectId, rawContent, mdContent, htmlContent)
 
         verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456.md", mdContent)
         verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456.html", htmlContent)

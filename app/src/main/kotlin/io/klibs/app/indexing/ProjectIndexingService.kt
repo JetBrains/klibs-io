@@ -205,6 +205,7 @@ class ProjectIndexingService(
             )
 
             readmeServiceDispatcher.writeReadmeFiles(
+                rawContent = readmeContent.raw,
                 projectId = persistedEntity.idNotNull,
                 mdContent = readmeContent.markdown,
                 htmlContent = readmeContent.html

@@ -29,7 +29,7 @@ class ReadmeServiceDispatcher(
             s3ReadmeService.readReadmeHtml(projectInfo.id, projectInfo.scmRepositoryId)
         }
 
-    fun writeReadmeFiles(projectId: Int, mdContent: String, htmlContent: String) {
-        s3ReadmeService.writeReadmeFiles(projectId, mdContent, htmlContent)
+    fun writeReadmeFiles(projectId: Int, rawContent: String, mdContent: String, htmlContent: String) {
+        s3ReadmeService.writeReadmeFiles(projectId, rawContent, mdContent, htmlContent)
     }
 }

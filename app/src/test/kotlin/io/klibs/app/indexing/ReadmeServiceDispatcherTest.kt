@@ -75,9 +75,9 @@ class ReadmeServiceDispatcherTest {
 
     @Test
     fun `writeReadmeFiles always delegates to S3`() {
-        uut.writeReadmeFiles(1, "md content", "html content")
+        uut.writeReadmeFiles(1, "raw content","md content", "html content")
 
-        verify(s3ReadmeService).writeReadmeFiles(1, "md content", "html content")
+        verify(s3ReadmeService).writeReadmeFiles(1, "raw content","md content", "html content")
         verifyNoInteractions(androidxReadmeProvider)
     }
 }
