@@ -11,7 +11,16 @@ WITH LatestVersions AS (SELECT DISTINCT ON (p.group_id, p.artifact_id) p.group_i
                                                                        p.project_id,
                                                                        p.id                                                         as latest_package_id
                         FROM package p
-                        ORDER BY p.group_id, p.artifact_id, p.release_ts DESC)
+                        ORDER BY p.group_id, p.artifact_id, p.release_ts DESC),
+     PackageTargetJson AS (SELECT package_id,
+                                  jsonb_object_agg(platform, platform_targets) AS targets
+                           FROM (SELECT package_id,
+                                        platform,
+                                        to_jsonb(array_remove(array_agg(DISTINCT target), NULL)) AS platform_targets
+                                 FROM package_target
+                                 WHERE package_id IN (SELECT latest_package_id FROM LatestVersions)
+                                 GROUP BY package_id, platform) s
+                           GROUP BY package_id)
 SELECT p.group_id,
        p.artifact_id,
        p.project_id,
@@ -24,7 +33,7 @@ SELECT p.group_id,
        p.latest_license_name,
        array_agg(DISTINCT pt.platform)                                    AS platforms,
        array_to_tsvector(array_agg(DISTINCT pt.platform))                 AS platforms_vector,
-       tgt.targets,
+       ptj.targets,
        -- Form a tsvector from the targets for searching
        array_to_tsvector(array_remove(array_agg(DISTINCT COALESCE(pt.platform || '_' || pt.target, pt.platform)),
                                       NULL))                              AS targets_vector,
@@ -41,14 +50,7 @@ FROM LatestVersions p
          JOIN scm_repo ON project.scm_repo_id = scm_repo.id
          JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
          LEFT JOIN package_target pt ON p.latest_package_id = pt.package_id
-         LEFT JOIN LATERAL (
-    SELECT jsonb_object_agg(platform, targets) AS targets
-    FROM (SELECT pt_sub.platform,
-                 to_jsonb(array_remove(array_agg(DISTINCT pt_sub.target), NULL)) AS targets
-          FROM package_target pt_sub
-          WHERE pt_sub.package_id = p.latest_package_id
-          GROUP BY pt_sub.platform) s
-    ) tgt ON true
+         LEFT JOIN PackageTargetJson ptj ON p.latest_package_id = ptj.package_id
 GROUP BY p.group_id,
          p.artifact_id,
          p.project_id,
@@ -60,5 +62,5 @@ GROUP BY p.group_id,
          scm_owner.login,
          p.latest_licenses,
          p.latest_license_name,
-         tgt.targets
+         ptj.targets
 WITH DATA;

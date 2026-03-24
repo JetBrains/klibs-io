@@ -93,6 +93,8 @@ databaseChangeLog:
             sql: CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts)
         - sql:
             sql: CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector)
+        - sql:
+            sql: CREATE INDEX project_index_markers_gin_idx ON project_index USING GIN (markers)
         - createIndex:
             indexName: project_index_stars_idx
             tableName: project_index

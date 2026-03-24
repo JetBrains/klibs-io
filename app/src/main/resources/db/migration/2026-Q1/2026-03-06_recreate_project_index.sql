@@ -2,13 +2,13 @@ DROP MATERIALIZED VIEW IF EXISTS project_index;
 
 CREATE MATERIALIZED VIEW project_index AS
 WITH package_info AS (SELECT project.id,
-                             array_agg(DISTINCT platform)                                                      AS platforms,
-                             array_to_tsvector(array_agg(DISTINCT platform))                                   AS platforms_vector,
-                             string_agg(format('%s:1', pckg.group_id), ' ')::tsvector                          AS group_ids_vector,
-                             string_agg(format('%s:2', pckg.artifact_id), ' ')::tsvector                       AS artifact_ids_vector,
+                             array_agg(DISTINCT platform)                                AS platforms,
+                             array_to_tsvector(array_agg(DISTINCT platform))             AS platforms_vector,
+                             string_agg(format('%s:1', pckg.group_id), ' ')::tsvector    AS group_ids_vector,
+                             string_agg(format('%s:2', pckg.artifact_id), ' ')::tsvector AS artifact_ids_vector,
                              array_to_tsvector(array_remove(
                                      array_agg(DISTINCT COALESCE(platform || '_' || target, platform)),
-                                     NULL))                                                                    AS targets_vector
+                                     NULL))                                              AS targets_vector
                       FROM project
                                JOIN package_index pckg ON project.id = pckg.project_id
                                JOIN scm_owner owner ON project.owner_id = owner.id
@@ -23,10 +23,9 @@ WITH package_info AS (SELECT project.id,
                       GROUP BY project_marker.project_id),
      tags_info AS (SELECT project_id,
                           COALESCE(
-                                          array_agg(DISTINCT value ORDER BY value DESC) FILTER (WHERE origin = 'USER'),
-                                          array_agg(DISTINCT value ORDER BY value DESC)
-                                          FILTER (WHERE origin = 'GITHUB'),
-                                          array_agg(DISTINCT value ORDER BY value DESC) FILTER (WHERE origin = 'AI')
+                              array_agg(DISTINCT value ORDER BY value DESC) FILTER (WHERE origin = 'USER'),
+                              array_agg(DISTINCT value ORDER BY value DESC) FILTER (WHERE origin = 'GITHUB'),
+                              array_agg(DISTINCT value ORDER BY value DESC) FILTER (WHERE origin = 'AI')
                           ) AS tags
                    FROM project_tags
                    GROUP BY project_id)
