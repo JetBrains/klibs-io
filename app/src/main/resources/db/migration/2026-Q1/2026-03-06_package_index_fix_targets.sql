@@ -11,16 +11,7 @@ WITH LatestVersions AS (SELECT DISTINCT ON (p.group_id, p.artifact_id) p.group_i
                                                                        p.project_id,
                                                                        p.id                                                         as latest_package_id
                         FROM package p
-                        ORDER BY p.group_id, p.artifact_id, p.release_ts DESC),
-     PackageTargetJson AS (SELECT package_id,
-                                  jsonb_object_agg(platform, platform_targets) AS targets
-                           FROM (SELECT package_id,
-                                        platform,
-                                        to_jsonb(array_remove(array_agg(DISTINCT target), NULL)) AS platform_targets
-                                 FROM package_target
-                                 WHERE package_id IN (SELECT latest_package_id FROM LatestVersions)
-                                 GROUP BY package_id, platform) s
-                           GROUP BY package_id)
+                        ORDER BY p.group_id, p.artifact_id, p.release_ts DESC)
 SELECT p.group_id,
        p.artifact_id,
        p.project_id,
@@ -31,36 +22,34 @@ SELECT p.group_id,
        scm_owner.type                                                     as owner_type,
        scm_owner.login                                                    as owner_login,
        p.latest_license_name,
-       array_agg(DISTINCT pt.platform)                                    AS platforms,
-       array_to_tsvector(array_agg(DISTINCT pt.platform))                 AS platforms_vector,
-       ptj.targets,
-       -- Form a tsvector from the targets for searching
-       array_to_tsvector(array_remove(array_agg(DISTINCT COALESCE(pt.platform || '_' || pt.target, pt.platform)),
-                                      NULL))                              AS targets_vector,
+       tgt.platforms,
+       tgt.platforms_vector,
+       tgt.targets,
+       tgt.targets_vector,
        (setweight(format('%s:1', p.group_id)::tsvector, 'A') ||
         setweight(format('%s:1', p.artifact_id)::tsvector, 'A') ||
         setweight(to_tsvector(replace(p.group_id, '.', ' ')), 'A') ||
         setweight(to_tsvector(replace(p.artifact_id, '.', ' ')), 'A') ||
         setweight(to_tsvector(coalesce(scm_owner.login, '')), 'A') ||
         setweight(to_tsvector(coalesce(p.latest_description, '')), 'B') ||
-        setweight(to_tsvector(coalesce(array_to_string(array_agg(DISTINCT pt.platform), ' '), '')), 'C') ||
+        setweight(to_tsvector(coalesce(array_to_string(tgt.platforms, ' '), '')), 'C') ||
         setweight(to_tsvector(coalesce(p.latest_license_name, '')), 'C')) AS fts
 FROM LatestVersions p
          JOIN project ON p.project_id = project.id
          JOIN scm_repo ON project.scm_repo_id = scm_repo.id
          JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
-         LEFT JOIN package_target pt ON p.latest_package_id = pt.package_id
-         LEFT JOIN PackageTargetJson ptj ON p.latest_package_id = ptj.package_id
-GROUP BY p.group_id,
-         p.artifact_id,
-         p.project_id,
-         p.latest_package_id,
-         p.latest_version,
-         p.latest_description,
-         p.release_ts,
-         scm_owner.type,
-         scm_owner.login,
-         p.latest_licenses,
-         p.latest_license_name,
-         ptj.targets
+         LEFT JOIN LATERAL (
+    SELECT array_agg(DISTINCT pt.platform)                    as platforms,
+           array_to_tsvector(array_agg(DISTINCT pt.platform)) as platforms_vector,
+           array_to_tsvector(array_remove(array_agg(DISTINCT COALESCE(pt.platform || '_' || pt.target, pt.platform)),
+                                          NULL))              as targets_vector,
+           (SELECT jsonb_object_agg(s.platform, s.platform_targets)
+            FROM (SELECT platform,
+                         to_jsonb(array_remove(array_agg(DISTINCT target), NULL)) as platform_targets
+                  FROM package_target
+                  WHERE package_id = p.latest_package_id
+                  GROUP BY platform) s)                       as targets
+    FROM package_target pt
+    WHERE pt.package_id = p.latest_package_id
+    ) tgt ON true
 WITH DATA;
