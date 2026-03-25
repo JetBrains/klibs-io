@@ -116,6 +116,7 @@ class ProjectService(
             .map { normalizeTag(it) }
             .filter { it.isNotEmpty() }
             .distinct()
+            .filter { allowedProjectTagsRepository.existsById(it) }
             .toList()
 
         if (normalizedTags.isEmpty()) {
@@ -131,27 +132,10 @@ class ProjectService(
             }
         }
 
-        val invalidTags = mutableListOf<String>()
-        val canonicalTagsToAdd = mutableListOf<String>()
-
-        for (tag in normalizedTags) {
-            val canonicalName = allowedProjectTagsRepository.findCanonicalNameByValue(tag)
-            if (canonicalName == null) {
-                invalidTags.add(tag)
-            } else {
-                canonicalTagsToAdd.add(canonicalName)
-            }
-        }
-
-        if (invalidTags.isNotEmpty() && tagsType != TagOrigin.GITHUB) {
-            throw IllegalArgumentException("Invalid tags were provided: ${invalidTags.joinToString(", ")}")
-        }
-
-        val tagsToSave = canonicalTagsToAdd.distinct()
 
         projectTagRepository.deleteByProjectIdAndOrigin(projectId, tagsType)
 
-        val entities = tagsToSave.map { value ->
+        val entities = normalizedTags.map { value ->
             TagEntity(
                 projectId = projectId,
                 value = value,
@@ -160,7 +144,7 @@ class ProjectService(
         }
         projectTagRepository.saveAll(entities)
 
-        return tagsToSave
+        return normalizedTags
     }
 
     private companion object {

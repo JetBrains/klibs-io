@@ -84,12 +84,12 @@ class ProjectServiceTest {
         whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
         whenever(project.idNotNull).thenReturn(projectId)
 
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("valid-tag")).thenReturn("Valid Tag")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("another-tag")).thenReturn("Another Tag")
+        whenever(allowedProjectTagsRepository.existsById("valid-tag")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("another-tag")).thenReturn(true)
 
         val result = uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
 
-        assertEquals(listOf("Valid Tag", "Another Tag"), result)
+        assertEquals(listOf("valid-tag", "another-tag"), result)
         verify(projectTagRepository).deleteByProjectIdAndOrigin(projectId, tagsType)
         verify(projectTagRepository).saveAll(any<List<TagEntity>>())
     }
