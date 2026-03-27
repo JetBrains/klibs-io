@@ -24,12 +24,12 @@ INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, 
 
 -- package (latest version should match project.latest_version)
 INSERT INTO public.package (
-    id, project_id, release_ts, created_at, group_id, artifact_id, version, name, description,
+    id, project_id, release_ts, created_at, group_id, artifact_id, version, description,
     url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses
 ) VALUES
-    (31001, 30001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-a', '1.0.0', 'lib-a', 'desc A', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (31002, 30002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-b', '1.0.0', 'lib-b', 'desc B', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (31003, 30003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-c', '1.0.0', 'lib-c', 'desc C', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]');
+    (31001, 30001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-a', '1.0.0',  'desc A', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (31002, 30002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-b', '1.0.0', 'desc B', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (31003, 30003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-c', '1.0.0',  'desc C', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]');
 
 -- at least one platform per package so project_index can aggregate
 INSERT INTO public.package_target (package_id, platform, target) VALUES

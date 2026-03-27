@@ -3,6 +3,7 @@ package io.klibs.app.indexing
 import BaseUnitWithDbLayerTest
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.klibs.core.pckg.repository.IndexingRequestRepository
+import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenPom
@@ -40,6 +41,9 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var packageRepository: PackageRepository
+
+    @Autowired
+    private lateinit var packageIndexRepository: PackageIndexRepository
 
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
@@ -108,7 +112,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertFalse(output.out.contains("Unable to process the index request"))
 
         assertNull(indexingRequestRepository.findFirstForIndexing(), "Processed request should be removed from the queue")
-        val foundPackages = packageRepository.findLatestByGroupId(packageIndexRequestBeforeProcessing.groupId)
+        val foundPackages = packageRepository.findByGroupIdAndArtifactIdOrderByReleaseTsDesc(packageIndexRequestBeforeProcessing.groupId, packageIndexRequestBeforeProcessing.artifactId)
         assertEquals(1, foundPackages.size)
         assertEquals(foundPackages.get(0).groupId, packageIndexRequestBeforeProcessing.groupId)
         assertEquals(foundPackages.get(0).artifactId, packageIndexRequestBeforeProcessing.artifactId)
@@ -179,7 +183,6 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         // Mock the AI service to return a predictable description
         `when`(packageDescriptionGenerator.generatePackageDescription(
-            any(), // packageName
             any(), // groupId
             any(), // artifactId
             any(), // version

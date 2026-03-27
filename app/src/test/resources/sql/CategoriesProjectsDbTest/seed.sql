@@ -31,14 +31,14 @@ VALUES
     (50006, 50006, CURRENT_TIMESTAMP, '1.0.0', 'Featured + Compose lib', 'repo-feat-comp', NULL, 50006);
 
 -- package (one per project, version must match project.latest_version)
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, name, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses)
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses)
 VALUES
-    (51001, 50001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'feat-1',    '1.0.0', 'feat-1',    'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51002, 50002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'feat-2',    '1.0.0', 'feat-2',    'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51003, 50003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'grant-23',  '1.0.0', 'grant-23',  'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51004, 50004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'grant-24',  '1.0.0', 'grant-24',  'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51005, 50005, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'compose-1', '1.0.0', 'compose-1', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
-    (51006, 50006, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'feat-comp', '1.0.0', 'feat-comp', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]');
+    (51001, 50001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'feat-1',    '1.0.0',  'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51002, 50002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'feat-2',    '1.0.0',  'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51003, 50003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'grant-23',  '1.0.0',  'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51004, 50004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'grant-24',  '1.0.0',  'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51005, 50005, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'compose-1', '1.0.0',  'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]'),
+    (51006, 50006, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'feat-comp', '1.0.0',  'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]');
 
 -- package_target (at least one per package for project_index aggregation)
 INSERT INTO public.package_target (package_id, platform, target)
