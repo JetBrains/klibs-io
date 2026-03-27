@@ -14,7 +14,6 @@ class PackageControllerFileLinkTest {
         artifactId = a,
         version = v,
         releasedAt = Instant.EPOCH,
-        name = null,
         description = null,
         targets = emptyList(),
         licenses = emptyList(),

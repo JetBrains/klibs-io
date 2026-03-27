@@ -23,5 +23,8 @@ INSERT INTO public.project VALUES (10002, 368, CURRENT_TIMESTAMP, '1.0.0', CURRE
 INSERT INTO public.project VALUES (10003, 369, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'k-big-numbers', NULL, 198);
 
 -- Insert test packages with same groupId but different artifactIds
-INSERT INTO public.package VALUES (10002, 10002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-library', '1.0.0', 'org.example:test-library', 'Old description 1', 'https://example.com/test-library', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');
-INSERT INTO public.package VALUES (10003, 10003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-utils', '1.0.0', 'org.example:test-utils', 'Old description 2', 'https://example.com/test-utils', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');
+INSERT INTO public.package VALUES (10002, 10002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-library', '1.0.0', 'Old description 1', 'https://example.com/test-library', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');
+INSERT INTO public.package VALUES (10003, 10003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-utils', '1.0.0', 'Old description 2', 'https://example.com/test-utils', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');
+
+INSERT INTO public.package_target (package_id, platform, target) VALUES (10002, 'JVM', '1.8');
+INSERT INTO public.package_target (package_id, platform, target) VALUES (10003, 'JVM', '1.8');

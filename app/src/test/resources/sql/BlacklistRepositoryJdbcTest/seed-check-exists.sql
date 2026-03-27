@@ -9,7 +9,6 @@ VALUES (
     'com.example',      -- group_id
     'lib-a',            -- artifact_id
     '1.0.0',            -- version
-    'com.example:lib-a',-- name
     'Example A',        -- description
     'https://example.com/lib-a', -- url
     'gradle',           -- build_tool
