@@ -1,6 +1,7 @@
 plugins {
     id("klibs.spring-cloud")
     id("klibs.mock")
+    id("klibs.persistence")
 }
 
 dependencies {

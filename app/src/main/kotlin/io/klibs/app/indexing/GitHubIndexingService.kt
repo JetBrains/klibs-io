@@ -9,9 +9,11 @@ import io.klibs.core.project.ProjectService
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeService
+import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
@@ -29,8 +31,10 @@ class GitHubIndexingService(
 
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val scmOwnerRepository: ScmOwnerRepository,
+    private val readmeMetadataRepository: ReadmeMetadataRepository,
 
     private val readmeService: ReadmeService,
+    private val readmeServiceDispatcher: ReadmeServiceDispatcher,
     private val readmeContentBuilder: ReadmeContentBuilder,
     private val projectRepository: ProjectRepository,
     @Qualifier("ownerBackoffProvider")
@@ -82,7 +86,7 @@ class GitHubIndexingService(
             projectRepository.updateOwnerId(projectEntity.idNotNull, ownerId)
         }
 
-        val hasReadme = updateReadme(projectEntity, ghRepo, repoToUpdate.updatedAtTs)
+        val hasReadme = updateReadme(projectEntity, repoToUpdate, ghRepo, repoToUpdate.updatedAtTs)
         val license = gitHubIntegration.getLicense(ghRepo.nativeId)
 
         val scmRepositoryEntity = repoToUpdate.copy(
@@ -152,38 +156,90 @@ class GitHubIndexingService(
      */
     private fun updateReadme(
         projectEntity: ProjectEntity,
+        scmRepositoryEntity: ScmRepositoryEntity,
         ghRepo: GitHubRepository,
         lastUpdatedTs: Instant
     ): Boolean {
+        val readmeMetadataEntity = readmeMetadataRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)
+
         return when (val result = gitHubIntegration.getReadmeWithModifiedSinceCheck(
             ghRepo.nativeId,
-            lastUpdatedTs
+            readmeMetadataEntity?.lastSyncedAt ?: lastUpdatedTs
         )) {
             is ReadmeFetchResult.Content -> {
-                val readmeContent = readmeContentBuilder.buildFromMarkdown(
-                    readmeMd = result.markdown,
-                    nativeId = ghRepo.nativeId,
-                    ownerLogin = ghRepo.owner,
-                    repoName = ghRepo.name,
-                    defaultBranch = ghRepo.defaultBranch,
-                )
-                readmeService.writeReadmeFiles(
-                    projectId = projectEntity.idNotNull,
-                    rawContent = readmeContent.raw,
-                    mdContent = readmeContent.markdown,
-                    htmlContent = readmeContent.html
-                )
-                projectEntity.minimizedReadme = readmeContent.minimized
-                projectRepository.updateMinimizedReadme(projectEntity.idNotNull, readmeContent.minimized)
+                processReadmeContent(result.markdown, ghRepo, projectEntity)
+
+                if (readmeMetadataEntity == null) {
+                    readmeMetadataRepository.insert(
+                        scmRepoId = scmRepositoryEntity.idNotNull
+                    )
+                } else {
+                    readmeMetadataRepository.updateLastSyncedAndProcessedAt(
+                        readmeMetadataEntity.scmRepoId
+                    )
+                }
                 true
             }
+
             is ReadmeFetchResult.NotModified -> {
+                if (readmeMetadataEntity == null) {
+                    logger.warn("Received NotModified but no readme metadata found for repo ${scmRepositoryEntity.idNotNull}")
+                    return false
+                }
+
+                // reprocess at least once a week
+                if (readmeMetadataEntity.lastProcessedAt.isBefore(Instant.now().minusSeconds(60 * 60 * 24 * 7))) {
+                    val readmeRaw = readmeServiceDispatcher.readReadmeRaw(
+                        ReadmeServiceDispatcher.ProjectInfo(
+                            projectEntity.idNotNull,
+                            projectEntity.scmRepoId,
+                            projectEntity.name,
+                            ghRepo.owner
+                        )
+                    )
+
+                    if (readmeRaw == null) {
+                        logger.warn("Received NotModified but no readme content found for repo ${scmRepositoryEntity.idNotNull}")
+                        return false
+                    }
+
+                    processReadmeContent(readmeRaw, ghRepo, projectEntity)
+                    readmeMetadataRepository.updateLastSyncedAndProcessedAt(
+                        readmeMetadataEntity.scmRepoId
+                    )
+                } else {
+                    readmeMetadataRepository.updateLastSyncedAt(readmeMetadataEntity.scmRepoId)
+                }
+
                 // README exists but hasn't changed; treat as having README
                 true
             }
+
             is ReadmeFetchResult.NotFound -> false
             is ReadmeFetchResult.Error -> false
         }
+    }
+
+    private fun processReadmeContent(
+        content: String,
+        ghRepo: GitHubRepository,
+        projectEntity: ProjectEntity
+    ) {
+        val readmeContent = readmeContentBuilder.buildFromMarkdown(
+            readmeMd = content,
+            nativeId = ghRepo.nativeId,
+            ownerLogin = ghRepo.owner,
+            repoName = ghRepo.name,
+            defaultBranch = ghRepo.defaultBranch,
+        )
+        readmeService.writeReadmeFiles(
+            projectId = projectEntity.idNotNull,
+            rawContent = readmeContent.raw,
+            mdContent = readmeContent.markdown,
+            htmlContent = readmeContent.html
+        )
+        projectEntity.minimizedReadme = readmeContent.minimized
+        projectRepository.updateMinimizedReadme(projectEntity.idNotNull, readmeContent.minimized)
     }
 
     private fun updateOwner(ownerEntity: ScmOwnerEntity): ScmOwnerEntity {
@@ -256,7 +312,6 @@ class GitHubIndexingService(
         return !originalOwnerLogin.equals(this.owner, ignoreCase = true)
                 || !originalName.equals(this.name, ignoreCase = true)
     }
-
 
 
     private fun indexOwner(ownerLogin: String): ScmOwnerEntity {

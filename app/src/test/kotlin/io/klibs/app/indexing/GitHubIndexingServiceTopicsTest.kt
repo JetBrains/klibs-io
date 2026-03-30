@@ -9,9 +9,11 @@ import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeService
+import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.ReadmeFetchResult
@@ -24,7 +26,9 @@ class GitHubIndexingServiceTopicsTest {
     private val gitHubIntegration: GitHubIntegration = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
     private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
+    private val readmeMetadataRepository: ReadmeMetadataRepository = mock()
     private val readmeService: ReadmeService = mock()
+    private val readmeServiceDispatcher: ReadmeServiceDispatcher = mock()
     private val projectRepository: ProjectRepository = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
     private val readmeContentBuilder: ReadmeContentBuilder = mock()
@@ -36,7 +40,9 @@ class GitHubIndexingServiceTopicsTest {
         gitHubIntegration = gitHubIntegration,
         scmRepositoryRepository = scmRepositoryRepository,
         scmOwnerRepository = scmOwnerRepository,
+        readmeMetadataRepository = readmeMetadataRepository,
         readmeService = readmeService,
+        readmeServiceDispatcher = readmeServiceDispatcher,
         readmeContentBuilder = readmeContentBuilder,
         projectRepository = projectRepository,
         ownerBackoffProvider = ownerBackoffProvider,

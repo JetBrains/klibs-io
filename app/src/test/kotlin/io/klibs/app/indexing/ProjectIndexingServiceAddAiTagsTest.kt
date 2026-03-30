@@ -8,6 +8,7 @@ import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeServiceDispatcher
@@ -29,6 +30,7 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val projectRepository: ProjectRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
     private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
+    private val readmeMetadataRepository: ReadmeMetadataRepository = mock()
     private val tagsGenerator: TagsGenerationService = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
     private val gitHubIntegration: GitHubIntegration = mock()
@@ -42,8 +44,9 @@ class ProjectIndexingServiceAddAiTagsTest {
             projectRepository = projectRepository,
             scmRepositoryRepository = scmRepositoryRepository,
             scmOwnerRepository = scmOwnerRepository,
-            tagsGenerationService = tagsGenerator,
-            projectTagRepository = projectTagRepository,
+            readmeMetadataRepository = readmeMetadataRepository,
+        tagsGenerationService = tagsGenerator,
+         projectTagRepository = projectTagRepository,
             gitHubIntegration = gitHubIntegration,
             readmeContentBuilder = readmeContentBuilder,
             descriptionBackoffProvider = descriptionBackoffProvider,

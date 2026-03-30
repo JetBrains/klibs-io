@@ -29,6 +29,14 @@ class ReadmeServiceDispatcher(
             s3ReadmeService.readReadmeHtml(projectInfo.id, projectInfo.scmRepositoryId)
         }
 
+    fun readReadmeRaw(projectInfo: ProjectInfo): String? {
+        return if (projectInfo.ownerLogin == AndroidxReadmeProvider.OWNER_NAME) {
+            null
+        } else {
+            s3ReadmeService.readReadmeRaw(projectInfo.id, projectInfo.scmRepositoryId)
+        }
+    }
+
     fun writeReadmeFiles(projectId: Int, rawContent: String, mdContent: String, htmlContent: String) {
         s3ReadmeService.writeReadmeFiles(projectId, rawContent, mdContent, htmlContent)
     }

@@ -13,6 +13,7 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.AndroidxReadmeProvider
 import io.klibs.core.readme.GitHubIndexingReadmeContent
 import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.github.GitHubIntegration
@@ -34,6 +35,7 @@ class ProjectIndexingService(
     private val projectRepository: ProjectRepository,
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val scmOwnerRepository: ScmOwnerRepository,
+    private val readmeMetadataRepository: ReadmeMetadataRepository,
 
     private val tagsGenerationService: TagsGenerationService,
     private val projectTagRepository: ProjectTagRepository,
@@ -202,6 +204,10 @@ class ProjectIndexingService(
                 scmRepositoryEntity.copy(
                     hasReadme = readmeContent.markdown.isNotBlank()
                 )
+            )
+
+            readmeMetadataRepository.insert(
+                scmRepoId = scmRepositoryEntity.idNotNull
             )
 
             readmeServiceDispatcher.writeReadmeFiles(

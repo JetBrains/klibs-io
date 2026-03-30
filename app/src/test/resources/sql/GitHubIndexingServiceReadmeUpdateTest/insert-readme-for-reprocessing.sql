@@ -44,4 +44,4 @@ VALUES (10001,
         198);
 
 INSERT INTO public.readme_metadata (id, scm_repo_id, last_synced_at, last_processed_at)
-VALUES (10001, 368,current_timestamp - interval '24 hours', current_timestamp - interval '24 hours')
+VALUES (10001, 368,current_timestamp - interval '24 hours', current_timestamp - interval '8 days')
