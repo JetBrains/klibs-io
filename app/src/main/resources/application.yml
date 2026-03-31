@@ -96,7 +96,7 @@ management:
       show-components: always
       show-details: always
     prometheus:
-      enabled: true
+      access: read_only
   info:
     git.enabled: true
     os.enabled: true
