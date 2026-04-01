@@ -72,6 +72,26 @@ class PackageService(
 
     fun findAllPackagesForSitemap(): List<SitemapPackageView> =
         packageRepository.findAllPackagesForSitemap()
+
+    fun getKotlinVersionsByProjectIds(projectIds: List<Int>): Map<Int, String?> {
+        if (projectIds.isEmpty()) return emptyMap()
+
+        val indexEntities = packageIndexRepository.findByProjectIdIn(projectIds)
+
+        val latestByProject = indexEntities
+            .filter { it.projectId != null }
+            .groupBy { it.projectId!! }
+            .mapValues { (_, entities) -> entities.maxBy { it.releaseTs } }
+
+        val latestPackageIds = latestByProject.values.map { it.latestPackageId }
+
+        val packageById = packageRepository.findAllById(latestPackageIds)
+            .associateBy { it.idNotNull }
+
+        return latestByProject.mapValues { (_, indexEntity) ->
+            packageById[indexEntity.latestPackageId]?.kotlinVersion
+        }
+    }
 }
 
 

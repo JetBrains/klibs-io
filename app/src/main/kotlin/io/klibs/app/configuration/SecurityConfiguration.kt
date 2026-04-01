@@ -56,6 +56,10 @@ class SecurityConfiguration(
                 authorize(HttpMethod.GET, "/ping", permitAll)
                 authorize(HttpMethod.OPTIONS, "/ping", permitAll)
 
+                authorize(HttpMethod.POST, "/compare/**", permitAll)
+                authorize(HttpMethod.GET, "/compare/**", permitAll)
+                authorize(HttpMethod.OPTIONS, "/compare/**", permitAll)
+
                 // NOTE:
                 //  - /actuator/metrics and /actuator/prometheus are intentionally OPEN at the application level
                 //  - They are CLOSED at the nginx level
