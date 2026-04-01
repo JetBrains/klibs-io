@@ -34,8 +34,13 @@ class ProjectService(
 ) {
     @Transactional(readOnly = true)
     fun getProjectDetailsByName(ownerLogin: String, projectName: String): ProjectDetails? {
-        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
-        return buildProjectDetails(projectEntity)
+        return getProjectDetailsByNames(listOf(projectName to ownerLogin)).firstOrNull()
+    }
+
+    @Transactional(readOnly = true)
+    fun getProjectDetailsByNames(pairs: List<Pair<String, String>>): List<ProjectDetails> {
+        val projectEntities = projectRepository.findManyByProjectNameAndOwnerLogin(pairs)
+        return projectEntities.mapNotNull { buildProjectDetails(it) }
     }
 
     @Transactional(readOnly = true)

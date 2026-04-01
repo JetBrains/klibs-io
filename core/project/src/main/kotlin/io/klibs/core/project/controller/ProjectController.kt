@@ -1,7 +1,10 @@
-package io.klibs.core.project
+package io.klibs.core.project.controller
 
 import io.klibs.core.pckg.api.PackageOverviewResponse
 import io.klibs.core.pckg.controller.toDTO
+import io.klibs.core.project.ProjectDetails
+import io.klibs.core.project.ProjectDetailsDTO
+import io.klibs.core.project.ProjectService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
