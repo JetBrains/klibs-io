@@ -32,6 +32,9 @@ class PackageIndexEntity(
     @Column(name = "release_ts")
     val releaseTs: Instant,
 
+    @Column(name = "kotlin_version")
+    val kotlinVersion: String,
+
     @Column(name = "owner_type")
     val ownerType: String,
 
