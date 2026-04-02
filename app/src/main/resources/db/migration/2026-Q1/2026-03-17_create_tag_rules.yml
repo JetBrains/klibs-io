@@ -33,6 +33,14 @@ databaseChangeLog:
             where: name in ('maven', 'gradle')
 
   - changeSet:
+      id: remove maven and gradle tags from project_tags
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - delete:
+            tableName: project_tags
+            where: value in ('maven', 'gradle')
+
+  - changeSet:
       id: 2026-03-13-fill-allowed-project-tags
       author: dmitrii.krasnov@jetbrains.com
       changes:
