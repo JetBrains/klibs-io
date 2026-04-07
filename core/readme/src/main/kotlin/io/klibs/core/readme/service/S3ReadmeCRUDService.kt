@@ -3,10 +3,10 @@ package io.klibs.core.readme.service
 import io.klibs.core.readme.ReadmeConfigurationProperties
 import io.klibs.core.storage.S3StorageService
 
-class S3ReadmeService(
+class S3ReadmeCRUDService(
     private val readmeProperties: ReadmeConfigurationProperties,
     private val s3StorageService: S3StorageService,
-) : ReadmeService {
+) : ReadmeCRUDService {
     private val bucketName = readmeProperties.s3.bucketName ?: throw IllegalArgumentException("Bucket name is required for S3 mode")
 
     override fun readReadmeRaw(projectId: Int?, scmRepositoryId: Int?): String? {

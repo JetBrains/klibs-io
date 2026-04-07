@@ -2,7 +2,7 @@ package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
-import io.klibs.core.readme.service.S3ReadmeService
+import io.klibs.core.readme.service.S3ReadmeCRUDService
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
@@ -29,7 +29,7 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
     private lateinit var gitHubIntegration: GitHubIntegration
 
     @MockitoBean
-    private lateinit var s3ReadmeService: S3ReadmeService
+    private lateinit var s3ReadmeService: S3ReadmeCRUDService
 
     @Test
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceReadmeUpdateTest/insert-readme-for-reprocessing.sql"])

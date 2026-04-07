@@ -1,6 +1,6 @@
 package io.klibs.core.readme
 
-import io.klibs.core.readme.service.S3ReadmeService
+import io.klibs.core.readme.service.S3ReadmeCRUDService
 import io.klibs.core.storage.S3StorageService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -10,11 +10,11 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
 
-class S3ReadmeServiceTest {
+class S3ReadmeCRUDServiceTest {
 
     private lateinit var readmeProperties: ReadmeConfigurationProperties
     private lateinit var s3StorageService: S3StorageService
-    private lateinit var uut: S3ReadmeService
+    private lateinit var uut: S3ReadmeCRUDService
 
     @BeforeEach
     fun setUp() {
@@ -26,7 +26,7 @@ class S3ReadmeServiceTest {
             )
         )
         s3StorageService = mock()
-        uut = S3ReadmeService(readmeProperties, s3StorageService)
+        uut = S3ReadmeCRUDService(readmeProperties, s3StorageService)
     }
 
     @Test

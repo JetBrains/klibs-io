@@ -7,7 +7,7 @@ import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.readme.service.ReadmeServiceDispatcher
+import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.readme.impl.ReadmeMinimizationProcessor
 import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.github.GitHubIntegration
@@ -30,7 +30,7 @@ import kotlin.test.assertNull
 
 class ProjectIndexingServicePersistReadmeTest {
 
-    private val readmeServiceDispatcher: ReadmeServiceDispatcher = mock()
+    private val readmeService: ReadmeService = mock()
     private val projectDescriptionGenerator: ProjectDescriptionGenerator = mock()
     private val projectRepository: ProjectRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
@@ -45,7 +45,7 @@ class ProjectIndexingServicePersistReadmeTest {
     private val tagsBackoffProvider: BackoffProvider = BackoffProvider("tagsBackoff", mock())
 
     private fun uut() = ProjectIndexingService(
-        readmeServiceDispatcher = readmeServiceDispatcher,
+        readmeService = readmeService,
         projectDescriptionGenerator = projectDescriptionGenerator,
         projectRepository = projectRepository,
         scmRepositoryRepository = scmRepositoryRepository,
@@ -128,7 +128,7 @@ class ProjectIndexingServicePersistReadmeTest {
         val result = uut().save(mavenArtifact, scmRepositoryEntity)
 
         assertEquals(persistedProject.idNotNull, result.idNotNull)
-        verify(readmeServiceDispatcher).writeReadmeFiles(
+        verify(readmeService).writeReadmeFiles(
             projectId = persistedProject.idNotNull,
             scmRepositoryId = scmRepositoryEntity.idNotNull,
             readmeMetadataEntity = null,
@@ -187,7 +187,7 @@ class ProjectIndexingServicePersistReadmeTest {
         )
 
         verify(readmeMinimizer, never()).process(any(), any(), any(), any())
-        verify(readmeServiceDispatcher, never()).writeReadmeFiles(any(), any(), any(), any())
+        verify(readmeService, never()).writeReadmeFiles(any(), any(), any(), any(), any(), any())
         verify(scmRepositoryRepository, never()).update(any())
         verify(gitHubIntegration, never()).getReadmeWithModifiedSinceCheck(any(), any())
     }

@@ -2,9 +2,9 @@ package io.klibs.app.indexing
 
 import io.klibs.core.readme.AndroidxReadmeProvider
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
-import io.klibs.core.readme.service.ReadmeServiceDispatcher
-import io.klibs.core.readme.service.ReadmeServiceDispatcher.ProjectInfo
-import io.klibs.core.readme.service.S3ReadmeService
+import io.klibs.core.readme.service.ReadmeService
+import io.klibs.core.readme.service.ReadmeService.ProjectInfo
+import io.klibs.core.readme.service.S3ReadmeCRUDService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -14,19 +14,19 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
-class ReadmeServiceDispatcherTest {
+class ReadmeServiceTest {
 
-    private lateinit var s3ReadmeService: S3ReadmeService
+    private lateinit var s3ReadmeService: S3ReadmeCRUDService
     private lateinit var androidxReadmeProvider: AndroidxReadmeProvider
     private lateinit var readmeMetadataRepository: ReadmeMetadataRepository
-    private lateinit var uut: ReadmeServiceDispatcher
+    private lateinit var uut: ReadmeService
 
     @BeforeEach
     fun setUp() {
         s3ReadmeService = mock()
         androidxReadmeProvider = mock()
         readmeMetadataRepository = mock()
-        uut = ReadmeServiceDispatcher(s3ReadmeService, androidxReadmeProvider, readmeMetadataRepository)
+        uut = ReadmeService(s3ReadmeService, androidxReadmeProvider, readmeMetadataRepository)
     }
 
     @Test

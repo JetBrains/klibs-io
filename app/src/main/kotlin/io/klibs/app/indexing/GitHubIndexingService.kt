@@ -13,7 +13,7 @@ import io.klibs.core.readme.entity.ReadmeMetadataEntity
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.readme.service.ReadmeServiceDispatcher
+import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
@@ -35,7 +35,7 @@ class GitHubIndexingService(
     private val scmOwnerRepository: ScmOwnerRepository,
     private val readmeMetadataRepository: ReadmeMetadataRepository,
 
-    private val readmeServiceDispatcher: ReadmeServiceDispatcher,
+    private val readmeService: ReadmeService,
     private val readmeContentBuilder: ReadmeContentBuilder,
     private val projectRepository: ProjectRepository,
     @Qualifier("ownerBackoffProvider")
@@ -196,8 +196,8 @@ class GitHubIndexingService(
 
                 // reprocess at least once a week
                 if (readmeMetadataEntity.lastProcessedAt.isBefore(reprocessThreshold)) {
-                    val readmeRaw = readmeServiceDispatcher.readReadmeRaw(
-                        ReadmeServiceDispatcher.ProjectInfo(
+                    val readmeRaw = readmeService.readReadmeRaw(
+                        ReadmeService.ProjectInfo(
                             projectEntity.idNotNull,
                             projectEntity.scmRepoId,
                             projectEntity.name,
@@ -245,7 +245,7 @@ class GitHubIndexingService(
             repoName = ghRepo.name,
             defaultBranch = ghRepo.defaultBranch,
         )
-        readmeServiceDispatcher.writeReadmeFiles(
+        readmeService.writeReadmeFiles(
             projectId = projectEntity.idNotNull,
             scmRepositoryId = scmRepoId,
             readmeMetadataEntity = readmeMetadataEntity,
