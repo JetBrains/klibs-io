@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test
 import io.klibs.core.readme.AndroidxReadmeProvider
 import io.klibs.core.readme.GitHubIndexingReadmeContent
 import io.klibs.core.readme.ReadmeContentBuilder
-import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
@@ -37,7 +36,6 @@ class ProjectIndexingServicePersistReadmeTest {
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
     private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
     private val tagsGenerator: TagsGenerationService = mock()
-    private val readmeMetadataRepository: ReadmeMetadataRepository = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
     private val gitHubIntegration: GitHubIntegration = mock()
     private val readmeContentBuilder: ReadmeContentBuilder = mock()
@@ -53,7 +51,6 @@ class ProjectIndexingServicePersistReadmeTest {
         scmRepositoryRepository = scmRepositoryRepository,
         scmOwnerRepository = scmOwnerRepository,
         tagsGenerationService = tagsGenerator,
-        readmeMetadataRepository = readmeMetadataRepository,
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
         readmeContentBuilder = readmeContentBuilder,
@@ -109,7 +106,6 @@ class ProjectIndexingServicePersistReadmeTest {
 
         whenever(projectRepository.findByNameAndScmRepoId(repoName, scmRepoId)).thenReturn(null)
         whenever(projectRepository.insert(any())).thenReturn(persistedProject)
-        whenever(readmeMetadataRepository.insert(any())).thenReturn(true)
         whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, Instant.EPOCH))
             .thenReturn(ReadmeFetchResult.Content("# Title"))
         whenever(
@@ -134,6 +130,8 @@ class ProjectIndexingServicePersistReadmeTest {
         assertEquals(persistedProject.idNotNull, result.idNotNull)
         verify(readmeServiceDispatcher).writeReadmeFiles(
             projectId = persistedProject.idNotNull,
+            scmRepositoryId = scmRepositoryEntity.idNotNull,
+            readmeMetadataEntity = null,
             rawContent = "# Title",
             mdContent = "# Title",
             htmlContent = "<h1>Title</h1>"
@@ -146,8 +144,6 @@ class ProjectIndexingServicePersistReadmeTest {
         assertEquals(repoNativeId, repoCaptor.firstValue.nativeId)
         assertEquals(repoName, repoCaptor.firstValue.name)
         assertEquals(scmRepoId, repoCaptor.firstValue.idNotNull)
-
-        verify(readmeMetadataRepository).insert(any())
     }
 
     @Test

@@ -2,7 +2,6 @@ package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
-import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import io.klibs.core.readme.service.S3ReadmeService
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.integration.github.GitHubIntegration
@@ -30,15 +29,13 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
     private lateinit var gitHubIntegration: GitHubIntegration
 
     @MockitoBean
-    private lateinit var readmeServiceDispatcher: ReadmeServiceDispatcher
-
-    @MockitoBean
     private lateinit var s3ReadmeService: S3ReadmeService
 
     @Test
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceReadmeUpdateTest/insert-readme-for-reprocessing.sql"])
     fun `updateReadme should reprocess when NotModified but lastProcessedAt is older than 7 days`() {
         val repoId = 368
+        val projectId = 10001
         val repo = scmRepositoryRepository.findById(repoId)!!
         val readmeMetadataBefore = readmeMetadataRepository.findByScmRepoId(repoId)!!
         val ghRepo = GitHubRepository(
@@ -57,14 +54,14 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
         whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
         whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()))
             .thenReturn(ReadmeFetchResult.NotModified)
-        whenever(readmeServiceDispatcher.readReadmeRaw(any()))
+        whenever(s3ReadmeService.readReadmeRaw(projectId, repoId))
             .thenReturn("# Old Content")
         whenever(gitHubIntegration.markdownToHtml(any(), any())).thenReturn("<html></html>")
         whenever(gitHubIntegration.markdownRender(any(), any())).thenReturn("Rendered")
 
         uut.updateRepo(repo)
 
-        verify(readmeServiceDispatcher).readReadmeRaw(any())
+        verify(s3ReadmeService).readReadmeRaw(projectId, repo.idNotNull)
 
         val readmeMetadataAfter = readmeMetadataRepository.findByScmRepoId(repo.idNotNull)!!
         assert(readmeMetadataAfter.lastProcessedAt.isAfter(readmeMetadataBefore.lastProcessedAt))
@@ -75,6 +72,7 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceReadmeUpdateTest/insert-readme-not-for-reprocessing.sql"])
     fun `updateReadme should only update lastSyncedAt when NotModified and recently processed`() {
         val repoId = 368
+        val projectId = 10001
         val repo = scmRepositoryRepository.findById(repoId)!!
         val readmeMetadataBefore = readmeMetadataRepository.findByScmRepoId(repoId)!!
         val ghRepo = GitHubRepository(
@@ -93,12 +91,12 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
         whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
         whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()))
             .thenReturn(ReadmeFetchResult.NotModified)
-        whenever(readmeServiceDispatcher.readReadmeRaw(any()))
+        whenever(s3ReadmeService.readReadmeRaw(projectId, repoId))
             .thenReturn("# Old Content")
 
         uut.updateRepo(repo)
 
-        verify(readmeServiceDispatcher, never()).readReadmeRaw(any())
+        verify(s3ReadmeService, never()).readReadmeRaw(projectId, repo.idNotNull)
 
         val readmeMetadataAfter = readmeMetadataRepository.findByScmRepoId(repo.idNotNull)!!
         assert(readmeMetadataAfter.lastProcessedAt == readmeMetadataBefore.lastProcessedAt)
@@ -109,6 +107,7 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceReadmeUpdateTest/insert-readme-not-for-reprocessing.sql"])
     fun `updateReadme should update readme metadata when content of readme changed`() {
         val repoId = 368
+        val projectId = 10001
         val repo = scmRepositoryRepository.findById(repoId)!!
         val readmeMetadataBefore = readmeMetadataRepository.findByScmRepoId(repoId)!!
         val ghRepo = GitHubRepository(
@@ -127,14 +126,14 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
         whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
         whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()))
             .thenReturn(ReadmeFetchResult.Content("New Content"))
-        whenever(readmeServiceDispatcher.readReadmeRaw(any()))
+        whenever(s3ReadmeService.readReadmeRaw(projectId, repoId))
             .thenReturn("# Old Content")
         whenever(gitHubIntegration.markdownToHtml(any(), any())).thenReturn("<html></html>")
         whenever(gitHubIntegration.markdownRender(any(), any())).thenReturn("Rendered")
 
         uut.updateRepo(repo)
 
-        verify(readmeServiceDispatcher, never()).readReadmeRaw(any())
+        verify(s3ReadmeService, never()).readReadmeRaw(projectId, repo.idNotNull)
         verify(gitHubIntegration).markdownToHtml(any(), any())
 
         val readmeMetadataAfter = readmeMetadataRepository.findByScmRepoId(repo.idNotNull)!!
@@ -146,6 +145,7 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceReadmeUpdateTest/insert-repo-without-readme.sql"])
     fun `updateReadme should create readme metadata when no readme metadata`() {
         val repoId = 368
+        val projectId = 10001
         val repo = scmRepositoryRepository.findById(repoId)!!
         val readmeMetadataBefore = readmeMetadataRepository.findByScmRepoId(repoId)
         assert(readmeMetadataBefore == null)
@@ -171,7 +171,7 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
 
         uut.updateRepo(repo)
 
-        verify(readmeServiceDispatcher, never()).readReadmeRaw(any())
+        verify(s3ReadmeService, never()).readReadmeRaw(projectId, repo.idNotNull)
         verify(gitHubIntegration).markdownToHtml(any(), any())
 
         val readmeMetadataAfter = readmeMetadataRepository.findByScmRepoId(repo.idNotNull)

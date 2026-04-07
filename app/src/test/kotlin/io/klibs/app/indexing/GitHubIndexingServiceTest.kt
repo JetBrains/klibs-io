@@ -6,6 +6,7 @@ import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.project.ProjectService
 import io.klibs.core.project.repository.ProjectRepository
+import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.S3ReadmeService
 import io.klibs.integration.github.GitHubIntegration
@@ -33,7 +34,7 @@ import kotlin.test.assertNotNull
 
 
 @ExtendWith(OutputCaptureExtension::class)
-class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
+class GitHubIndexingServiceTest() : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var uut: GitHubIndexingService
@@ -43,6 +44,9 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
+
+    @Autowired
+    private lateinit var readmeMetadataRepository: ReadmeMetadataRepository
 
     @Autowired
     private lateinit var projectRepository: ProjectRepository
@@ -154,6 +158,9 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val repositoryBeforeTest = scmRepositoryRepository.findByNativeId(repositoryNativeId)
         assertNotNull(repositoryBeforeTest, "Repository entity should exist before test")
 
+        val readmeMetadataBeforeTest = readmeMetadataRepository.findByScmRepoId(repositoryBeforeTest.idNotNull)
+        assertNotNull(readmeMetadataBeforeTest, "Readme metadata entity should exist before test")
+
         val fixedTime = Instant.now()
 
         val ghRepo = GitHubRepository(
@@ -195,7 +202,7 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
             )
         )
         whenever(
-            gitHubIntegration.getReadmeWithModifiedSinceCheck(repositoryNativeId, repositoryBeforeTest.updatedAtTs)
+            gitHubIntegration.getReadmeWithModifiedSinceCheck(repositoryNativeId, readmeMetadataBeforeTest.lastSyncedAt)
         ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
         whenever(gitHubIntegration.markdownToHtml("Updated readme", repositoryNativeId)).thenReturn("<p>Updated readme</p>")
         whenever(gitHubIntegration.markdownRender("Updated readme", repositoryNativeId)).thenReturn("Updated readme (rendered)")

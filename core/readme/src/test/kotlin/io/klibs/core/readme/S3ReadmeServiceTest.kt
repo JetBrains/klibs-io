@@ -68,6 +68,7 @@ class S3ReadmeServiceTest {
 
         uut.writeReadmeFiles(projectId, rawContent, mdContent, htmlContent)
 
+        verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456-raw.md", rawContent)
         verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456.md", mdContent)
         verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456.html", htmlContent)
     }
