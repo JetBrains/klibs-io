@@ -13,5 +13,5 @@ INSERT INTO public.project VALUES (9001, 9001, CURRENT_TIMESTAMP, '1.0.0', CURRE
 INSERT INTO public.package VALUES (9001, 9001, CURRENT_TIMESTAMP - INTERVAL '1 month', CURRENT_TIMESTAMP - INTERVAL '1 month', 'com.example', 'test-library-gen', '1.0.0', 'This is a description for version 1.0.0', 'https://example.com/test-library', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'CENTRAL_SONATYPE');
 
 -- Insert indexing request for a new version of the same package
-INSERT INTO package_index_request(id, group_id, artifact_id, version, released_ts, scraper_type, reindex, failed_attempts)
-VALUES (9001, 'com.example', 'test-library-gen', '2.0.0', CURRENT_TIMESTAMP, 'CENTRAL_SONATYPE', false, 0);
+INSERT INTO package_index_request(id, group_id, artifact_id, version, released_ts, scraper_type, reindex, failed_attempts, status)
+VALUES (9001, 'com.example', 'test-library-gen', '2.0.0', CURRENT_TIMESTAMP, 'CENTRAL_SONATYPE', false, 0, 'PENDING');
