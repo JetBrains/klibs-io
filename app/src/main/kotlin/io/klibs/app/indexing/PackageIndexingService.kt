@@ -6,16 +6,17 @@ import io.klibs.app.util.isAndroidxProject
 import io.klibs.app.util.normalizeGitHubLink
 import io.klibs.app.util.parseGitHubLink
 import io.klibs.app.util.toIndexRequest
-import io.klibs.core.pckg.repository.PackageRepository
-import io.klibs.core.pckg.service.PackageService
-import io.klibs.core.pckg.entity.IndexingRequestEntity
-import io.klibs.core.pckg.model.Configuration
 import io.klibs.core.pckg.dto.PackageDTO
+import io.klibs.core.pckg.entity.IndexingRequestEntity
+import io.klibs.core.pckg.enums.IndexingRequestStatus
+import io.klibs.core.pckg.model.Configuration
 import io.klibs.core.pckg.model.PackageDeveloper
 import io.klibs.core.pckg.model.PackageLicense
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.repository.IndexingRequestRepository
+import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.integration.ai.PackageDescriptionGenerator
@@ -38,6 +39,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.supervisorScope
 import org.jetbrains.kotlin.tooling.KotlinToolingMetadata
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Service
 
 @Service
@@ -51,8 +53,8 @@ class PackageIndexingService(
     private val indexingRequestRepository: IndexingRequestRepository,
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
-
-    ) {
+    private val selfProvider: ObjectProvider<PackageIndexingService>
+) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun indexNewPackages() {
@@ -96,40 +98,52 @@ class PackageIndexingService(
     }
 
     /**
-     * Processes the package queue by retrieving requests for indexing and handling them.
+     * Processes the package queue by claiming a package index request and processing it.
+     *
+     * It finds the highest-priority pending request, which selects PENDING requests ordered by
+     * release timestamp. The request is then atomically claimed, which updates
+     * its status to IN_PROCESS within a separate transaction.
+     *
+     * If an error occurs during processing, the request is marked as FAILED and its retry counter
+     * is incremented.
      *
      * @return true if a package indexing request was processed, false if the queue is empty.
      */
-    @Transactional
     fun processPackageQueue(): Boolean {
+        var indexRequestId: Long? = null
         try {
             val indexRequest = indexingRequestRepository.findFirstForIndexing()
             if (indexRequest == null) {
                 logger.info("The package index queue is empty")
                 return false
             } else {
-                processRequest(indexRequest)
-                logger.debug("Processed an indexing request for {}", indexRequest)
+                indexRequestId = indexRequest.idNotNull
+                selfProvider.getObject().processRequest(indexRequestId)
             }
         } catch (e: Exception) {
-            logger.error("Error during the queue processing: ${e.message}")
+            logger.error("Error during claiming an indexing request: ${e.message}", e)
+            try {
+                indexRequestId?.let { indexingRequestRepository.markAsFailed(it, e.message) }
+            } catch (ex: Exception) {
+                logger.error("Error during marking index request with id=$indexRequestId: ${ex.message}", ex)
+            }
         }
         return true
     }
 
-    private fun processRequest(indexRequest: IndexingRequestEntity) {
-        try {
-            val isIndividualArtifact = indexRequest.version != null
-            if (isIndividualArtifact) {
-                indexArtifact(indexRequest)
-            } else {
-                logger.error("Multi-version indexing requests are not supported")
-            }
-            indexingRequestRepository.deleteById(indexRequest.idNotNull)
-        } catch (e: Exception) {
-            logger.error("Unable to process the index request, marking the request as failed: $indexRequest", e)
-            indexingRequestRepository.markAsFailed(indexRequest.idNotNull, e.message)
+    @Transactional
+    protected fun processRequest(idToProcess: Long) {
+        val indexRequest =
+            indexingRequestRepository.updateStatus(idToProcess, IndexingRequestStatus.IN_PROCESS) ?: return
+
+        val isIndividualArtifact = indexRequest.version != null
+        if (isIndividualArtifact) {
+            indexArtifact(indexRequest)
+        } else {
+            logger.error("Multi-version indexing requests are not supported")
         }
+        indexingRequestRepository.deleteById(indexRequest.idNotNull)
+        logger.debug("Processed an indexing request for {}", indexRequest)
     }
 
     private fun indexArtifact(indexRequest: IndexingRequestEntity) {
@@ -370,7 +384,7 @@ class PackageIndexingService(
 
     private fun KotlinToolingMetadata.ProjectTargetMetadata.toPackageTarget(): PackageTarget {
         return PackageTarget(
-            platform= toPlatform(),
+            platform = toPlatform(),
             target = when (platformType) {
                 "common" -> null
                 "jvm" -> if (target == "com.android.build.api.variant.impl.KotlinMultiplatformAndroidLibraryTargetImpl") {
@@ -379,6 +393,7 @@ class PackageIndexingService(
                 } else {
                     extras.jvm?.jvmTarget
                 }
+
                 "androidJvm" -> extras.android?.targetCompatibility
                 "wasm" -> null
                 "native" -> extras.native?.konanTarget
@@ -402,6 +417,7 @@ class PackageIndexingService(
             } else {
                 PackagePlatform.JVM
             }
+
             "androidJvm" -> PackagePlatform.ANDROIDJVM
             "wasm" -> PackagePlatform.WASM
             "native" -> PackagePlatform.NATIVE
