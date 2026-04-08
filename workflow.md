@@ -109,6 +109,7 @@ This block describes working on a release flow.
 3. Check indexing performance:
    1. Enable indexing in [ConfigMap](https://console.intellij.net/config-map?clusterId=gke-europe-west1&namespace=klibs-test&config-map-name=klibs-features-config)
    2. Wait for the nightly run and check for errors and exceptions
+   3. Disable indexing in [ConfigMap](https://console.intellij.net/config-map?clusterId=gke-europe-west1&namespace=klibs-test&config-map-name=klibs-features-config)
 4. (TODO: KTL-2947) Run automated E2E / integration tests against the deployed branch.
 5. Perform manual smoke testing for critical scenarios:
     * Search project
