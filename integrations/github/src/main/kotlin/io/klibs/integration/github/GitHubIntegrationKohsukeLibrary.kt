@@ -206,10 +206,8 @@ internal class GitHubIntegrationKohsukeLibrary(
         }
     }
 
-    private fun GHRepository.markdownRender(markdownContent: String, mode: MarkdownMode): String? {
-        return this.renderMarkdown(markdownContent, mode)
-            .readText()
-            .takeIf { it.isNotBlank() }
+    private fun GHRepository.markdownRender(markdownContent: String, mode: MarkdownMode): String {
+        return this.renderMarkdown(markdownContent, mode).readText()
     }
 
     private fun <T> executeNullable(block: () -> T): T? {
