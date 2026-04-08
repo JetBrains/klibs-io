@@ -169,11 +169,11 @@ class GitHubIndexingService(
         lastUpdatedTs: Instant
     ): Boolean {
         val readmeMetadataEntity = readmeMetadataRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)
-        val modifiedSince = readmeMetadataEntity?.lastSyncedAt ?: lastUpdatedTs
+        val lastSyncedAt = readmeMetadataEntity?.lastSyncedAt ?: lastUpdatedTs
 
         return when (val result = gitHubIntegration.getReadmeWithModifiedSinceCheck(
             ghRepo.nativeId,
-            modifiedSince
+            lastSyncedAt
         )) {
             is ReadmeFetchResult.Content -> {
                 processReadmeContent(
@@ -217,7 +217,7 @@ class GitHubIndexingService(
                     )
                 } else {
                     readmeMetadataEntity.apply {
-                        lastSyncedAt = Instant.now()
+                        this.lastSyncedAt = Instant.now()
                     }
                     readmeMetadataRepository.save(readmeMetadataEntity)
                 }

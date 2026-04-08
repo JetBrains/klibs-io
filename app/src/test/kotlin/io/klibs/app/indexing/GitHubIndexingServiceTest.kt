@@ -34,7 +34,7 @@ import kotlin.test.assertNotNull
 
 
 @ExtendWith(OutputCaptureExtension::class)
-class GitHubIndexingServiceTest() : BaseUnitWithDbLayerTest() {
+class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var uut: GitHubIndexingService

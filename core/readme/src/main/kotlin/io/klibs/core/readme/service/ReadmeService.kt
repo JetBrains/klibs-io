@@ -3,6 +3,7 @@ package io.klibs.core.readme.service
 import io.klibs.core.readme.AndroidxReadmeProvider
 import io.klibs.core.readme.entity.ReadmeMetadataEntity
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.stereotype.Service
 import java.time.Instant
 
@@ -40,6 +41,7 @@ class ReadmeService(
             s3ReadmeService.readReadmeRaw(projectInfo.id, projectInfo.scmRepositoryId)
         }
 
+    @Transactional
     fun writeReadmeFiles(
         projectId: Int,
         scmRepositoryId: Int,
