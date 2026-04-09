@@ -144,5 +144,7 @@ databaseChangeLog:
   - include:
       file: db/migration/2026-Q1/2026-03-17_create_tag_rules.yml
   - include:
+      file: db/migration/2026-Q1/2026-03-20_create_readme_metadata_table.yml
+  - include:
       file: db/migration/2026-Q2/2026-04-08_add_status_to_package_index_request.yml
 

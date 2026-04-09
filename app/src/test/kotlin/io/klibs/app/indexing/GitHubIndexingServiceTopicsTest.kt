@@ -9,6 +9,7 @@ import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeService
@@ -24,6 +25,7 @@ class GitHubIndexingServiceTopicsTest {
     private val gitHubIntegration: GitHubIntegration = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
     private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
+    private val readmeMetadataRepository: ReadmeMetadataRepository = mock()
     private val readmeService: ReadmeService = mock()
     private val projectRepository: ProjectRepository = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
@@ -31,16 +33,19 @@ class GitHubIndexingServiceTopicsTest {
     private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mock()
     private val ownerBackoffProvider: BackoffProvider = mock()
     private val projectService: ProjectService = mock()
+    private val readmeReprocessPeriodDays: Long = 7
 
     private fun uut() = GitHubIndexingService(
         gitHubIntegration = gitHubIntegration,
         scmRepositoryRepository = scmRepositoryRepository,
         scmOwnerRepository = scmOwnerRepository,
+        readmeMetadataRepository = readmeMetadataRepository,
         readmeService = readmeService,
         readmeContentBuilder = readmeContentBuilder,
         projectRepository = projectRepository,
         ownerBackoffProvider = ownerBackoffProvider,
         projectService = projectService,
+        readmeReprocessPeriodDays = readmeReprocessPeriodDays
     )
 
     @Test

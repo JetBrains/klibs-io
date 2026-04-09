@@ -10,7 +10,7 @@ import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.readme.service.ReadmeServiceDispatcher
+import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.github.GitHubIntegration
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -24,7 +24,7 @@ import java.time.Instant
 
 class ProjectIndexingServiceAddAiTagsTest {
 
-    private val readmeServiceDispatcher: ReadmeServiceDispatcher = mock()
+    private val readmeService: ReadmeService = mock()
     private val projectDescriptionGenerator: io.klibs.integration.ai.ProjectDescriptionGenerator = mock()
     private val projectRepository: ProjectRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
@@ -37,18 +37,18 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val tagsBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
 
     private fun uut() = ProjectIndexingService(
-            readmeServiceDispatcher = readmeServiceDispatcher,
-            projectDescriptionGenerator = projectDescriptionGenerator,
-            projectRepository = projectRepository,
-            scmRepositoryRepository = scmRepositoryRepository,
-            scmOwnerRepository = scmOwnerRepository,
-            tagsGenerationService = tagsGenerator,
-            projectTagRepository = projectTagRepository,
-            gitHubIntegration = gitHubIntegration,
-            readmeContentBuilder = readmeContentBuilder,
-            descriptionBackoffProvider = descriptionBackoffProvider,
-            tagsBackoffProvider = tagsBackoffProvider,
-        )
+        readmeService = readmeService,
+        projectDescriptionGenerator = projectDescriptionGenerator,
+        projectRepository = projectRepository,
+        scmRepositoryRepository = scmRepositoryRepository,
+        scmOwnerRepository = scmOwnerRepository,
+        tagsGenerationService = tagsGenerator,
+        projectTagRepository = projectTagRepository,
+        gitHubIntegration = gitHubIntegration,
+        readmeContentBuilder = readmeContentBuilder,
+        descriptionBackoffProvider = descriptionBackoffProvider,
+        tagsBackoffProvider = tagsBackoffProvider,
+    )
 
     @Test
     fun `addAiTags should generate tags and save them with AI origin`() {
@@ -90,8 +90,8 @@ class ProjectIndexingServiceAddAiTagsTest {
             updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
         whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
-        whenever(readmeServiceDispatcher.readReadmeMd(
-            ReadmeServiceDispatcher.ProjectInfo(projectId, scmRepoId, "test-repo", "octocat")
+        whenever(readmeService.readReadmeMd(
+            ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "octocat")
         )).thenReturn(readme)
 
         val generatedTags = listOf("kotlin", "testing", "http-client")
@@ -130,7 +130,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         uut().addAiTags()
 
         verify(scmRepositoryRepository, never()).findById(any<Int>())
-        verify(readmeServiceDispatcher, never()).readReadmeMd(any())
+        verify(readmeService, never()).readReadmeMd(any())
         verify(tagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
         verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
     }
@@ -176,8 +176,8 @@ class ProjectIndexingServiceAddAiTagsTest {
             updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
         whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
-        whenever(readmeServiceDispatcher.readReadmeMd(
-            ReadmeServiceDispatcher.ProjectInfo(projectId, scmRepoId, "test-repo", "owner")
+        whenever(readmeService.readReadmeMd(
+            ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "owner")
         )).thenReturn("# Test README")
 
         // Force a failure during tag generation

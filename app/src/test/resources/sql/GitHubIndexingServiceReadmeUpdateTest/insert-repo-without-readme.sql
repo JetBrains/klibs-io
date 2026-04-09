@@ -20,7 +20,7 @@ VALUES (598863246,
         true,
         true,
         true,
-        true,
+        false,
         '2023-02-08 01:28:54.000000',
         current_timestamp - interval '24 hours',
         '2023-02-19 17:44:36.000000',
@@ -42,6 +42,3 @@ VALUES (10001,
         'k-big-numbers',
         'initial minimized readme',
         198);
-
-INSERT INTO public.readme_metadata (id, scm_repo_id, last_synced_at, last_processed_at)
-VALUES (10001, 368,current_timestamp - interval '24 hours', current_timestamp - interval '24 hours')

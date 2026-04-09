@@ -5,9 +5,10 @@ import io.klibs.core.owner.ScmOwnerEntity
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.project.ProjectService
 import io.klibs.core.project.repository.ProjectRepository
+import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.readme.service.S3ReadmeService
+import io.klibs.core.readme.service.S3ReadmeCRUDService
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubLicense
 import io.klibs.integration.github.model.GitHubRepository
@@ -35,13 +36,16 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
 
     @Autowired
+    private lateinit var readmeMetadataRepository: ReadmeMetadataRepository
+
+    @Autowired
     private lateinit var projectRepository: ProjectRepository
 
     @MockitoBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
     @MockitoBean
-    private lateinit var s3ReadmeService: S3ReadmeService
+    private lateinit var s3ReadmeService: S3ReadmeCRUDService
 
     @MockitoBean
     private lateinit var projectService: ProjectService
@@ -119,8 +123,9 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
     fun `updateRepo - owner unchanged keeps same owner id`() {
-        val before = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
-        initVars(before)
+        val repoBefore = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        val readmeMetadataBefore = requireNotNull(readmeMetadataRepository.findByScmRepoId(repoBefore.idNotNull))
+        initVars(repoBefore)
 
         val ghRepo = ghRepoBefore.copy(
             description = "Updated repo description"
@@ -130,16 +135,16 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(ghLicenseBefore)
 
         whenever(
-            gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, before.updatedAtTs)
+            gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, readmeMetadataBefore.lastSyncedAt)
         ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
         whenever(gitHubIntegration.markdownToHtml("Updated readme", repoNativeId)).thenReturn("<p>Updated readme</p>")
         whenever(gitHubIntegration.markdownRender("Updated readme", repoNativeId)).thenReturn("Updated readme (rendered)")
 
-        uut.updateRepo(before)
+        uut.updateRepo(repoBefore)
 
         verify(gitHubIntegration).getRepository(repoNativeId)
         verify(gitHubIntegration).getLicense(repoNativeId)
-        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, before.updatedAtTs)
+        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, readmeMetadataBefore.lastSyncedAt)
         verify(gitHubIntegration).markdownToHtml("Updated readme", repoNativeId)
         verify(gitHubIntegration).markdownRender("Updated readme", repoNativeId)
         verify(gitHubIntegration).getRepositoryTopics(repoNativeId)
@@ -147,8 +152,8 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
 
         val after = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
 
-        assertTrue(after.updatedAtTs.isAfter(before.updatedAtTs))
-        val beforeUpdated = before.copy(
+        assertTrue(after.updatedAtTs.isAfter(repoBefore.updatedAtTs))
+        val beforeUpdated = repoBefore.copy(
             description = ghRepo.description,
             updatedAtTs = after.updatedAtTs,
         )
@@ -160,6 +165,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
     fun `updateRepo - owner changed with different nativeId relocates to new owner`() {
         val repoBefore = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
         val ownerBefore = requireNotNull(scmOwnerRepository.findById(repoBefore.ownerId))
+        val readmeMetadataBefore = requireNotNull(readmeMetadataRepository.findByScmRepoId(repoBefore.idNotNull))
         initVars(repoBefore, ownerBefore)
 
         val newOwnerLogin = "new-org"
@@ -180,7 +186,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(ghLicenseBefore)
 
         whenever(
-            gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
+            gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, readmeMetadataBefore.lastSyncedAt)
         ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
         whenever(gitHubIntegration.markdownToHtml("Updated readme", repoNativeId)).thenReturn("<p>Updated readme</p>")
         whenever(gitHubIntegration.markdownRender("Updated readme", repoNativeId)).thenReturn("Updated readme (rendered)")
@@ -190,7 +196,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         verify(gitHubIntegration).getRepository(repoNativeId)
         verify(gitHubIntegration).getUser(newOwnerLogin)
         verify(gitHubIntegration).getLicense(repoNativeId)
-        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
+        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, readmeMetadataBefore.lastSyncedAt)
         verify(gitHubIntegration).markdownToHtml("Updated readme", repoNativeId)
         verify(gitHubIntegration).markdownRender("Updated readme", repoNativeId)
         verify(gitHubIntegration).getRepositoryTopics(repoNativeId)
@@ -229,6 +235,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
     fun `updateRepo - owner changed but same nativeId updates login and keeps owner id`() {
         val repoBefore = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
         val ownerBefore = requireNotNull(scmOwnerRepository.findById(repoBefore.ownerId))
+        val readmeMetadataBefore = requireNotNull(readmeMetadataRepository.findByScmRepoId(repoBefore.idNotNull))
         initVars(repoBefore, ownerBefore)
 
         val renamedLogin = "k-libs-renamed"
@@ -246,7 +253,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(ghLicenseBefore)
 
         whenever(
-            gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
+            gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, readmeMetadataBefore.lastSyncedAt)
         ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
         whenever(gitHubIntegration.markdownToHtml("Updated readme", repoNativeId)).thenReturn("<p>Updated readme</p>")
         whenever(gitHubIntegration.markdownRender("Updated readme", repoNativeId)).thenReturn("Updated readme (rendered)")
@@ -256,7 +263,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         verify(gitHubIntegration).getRepository(repoNativeId)
         verify(gitHubIntegration).getUser(renamedLogin)
         verify(gitHubIntegration).getLicense(repoNativeId)
-        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
+        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, readmeMetadataBefore.lastSyncedAt)
         verify(gitHubIntegration).markdownToHtml("Updated readme", repoNativeId)
         verify(gitHubIntegration).markdownRender("Updated readme", repoNativeId)
         verify(gitHubIntegration).getRepositoryTopics(repoNativeId)
@@ -282,6 +289,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
     fun `updateRepo - repository renamed under same owner uses upsert to change name`() {
         val repoBefore = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        val readmeMetadataBefore = requireNotNull(readmeMetadataRepository.findByScmRepoId(repoBefore.idNotNull))
         initVars(repoBefore)
 
         val newName = repoBefore.name + "-renamed"
@@ -294,7 +302,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(ghLicenseBefore)
 
         whenever(
-            gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
+            gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, readmeMetadataBefore.lastSyncedAt)
         ).thenReturn(ReadmeFetchResult.Content("Updated readme"))
         whenever(gitHubIntegration.markdownToHtml("Updated readme", repoNativeId)).thenReturn("<p>Updated readme</p>")
         whenever(gitHubIntegration.markdownRender("Updated readme", repoNativeId)).thenReturn("Updated readme (rendered)")
@@ -303,7 +311,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
 
         verify(gitHubIntegration).getRepository(repoNativeId)
         verify(gitHubIntegration).getLicense(repoNativeId)
-        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, repoBefore.updatedAtTs)
+        verify(gitHubIntegration).getReadmeWithModifiedSinceCheck(repoNativeId, readmeMetadataBefore.lastSyncedAt)
         verify(gitHubIntegration).markdownToHtml("Updated readme", repoNativeId)
         verify(gitHubIntegration).markdownRender("Updated readme", repoNativeId)
         verify(gitHubIntegration).getRepositoryTopics(repoNativeId)

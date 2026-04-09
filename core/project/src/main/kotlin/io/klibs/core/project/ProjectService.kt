@@ -16,7 +16,7 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.project.utils.normalizeTag
 import io.klibs.core.readme.AndroidxReadmeProvider
-import io.klibs.core.readme.service.ReadmeServiceDispatcher
+import io.klibs.core.readme.service.ReadmeService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class ProjectService(
     private val packageService: PackageService,
-    private val readmeServiceDispatcher: ReadmeServiceDispatcher,
+    private val readmeService: ReadmeService,
     private val projectRepository: ProjectRepository,
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val markerRepository: MarkerRepository,
@@ -70,8 +70,8 @@ class ProjectService(
     @Transactional(readOnly = true)
     fun getProjectReadmeMd(ownerLogin: String, projectName: String): String? {
         val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
-        return readmeServiceDispatcher.readReadmeMd(
-            ReadmeServiceDispatcher.ProjectInfo(
+        return readmeService.readReadmeMd(
+            ReadmeService.ProjectInfo(
                 projectEntity.idNotNull,
                 projectEntity.scmRepoId,
                 projectName,
@@ -83,8 +83,8 @@ class ProjectService(
     @Transactional(readOnly = true)
     fun getProjectReadmeHtml(ownerLogin: String, projectName: String): String? {
         val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
-        return readmeServiceDispatcher.readReadmeHtml(
-            ReadmeServiceDispatcher.ProjectInfo(
+        return readmeService.readReadmeHtml(
+            ReadmeService.ProjectInfo(
                 projectEntity.idNotNull,
                 projectEntity.scmRepoId,
                 projectName,

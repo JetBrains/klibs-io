@@ -13,7 +13,7 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.AndroidxReadmeProvider
 import io.klibs.core.readme.GitHubIndexingReadmeContent
 import io.klibs.core.readme.ReadmeContentBuilder
-import io.klibs.core.readme.service.ReadmeServiceDispatcher
+import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.ReadmeFetchResult
@@ -28,7 +28,7 @@ import java.time.ZoneOffset
 
 @Service
 class ProjectIndexingService(
-    private val readmeServiceDispatcher: ReadmeServiceDispatcher,
+    private val readmeService: ReadmeService,
     private val projectDescriptionGenerator: ProjectDescriptionGenerator,
 
     private val projectRepository: ProjectRepository,
@@ -59,8 +59,8 @@ class ProjectIndexingService(
             val ownerLogin = scmOwnerRepository.findById(project.ownerId)?.login
                 ?: error("Unable to find owner for projectId=${project.id}")
 
-            val readmeMd = readmeServiceDispatcher.readReadmeMd(
-                ReadmeServiceDispatcher.ProjectInfo(
+            val readmeMd = readmeService.readReadmeMd(
+                ReadmeService.ProjectInfo(
                     project.idNotNull,
                     project.scmRepoId,
                     project.name,
@@ -98,8 +98,8 @@ class ProjectIndexingService(
             val repo = scmRepositoryRepository.findById(project.scmRepoId) ?: error("Unable to find the repo: $project")
             logger.debug("Generating AI tags for projectId=${project.id}: ${project.name}")
 
-            val readmeMd = readmeServiceDispatcher.readReadmeMd(
-                ReadmeServiceDispatcher.ProjectInfo(
+            val readmeMd = readmeService.readReadmeMd(
+                ReadmeService.ProjectInfo(
                     project.idNotNull,
                     project.scmRepoId,
                     project.name,
@@ -204,7 +204,9 @@ class ProjectIndexingService(
                 )
             )
 
-            readmeServiceDispatcher.writeReadmeFiles(
+            readmeService.writeReadmeFiles(
+                scmRepositoryId = scmRepositoryEntity.idNotNull,
+                rawContent = readmeContent.raw,
                 projectId = persistedEntity.idNotNull,
                 mdContent = readmeContent.markdown,
                 htmlContent = readmeContent.html
