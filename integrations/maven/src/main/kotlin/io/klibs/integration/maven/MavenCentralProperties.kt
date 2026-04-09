@@ -13,5 +13,6 @@ data class MavenIntegrationProperties(
         val discoveryEndpoint: String,
         val indexEndpoint: String,
         val indexDir: String,
+        val contentEndpoint: String,
     )
 }
