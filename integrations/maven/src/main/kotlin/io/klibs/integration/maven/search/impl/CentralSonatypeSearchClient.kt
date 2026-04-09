@@ -16,16 +16,17 @@ import org.apache.maven.search.backend.smo.SmoSearchBackendFactory.CSC_BACKEND_I
 import org.apache.maven.search.backend.smo.SmoSearchBackendFactory.CSC_REPOSITORY_ID
 import org.apache.maven.search.backend.smo.SmoSearchBackendFactory.CSC_SMO_URI
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Instant
-
-private const val MAVEN_CENTRAL_REPOSITORY_URL = "https://search.maven.org/remotecontent?filepath="
 
 @Component("CENTRAL_SONATYPE")
 class CentralSonatypeSearchClient(
     xmlMapper: XmlMapper,
     mavenCentralRateLimiter: MavenCentralRateLimiter,
     objectMapper: ObjectMapper,
+    @Value("\${klibs.integration.maven.central.content-endpoint}")
+    private val contentEndpoint: String,
 ) : BaseMavenSearchClient(
     xmlMapper,
     mavenCentralRateLimiter,
@@ -58,7 +59,7 @@ class CentralSonatypeSearchClient(
     }
 
     override fun getContentUrlPrefix(): String {
-        return MAVEN_CENTRAL_REPOSITORY_URL
+        return contentEndpoint
     }
 
     private fun Record.toArtifactData(): ArtifactData {
