@@ -56,6 +56,7 @@ class MavenStaticDataProviderTest {
                 ScraperType.SEARCH_MAVEN -> true
                 ScraperType.GOOGLE_MAVEN -> providers.entries.find { it.key == repo.name && it.value is GoogleMavenSearchClient }
                 ScraperType.CENTRAL_SONATYPE -> providers.entries.find { it.key == repo.name && it.value is CentralSonatypeSearchClient }
+                ScraperType.MANUAL_REQUEST -> true
             }
             assertNotNull(providerBean, "No provider found for repository ${repo.name}")
         }
