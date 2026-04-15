@@ -1,18 +1,31 @@
 package io.klibs.core.pckg.repository
 
 import io.klibs.core.pckg.entity.IndexingRequestEntity
+import io.klibs.core.pckg.enums.IndexingRequestStatus
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.query.Param
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
 interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long> {
 
+    @Transactional
+    @Query(value = """
+        UPDATE package_index_request
+        SET status = :#{#newStatus.name()}
+        WHERE id = :id and status != :#{#newStatus.name()}
+        RETURNING *
+    """, nativeQuery = true)
+    
+    fun updateStatus(id: Long, newStatus: IndexingRequestStatus): IndexingRequestEntity?
+
     @Query(value = """
         SELECT req.*
         FROM package_index_request req
-        WHERE req.failed_attempts < 2
+        WHERE req.status = 'PENDING'
+          AND req.failed_attempts < 2
           AND NOT EXISTS (
               SELECT 1
               FROM banned_packages bp
@@ -21,15 +34,15 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
           )
         ORDER BY req.released_ts DESC NULLS FIRST
         LIMIT 1
-        FOR UPDATE SKIP LOCKED
     """, nativeQuery = true)
     fun findFirstForIndexing(): IndexingRequestEntity?
 
     @Modifying
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Query(value = """
         UPDATE package_index_request
-        SET failed_ts = current_timestamp,
+        SET status = 'PENDING',
+            failed_ts = current_timestamp,
             failed_attempts = failed_attempts + 1,
             last_error_message = :errorMessage
         WHERE id = :id

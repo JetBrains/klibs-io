@@ -1,6 +1,5 @@
 package io.klibs.core.project
 
-import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
@@ -9,35 +8,29 @@ import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.project.entity.TagEntity
-import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.scm.repository.readme.ReadmeService
-import io.klibs.core.owner.ScmOwnerType
+import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
-import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class ProjectServiceTest {
 
     private val packageService: PackageService = mock()
-    private val readmeService: ReadmeService = mock()
+    private val readmeServiceDispatcher: ReadmeServiceDispatcher = mock()
     private val projectRepository: ProjectRepository = mock()
-    private val packageRepository: PackageRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
     private val markerRepository: MarkerRepository = mock()
     private val tagRepository: TagRepository = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
     private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mock()
-    private val scmRepo: ScmRepositoryEntity = mock()
     private val project: ProjectEntity = mock()
 
     private val uut = ProjectService(
         packageService,
-        readmeService,
+        readmeServiceDispatcher,
         projectRepository,
-        packageRepository,
         scmRepositoryRepository,
         markerRepository,
         tagRepository,
@@ -50,18 +43,15 @@ class ProjectServiceTest {
         val projectName = "test-project"
         val ownerLogin = "test-owner"
         val projectId = 1
-        val scmRepoId = 10
         val tags = listOf("", " ", "!!!")
         val tagsType = TagOrigin.GITHUB
 
-        whenever(scmRepo.idNotNull).thenReturn(scmRepoId)
-        whenever(scmRepositoryRepository.findByName(ownerLogin, projectName)).thenReturn(scmRepo)
-        whenever(projectRepository.findByScmRepoId(scmRepoId)).thenReturn(project)
+        whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
         whenever(project.idNotNull).thenReturn(projectId)
 
         val result = uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
 
-        assertEquals(emptyList<String>(), result)
+        assertEquals(emptyList(), result)
         verify(projectTagRepository).deleteByProjectIdAndOrigin(projectId, tagsType)
         verify(projectTagRepository, never()).saveAll(any<List<TagEntity>>())
     }
@@ -71,13 +61,10 @@ class ProjectServiceTest {
         val projectName = "test-project"
         val ownerLogin = "test-owner"
         val projectId = 1
-        val scmRepoId = 10
         val tags = listOf("", " ", "!!!")
         val tagsType = TagOrigin.USER
 
-        whenever(scmRepo.idNotNull).thenReturn(scmRepoId)
-        whenever(scmRepositoryRepository.findByName(ownerLogin, projectName)).thenReturn(scmRepo)
-        whenever(projectRepository.findByScmRepoId(scmRepoId)).thenReturn(project)
+        whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
         whenever(project.idNotNull).thenReturn(projectId)
 
         assertFailsWith<IllegalArgumentException> {
@@ -91,22 +78,39 @@ class ProjectServiceTest {
         val projectName = "test-project"
         val ownerLogin = "test-owner"
         val projectId = 1
-        val scmRepoId = 10
         val tags = listOf("valid-tag", "another-tag")
         val tagsType = TagOrigin.GITHUB
 
-        whenever(scmRepo.idNotNull).thenReturn(scmRepoId)
-        whenever(scmRepositoryRepository.findByName(ownerLogin, projectName)).thenReturn(scmRepo)
-        whenever(projectRepository.findByScmRepoId(scmRepoId)).thenReturn(project)
+        whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
         whenever(project.idNotNull).thenReturn(projectId)
 
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("valid-tag")).thenReturn("Valid Tag")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("another-tag")).thenReturn("Another Tag")
+        whenever(allowedProjectTagsRepository.existsById("valid-tag")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("another-tag")).thenReturn(true)
 
         val result = uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
 
-        assertEquals(listOf("Valid Tag", "Another Tag"), result)
+        assertEquals(listOf("valid-tag", "another-tag"), result)
         verify(projectTagRepository).deleteByProjectIdAndOrigin(projectId, tagsType)
         verify(projectTagRepository).saveAll(any<List<TagEntity>>())
     }
+
+    @Test
+    fun `updateProjectTags throws exception for USER tags when tags are not allowed`() {
+        val projectName = "test-project"
+        val ownerLogin = "test-owner"
+        val projectId = 1
+        val tags = listOf("invalid-tag")
+        val tagsType = TagOrigin.USER
+
+        whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
+        whenever(project.idNotNull).thenReturn(projectId)
+        whenever(allowedProjectTagsRepository.existsById("invalid-tag")).thenReturn(false)
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
+        }
+        assertEquals("Invalid tags were provided. After normalization they are: invalid-tag", exception.message)
+        verify(projectTagRepository, never()).deleteByProjectIdAndOrigin(any(), any())
+    }
+
 }

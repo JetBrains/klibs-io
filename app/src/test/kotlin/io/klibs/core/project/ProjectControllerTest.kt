@@ -1,22 +1,38 @@
 package io.klibs.core.project
 
-import SmokeTestBase
-import org.springframework.test.context.ActiveProfiles
+import BaseUnitWithDbLayerTest
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.core.pckg.api.PackageOverviewResponse
+import io.klibs.core.search.service.SearchService
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.jdbc.Sql
+import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 @ActiveProfiles("test")
-class ProjectControllerTest : SmokeTestBase() {
+class ProjectControllerTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
+    @Autowired
+    private lateinit var mockMvc : MockMvc
+
+    @Autowired
+    private lateinit var searchService: SearchService
+
+    @BeforeEach
+    fun setup() {
+        searchService.refreshSearchViews()
+    }
+
     @Test
+    @Sql(scripts = ["classpath:sql/ProjectControllerTest/seed.sql"])
     fun `should return descriptions for packages if present`() {
         // Act & Assert
         val result = mockMvc.get("/project/Kotlin/kotlinx-atomicfu/packages")
@@ -41,6 +57,7 @@ class ProjectControllerTest : SmokeTestBase() {
     }
 
     @Test
+    @Sql(scripts = ["classpath:sql/ProjectControllerTest/seed.sql"])
     fun `should return 200 when project details are found`() {
         // Act & Assert
         mockMvc.get("/project/Kotlin/kotlinx-atomicfu/details")
@@ -52,6 +69,7 @@ class ProjectControllerTest : SmokeTestBase() {
     }
 
     @Test
+    @Sql(scripts = ["classpath:sql/ProjectControllerTest/seed.sql"])
     fun `should return 404 when project details are not found`() {
         // Act & Assert
         mockMvc.get("/project/Kotlin/non-existent-project/details")

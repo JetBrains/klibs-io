@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: delete-markers-from-old-main-androidx-project
+      author: nikita.vlaev@jetbrains.com
+      comment: >
+        KTL-4038: Remove markers from the old main androidx project since
+        packages have been relinked to sub-projects. Markers should be associated
+        with the specific sub-projects instead.
+      changes:
+        - sql:
+            sql: |
+              DELETE FROM project_marker
+              WHERE project_id IN (
+                SELECT p.id
+                FROM project p
+                JOIN scm_owner o ON p.owner_id = o.id
+                WHERE p.name = 'androidx'
+                  AND o.login = 'androidx'
+              );
+
+  - changeSet:
+      id: add-local-storage-markers-to-androidx-sub-projects
+      author: nikita.vlaev@jetbrains.com
+      comment: >
+        KTL-4038: Add LOCAL_STORAGE markers to room.
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT p.id, 'LOCAL_STORAGE'
+              FROM project p
+              JOIN scm_owner o ON p.owner_id = o.id
+              WHERE o.login = 'androidx'
+                AND p.name = 'room'
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-navigation-markers-to-androidx-sub-projects
+      author: nikita.vlaev@jetbrains.com
+      comment: >
+        KTL-4038: Add NAVIGATION markers to androidx sub-projects that contain
+        navigation functionality.
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT p.id, 'NAVIGATION'
+              FROM project p
+              JOIN scm_owner o ON p.owner_id = o.id
+              WHERE o.login = 'androidx'
+                AND p.name IN ('navigation', 'navigation3', 'navigationevent')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-preferences-markers-to-androidx-sub-projects
+      author: nikita.vlaev@jetbrains.com
+      comment: >
+        KTL-4038: Add PREFERENCES markers to androidx sub-projects that contain
+        preferences functionality (datastore handles preferences).
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT p.id, 'PREFERENCES'
+              FROM project p
+              JOIN scm_owner o ON p.owner_id = o.id
+              WHERE o.login = 'androidx'
+                AND p.name = 'datastore'
+              ON CONFLICT (project_id, type) DO NOTHING;

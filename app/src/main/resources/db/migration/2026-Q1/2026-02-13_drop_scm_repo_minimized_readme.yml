@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop scm_repo minimized_readme
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: scm_repo
+            columnName: minimized_readme
+      changes:
+        - dropColumn:
+            tableName: scm_repo
+            columnName: minimized_readme

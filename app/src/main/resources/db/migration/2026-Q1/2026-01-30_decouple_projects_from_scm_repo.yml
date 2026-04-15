@@ -1,0 +1,99 @@
+databaseChangeLog:
+  - changeSet:
+      id: added project columns from scm_repo
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - addColumn:
+            tableName: project
+            columns:
+              - column:
+                  name: name
+                  type: TEXT
+              - column:
+                  name: minimized_readme
+                  type: TEXT
+              - column:
+                  name: owner_id
+                  type: INTEGER
+  - changeSet:
+      id: populate project data
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              UPDATE project
+              SET
+                name = scm_repo.name,
+                minimized_readme = scm_repo.minimized_readme,
+                owner_id = scm_repo.owner_id
+              FROM scm_repo
+              WHERE scm_repo.id = project.scm_repo_id;
+  - changeSet:
+      id: Add new project constraints and indices
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - addNotNullConstraint:
+            tableName: project
+            columnName: name
+            columnDataType: TEXT
+        - addNotNullConstraint:
+            tableName: project
+            columnName: owner_id
+            columnDataType: INTEGER
+        - dropUniqueConstraint:
+            tableName: project
+            constraintName: project_scm_repo_id_key
+        - addUniqueConstraint:
+            tableName: project
+            columnNames: scm_repo_id, name
+            constraintName: uk_project_scm_repo_id_name
+        - addForeignKeyConstraint:
+            baseTableName: project
+            baseColumnNames: owner_id
+            constraintName: fk_project_owner_id
+            referencedTableName: scm_owner
+            referencedColumnNames: id
+        - createIndex:
+            tableName: project
+            indexName: idx_project_owner_id
+            columns:
+              - column:
+                  name: owner_id
+  - changeSet:
+      id: recreate project_index
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sqlFile:
+            path: 2026-01-30_recreate_project_index.sql
+            relativeToChangelogFile: true
+  - changeSet:
+      id: project_index indices
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts)
+        - sql:
+            sql: CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector)
+        - createIndex:
+            indexName: project_index_stars_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: stars
+        - createIndex:
+            indexName: project_index_project_id_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: project_id
+        - createIndex:
+            indexName: project_index_unique
+            tableName: project_index
+            unique: true
+            columns:
+              - column:
+                  name: project_id
+      rollback:
+        - dropIndex:
+            indexName: project_index_unique
+            tableName: project_index

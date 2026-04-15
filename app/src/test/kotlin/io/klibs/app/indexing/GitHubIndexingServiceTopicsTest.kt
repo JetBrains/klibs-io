@@ -8,10 +8,10 @@ import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
+import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.scm.repository.readme.ReadmeProcessor
-import io.klibs.core.scm.repository.readme.ReadmeService
+import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.ReadmeFetchResult
@@ -27,7 +27,7 @@ class GitHubIndexingServiceTopicsTest {
     private val readmeService: ReadmeService = mock()
     private val projectRepository: ProjectRepository = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
-    private val readmeProcessors: List<ReadmeProcessor> = emptyList()
+    private val readmeContentBuilder: ReadmeContentBuilder = mock()
     private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mock()
     private val ownerBackoffProvider: BackoffProvider = mock()
     private val projectService: ProjectService = mock()
@@ -37,7 +37,7 @@ class GitHubIndexingServiceTopicsTest {
         scmRepositoryRepository = scmRepositoryRepository,
         scmOwnerRepository = scmOwnerRepository,
         readmeService = readmeService,
-        readmeProcessors = readmeProcessors,
+        readmeContentBuilder = readmeContentBuilder,
         projectRepository = projectRepository,
         ownerBackoffProvider = ownerBackoffProvider,
         projectService = projectService,
@@ -71,7 +71,6 @@ class GitHubIndexingServiceTopicsTest {
             openIssues = 0,
             lastActivityTs = Instant.now().minusSeconds(1800),
             updatedAtTs = Instant.now().minusSeconds(300),
-            minimizedReadme = null,
         )
 
         val ghRepo = GitHubRepository(
@@ -93,14 +92,16 @@ class GitHubIndexingServiceTopicsTest {
         val project = ProjectEntity(
             id = 101,
             scmRepoId = repoId,
+            ownerId = 10,
+            name = "awesome-lib",
             description = null,
+            minimizedReadme = null,
             latestVersion = "1.0.0",
             latestVersionTs = Instant.now().minusSeconds(100),
         )
 
         // Topics with mixed case, blanks, and duplicates
         val topicsFromGh = listOf("Kotlin", "kotlin", "  SPRING  ", "", "Web", "compose UI", "flow")
-        val expectedNormalized = listOf("kotlin", "spring", "web", "compose-ui", "kotlin-flow")
 
         whenever(gitHubIntegration.getRepository(ghNativeId)).thenReturn(ghRepo)
         whenever(gitHubIntegration.getLicense(ghNativeId)).thenReturn(null)
@@ -113,16 +114,16 @@ class GitHubIndexingServiceTopicsTest {
             arg.copy(id = repoId)
         }
 
-        whenever(projectRepository.findByScmRepoId(repoId)).thenReturn(project)
+        whenever(projectRepository.findByNameAndScmRepoId(any(), eq(repoId))).thenReturn(project)
         whenever(gitHubIntegration.getRepositoryTopics(ghNativeId)).thenReturn(topicsFromGh)
         whenever(projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB)).thenReturn(emptyList())
 
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue(any<String>())).thenReturn(null)
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("kotlin")).thenReturn("kotlin")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("spring")).thenReturn("spring")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("web")).thenReturn("web")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("compose-ui")).thenReturn("compose-ui")
-        whenever(allowedProjectTagsRepository.findCanonicalNameByValue("flow")).thenReturn("kotlin-flow")
+        whenever(allowedProjectTagsRepository.existsById(any<String>())).thenReturn(false)
+        whenever(allowedProjectTagsRepository.existsById("kotlin")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("spring")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("web")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("compose-ui")).thenReturn(true)
+        whenever(allowedProjectTagsRepository.existsById("flow")).thenReturn(false)
 
         uut().updateRepo(existingRepo)
 

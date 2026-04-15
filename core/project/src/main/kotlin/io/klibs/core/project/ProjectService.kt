@@ -1,6 +1,5 @@
 package io.klibs.core.project
 
-import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackagePlatform
@@ -10,12 +9,14 @@ import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.MarkerRepository
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
+import io.klibs.core.project.repository.SitemapProjectEntry
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.scm.repository.readme.ReadmeService
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.project.utils.normalizeTag
+import io.klibs.core.readme.AndroidxReadmeProvider
+import io.klibs.core.readme.service.ReadmeServiceDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,10 +24,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class ProjectService(
     private val packageService: PackageService,
-    private val readmeService: ReadmeService,
-
+    private val readmeServiceDispatcher: ReadmeServiceDispatcher,
     private val projectRepository: ProjectRepository,
-    private val packageRepository: PackageRepository,
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val markerRepository: MarkerRepository,
     private val tagRepository: TagRepository,
@@ -35,34 +34,23 @@ class ProjectService(
 ) {
     @Transactional(readOnly = true)
     fun getProjectDetailsByName(ownerLogin: String, projectName: String): ProjectDetails? {
-        val scmRepositoryEntity = scmRepositoryRepository.findByName(ownerLogin, projectName) ?: return null
-        val projectEntity = requireNotNull(projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)) {
-            "Unable to find the corresponding project for an existing SCM repo: $scmRepositoryEntity"
-        }
-
-        // Check if project has any packages
-        if (!packageRepository.existsByProjectId(projectEntity.idNotNull)) {
-            return null
-        }
-
-        val projectPlatforms = packageRepository.findPlatformsOf(projectEntity.idNotNull)
-
-        return projectEntity.toDetails(
-            projectEntity = projectEntity,
-            scmRepositoryEntity = scmRepositoryEntity,
-            projectPlatforms = projectPlatforms,
-            projectMarkers = markerRepository.findAllByProjectId(projectEntity.idNotNull),
-            projectTags = tagRepository.getTagsByProjectId(projectEntity.idNotNull)
-        )
+        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
+        return buildProjectDetails(projectEntity)
     }
 
     @Transactional(readOnly = true)
     fun getProjectDetailsById(projectId: Int): ProjectDetails? {
         val projectEntity = projectRepository.findById(projectId) ?: return null
+        return buildProjectDetails(projectEntity)
+    }
+
+    private fun buildProjectDetails(projectEntity: ProjectEntity): ProjectDetails? {
         val scmRepositoryEntity = requireNotNull(scmRepositoryRepository.findById(projectEntity.scmRepoId)) {
             "Unable to find the corresponding scm repository for an existing project: $projectEntity"
         }
-        val projectPlatforms = packageRepository.findPlatformsOf(projectEntity.idNotNull)
+
+        // Fetch platforms from project_index; returns null if project has no packages
+        val projectPlatforms = projectRepository.findPlatformsById(projectEntity.idNotNull) ?: return null
 
         return projectEntity.toDetails(
             projectEntity = projectEntity,
@@ -75,25 +63,38 @@ class ProjectService(
 
     @Transactional(readOnly = true)
     fun getLatestProjectPackages(ownerLogin: String, projectName: String): List<PackageOverview> {
-        // TODO can be optimized into a single request
-        val scmRepositoryEntity = scmRepositoryRepository.findByName(ownerLogin, projectName) ?: return emptyList()
-        val projectEntity = requireNotNull(projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)) {
-            "Unable to find the corresponding project for an existing SCM repo: $scmRepositoryEntity"
-        }
+        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return emptyList()
         return packageService.getLatestPackagesByProjectId(projectEntity.idNotNull)
     }
 
     @Transactional(readOnly = true)
     fun getProjectReadmeMd(ownerLogin: String, projectName: String): String? {
-        val scmRepositoryId = scmRepositoryRepository.findIdByName(ownerLogin, projectName) ?: return null
-        return readmeService.readReadmeMd(scmRepositoryId)
+        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
+        return readmeServiceDispatcher.readReadmeMd(
+            ReadmeServiceDispatcher.ProjectInfo(
+                projectEntity.idNotNull,
+                projectEntity.scmRepoId,
+                projectName,
+                ownerLogin
+            )
+        )
     }
 
     @Transactional(readOnly = true)
     fun getProjectReadmeHtml(ownerLogin: String, projectName: String): String? {
-        val scmRepositoryId = scmRepositoryRepository.findIdByName(ownerLogin, projectName) ?: return null
-        return readmeService.readReadmeHtml(scmRepositoryId)
+        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
+        return readmeServiceDispatcher.readReadmeHtml(
+            ReadmeServiceDispatcher.ProjectInfo(
+                projectEntity.idNotNull,
+                projectEntity.scmRepoId,
+                projectName,
+                ownerLogin
+            )
+        )
     }
+
+    @Transactional(readOnly = true)
+    fun findAllForSitemap(): List<SitemapProjectEntry> = projectRepository.findAllForSitemap()
 
     @Transactional
     fun updateProjectDescription(projectName: String, ownerLogin: String, description: String) {
@@ -107,17 +108,14 @@ class ProjectService(
         tags: List<String>,
         tagsType: TagOrigin
     ): List<String> {
-        val scmRepositoryEntity = scmRepositoryRepository.findByName(ownerLogin, projectName)
-            ?: throw IllegalArgumentException("Project $ownerLogin/$projectName not found")
-        val projectEntity = projectRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)
+        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)
             ?: throw IllegalArgumentException("Project $ownerLogin/$projectName not found")
         val projectId = projectEntity.idNotNull
 
         val normalizedTags = tags.asSequence()
             .map { normalizeTag(it) }
             .filter { it.isNotEmpty() }
-            .distinct()
-            .toList()
+            .toSet()
 
         if (normalizedTags.isEmpty()) {
             if (tagsType == TagOrigin.GITHUB) {
@@ -132,27 +130,18 @@ class ProjectService(
             }
         }
 
-        val invalidTags = mutableListOf<String>()
-        val canonicalTagsToAdd = mutableListOf<String>()
-
-        for (tag in normalizedTags) {
-            val canonicalName = allowedProjectTagsRepository.findCanonicalNameByValue(tag)
-            if (canonicalName == null) {
-                invalidTags.add(tag)
-            } else {
-                canonicalTagsToAdd.add(canonicalName)
-            }
+        val (validTags, invalidTags) = normalizedTags.partition { tag ->
+            allowedProjectTagsRepository.existsById(tag)
         }
 
         if (invalidTags.isNotEmpty() && tagsType != TagOrigin.GITHUB) {
-            throw IllegalArgumentException("Invalid tags were provided: ${invalidTags.joinToString(", ")}")
+            throw IllegalArgumentException("Invalid tags were provided. " +
+                    "After normalization they are: ${invalidTags.joinToString(", ")}")
         }
-
-        val tagsToSave = canonicalTagsToAdd.distinct()
 
         projectTagRepository.deleteByProjectIdAndOrigin(projectId, tagsType)
 
-        val entities = tagsToSave.map { value ->
+        val entities = validTags.map { value ->
             TagEntity(
                 projectId = projectId,
                 value = value,
@@ -161,7 +150,7 @@ class ProjectService(
         }
         projectTagRepository.saveAll(entities)
 
-        return tagsToSave
+        return validTags
     }
 
     private companion object {
@@ -180,7 +169,8 @@ private fun ProjectEntity.toDetails(
         id = this.idNotNull,
         ownerType = scmRepositoryEntity.ownerType,
         ownerLogin = scmRepositoryEntity.ownerLogin,
-        name = scmRepositoryEntity.name,
+        repoName = scmRepositoryEntity.name,
+        name = this.name,
         description = projectEntity.description ?: scmRepositoryEntity.description,
         platforms = projectPlatforms,
         latestReleaseVersion = projectEntity.latestVersion,
@@ -189,10 +179,15 @@ private fun ProjectEntity.toDetails(
         hasGhPages = scmRepositoryEntity.hasGhPages,
         hasIssues = scmRepositoryEntity.hasIssues,
         hasWiki = scmRepositoryEntity.hasWiki,
+        hasReadme = projectEntity.minimizedReadme != null,
         stars = scmRepositoryEntity.stars,
         createdAt = scmRepositoryEntity.createdTs,
         openIssues = scmRepositoryEntity.openIssues,
-        lastActivityAt = scmRepositoryEntity.lastActivityTs,
+        lastActivityAt = if (scmRepositoryEntity.ownerLogin == AndroidxReadmeProvider.OWNER_NAME) {
+            projectEntity.latestVersionTs
+        } else {
+            scmRepositoryEntity.lastActivityTs
+        },
         licenseName = scmRepositoryEntity.licenseName,
         updatedAt = scmRepositoryEntity.updatedAtTs,
         tags = projectTags,

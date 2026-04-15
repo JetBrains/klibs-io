@@ -1,15 +1,17 @@
 package io.klibs.app.indexing
 
+import io.klibs.app.service.TagsGenerationService
 import io.klibs.app.util.BackoffProvider
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
+import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.scm.repository.readme.ReadmeService
-import io.klibs.integration.ai.ProjectTagsGenerator
+import io.klibs.core.readme.service.ReadmeServiceDispatcher
+import io.klibs.integration.github.GitHubIntegration
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -22,22 +24,28 @@ import java.time.Instant
 
 class ProjectIndexingServiceAddAiTagsTest {
 
-    private val readmeService: ReadmeService = mock()
+    private val readmeServiceDispatcher: ReadmeServiceDispatcher = mock()
     private val projectDescriptionGenerator: io.klibs.integration.ai.ProjectDescriptionGenerator = mock()
     private val projectRepository: ProjectRepository = mock()
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
-    private val projectTagsGenerator: ProjectTagsGenerator = mock()
+    private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
+    private val tagsGenerator: TagsGenerationService = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
+    private val gitHubIntegration: GitHubIntegration = mock()
+    private val readmeContentBuilder: ReadmeContentBuilder = mock()
     private val descriptionBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
     private val tagsBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
 
     private fun uut() = ProjectIndexingService(
-            readmeService = readmeService,
+            readmeServiceDispatcher = readmeServiceDispatcher,
             projectDescriptionGenerator = projectDescriptionGenerator,
             projectRepository = projectRepository,
             scmRepositoryRepository = scmRepositoryRepository,
-            projectTagsGenerator = projectTagsGenerator,
+            scmOwnerRepository = scmOwnerRepository,
+            tagsGenerationService = tagsGenerator,
             projectTagRepository = projectTagRepository,
+            gitHubIntegration = gitHubIntegration,
+            readmeContentBuilder = readmeContentBuilder,
             descriptionBackoffProvider = descriptionBackoffProvider,
             tagsBackoffProvider = tagsBackoffProvider,
         )
@@ -46,16 +54,19 @@ class ProjectIndexingServiceAddAiTagsTest {
     fun `addAiTags should generate tags and save them with AI origin`() {
         val projectId = 101
         val scmRepoId = 202
+        val readme = "# Awesome lib\nSome README content"
         val project = ProjectEntity(
             id = projectId,
             scmRepoId = scmRepoId,
+            ownerId = 1,
+            name = "test-repo",
             description = "Project long description",
+            minimizedReadme = readme,
             latestVersion = "1.0.0",
             latestVersionTs = Instant.parse("2024-01-01T00:00:00Z")
         )
         whenever(projectRepository.findWithoutTags()).thenReturn(project)
 
-        val readme = "# Awesome lib\nSome README content"
         val repo = ScmRepositoryEntity(
             id = scmRepoId,
             nativeId = 9999,
@@ -76,15 +87,17 @@ class ProjectIndexingServiceAddAiTagsTest {
             stars = 42,
             openIssues = 0,
             lastActivityTs = Instant.parse("2024-06-01T00:00:00Z"),
-            updatedAtTs = Instant.parse("2024-06-01T00:00:00Z"),
-            minimizedReadme = readme
+            updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
         whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
+        whenever(readmeServiceDispatcher.readReadmeMd(
+            ReadmeServiceDispatcher.ProjectInfo(projectId, scmRepoId, "test-repo", "octocat")
+        )).thenReturn(readme)
 
         val generatedTags = listOf("kotlin", "testing", "http-client")
         whenever(
-            projectTagsGenerator.generateTagsForProject(
-                eq(repo.name),
+            tagsGenerator.generateTagsForProject(
+                eq(project.name),
                 eq(project.description ?: ""),
                 eq(repo.description ?: ""),
                 eq(readme)
@@ -117,8 +130,8 @@ class ProjectIndexingServiceAddAiTagsTest {
         uut().addAiTags()
 
         verify(scmRepositoryRepository, never()).findById(any<Int>())
-        verify(readmeService, never()).readReadmeMd(any<Int>())
-        verify(projectTagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
+        verify(readmeServiceDispatcher, never()).readReadmeMd(any())
+        verify(tagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
         verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
     }
 
@@ -129,7 +142,10 @@ class ProjectIndexingServiceAddAiTagsTest {
         val project = ProjectEntity(
             id = projectId,
             scmRepoId = scmRepoId,
+            ownerId = 1,
+            name = "test-repo",
             description = "Desc",
+            minimizedReadme = null,
             latestVersion = "1.0.0",
             latestVersionTs = Instant.parse("2024-01-01T00:00:00Z")
         )
@@ -157,14 +173,16 @@ class ProjectIndexingServiceAddAiTagsTest {
             stars = 0,
             openIssues = 0,
             lastActivityTs = Instant.parse("2024-06-01T00:00:00Z"),
-            updatedAtTs = Instant.parse("2024-06-01T00:00:00Z"),
-            minimizedReadme = "readme"
+            updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
         whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
+        whenever(readmeServiceDispatcher.readReadmeMd(
+            ReadmeServiceDispatcher.ProjectInfo(projectId, scmRepoId, "test-repo", "owner")
+        )).thenReturn("# Test README")
 
         // Force a failure during tag generation
         whenever(
-            projectTagsGenerator.generateTagsForProject(any(), any(), any(), any())
+            tagsGenerator.generateTagsForProject(any(), any(), any(), any())
         ).thenThrow(RuntimeException("AI tags generation failure"))
 
         val service = uut()
@@ -176,7 +194,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         service.addAiTags()
 
         // Generator should be invoked only once (first run). Second run should skip early.
-        verify(projectTagsGenerator).generateTagsForProject(any(), any(), any(), any())
+        verify(tagsGenerator).generateTagsForProject(any(), any(), any(), any())
 
         // No tags should be saved at all due to failure and then skip
         verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())

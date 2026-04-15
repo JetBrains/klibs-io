@@ -1,0 +1,5 @@
+# should depend on the 'spring' template, but we can't do this in Amper yet. See AMPER-5098
+
+dependencies:
+  - $libs.shedlock.spring
+  - $libs.shedlock.jdbc
