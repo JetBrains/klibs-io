@@ -44,8 +44,8 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
         val results = searchService.searchByCategories(limit = 10)
 
         val grantWinners = results.first { it.categoryName == "Grant winners" }
-        assertEquals(2, grantWinners.projects.size, "Grant winners merges GRANT_WINNER_2023 + GRANT_WINNER_2024")
-        assertEquals(listOf(60, 50), grantWinners.projects.map { it.vcsStars }, "Sorted by stars DESC")
+        assertEquals(3, grantWinners.projects.size, "Grant winners merges GRANT_WINNER_2023 + GRANT_WINNER_2024 + GRANT_WINNER_2025")
+        assertEquals(listOf(60, 50, 45), grantWinners.projects.map { it.vcsStars }, "Sorted by stars DESC")
     }
 
     @Test
