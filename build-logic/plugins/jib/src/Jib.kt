@@ -74,6 +74,7 @@ private fun RegistryImage.configureCredentials(
     val credentialRetrieverFactory = CredentialRetrieverFactory.forImage(imageReference) { logEvent ->
         println("${logEvent.level} ${logEvent.message}")
     }
+    addCredentialRetriever(credentialRetrieverFactory.dockerConfig())
     addCredentialRetriever(credentialRetrieverFactory.wellKnownCredentialHelpers())
     if (credHelper != null) {
         addCredentialRetriever(credentialRetrieverFactory.dockerCredentialHelper(credHelper))
