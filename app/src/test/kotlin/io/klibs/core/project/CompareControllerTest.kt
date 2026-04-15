@@ -142,7 +142,7 @@ class CompareControllerTest : SmokeTestBase() {
     }
 
     @Test
-    fun `should return 400 when owner login is blank when some of the projects aren't exist`() {
+    fun `should return 400 when owner login and project name are not exist`() {
         val request = mapOf(
             "projects" to listOf(
                 mapOf("ownerLogin" to "nonexistent-owner-xyz", "projectName" to "nonexistent-project-xyz")
