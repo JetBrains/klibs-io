@@ -263,6 +263,39 @@ class ProjectRepositoryJdbc(
             .getOrNull()
     }
 
+    override fun findManyByProjectNameAndOwnerLogin(pairs: List<Pair<String, String>>): List<ProjectEntity> {
+        if (pairs.isEmpty()) return emptyList()
+
+        val conditions = pairs.indices.joinToString(" OR ") { i ->
+            "(project.name = :name$i AND scm_owner.login = :ownerLogin$i)"
+        }
+
+        val sql = """
+        SELECT project.id,
+               project.scm_repo_id,
+               project.owner_id,
+               project.name,
+               project.description,
+               project.minimized_readme,
+               project.latest_version,
+               project.latest_version_ts
+        FROM project
+        JOIN scm_owner ON project.owner_id = scm_owner.id
+        WHERE $conditions
+    """.trimIndent()
+
+        var statementSpec = jdbcClient.sql(sql)
+        pairs.forEachIndexed { i, (name, ownerLogin) ->
+            statementSpec = statementSpec
+                .param("name$i", name)
+                .param("ownerLogin$i", ownerLogin)
+        }
+
+        return statementSpec
+            .query(PROJECT_ENTITY_ROW_MAPPER)
+            .list()
+    }
+
     override fun findByNameAndScmRepoId(name: String, scmRepoId: Int): ProjectEntity? {
         val sql = """
             SELECT id,

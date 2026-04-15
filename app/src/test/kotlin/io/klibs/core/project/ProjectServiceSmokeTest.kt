@@ -15,6 +15,7 @@ import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 import org.mockito.ArgumentMatchers.anyInt
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -99,7 +100,7 @@ class ProjectServiceSmokeTest {
         )
 
         // Mock repository responses
-        `when`(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(projectEntity)
+        `when`(projectRepository.findManyByProjectNameAndOwnerLogin(any())).thenReturn(listOf(projectEntity))
         `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
         // Return null to simulate project not in project_index (no packages)
         `when`(projectRepository.findPlatformsById(projectEntity.idNotNull)).thenReturn(null)
@@ -224,10 +225,11 @@ class ProjectServiceSmokeTest {
         val platforms = listOf(PackagePlatform.JVM, PackagePlatform.JS)
 
         // Mock repository responses
-        `when`(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(projectEntity)
+        `when`(projectRepository.findManyByProjectNameAndOwnerLogin(any())).thenReturn(listOf(projectEntity))
         `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
         `when`(projectRepository.findPlatformsById(projectEntity.idNotNull)).thenReturn(platforms)
         `when`(markerRepository.findAllByProjectId(projectEntity.idNotNull)).thenReturn(projectMarkers)
+        `when`(tagRepository.getTagsByProjectId(anyInt())).thenReturn(emptyList())
 
         val result = uut.getProjectDetailsByName(ownerLogin, projectName)
 
