@@ -1,18 +1,16 @@
 tasks:
-  jib: # need command with argument for the image name/tag
+  jib:
     action: !buildAndPush
       runtimeClasspath: ${module.runtimeClasspath}
       container: ${pluginSettings.container}
       baseImage: ${pluginSettings.baseImage}
       targetImage: ${pluginSettings.targetImage}
-
   jibDockerBuild:
     action: !buildToDockerDaemon
       runtimeClasspath: ${module.runtimeClasspath}
       container: ${pluginSettings.container}
       baseImage: ${pluginSettings.baseImage}
       targetImageName: ${pluginSettings.targetImage.name}
-
   jibBuildTar:
     action: !buildTar
       runtimeClasspath: ${module.runtimeClasspath}
@@ -20,3 +18,8 @@ tasks:
       baseImage: ${pluginSettings.baseImage}
       outputTar: ${taskOutputDir}/${module.name}-oci-image.tar
       targetImageName: ${pluginSettings.targetImage.name}
+
+
+commands:
+  - name: jib
+    performedBy: jib
