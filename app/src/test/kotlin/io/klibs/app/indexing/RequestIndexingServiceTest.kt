@@ -5,7 +5,6 @@ import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
-import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.search.ArtifactData
 import io.klibs.integration.maven.search.MavenSearchResponse
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
@@ -36,43 +35,10 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @MockitoBean
     private lateinit var centralSonatypeSearchClient: CentralSonatypeSearchClient
 
-    @Test
-    fun `should throw 400 when maven-metadata xml does not exist for specific version request`() {
-        whenever(centralSonatypeSearchClient.getMavenMetadata("com.example", "lib")).thenReturn(null)
-
-        val exception = assertThrows<ResponseStatusException> {
-            uut.requestIndexing("com.example", "lib", "1.0.0")
-        }
-
-        assertEquals(400, exception.statusCode.value())
-        assertEquals("Artifact not found: maven-metadata.xml does not exist for com.example:lib", exception.reason!!)
-    }
-
-    @Test
-    fun `should throw 400 when version not found in maven-metadata xml`() {
-        val metadata = MavenMetadata(
-            groupId = "com.example",
-            artifactId = "lib",
-            versioning = MavenMetadata.Versioning(versions = listOf("1.0.0", "2.0.0"))
-        )
-        whenever(centralSonatypeSearchClient.getMavenMetadata("com.example", "lib")).thenReturn(metadata)
-
-        val exception = assertThrows<ResponseStatusException> {
-            uut.requestIndexing("com.example", "lib", "3.0.0")
-        }
-
-        assertEquals(400, exception.statusCode.value())
-        assertEquals("Version 3.0.0 not found in maven-metadata.xml for com.example:lib", exception.reason!!)
-    }
+    // Tests for specific artifact with given version
 
     @Test
     fun `should throw 400 when artifact is not a KMP library`() {
-        val metadata = MavenMetadata(
-            groupId = "com.example",
-            artifactId = "lib",
-            versioning = MavenMetadata.Versioning(versions = listOf("1.0.0"))
-        )
-        whenever(centralSonatypeSearchClient.getMavenMetadata("com.example", "lib")).thenReturn(metadata)
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(null)
 
         val exception = assertThrows<ResponseStatusException> {
@@ -81,20 +47,14 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         assertEquals(400, exception.statusCode.value())
         assertEquals(
-            "Artifact com.example:lib:1.0.0 is not a Kotlin Multiplatform library (kotlin-tooling-metadata.json not found)",
+            "Artifact com.example:lib:1.0.0 is not a valid Kotlin Multiplatform library (kotlin-tooling-metadata.json not found)",
             exception.reason!!
         )
     }
 
     @Test
     @Sql(value = ["classpath:sql/RequestIndexingServiceTest/insert-into-package.sql"])
-    fun `should throw 400 when artifact is already indexed`() {
-        val metadata = MavenMetadata(
-            groupId = "com.example",
-            artifactId = "lib",
-            versioning = MavenMetadata.Versioning(versions = listOf("1.0.0"))
-        )
-        whenever(centralSonatypeSearchClient.getMavenMetadata("com.example", "lib")).thenReturn(metadata)
+    fun `should throw 400 when a specific artifact is already indexed`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
         val exception = assertThrows<ResponseStatusException> {
@@ -102,18 +62,12 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         }
 
         assertEquals(400, exception.statusCode.value())
-        assertEquals("All artifacts from this request are already indexed", exception.reason!!)
+        assertEquals("Artifact com.example:lib:1.0.0 is already indexed or queued", exception.reason!!)
     }
 
     @Test
     @Sql(value = ["classpath:sql/RequestIndexingServiceTest/insert-into-package-index-request.sql"])
-    fun `should throw 400 when artifact is already in package_index_request`() {
-        val metadata = MavenMetadata(
-            groupId = "com.example",
-            artifactId = "lib",
-            versioning = MavenMetadata.Versioning(versions = listOf("1.0.0"))
-        )
-        whenever(centralSonatypeSearchClient.getMavenMetadata("com.example", "lib")).thenReturn(metadata)
+    fun `should throw 400 when a specific artifact is already in package_index_request`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
         val exception = assertThrows<ResponseStatusException> {
@@ -121,28 +75,24 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         }
 
         assertEquals(400, exception.statusCode.value())
-        assertEquals("All artifacts from this request are already indexed", exception.reason!!)
+        assertEquals("Artifact com.example:lib:1.0.0 is already indexed or queued", exception.reason!!)
     }
 
     @Test
     fun `should save index request for valid specific version`() {
-        val metadata = MavenMetadata(
-            groupId = "com.example",
-            artifactId = "lib",
-            versioning = MavenMetadata.Versioning(versions = listOf("1.0.0"))
-        )
-        whenever(centralSonatypeSearchClient.getMavenMetadata("com.example", "lib")).thenReturn(metadata)
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
         uut.requestIndexing("com.example", "lib", "1.0.0")
 
         val saved = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "lib", "1.0.0")
         assertTrue(saved != null, "Index request should be saved")
-        assertEquals(metadata.groupId, saved.groupId, "Wrong groupId")
-        assertEquals(metadata.artifactId, saved.artifactId, "Wrong artifactId")
-        assertEquals(metadata.versioning.versions.first(), saved.version, "Wrong version")
+        assertEquals("com.example", saved.groupId, "Wrong groupId")
+        assertEquals("lib", saved.artifactId, "Wrong artifactId")
+        assertEquals("1.0.0", saved.version, "Wrong version")
         assertEquals(ScraperType.MANUAL_REQUEST, saved.repo, "Wrong scraper type")
     }
+
+    // Tests when no specific version is provided
 
     @Test
     fun `should throw 503 when central sonatype search fails`() {
@@ -206,6 +156,60 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(ScraperType.MANUAL_REQUEST, saved1.repo)
         assertEquals(ScraperType.MANUAL_REQUEST, saved2.repo)
         assertEquals(ScraperType.MANUAL_REQUEST, saved3.repo)
+    }
+
+    @Test
+    @Sql(value = ["classpath:sql/RequestIndexingServiceTest/insert-into-package.sql"])
+    fun `should save index request for multiple artifacts that aren't indexed yet`() {
+        val artifacts = listOf(
+            ArtifactData("com.example", "libA", "1.0.0"),
+            ArtifactData("com.example", "libA", "2.0.0"),
+            ArtifactData("com.example", "libB", "1.0.0"),
+            ArtifactData("com.example", "libB", "2.0.0"),
+            ArtifactData("com.example", "libC", "1.0.0"),
+        )
+        whenever(centralSonatypeSearchClient.searchWithThrottle(eq(0), any(), any()))
+            .thenReturn(MavenSearchResponse(totalHits = 5, currentHits = 5, page = artifacts))
+        whenever(centralSonatypeSearchClient.searchWithThrottle(eq(1), any(), any()))
+            .thenReturn(MavenSearchResponse(totalHits = 5, currentHits = 0, page = emptyList()))
+
+
+        uut.requestIndexing("com.example", null, null)
+
+        val old1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "1.0.0")
+        val old2 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "2.0.0")
+        val old3 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libB", "1.0.0")
+        val saved1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libB", "2.0.0")
+        val saved2 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libC", "1.0.0")
+        assertEquals(old1, null, "First artifact shouldn't be saved")
+        assertEquals(old2, null, "Second artifact shouldn't be saved")
+        assertEquals(old3, null, "Third artifact shouldn't be saved")
+        assertTrue(saved1 != null, "Fourth artifact should be saved")
+        assertTrue(saved2 != null, "Fifth artifact should be saved")
+        assertEquals(ScraperType.MANUAL_REQUEST, saved1.repo)
+        assertEquals(ScraperType.MANUAL_REQUEST, saved2.repo)
+    }
+
+    @Test
+    @Sql(value = ["classpath:sql/RequestIndexingServiceTest/insert-into-package.sql"])
+    fun `should throw 400 when all artifacts are already indexed`() {
+        val artifacts = listOf(
+            ArtifactData("com.example", "libA", "1.0.0"),
+            ArtifactData("com.example", "libA", "2.0.0"),
+            ArtifactData("com.example", "libB", "1.0.0"),
+        )
+        whenever(centralSonatypeSearchClient.searchWithThrottle(eq(0), any(), any()))
+            .thenReturn(MavenSearchResponse(totalHits = 3, currentHits = 3, page = artifacts))
+        whenever(centralSonatypeSearchClient.searchWithThrottle(eq(1), any(), any()))
+            .thenReturn(MavenSearchResponse(totalHits = 3, currentHits = 0, page = emptyList()))
+
+
+        val exception = assertThrows<ResponseStatusException> {
+            uut.requestIndexing("com.example", null, null)
+        }
+
+        assertEquals(400, exception.statusCode.value())
+        assertEquals("All artifacts from this request are already indexed or queued", exception.reason!!)
     }
 
     @Test

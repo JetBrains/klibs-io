@@ -48,34 +48,54 @@ class RequestIndexingService(
         }
 
         val query = buildKmpQuery(groupId, artifactId)
-        val results = paginateSearch(query)
+        val searchResult = paginateSearch(query)
 
-        if (results.isEmpty()) {
-            throw badRequest("No Kotlin Multiplatform artifacts found for $groupId${artifactId?.let{":$it"}.orEmpty()}")
-        }
-
-        return results.map { it.toMavenArtifact() }
-    }
-
-    private fun resolveSpecificVersion(groupId: String, artifactId: String, version: String): MavenArtifact {
-        val metadata = centralSonatypeSearchClient.getMavenMetadata(groupId, artifactId)
-            ?: throw badRequest("Artifact not found: maven-metadata.xml does not exist for $groupId:$artifactId")
-
-        if (version !in metadata.versioning.versions) {
+        if (searchResult.isEmpty()) {
             throw badRequest(
-                "Version $version not found in maven-metadata.xml for $groupId:$artifactId"
+                "No Kotlin Multiplatform artifacts found for $groupId${
+                    artifactId?.let { ":$it" }.orEmpty()
+                }"
             )
         }
 
+        val artifactsToSave = searchResult
+            .map { it.toMavenArtifact() }
+            .filterNot { isAlreadyIndexedOrQueued(it) }
+
+        if (artifactsToSave.isEmpty()) throw badRequest("All artifacts from this request are already indexed or queued")
+
+        return artifactsToSave
+    }
+
+    private fun resolveSpecificVersion(groupId: String, artifactId: String, version: String): MavenArtifact {
         val artifact = MavenArtifact(groupId, artifactId, version, ScraperType.MANUAL_REQUEST)
+        if (isAlreadyIndexedOrQueued(artifact)) throw badRequest("Artifact $groupId:$artifactId:$version is already indexed or queued")
+
         centralSonatypeSearchClient.getKotlinToolingMetadata(artifact)
             ?: throw badRequest(
-                "Artifact $groupId:$artifactId:$version is not a Kotlin Multiplatform library " +
+                "Artifact $groupId:$artifactId:$version is not a valid Kotlin Multiplatform library " +
                         "(kotlin-tooling-metadata.json not found)"
             )
 
         return artifact
     }
+
+    private fun isAlreadyIndexedOrQueued(artifact: MavenArtifact): Boolean =
+        with(artifact) {
+            when {
+                packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version) != null -> {
+                    logger.debug("Already indexed: $groupId:$artifactId:$version, skipping")
+                    true
+                }
+
+                indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version) != null -> {
+                    logger.debug("Already queued: $groupId:$artifactId:$version, skipping")
+                    true
+                }
+
+                else -> false
+            }
+        }
 
     private fun buildKmpQuery(groupId: String, artifactId: String?): Query {
         var query = BooleanQuery.and(
@@ -110,22 +130,7 @@ class RequestIndexingService(
     }
 
     private fun saveIndexRequests(mavenArtifacts: List<MavenArtifact>) {
-        val requests = mavenArtifacts.mapNotNull { artifact ->
-            val (g, a, v) = Triple(artifact.groupId, artifact.artifactId, artifact.version)
-
-            if (packageRepository.findByGroupIdAndArtifactIdAndVersion(g, a, v) != null) {
-                logger.debug("Already indexed: $g:$a:$v, skipping")
-                return@mapNotNull null
-            }
-            if (indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion(g, a, v) != null) {
-                logger.debug("Already queued: $g:$a:$v, skipping")
-                return@mapNotNull null
-            }
-
-            artifact.toIndexRequest()
-        }
-
-        if (requests.isEmpty()) throw badRequest("All artifacts from this request are already indexed")
+        val requests = mavenArtifacts.map { it.toIndexRequest() }
 
         try {
             indexingRequestRepository.saveAll(requests)
