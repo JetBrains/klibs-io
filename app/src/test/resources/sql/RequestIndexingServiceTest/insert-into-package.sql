@@ -6,6 +6,9 @@ VALUES (19001, 19001, 19001, false, true, true, true, CURRENT_TIMESTAMP, CURRENT
 
 INSERT INTO public.project VALUES (19001, 19001, CURRENT_TIMESTAMP, '2.0.0', CURRENT_TIMESTAMP, 'repo-9001', 'readme', 19001);
 
-INSERT INTO public.package VALUES (19002, 19001, CURRENT_TIMESTAMP - INTERVAL '1 year', CURRENT_TIMESTAMP, 'com.example', 'lib', '1.0.0', 'Old A', 'https://example.com/libA', 'https://example.com/libA', 'gradle', '7.0', '1.9.0', null,'[]'::jsonb,  '[]'::jsonb, 'SEARCH_MAVEN', true);
+INSERT INTO public.package VALUES (19001, 19001, CURRENT_TIMESTAMP - INTERVAL '1 year', CURRENT_TIMESTAMP, 'com.example', 'lib', '1.0.0', 'New', 'https://example.com/lib', 'https://example.com/lib', 'gradle', '7.0', '1.9.0', null,'[]'::jsonb,  '[]'::jsonb, 'SEARCH_MAVEN', true);
+INSERT INTO public.package VALUES (19002, 19001, CURRENT_TIMESTAMP - INTERVAL '1 year', CURRENT_TIMESTAMP, 'com.example', 'libA', '1.0.0', 'Old A', 'https://example.com/libA', 'https://example.com/libA', 'gradle', '7.0', '1.9.0', null,'[]'::jsonb,  '[]'::jsonb, 'SEARCH_MAVEN', true);
+INSERT INTO public.package VALUES (19003, 19001, CURRENT_TIMESTAMP - INTERVAL '1 year', CURRENT_TIMESTAMP, 'com.example', 'libA', '2.0.0', 'New A', 'https://example.com/libA', 'https://example.com/libA', 'gradle', '7.0', '1.9.0', null,'[]'::jsonb,  '[]'::jsonb, 'SEARCH_MAVEN', true);
+INSERT INTO public.package VALUES (19004, 19001, CURRENT_TIMESTAMP - INTERVAL '1 year', CURRENT_TIMESTAMP, 'com.example', 'libB', '1.0.0', 'New B', 'https://example.com/libB', 'https://example.com/libB', 'gradle', '7.0', '1.9.0', null,'[]'::jsonb,  '[]'::jsonb, 'SEARCH_MAVEN', true);
 
 INSERT INTO public.package_target (package_id, platform, target) VALUES (19002, 'NATIVE', 'linux_x64');
