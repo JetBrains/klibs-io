@@ -1,7 +1,9 @@
 product: jvm/lib
 
+layout: maven-like
+
 apply:
-  - ../../build-logic/templates/spring.module-template.yaml
+  - ../../build-logic/templates/persistence.module-template.yaml
 
 dependencies:
   - $kotlin.serialization.json: exported
