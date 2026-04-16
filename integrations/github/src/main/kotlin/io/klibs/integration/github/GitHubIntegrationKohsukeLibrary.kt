@@ -199,10 +199,12 @@ internal class GitHubIntegrationKohsukeLibrary(
     }
 
     private fun getRepositoryById(id: Long): GHRepository? {
-        return repositoryCache.get(id) {
-            executeNullable {
-                githubApi.getRepositoryById(it)
-            }
+        repositoryCache.getIfPresent(id)?.let { return it }
+
+        return executeNullable {
+            githubApi.getRepositoryById(id)
+        }?.also { repository ->
+            repositoryCache.put(id, repository)
         }
     }
 
