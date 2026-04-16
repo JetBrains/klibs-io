@@ -1,5 +1,7 @@
-# should depend on the 'base' template, but we can't do this in Amper yet. See AMPER-5098
-# TODO Jib plugin
+# TODO Jib plugin (configured only on the app module because container.mainClass/baseImage/targetImage are required)
+
+apply:
+  - ./base.module-template.yaml
 
 settings:
   kotlin:

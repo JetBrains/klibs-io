@@ -1,4 +1,5 @@
-# should depend on the 'kotlin-jvm' template, but we can't do this in Amper yet. See AMPER-5098
+apply:
+  - ./kotlin-jvm.module-template.yaml
 
 repositories:
   - url: https://repo.spring.io/milestone
