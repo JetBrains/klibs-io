@@ -8,3 +8,6 @@
 [remote "origin"]
 	url = https://example.com/repo.git
 	fetch = +refs/heads/*:refs/remotes/origin/*
+[user]
+	name = Kirill Likhodedov
+	email = Kirill.Likhodedov@gmail.com

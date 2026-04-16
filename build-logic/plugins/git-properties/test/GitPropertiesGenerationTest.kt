@@ -31,10 +31,11 @@ class GitPropertiesGenerationTest {
             "git.properties file not generated"
         }
         val expectedGitProperties = Path("") / "testResources" / "expected.git.properties"
-        assertEquals(expectedGitProperties.readText().sanitizeDate(), actualGitProperties.readText().sanitizeDate())
+        assertEquals(expectedGitProperties.readText().sanitizeGeneratedValues(), actualGitProperties.readText().sanitizeGeneratedValues())
     }
 
-    private fun String.sanitizeDate() = this
+    private fun String.sanitizeGeneratedValues() = this
+        .replace(Regex("git.build.host=.*"), "git.build.host=<HOST>")
         .replace(Regex("git.build.time=.*"), "git.build.time=<TIME>")
         .replace(Regex("#.*"), "#<TIME>")
 }

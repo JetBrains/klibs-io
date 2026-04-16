@@ -1,4 +1,6 @@
 product: jvm/lib
 
+layout: maven-like
+
 apply:
   - ../../build-logic/templates/spring-cloud.module-template.yaml
