@@ -1,4 +1,5 @@
-# should depend on the 'spring' template, but we can't do this in Amper yet. See AMPER-5098
+apply:
+  - ./spring.module-template.yaml
 
 dependencies:
   - $libs.spring.cloud.aws.starter.s3
