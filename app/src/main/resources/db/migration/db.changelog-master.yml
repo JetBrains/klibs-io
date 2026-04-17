@@ -116,6 +116,37 @@ databaseChangeLog:
   - include:
       file: db/migration/2026-Q1/2026-01-11_update_devlog_kotlin_description.yml
   - include:
+      file: db/migration/2026-Q1/2026-01-16_package_index_add_latest_package_id.yml
+  - include:
       file: db/migration/2026-Q1/2026-01-21_add_all_categories_markers.yml
   - include:
+      file: db/migration/2026-Q1/2026-01-26_package_drop_column_name.yml
+  - include:
       file: db/migration/2026-Q1/2026-01-30_maven_central_log.yml
+  - include:
+      file: db/migration/2026-Q1/2026-01-28_remove_suggestion_words.yml
+  - include:
+      file: db/migration/2026-Q1/2026-01-30_decouple_projects_from_scm_repo.yml
+  - include:
+      file: db/migration/2026-Q1/2026-02-13_drop_scm_repo_minimized_readme.yml
+  - include:
+      file: db/migration/2026-Q1/2026-02-17_create_stub_androidx_projects.yml
+  - include:
+      file: db/migration/2026-Q1/2026-02-19_fill_androidx_metadata.yml
+  - include:
+      file: db/migration/2026-Q1/2026-02-25_migrate_androidx_markers_to_stub_projects.yml
+  - include:
+      file: db/migration/2026-Q1/2026-03-03_exclude_wasm_js_from_room_project_index.yml
+  - include:
+      file: db/migration/2026-Q1/2026-03-06_package_index_fix_targets.yml
+  - include:
+      file: db/migration/2026-Q1/2026-03-10_create_category_table.yml
+  - include:
+      file: db/migration/2026-Q1/2026-03-17_create_tag_rules.yml
+  - include:
+      file: db/migration/2026-Q1/2026-03-20_create_readme_metadata_table.yml
+  - include:
+      file: db/migration/2026-Q2/2026-04-08_add_status_to_package_index_request.yml
+  - include:
+      file: db/migration/2026-Q2/2026-04-15_add_2025_grant_winners.yml
+

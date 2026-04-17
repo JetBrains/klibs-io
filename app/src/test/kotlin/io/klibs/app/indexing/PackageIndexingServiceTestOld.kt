@@ -19,6 +19,7 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Instant
 
@@ -36,6 +37,7 @@ class PackageIndexingServiceTestOld {
     private val packageService: PackageService = mock()
     private val packageRepository: PackageRepository = mock()
     private val transactionTemplate: TransactionTemplate = mock()
+    private val selfProvider: ObjectProvider<PackageIndexingService> = mock()
 
     private lateinit var service: PackageIndexingService
 
@@ -51,7 +53,8 @@ class PackageIndexingServiceTestOld {
             packageDescriptionGenerator,
             indexingRequestRepository,
             packageService,
-            packageRepository
+            packageRepository,
+            selfProvider
         )
     }
 

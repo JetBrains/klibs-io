@@ -31,8 +31,7 @@ class ScmRepositoryRepositoryJdbc(
                                   stars,
                                   open_issues,
                                   last_activity_ts,
-                                  updated_at,
-                                  minimized_readme)
+                                  updated_at)
             VALUES (:idGh,
                     :name,
                     :description,
@@ -49,8 +48,7 @@ class ScmRepositoryRepositoryJdbc(
                     :stars,
                     :openIssues,
                     :lastActivityTs,
-                    current_timestamp,
-                    :minimizedReadme)
+                    current_timestamp)
             ON CONFLICT (id_native) DO UPDATE SET name             = :name,
                                                   description      = :description,
                                                   default_branch   = :defaultBranch,
@@ -65,8 +63,7 @@ class ScmRepositoryRepositoryJdbc(
                                                   stars            = :stars,
                                                   open_issues      = :openIssues,
                                                   last_activity_ts = :lastActivityTs,
-                                                  updated_at       = current_timestamp,
-                                                  minimized_readme  = :minimizedReadme
+                                                  updated_at       = current_timestamp
             RETURNING id;
         """.trimIndent()
 
@@ -87,7 +84,6 @@ class ScmRepositoryRepositoryJdbc(
             .param("stars", entity.stars)
             .param("openIssues", entity.openIssues)
             .param("lastActivityTs", Timestamp.from(entity.lastActivityTs))
-            .param("minimizedReadme", entity.minimizedReadme)
             .query(Int::class.java)
             .single()
 
@@ -113,8 +109,7 @@ class ScmRepositoryRepositoryJdbc(
                 stars            = :stars,
                 open_issues      = :openIssues,
                 last_activity_ts = :lastActivityTs,
-                updated_at       = current_timestamp,
-                minimized_readme  = :minimizedReadme
+                updated_at       = current_timestamp
             WHERE lower(name) = lower(:name) AND owner_id = :ownerId
             RETURNING id;
         """.trimIndent()
@@ -136,7 +131,6 @@ class ScmRepositoryRepositoryJdbc(
             .param("stars", entity.stars)
             .param("openIssues", entity.openIssues)
             .param("lastActivityTs", Timestamp.from(entity.lastActivityTs))
-            .param("minimizedReadme", entity.minimizedReadme)
             .query(Int::class.java)
             .single()
 
@@ -179,8 +173,7 @@ class ScmRepositoryRepositoryJdbc(
                    repo.stars,
                    repo.open_issues,
                    repo.last_activity_ts,
-                   repo.updated_at,
-                   repo.minimized_readme
+                   repo.updated_at
             FROM scm_repo repo
                      JOIN scm_owner owner ON repo.owner_id = owner.id
             WHERE repo.id = :id
@@ -214,8 +207,7 @@ class ScmRepositoryRepositoryJdbc(
                    repo.stars,
                    repo.open_issues,
                    repo.last_activity_ts,
-                   repo.updated_at,
-                   repo.minimized_readme
+                   repo.updated_at
             FROM scm_repo repo
                      JOIN scm_owner owner ON repo.owner_id = owner.id
             WHERE repo.id_native = :nativeId
@@ -249,8 +241,7 @@ class ScmRepositoryRepositoryJdbc(
                    repo.stars,
                    repo.open_issues,
                    repo.last_activity_ts,
-                   repo.updated_at,
-                   repo.minimized_readme
+                   repo.updated_at
             FROM scm_repo repo
                      JOIN scm_owner owner ON repo.owner_id = owner.id
             WHERE lower(owner.login) = lower(:ownerLogin)
@@ -303,8 +294,7 @@ class ScmRepositoryRepositoryJdbc(
                    repo.stars,
                    repo.open_issues,
                    repo.last_activity_ts,
-                   repo.updated_at,
-                   repo.minimized_readme
+                   repo.updated_at
             FROM scm_repo repo
                      JOIN scm_owner owner ON repo.owner_id = owner.id
             WHERE repo.updated_at < (current_timestamp - interval '24 hours')
@@ -341,8 +331,7 @@ class ScmRepositoryRepositoryJdbc(
                 stars = rs.getInt("stars"),
                 openIssues = rs.getInt("open_issues"),
                 lastActivityTs = rs.getTimestamp("last_activity_ts").toInstant(),
-                updatedAtTs = rs.getTimestamp("updated_at").toInstant(),
-                minimizedReadme = rs.getString("minimized_readme")
+                updatedAtTs = rs.getTimestamp("updated_at").toInstant()
             )
         }
     }

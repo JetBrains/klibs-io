@@ -1,0 +1,116 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop project_index before updating package_index
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*) 
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'project_index'
+      changes:
+        - sql:
+            sql: |
+              DROP MATERIALIZED VIEW IF EXISTS project_index;
+
+  - changeSet:
+      id: replace targets with targets_by_platform in package_index
+      author: zofia.zuzanna.wiora@jetbrains.com
+      comment: targets fields missed null targets unintentionally, the jsonb column will be used instead
+      changes:
+        - sqlFile:
+            path: 2026-03-06_package_index_fix_targets.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: recreate package_index_fts_gin_idx
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_fts_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_fts_gin_idx ON package_index USING GIN (fts);
+
+  - changeSet:
+      id: recreate package_index_platforms_vector_gin_idx
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_platforms_vector_gin_idx
+      changes:
+        - sql:
+            sql: |
+              CREATE INDEX package_index_platforms_vector_gin_idx ON package_index USING GIN (platforms_vector);
+
+  - changeSet:
+      id: recreate package_index_unique
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index
+              indexName: package_index_unique
+      changes:
+        - createIndex:
+            indexName: package_index_unique
+            tableName: package_index
+            unique: true
+            columns:
+              - column:
+                  name: group_id
+              - column:
+                  name: artifact_id
+      rollback:
+        - dropIndex:
+            indexName: package_index_unique
+            tableName: package_index
+
+  - changeSet:
+      id: recreate project_index materialized view after package_index update
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - sqlFile:
+            path: 2026-03-06_recreate_project_index.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: recreate project_index indexes
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - sql:
+            sql: CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts)
+        - sql:
+            sql: CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector)
+        - sql:
+            sql: CREATE INDEX project_index_markers_gin_idx ON project_index USING GIN (markers)
+        - createIndex:
+            indexName: project_index_stars_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: stars
+        - createIndex:
+            indexName: project_index_project_id_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: project_id
+        - createIndex:
+            indexName: project_index_unique
+            tableName: project_index
+            unique: true
+            columns:
+              - column:
+                  name: project_id

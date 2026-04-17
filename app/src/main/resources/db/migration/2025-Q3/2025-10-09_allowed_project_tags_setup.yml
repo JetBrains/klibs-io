@@ -23,7 +23,7 @@ databaseChangeLog:
                 tag_synonyms text
               );
         - loadData:
-            file: ../csv_data/2025-10-09-allowed_tags.csv
+            file: 2025-10-09-allowed_tags.csv
             tableName: allowed_project_tags_raw
             schemaName: pg_temp
             relativeToChangelogFile: true

@@ -10,6 +10,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase
 import org.springframework.test.context.jdbc.SqlMergeMode
@@ -31,10 +32,10 @@ import org.testcontainers.containers.PostgreSQLContainer
 @AutoConfigureMockMvc
 abstract class BaseUnitWithDbLayerTest {
 
-    @MockBean
+    @MockitoBean
     protected lateinit var aiService: AiService
 
-    @MockBean
+    @MockitoBean
     protected lateinit var s3Template: S3Template
 
     companion object {

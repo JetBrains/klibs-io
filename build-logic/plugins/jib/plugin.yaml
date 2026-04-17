@@ -1,0 +1,25 @@
+tasks:
+  jib:
+    action: !buildAndPush
+      runtimeClasspath: ${module.runtimeClasspath}
+      container: ${pluginSettings.container}
+      baseImage: ${pluginSettings.baseImage}
+      targetImage: ${pluginSettings.targetImage}
+  jibDockerBuild:
+    action: !buildToDockerDaemon
+      runtimeClasspath: ${module.runtimeClasspath}
+      container: ${pluginSettings.container}
+      baseImage: ${pluginSettings.baseImage}
+      targetImage: ${pluginSettings.targetImage}
+  jibBuildTar:
+    action: !buildTar
+      runtimeClasspath: ${module.runtimeClasspath}
+      container: ${pluginSettings.container}
+      baseImage: ${pluginSettings.baseImage}
+      outputTar: ${taskOutputDir}/${module.name}-oci-image.tar
+      targetImage: ${pluginSettings.targetImage}
+
+
+commands:
+  - name: jib
+    performedBy: jib

@@ -50,7 +50,8 @@ class MavenIndexScannerServiceTest {
                 rateLimitRefillPeriodSec = 1,
                 discoveryEndpoint = "http://localhost",
                 indexEndpoint = "http://localhost",
-                indexDir = "build/tmp/maven-index"
+                indexDir = "build/tmp/maven-index",
+                contentEndpoint = "http://localhost/content/"
             )
         )
         indexingContextManager = MavenIndexingContextManager(properties, indexer, emptyList())

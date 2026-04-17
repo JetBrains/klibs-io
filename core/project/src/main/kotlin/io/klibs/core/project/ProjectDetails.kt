@@ -10,6 +10,7 @@ data class ProjectDetails(
 
     val ownerType: ScmOwnerType,
     val ownerLogin: String,
+    val repoName: String,
 
     val name: String,
     val description: String?,
@@ -24,6 +25,7 @@ data class ProjectDetails(
     val hasGhPages: Boolean,
     val hasIssues: Boolean,
     val hasWiki: Boolean,
+    val hasReadme: Boolean,
 
     val stars: Int,
     val createdAt: Instant,
@@ -37,28 +39,50 @@ data class ProjectDetails(
     val tags: List<String>,
     val markers: List<MarkerType>,
 ) {
+    private val isAndroidx: Boolean get() = ownerLogin == ANDROIDX_OWNER
+
     fun getGitHubRepositoryLink(): String {
-        return "https://github.com/${this.ownerLogin}/${this.name}"
+        return if (isAndroidx) {
+            val folderName = if (name == "room") {
+                "room3"
+            } else name
+
+            "https://github.com/$ANDROIDX_OWNER/$ANDROIDX_OWNER/tree/androidx-main/$folderName"
+        } else {
+            "https://github.com/${this.ownerLogin}/${this.repoName}"
+        }
     }
 
     fun getGitHubPagesLink(): String? {
+        if (isAndroidx) return null
         return when {
-            this.hasGhPages -> "https://${this.ownerLogin}.github.io/${this.name}"
+            this.hasGhPages -> "https://${this.ownerLogin}.github.io/${this.repoName}"
             else -> null
+        }
+    }
+
+    fun getHomepageLink(): String? {
+        return when {
+            isAndroidx -> "https://developer.android.com/jetpack/androidx/releases/${this.name}"
+            else -> linkHomepage
         }
     }
 
     fun getIssuesLink(): String? {
         return when {
-            this.hasIssues -> "https://github.com/${this.ownerLogin}/${this.name}/issues"
+            this.hasIssues -> "https://github.com/${this.ownerLogin}/${this.repoName}/issues"
             else -> null
         }
     }
 
     fun getWikiLink(): String? {
         return when {
-            this.hasWiki -> "https://github.com/${this.ownerLogin}/${this.name}/wiki"
+            this.hasWiki -> "https://github.com/${this.ownerLogin}/${this.repoName}/wiki"
             else -> null
         }
+    }
+
+    private companion object {
+        private const val ANDROIDX_OWNER = "androidx"
     }
 }

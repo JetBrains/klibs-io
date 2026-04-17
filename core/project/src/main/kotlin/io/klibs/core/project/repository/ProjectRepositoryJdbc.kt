@@ -1,5 +1,6 @@
 package io.klibs.core.project.repository
 
+import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.project.ProjectEntity
 import org.hibernate.type.SqlTypes
 import org.springframework.jdbc.core.JdbcTemplate
@@ -26,7 +27,10 @@ class ProjectRepositoryJdbc(
     override fun insert(projectEntity: ProjectEntity): ProjectEntity {
         val params = MapSqlParameterSource()
             .addValue("scm_repo_id", projectEntity.scmRepoId)
+            .addValue("owner_id", projectEntity.ownerId)
+            .addValue("name", projectEntity.name)
             .addValue("description", projectEntity.description)
+            .addValue("minimized_readme", projectEntity.minimizedReadme)
             .addValue("latest_version", projectEntity.latestVersion)
             .addValue("latest_version_ts", Timestamp.from(projectEntity.latestVersionTs))
 
@@ -57,11 +61,10 @@ class ProjectRepositoryJdbc(
         val sql = """
             UPDATE project 
             SET description = :description 
-            FROM scm_repo 
-            JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
-            WHERE scm_repo.name = :projectName 
+            FROM scm_owner
+            WHERE project.name = :projectName 
               AND scm_owner.login = :ownerLogin
-              AND project.scm_repo_id = scm_repo.id
+              AND project.owner_id = scm_owner.id
         """.trimIndent()
 
         val updated = jdbcClient.sql(sql)
@@ -92,11 +95,48 @@ class ProjectRepositoryJdbc(
         }
     }
 
+    override fun updateMinimizedReadme(id: Int, minimizedReadme: String?) {
+        val sql = """
+            UPDATE project
+            SET minimized_readme = :minimizedReadme
+            WHERE id = :id
+        """.trimIndent()
+
+        val updated = jdbcClient.sql(sql)
+            .param("id", id)
+            .param("minimizedReadme", minimizedReadme)
+            .update()
+
+        require(updated == 1) {
+            "Did not update the project minimized readme of id: $id"
+        }
+    }
+
+    override fun updateOwnerId(projectId: Int, newOwnerId: Int) {
+        val sql = """
+            UPDATE project
+            SET owner_id = :newOwnerId
+            WHERE id = :projectId
+        """.trimIndent()
+
+        val updated = jdbcClient.sql(sql)
+            .param("projectId", projectId)
+            .param("newOwnerId", newOwnerId)
+            .update()
+
+        require(updated == 1) {
+            "Did not update the project owner_id for projectId: $projectId"
+        }
+    }
+
     override fun findById(id: Int): ProjectEntity? {
         val sql = """
             SELECT id,
                    scm_repo_id,
+                   owner_id,
+                   name,
                    description,
+                   minimized_readme,
                    latest_version,
                    latest_version_ts
             FROM project
@@ -114,7 +154,10 @@ class ProjectRepositoryJdbc(
         val sql = """
             SELECT id,
                    scm_repo_id,
+                   owner_id,
+                   name,
                    description,
+                   minimized_readme,
                    latest_version,
                    latest_version_ts
             FROM project
@@ -132,12 +175,14 @@ class ProjectRepositoryJdbc(
         val sql = """
             SELECT project.id,
                    project.scm_repo_id,
+                   project.owner_id,
+                   project.name,
                    project.description,
+                   project.minimized_readme,
                    project.latest_version,
                    project.latest_version_ts
             FROM project
-                     JOIN scm_repo repo on project.scm_repo_id = repo.id
-            WHERE repo.has_readme = true
+            WHERE project.minimized_readme IS NOT NULL
               AND project.description IS NULL
             ORDER BY random()
             LIMIT 1
@@ -153,12 +198,14 @@ class ProjectRepositoryJdbc(
         val sql = """
             SELECT project.id,
                    project.scm_repo_id,
+                   project.owner_id,
+                   project.name,
                    project.description,
+                   project.minimized_readme,
                    project.latest_version,
                    project.latest_version_ts
             FROM project
-                     JOIN scm_repo repo on project.scm_repo_id = repo.id
-            WHERE repo.has_readme = true
+            WHERE project.minimized_readme IS NOT NULL
               AND NOT EXISTS (
                     SELECT 1 FROM project_tags pt WHERE pt.project_id = project.id
               )
@@ -192,12 +239,100 @@ class ProjectRepositoryJdbc(
             .set()
     }
 
+    override fun findByNameAndOwnerLogin(name: String, ownerLogin: String): ProjectEntity? {
+        val sql = """
+            SELECT project.id,
+                   project.scm_repo_id,
+                   project.owner_id,
+                   project.name,
+                   project.description,
+                   project.minimized_readme,
+                   project.latest_version,
+                   project.latest_version_ts
+            FROM project
+            JOIN scm_owner ON project.owner_id = scm_owner.id
+            WHERE project.name = :name
+              AND scm_owner.login = :ownerLogin
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("name", name)
+            .param("ownerLogin", ownerLogin)
+            .query(PROJECT_ENTITY_ROW_MAPPER)
+            .optional()
+            .getOrNull()
+    }
+
+    override fun findByNameAndScmRepoId(name: String, scmRepoId: Int): ProjectEntity? {
+        val sql = """
+            SELECT id,
+                   scm_repo_id,
+                   owner_id,
+                   name,
+                   description,
+                   minimized_readme,
+                   latest_version,
+                   latest_version_ts
+            FROM project
+            WHERE scm_repo_id = :scmRepoId
+              AND name = :name
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("scmRepoId", scmRepoId)
+            .param("name", name)
+            .query(PROJECT_ENTITY_ROW_MAPPER)
+            .optional()
+            .getOrNull()
+    }
+
+    override fun findPlatformsById(projectId: Int): List<PackagePlatform>? {
+        val sql = """
+            SELECT platforms
+            FROM project_index
+            WHERE project_id = :projectId
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("projectId", projectId)
+            .query { rs, _ ->
+                @Suppress("UNCHECKED_CAST")
+                (rs.getArray("platforms").array as Array<String>)
+                    .map { PackagePlatform.valueOf(it) }
+            }
+            .optional()
+            .getOrNull()
+    }
+
+    override fun findAllForSitemap(): List<SitemapProjectEntry> {
+        val sql = """
+            SELECT scm_owner.login AS owner_login, p.name AS project_name, sr.updated_at
+            FROM project p
+            JOIN scm_repo sr ON sr.id = p.scm_repo_id
+            JOIN scm_owner ON p.owner_id = scm_owner.id
+            ORDER BY p.id
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .query { rs, _ ->
+                SitemapProjectEntry(
+                    ownerLogin = rs.getString("owner_login"),
+                    projectName = rs.getString("project_name"),
+                    updatedAt = rs.getTimestamp("updated_at").toInstant(),
+                )
+            }
+            .list()
+    }
+
     private companion object {
         private val PROJECT_ENTITY_ROW_MAPPER = RowMapper<ProjectEntity> { rs, _ ->
             ProjectEntity(
                 id = rs.getInt("id"),
                 scmRepoId = rs.getInt("scm_repo_id"),
+                ownerId = rs.getInt("owner_id"),
+                name = rs.getString("name"),
                 description = rs.getString("description"),
+                minimizedReadme = rs.getString("minimized_readme"),
                 latestVersion = rs.getString("latest_version"),
                 latestVersionTs = rs.getTimestamp("latest_version_ts").toInstant(),
             )

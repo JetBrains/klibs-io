@@ -43,9 +43,11 @@ data class PackageDetailsResponse(
     )
     val releasedAtMillis: Long,
 
+    @Deprecated("Use artifactId instead")
     @Schema(
-        description = "Name of the package. Might or might not be the same as artifactId, nullable",
-        example = "KStateMachine Core Main Package"
+        description = "Name of the package, DEPRECATED: Use artifactId instead",
+        example = "kstatemachine",
+        deprecated = true
     )
     val name: String?,
 

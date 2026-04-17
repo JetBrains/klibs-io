@@ -1,5 +1,6 @@
 package io.klibs.core.pckg.entity
 
+import io.klibs.core.pckg.enums.IndexingRequestStatus
 import io.klibs.integration.maven.ScraperType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -17,7 +18,11 @@ import java.time.Instant
 data class IndexingRequestEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "package_index_request_id_seq")
-    @SequenceGenerator(name = "package_index_request_id_seq", sequenceName = "package_index_request_id_seq", allocationSize = 50)
+    @SequenceGenerator(
+        name = "package_index_request_id_seq",
+        sequenceName = "package_index_request_id_seq",
+        allocationSize = 50
+    )
     @Column(name = "id")
     val id: Long? = null,
 
@@ -47,7 +52,14 @@ data class IndexingRequestEntity(
     val failedTs: Instant? = null,
 
     @Column(name = "last_error_message")
-    val lastErrorMessage: String? = null
+    val lastErrorMessage: String? = null,
+
+    /**
+     * Status of indexing request processig.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    val status: IndexingRequestStatus = IndexingRequestStatus.PENDING,
 ) {
     val idNotNull: Long get() = requireNotNull(id)
 }
