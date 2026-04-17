@@ -81,7 +81,7 @@ databaseChangeLog:
       author: dmitrii.krasnov@jetbrains.com
       changes:
         - sqlFile:
-            path: 2026-04-09_recreate_project_index.sql
+            path: ../2026-Q1/2026-03-06_recreate_project_index.sql
             relativeToChangelogFile: true
 
   - changeSet:
