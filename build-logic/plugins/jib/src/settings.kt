@@ -54,8 +54,11 @@ interface TargetImageSettings {
     /**
      * The name of the image, including the registry. The tag can be omitted, and several tags can be provided instead
      * using the [tags] list.
+     *
+     * If not specified, the name is read from the `IMAGE` environment variable, which Skaffold sets when invoking a
+     * custom builder.
      */
-    val name: String
+    val name: String?
 
     /**
      * The username/password authentication used to push the image to a registry.

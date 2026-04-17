@@ -10,14 +10,14 @@ tasks:
       runtimeClasspath: ${module.runtimeClasspath}
       container: ${pluginSettings.container}
       baseImage: ${pluginSettings.baseImage}
-      targetImageName: ${pluginSettings.targetImage.name}
+      targetImage: ${pluginSettings.targetImage}
   jibBuildTar:
     action: !buildTar
       runtimeClasspath: ${module.runtimeClasspath}
       container: ${pluginSettings.container}
       baseImage: ${pluginSettings.baseImage}
       outputTar: ${taskOutputDir}/${module.name}-oci-image.tar
-      targetImageName: ${pluginSettings.targetImage.name}
+      targetImage: ${pluginSettings.targetImage}
 
 
 commands:
