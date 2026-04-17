@@ -1,7 +1,5 @@
 product: jvm/lib
 
-layout: maven-like
-
 apply:
   - ../../build-logic/templates/mock.module-template.yaml
 
