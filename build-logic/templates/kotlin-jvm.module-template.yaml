@@ -1,13 +1,11 @@
-# TODO Jib plugin (configured only on the app module because container.mainClass/baseImage/targetImage are required)
-
 apply:
   - ./base.module-template.yaml
 
 settings:
   kotlin:
-    version: 2.1.10 # should be 2.1.0 to match the Gradle setup, but the lowest Amper supports is 2.1.10
+    version: 2.1.10
     serialization:
-      version: 1.6.3 # to match the Gradle setup
+      version: 1.6.3
   jvm:
     jdk:
       version: 21

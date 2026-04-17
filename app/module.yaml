@@ -26,3 +26,13 @@ test-dependencies:
 settings:
   jvm:
     mainClass: io.klibs.app.ApplicationKt
+
+plugins:
+  jib:
+    enabled: true
+    baseImage:
+      fullName:  eclipse-temurin:21-jre
+    targetImage:
+      name: registry.jetbrains.team/p/klibs-io/containers/klibs-prod
+    container:
+      mainClass: io.klibs.app.ApplicationKt
