@@ -19,11 +19,11 @@ fun buildTar(
     @Input runtimeClasspath: Classpath,
     container: ContainerSettings,
     baseImage: BaseImageSettings,
-    targetImageName: String,
+    targetImage: TargetImageSettings,
     @Output outputTar: Path,
 ) {
     jibContainerBuilder(runtimeClasspath, container, baseImage)
-        .containerize(Containerizer.to(TarImage.at(outputTar).named(targetImageName)))
+        .containerize(Containerizer.to(TarImage.at(outputTar).named(targetImage.resolvedName)))
 }
 
 @TaskAction
@@ -31,10 +31,10 @@ fun buildToDockerDaemon(
     @Input runtimeClasspath: Classpath,
     container: ContainerSettings,
     baseImage: BaseImageSettings,
-    targetImageName: String,
+    targetImage: TargetImageSettings,
 ) {
     jibContainerBuilder(runtimeClasspath, container, baseImage)
-        .containerize(Containerizer.to(DockerDaemonImage.named(ImageReference.parse(targetImageName))))
+        .containerize(Containerizer.to(DockerDaemonImage.named(ImageReference.parse(targetImage.resolvedName))))
 }
 
 private fun jibContainerBuilder(
@@ -60,11 +60,16 @@ private fun BaseImageSettings.toRegistryImage(): RegistryImage {
 }
 
 private fun TargetImageSettings.toRegistryImages(): RegistryImage {
-    val imageReference = ImageReference.parse(name)
+    val imageReference = ImageReference.parse(resolvedName)
     val registryImage = RegistryImage.named(imageReference)
     registryImage.configureCredentials(imageReference, credHelper, auth)
     return registryImage
 }
+
+private val TargetImageSettings.resolvedName: String
+    get() = name
+        ?: System.getenv("IMAGE")
+        ?: error("Target image name is not set: configure `plugins.jib.targetImage.name` or pass it via the IMAGE environment variable")
 
 private fun RegistryImage.configureCredentials(
     imageReference: ImageReference,
