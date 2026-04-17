@@ -20,23 +20,25 @@ This document provides guidelines and instructions for developing and testing th
 
 ### Building the Project
 
-The project uses Gradle as its build system. To build the project:
+The project uses [Amper](https://amper.org/) as its build system. To build the project:
 
 ```bash
-./gradlew build
+./amper build
 ```
 
-To build without running tests:
+To run tests separately (build alone does not execute tests in Amper):
 
 ```bash
-./gradlew build -x test
+./amper test
 ```
 
-To build a runnable JAR:
+To produce a runnable JAR:
 
 ```bash
-./gradlew bootJar
+./amper package
 ```
+
+Output: `build/tasks/_app_executableJarJvm/app-jvm-executable.jar`
 
 ### Configuration
 
@@ -115,21 +117,21 @@ Test configuration is in `app/src/test/resources/application-test.yml`.
 To run all tests:
 
 ```bash
-./gradlew test
+./amper test
 ```
 
 To run tests in a specific module:
 
 ```bash
-./gradlew :app:test
-./gradlew :core:package:test
+./amper test -m app
+./amper test -m package
 # etc.
 ```
 
-To run a specific test class:
+To run a specific test:
 
 ```bash
-./gradlew :app:test --tests "io.klibs.app.example.SimpleExampleTest"
+./amper test --include-test=io.klibs.app.example.SimpleExampleTest
 ```
 
 ### Types of Tests

@@ -9,7 +9,7 @@ klibs.io backend — a Spring Boot Kotlin service that indexes, catalogs, and pr
 - **Language:** Kotlin 2.1.0, JVM target: Java 21
 - **Framework:** Spring Boot 3.5.9
 - **Database:** PostgreSQL (Liquibase migrations, JPA + raw JDBC)
-- **Build:** Gradle with Kotlin DSL, version catalog at `gradle/libs.versions.toml`
+- **Build:** Amper (module manifests in `module.yaml`, shared templates under `build-logic/templates/`, version catalog at `gradle/libs.versions.toml` referenced via `$libs.*`)
 - **Key libraries:** Kotlin Coroutines 1.10.1, Spring AI 1.1.2 (OpenAI), Spring Cloud AWS 3.4.2 (S3), OkHttp 4.12.0, Kohsuke GitHub API 1.321, Maven Indexer 7.1.6, ShedLock, Bucket4j, Testcontainers
 
 ## Project Structure
@@ -27,8 +27,10 @@ integrations/
   ai/                       # OpenAI integration (descriptions, tags)
   github/                   # GitHub API integration
   maven/                    # Maven Central scanning and indexing
-build-logic/                # Gradle convention plugins
-build-settings-logic/       # Gradle settings plugins
+build-logic/
+  templates/                # Shared Amper module templates (base, kotlin-jvm, spring-*, persistence, mock)
+  plugins/                  # Local Amper plugins (git-properties, jib)
+project.yaml                # Amper project root (module list + plugin registrations)
 ```
 
 Module structure follows "module by feature". Each core module has its own entity, repository, service, and controller layers.
@@ -36,18 +38,21 @@ Module structure follows "module by feature". Each core module has its own entit
 ## Build & Run
 
 ```bash
-# Build
-./gradlew build
-
 # Build without tests
-./gradlew build -x test
+./amper build
 
-# Build runnable JAR
-./gradlew bootJar
-# Output: app/build/libs/app.jar
+# Run tests (see Testing section for scoping flags)
+./amper test
+
+# Package the runnable JAR
+./amper package
+# Output: build/tasks/_app_executableJarJvm/app-jvm-executable.jar
 
 # Run locally (requires Docker for PostgreSQL via docker-compose)
-# Run the main function from Application.kt — uses 'local' Spring profile
+# Run the app from CLI (uses 'local' Spring profile)
+./amper run -m app
+
+# Or run the main function by ./amper run -m app --main-class <class>
 ```
 
 ### Prerequisites
@@ -73,14 +78,14 @@ Important properties: `klibs.indexing` (enable/disable Maven Central scanning), 
 
 ```bash
 # Run all tests
-./gradlew test
+./amper test
 
 # Run tests for a specific module
-./gradlew :app:test
-./gradlew :core:package:test
+./amper test -m app
+./amper test -m package
 
-# Run a specific test class
-./gradlew :app:test --tests "io.klibs.app.example.SimpleExampleTest"
+# Run a specific test (fully qualified name)
+./amper test --include-test=io.klibs.app.example.SimpleExampleTest
 ```
 
 - **Framework:** JUnit 5, Spring Boot Test, MockMvc, Testcontainers (PostgreSQL), Mockito Kotlin
@@ -101,7 +106,7 @@ Docker must be running for Testcontainers-based tests.
 ## Key Architecture Decisions
 
 - **PostgreSQL FTS** over ElasticSearch — simpler deployment; acknowledged tech debt, contained in `core/search`
-- **Module by feature** — each domain is a separate Gradle module
+- **Module by feature** — each domain is a separate Amper module
 - **Interface-based integrations** — `AiService`, `GitHubIntegration`, `MavenSearchClient`
 - **S3 for README storage** with local cache
 - **Scheduled jobs** — daily indexing (2 AM), GitHub metadata updates, AI description generation, materialized view refresh
@@ -128,10 +133,15 @@ Swagger UI available at `/api-docs/swagger-ui.html`. Actuator at `/actuator/heal
 
 ## Updating JVM Version
 
-Three places to update:
-1. `build-logic/build.gradle.kts` — build logic module toolchain
-2. `build-logic/src/main/kotlin/klibs.kotlin-jvm.gradle.kts` — convention plugin toolchain
-3. Run `./gradlew updateDaemonJvm` — Gradle daemon JVM version
+Two places to update:
+1. `build-logic/templates/kotlin-jvm.module-template.yaml` — `settings.jvm.jdk.version`. All JVM modules inherit from this template, so this is the build-time source of truth.
+2. `app/module.yaml` — `plugins.jib.baseImage.fullName`. The container runtime must match the build JDK.
+
+## Updaring Amper version
+
+`./amper update`, if it's a dev version then `./amper update --dev`
+
+JVM runtime which Amper runs on is tied to Amper distribution, hence updating Amper updates the JVM runtime under the hood.
 
 ## Claude Code Working Agreement (Milestone Gating)
 

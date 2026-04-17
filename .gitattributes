@@ -5,4 +5,3 @@
 *.bat text eol=crlf
 
 amper text eol=lf
-gradlew text eol=lf
