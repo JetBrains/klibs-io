@@ -16,9 +16,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    env:
-      DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
-
     steps:
       - uses: actions/checkout@v5
       - name: Set up JDK 21
@@ -26,9 +23,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'corretto'
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Grant execute permission for amper
+        run: chmod +x amper
+      - name: Test with Amper
+        run: ./amper test
