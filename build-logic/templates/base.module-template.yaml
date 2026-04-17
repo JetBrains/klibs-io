@@ -1,2 +1,4 @@
+layout: maven-like
+
 plugins:
   git-properties: enabled
