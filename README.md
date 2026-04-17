@@ -15,25 +15,31 @@ The repository contains both the backend (this README) and the web frontend (see
 ### Build & test
 
 ```bash
-./gradlew build          # build + tests
-./gradlew build -x test  # build without tests
-./gradlew test           # tests only
+./amper build   # build without running tests
+./amper test    # run tests
+./amper check   # run project checks
 ```
 
-### Boot Jar
+### Executable Jar
 
 ```bash
-./gradlew bootJar
+./amper package
 ```
 
-Output: `app/build/libs/app.jar`
+Output: `build/tasks/_app_executableJarJvm/app-jvm-executable.jar`
 
 ### Run locally
 
 From CLI:
 
 ```bash
-./gradlew :app:bootRun
+./amper run -m app
+```
+
+or 
+
+```bash
+./amper run
 ```
 
 Or run the `main` function from `Application` in IntelliJ — both use the `local` profile.
@@ -107,30 +113,8 @@ Development workflow: [workflow.md](workflow.md).
 
 ### How to update JVM version
 
-There are 3 places to update:
-1) Build logic module toolchain version: [build.gradle.kts](build-logic/build.gradle.kts)
-2) Toolchain version in base jvm convention plugin: [klibs.kotlin-jvm.gradle.kts](build-logic/src/main/kotlin/klibs.kotlin-jvm.gradle.kts)
-3) Gradle daemon jvm version. Update jvm version in task `updateDaemonJvm`: [build.gradle.kts](build.gradle.kts) and run `updateDaemonJvm` task:
-```shell
-./gradlew updateDaemonJvm
-```
+JVM toolchain version is defined in the base Kotlin/JVM module template:
+[kotlin-jvm.module-template.yaml](build-logic/templates/kotlin-jvm.module-template.yaml)
+(`settings.jvm.jdk.version`). All modules inherit from this template.
 
-### Gradle Build Scans
-
-[Gradle Build Scans](https://scans.gradle.com/) can provide insights into an klibs.io backend Build.
-JetBrains runs a [Gradle Develocity server](https://ge.jetbrains.com/scans?search.rootProjectNames=kotlinx-atomicfu) that can be used to automatically upload reports.
-
-To automatically opt in add the following to `$GRADLE_USER_HOME/gradle.properties`.
-
-```properties
-io.klibs.build.scan.enabled=true
-# optionally provide a username that will be attached to each report
-io.klibs.build.scan.username=John Wick
-```
-
-Also, you need to create an access key:
-```bash
-./gradlew provisionDevelocityAccessKey
-```
-
-A Build Scan may contain identifiable information. See the Terms of Use https://gradle.com/legal/terms-of-use/.
+The JVM version used by Amper is tied to the Amper distribution, so updating Amper also updates the JVM runtime it runs on.
