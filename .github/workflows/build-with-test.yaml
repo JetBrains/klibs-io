@@ -25,5 +25,5 @@ jobs:
           distribution: 'corretto'
       - name: Grant execute permission for amper
         run: chmod +x amper
-      - name: Test with Amper
-        run: ./amper test
+      - name: Amper check
+        run: ./amper check
