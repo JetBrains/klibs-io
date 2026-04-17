@@ -1,12 +1,12 @@
 apiVersion: skaffold/v4beta8
 kind: Config
 metadata:
-  name: klibs-prod
+  name: klibs
 build:
   tagPolicy:
     sha256: {}
   artifacts:
-    - image: registry.jetbrains.team/p/klibs-io/containers/klibs-prod
+    - image: registry.jetbrains.team/p/klibs-io/containers/klibs-test
       custom:
         buildCommand: ./amper do jib
   local:
@@ -25,3 +25,19 @@ deploy:
           applicationName: "{{.APPLICATION_NAME}}"
         valuesFiles:
           - values.yaml
+profiles:
+  - name: prod
+    patches:
+      - op: replace
+        path: /build/artifacts/0/image
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-prod
+  - name: stage
+    patches:
+      - op: replace
+        path: /build/artifacts/0/image
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-stage
+  - name: test
+    patches:
+      - op: replace
+        path: /build/artifacts/0/image
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-
