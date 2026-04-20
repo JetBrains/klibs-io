@@ -1,10 +1,15 @@
 package io.klibs.core.readme.impl
 
 import io.klibs.core.readme.ReadmeType
+import io.klibs.core.readme.service.GithubLfsDetector
 import org.springframework.stereotype.Service
 
 @Service
-class LinksMarkdownReadmeProcessor : LinksBaseReadmeProcessor() {
+class LinksMarkdownReadmeProcessor(
+    lfsDetector: GithubLfsDetector,
+) : LinksBaseReadmeProcessor(
+    lfsDetector = lfsDetector,
+) {
 
     private val markdownInternalLinkPattern = Regex("""(!?\[.*?]\()(?!https?://|#)([^)]+)\)""")
 
@@ -54,7 +59,7 @@ class LinksMarkdownReadmeProcessor : LinksBaseReadmeProcessor() {
             val relativePath = matchResult.groupValues[2] // e.g., "docs/readme.md"
 
             if (relativePath.isImageFile()) {
-                "$prefix$repoUrlForRawContent/$relativePath)"
+                "$prefix${resolveLfsUrl("$repoUrlForRawContent/$relativePath")})"
             } else {
                 "$prefix$repoUrl/$relativePath)"
             }

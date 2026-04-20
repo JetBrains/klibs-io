@@ -1,14 +1,18 @@
 package io.klibs.core.readme.impl
 
 import io.klibs.core.readme.ReadmeProcessor
+import io.klibs.core.readme.service.GithubLfsDetector
 import java.net.URI
 import java.net.URISyntaxException
 
 private const val ORIGINAL_PATH_PARAMETER_NAME = "<original_path>"
 
-abstract class LinksBaseReadmeProcessor : ReadmeProcessor {
+abstract class LinksBaseReadmeProcessor(
+    protected val lfsDetector: GithubLfsDetector
+) : ReadmeProcessor {
     protected val GITHUB_URL = "https://github.com"
     protected val GITHUB_RAW_CONTENT_BASE_URL = "https://raw.githubusercontent.com"
+    protected val GITHUB_LFS_CONTENT_BASE_URL = "https://media.githubusercontent.com/media"
     private val rawContentRegex = Regex("src=\"(?!https?://|#)([^\"]*)\"")
     private val hrefRelativeLinkRegex = Regex("href=\"(?!https?://|#)([^\"]*)\"")
 
@@ -31,9 +35,11 @@ abstract class LinksBaseReadmeProcessor : ReadmeProcessor {
         srcUrlPrefix: String
     ): String {
         return readmeContent.replaceFirstGroupValue(hrefRelativeLinkRegex) { link ->
-            hrefUrlPrefix.replace(ORIGINAL_PATH_PARAMETER_NAME, link)
+            val rawUrl = hrefUrlPrefix.replace(ORIGINAL_PATH_PARAMETER_NAME, link)
+            "href=\"$rawUrl\""
         }.replaceFirstGroupValue(rawContentRegex) { link ->
-            srcUrlPrefix.replace(ORIGINAL_PATH_PARAMETER_NAME, link)
+            val rawUrl = srcUrlPrefix.replace(ORIGINAL_PATH_PARAMETER_NAME, link)
+            "src=\"${resolveLfsUrl(rawUrl)}\""
         }
     }
 
@@ -42,7 +48,7 @@ abstract class LinksBaseReadmeProcessor : ReadmeProcessor {
         readmeRepositoryName: String,
         repositoryDefaultBranch: String
     ): String {
-        return "src=\"$GITHUB_RAW_CONTENT_BASE_URL/$readmeOwner/$readmeRepositoryName/${repositoryDefaultBranch}/$ORIGINAL_PATH_PARAMETER_NAME\""
+        return "$GITHUB_RAW_CONTENT_BASE_URL/$readmeOwner/$readmeRepositoryName/${repositoryDefaultBranch}/$ORIGINAL_PATH_PARAMETER_NAME"
     }
 
     private fun constructNewHrefUrlPrefix(
@@ -50,7 +56,7 @@ abstract class LinksBaseReadmeProcessor : ReadmeProcessor {
         readmeRepositoryName: String,
         repositoryDefaultBranch: String
     ): String {
-        return "href=\"$GITHUB_URL/${readmeOwner}/${readmeRepositoryName}/blob/${repositoryDefaultBranch}/$ORIGINAL_PATH_PARAMETER_NAME\""
+        return "$GITHUB_URL/${readmeOwner}/${readmeRepositoryName}/blob/${repositoryDefaultBranch}/$ORIGINAL_PATH_PARAMETER_NAME"
     }
 
     private fun String.replaceFirstGroupValue(regex: Regex, replace: (match: String) -> String): String {
@@ -61,6 +67,14 @@ abstract class LinksBaseReadmeProcessor : ReadmeProcessor {
             } else {
                 replace(link)
             }
+        }
+    }
+
+    protected fun resolveLfsUrl(rawUrl: String): String {
+        return if (lfsDetector.isLfsFile(rawUrl)) {
+            rawUrl.replace(GITHUB_RAW_CONTENT_BASE_URL, GITHUB_LFS_CONTENT_BASE_URL)
+        } else {
+            rawUrl
         }
     }
 

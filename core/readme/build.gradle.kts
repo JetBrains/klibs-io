@@ -7,5 +7,6 @@ plugins {
 dependencies {
     implementation(projects.core.storage)
     implementation(projects.integrations.github)
+    implementation(libs.okhttp)
     implementation(libs.markdown)
 }

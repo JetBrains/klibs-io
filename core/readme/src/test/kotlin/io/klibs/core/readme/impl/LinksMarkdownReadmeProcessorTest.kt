@@ -1,11 +1,16 @@
 package io.klibs.core.readme.impl
 
+import io.klibs.core.readme.service.GithubLfsDetector
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class LinksMarkdownReadmeProcessorTest {
 
-    private val processor = LinksMarkdownReadmeProcessor()
+    private val lfsDetector: GithubLfsDetector = mock()
+    private val processor = LinksMarkdownReadmeProcessor(lfsDetector)
 
     @Test
     fun testProcess() {
@@ -14,6 +19,7 @@ class LinksMarkdownReadmeProcessorTest {
             [This link should be updated](docs/quick_start_guide.md)
             [This link should also be updated](./docs/quick_start_guide.md)
             [This link should also be updated](artwork/readme/apps.png)
+            ![This link should be updated as lfs](artwork/readme/lfs.png)
             [This link should not be update](https://klibs.io/)
             [This link should also not be update](http://klibs.io/)
             <a href="https://github.com/jsoizo/kotlin-csv/blob/master/LICENSE">
@@ -23,6 +29,10 @@ class LinksMarkdownReadmeProcessorTest {
                   <tr>
                     <td style="text-align:center;"><img src="images/first.png" alt="✓"></td>
                     <td><a href="README.md">It is updatable link</a></td>
+                  </tr>
+                  <tr>
+                    <td style="text-align:center;"><img src="artwork/readme/lfs.png" alt="✓"></td>
+                    <td><a href="README.md">It is updatable link as lfs</a></td>
                   </tr>
                   <tr>
                     <td style="text-align:center;"><img src="https://img.shields.io/badge/%20✓-green?style=flat-square&color=276221" alt="✓"></td>
@@ -36,6 +46,7 @@ class LinksMarkdownReadmeProcessorTest {
             [This link should be updated](https://github.com/Kotlin/kotlindl/blob/master/docs/quick_start_guide.md)
             [This link should also be updated](https://github.com/Kotlin/kotlindl/blob/master/./docs/quick_start_guide.md)
             [This link should also be updated](https://raw.githubusercontent.com/Kotlin/kotlindl/master/artwork/readme/apps.png)
+            ![This link should be updated as lfs](https://media.githubusercontent.com/media/Kotlin/kotlindl/master/artwork/readme/lfs.png)
             [This link should not be update](https://klibs.io/)
             [This link should also not be update](http://klibs.io/)
             <a href="https://github.com/jsoizo/kotlin-csv/blob/master/LICENSE">
@@ -47,11 +58,20 @@ class LinksMarkdownReadmeProcessorTest {
                     <td><a href="https://github.com/Kotlin/kotlindl/blob/master/README.md">It is updatable link</a></td>
                   </tr>
                   <tr>
+                    <td style="text-align:center;"><img src="https://media.githubusercontent.com/media/Kotlin/kotlindl/master/artwork/readme/lfs.png" alt="✓"></td>
+                    <td><a href="https://github.com/Kotlin/kotlindl/blob/master/README.md">It is updatable link as lfs</a></td>
+                  </tr>
+                  <tr>
                     <td style="text-align:center;"><img src="https://img.shields.io/badge/%20✓-green?style=flat-square&color=276221" alt="✓"></td>
                     <td><a href="https://github.com/the-best-is-best/KFirebase/blob/main/FirebaseMessaging/readme.md">It is not updatable link</a></td>
                   </tr>
             </table>
             """.trimIndent()
+
+        whenever(lfsDetector.isLfsFile(any())).thenAnswer { invocation ->
+            val url = invocation.getArgument<String>(0)
+            url == "https://raw.githubusercontent.com/Kotlin/kotlindl/master/artwork/readme/lfs.png"
+        }
 
         val processedMarkdownReadme = processor.process(readmeContent, "Kotlin", "kotlindl", "master")
 
