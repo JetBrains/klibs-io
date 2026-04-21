@@ -40,6 +40,7 @@ include(
     ":integrations:ai",
     ":integrations:github",
     ":integrations:maven",
+    ":integrations:mcp",
 )
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
