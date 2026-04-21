@@ -30,6 +30,7 @@ dependencies {
     implementation(projects.integrations.ai)
     implementation(projects.integrations.maven)
     implementation(projects.integrations.github)
+    implementation(projects.integrations.mcp)
 
     testImplementation(libs.okhttp)
     testImplementation(libs.kohsuke.githubApi)
