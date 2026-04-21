@@ -2,6 +2,7 @@ package io.klibs.core.pckg.dto
 
 import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.entity.PackageTargetEntity
+import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.model.Configuration
 import io.klibs.core.pckg.model.PackageDeveloper
 import io.klibs.core.pckg.model.PackageLicense
@@ -31,6 +32,7 @@ data class PackageDTO(
     val licenses: List<PackageLicense>,
     val configuration: Configuration?,
     val generatedDescription: Boolean = false,
+    val versionType: VersionType? = null,
     val targets: List<PackageTarget> = emptyList()
 ) {
     /**
@@ -55,7 +57,8 @@ data class PackageDTO(
             developers = developers,
             licenses = licenses,
             configuration = configuration,
-            generatedDescription = generatedDescription
+            generatedDescription = generatedDescription,
+            versionType = versionType
         )
 
         // Add targets to the entity
@@ -95,6 +98,7 @@ data class PackageDTO(
                 licenses = entity.licenses,
                 configuration = entity.configuration,
                 generatedDescription = entity.generatedDescription,
+                versionType = entity.versionType,
                 targets = entity.targets.map { PackageTarget(it.platform, it.target) }
             )
         }

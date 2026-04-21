@@ -1,6 +1,7 @@
 package io.klibs.core.pckg.entity
 
 
+import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.model.Configuration
 import io.klibs.core.pckg.model.PackageDeveloper
 import io.klibs.core.pckg.model.PackageLicense
@@ -80,6 +81,10 @@ data class PackageEntity(
 
     @Column(name = "generated_description", nullable = false)
     val generatedDescription: Boolean = false,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "version_type")
+    val versionType: VersionType? = null,
 ) {
     @OneToMany(mappedBy = "packageEntity", cascade = [CascadeType.ALL], orphanRemoval = true)
     val targets: MutableList<PackageTargetEntity> = mutableListOf()
@@ -112,6 +117,7 @@ data class PackageEntity(
      * @param licenses The licenses of the new entity, defaults to the current entity's licenses
      * @param configuration The configuration of the new entity, defaults to the current entity's configuration
      * @param generatedDescription Whether the description was generated, defaults to the current entity's value
+     * @param versionType The version type of the new entity, defaults to the current entity's version type
      * @return A new PackageEntity instance with specified properties changed and targets reattached
      */
     fun deepCopy(
@@ -131,7 +137,8 @@ data class PackageEntity(
         developers: List<PackageDeveloper> = this.developers,
         licenses: List<PackageLicense> = this.licenses,
         configuration: Configuration? = this.configuration,
-        generatedDescription: Boolean = this.generatedDescription
+        generatedDescription: Boolean = this.generatedDescription,
+        versionType: VersionType? = this.versionType
     ): PackageEntity {
         // Create a copy of the entity with specified fields changed
         val copy = PackageEntity(
@@ -151,7 +158,8 @@ data class PackageEntity(
             developers = developers,
             licenses = licenses,
             configuration = configuration,
-            generatedDescription = generatedDescription
+            generatedDescription = generatedDescription,
+            versionType = versionType
         )
 
         // Create new copies of each target and attach them to the new entity

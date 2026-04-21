@@ -4,6 +4,7 @@ import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.dto.projection.PackageVersionsView
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.dto.projection.SitemapPackageView
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 
@@ -47,6 +48,8 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
     fun findDuplicateDescriptions(limit: Int = 1): List<String>
 
     fun findAllByDescription(description: String): List<PackageEntity>
+
+    fun findByVersionTypeIsNull(pageable: Pageable): List<PackageEntity>
 
     fun existsByProjectId(projectId: Int): Boolean
 
