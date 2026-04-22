@@ -1,0 +1,23 @@
+.wrapper {
+    display: contents;
+}
+
+.popup {
+    position: fixed !important;
+    bottom: 0;
+    right: 0;
+    background: #fff;
+    margin: 8px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+@media (max-width: 640px) {
+    .popup {
+        display: none;
+    }
+}
+
+.targetElement {
+    display: contents;
+}

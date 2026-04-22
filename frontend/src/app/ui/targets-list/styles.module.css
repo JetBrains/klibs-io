@@ -1,0 +1,13 @@
+.targetsList {
+    width: fit-content;
+    display: contents;
+    cursor: pointer;
+}
+
+@media (min-width: 641px) {
+    .targetsList {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+}

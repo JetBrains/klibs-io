@@ -1,0 +1,63 @@
+{
+  "name": "klibs.io",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+"prepare": "husky",
+    "pw:check": "playwright --version",
+    "pw:install": "playwright install --with-deps",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
+  },
+  "dependencies": {
+    "@jetbrains/kotlin-web-site-ui": "^4.14.2",
+    "@next/third-parties": "^14.2.9",
+    "@rescui/button": "^0.16.4",
+    "@rescui/card": "^0.10.8",
+    "@rescui/checkbox": "^0.8.4",
+    "@rescui/chip-list": "^0.13.2",
+    "@rescui/dropdown-menu": "^0.9.10",
+    "@rescui/focus-manager": "^0.1.13",
+    "@rescui/icons": "^1.6.2",
+    "@rescui/radio-button": "^0.8.10",
+    "@rescui/select": "^0.11.7",
+    "@rescui/switcher": "^0.12.5",
+    "@rescui/tab-list": "^0.12.10",
+    "@rescui/table": "^0.8.7",
+    "@rescui/tag": "^0.13.0",
+    "@rescui/tooltip": "^0.8.13",
+    "@rescui/typography": "^0.16.4",
+    "@rescui/ui-contexts": "^0.5.4",
+    "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.11.3",
+    "classnames": "^2.5.1",
+    "date-fns": "^4.0.0-beta.1",
+    "github-markdown-css": "^5.8.1",
+    "next": "^14.2.12",
+    "react": "^18",
+    "react-bootstrap": "^2.10.4",
+    "react-dom": "^18",
+    "react-remove-scroll-bar": "^2.3.8",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.9",
+    "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "husky": "^9.1.7"
+  }
+}

@@ -1,0 +1,122 @@
+.searchFieldWrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    position: relative;
+}
+
+.searchField {
+    display: flex;
+    align-items: center;
+
+    position: relative;
+    width: 100%;
+    height: 52px;
+
+    flex-shrink: 0;
+
+    background-color: #000;
+    border: 1px solid var(--w50);
+}
+
+.searchFieldCompact {
+    height: 40px;
+}
+
+.leftIcon {
+    display: flex;
+    align-items: center;
+
+    position: absolute;
+    left: 16px;
+
+    pointer-events: none;
+    color: #fff;
+}
+
+.input {
+    height: 100%;
+
+    flex-grow: 1;
+    flex-shrink: 1;
+
+    background: none;
+    border: none;
+    outline: none;
+    color: white; /* Set the text color to contrast with the dark background */
+    font-size: 16px;
+    padding: 0 48px;
+    &::placeholder {
+        color: var(--Black-and-white-kt-white-50, rgba(255, 255, 255, 0.70));
+    }
+}
+
+.shortcut {
+    color: var(--text-icon-dark-white-t-70-avrage, var(--Opacity-White-T70, rgba(255, 255, 255, 0.70)));
+    font-size: 16px;
+    line-height: 24px;
+    position: absolute;
+    left: 48px;
+    margin-bottom: 1px;
+    pointer-events: none;
+}
+
+
+.clickable {
+    cursor: pointer;
+    pointer-events: all;
+    left: auto;
+    right: 18px;
+    &:hover {
+        opacity: 0.7;
+    }
+}
+
+.categoryTag {
+    right: 12px;
+    &:focus {
+        outline: 2px solid rgba(255, 255, 255, 0.5);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+}
+
+.clearHint {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #27282C;
+    color: rgba(255, 255, 255, 0.70);
+    font-size: 14px;
+    line-height: 20px;
+    margin-top: 8px;
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    &:hover {
+        opacity: 0.7;
+    }
+}
+
+@media (max-width: 640px) {
+    .shortcut {
+        display: none;
+    }
+    .clearHint {
+        display: none;
+    }
+}
+
+@media (min-width: 641px) {
+    .input {
+        &::placeholder {
+            opacity: 0;
+        }
+    }
+    .input.showPlaceholder {
+        &::placeholder {
+            opacity: 1;
+        }
+    }
+}

@@ -1,0 +1,12 @@
+.platformTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    @media (max-width: 640px) {
+        display: contents;
+    }
+}
+
+.platformTag {
+    margin-right: 0;
+}

@@ -1,0 +1,22 @@
+.list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    transform: translateY(4px);
+    background: #333;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #D1D1D2;
+}
+
+.menuItem {
+    .tag {
+        display: none;
+    }
+    & > button:focus-visible  {
+        .tag {
+            display: block;
+        }
+    }
+}

@@ -1,0 +1,369 @@
+/*Temporary for layout review*/
+/*body * {outline: 1px solid rgba(255, 0, 0, 0.35);}*/
+
+html {
+  font-size: 15px;
+
+  /*Temporary fix for layout shifts due to scrollbar*/
+  overflow-y: scroll;
+
+  /* Fonts*/
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+
+  /* Prevent header jumps on data load, but allows swipe navigation */
+  overscroll-behavior: auto none;
+  scroll-behavior: auto !important;
+
+  /* Offset anchor scroll position to account for fixed header */
+  scroll-padding-top: 88px; /* 72px header + 16px spacing */
+
+  /*Color vars*/
+  --link-blue: rgba(0,103,255,1);
+  --link-blue20: rgba(0,103,255,0.2);
+  --code-green: #017205;
+  --wrapper-grey: #E8E8E8;
+
+  --common: #DBDBDE !important;
+  --jvm: #8DE59B !important;
+  --androidjvm: #8DE59B !important;
+  --wasm:  #B89FFF !important;
+  --js: #FFC700 !important;
+  --kotlin-native: #F1B2FD !important;
+
+  /*Monochrome*/
+  --w: white;
+  --w5: rgba(255,255,255,0.05);
+  --w10: rgba(255,255,255,0.1);
+  --w20: rgba(255,255,255,0.2);
+  --w50: rgba(255,255,255,0.5);
+
+  --b: black;
+  --b5: rgba(0,0,0,0.05);
+  --b20: rgba(0,0,0,0.2);
+  --b50: rgba(0,0,0,0.5);
+  --b70: rgba(0,0,0,0.7);
+
+  /*Size modules form DokkaUI (https://www.figma.com/design/p5V2MV7znMxdVekniseQkA/DokkaUI-library?node-id=1-649&t=mfGLxSZdBK2d3j5l-1) */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 16px;
+  --m1: 24px;
+  --m2: 32px;
+  --m3: 48px;
+  --l1: 64px;
+  --l2: 72px;
+  --ta1: 40px;
+  --ta2: 52px;
+}
+
+@media (max-width: 640px) {
+  html {
+    scroll-padding-top: 72px; /* 56px header + 16px spacing */
+  }
+}
+
+:focus[data-focus-method=touch] {
+  box-shadow: none;
+}
+
+:focus-visible, :focus[data-focus-method=key], [data-test="checkbox-input"]:focus-visible ~ [data-test="checkbox-icon"] {
+  outline: none;
+  box-shadow: rgba(107,87,255,.8) 0 0 0 4px;
+}
+
+.scroll-lock {
+  overflow: hidden !important;
+}
+
+/*Global layout utility classes*/
+  /*WebTeamUI breakpoints*/
+  /*Max    XXXXpx - 1277px */
+  @media only screen and (min-width: 1277px) {
+    .hide-on-max{
+      display: none !important;
+    }
+    .show-on-small{
+      display: none !important;
+    }
+    .show-on-max {
+      display: flex !important;
+    }
+  }
+  /*Large  1276px - 1001px */
+  @media only screen and (max-width: 1276px) {
+    .hide-on-large{
+      display: none !important;
+    }
+    .show-on-small{
+      display: none !important;
+    }
+  }
+  /*Medium 1000px - 641px */
+  @media only screen and (max-width: 1000px) {
+    .hide-on-medium{
+      display: none !important;
+      border: 1px solid red;
+    }
+    .hide-on-large{
+      display: flex !important;
+    }
+    .show-on-small{
+      display: none !important;
+    }
+  }
+  /*Small   640px - XXXpx */
+  @media only screen and (max-width: 640px) {
+    .hide-on-small{
+      display: none !important;
+    }
+    .show-on-small{
+      display: flex !important;
+    }
+  }
+  /*Generic hide class for custom tooltip*/
+  .hide{
+    display: none !important;
+  }
+
+
+/*Page specific spacing*/
+.layout-wrapper{
+  width: 100%;
+  max-width: calc(1296px + 32px);
+}
+
+/*RescUI override*/
+.rs-tab-override{
+  padding-left: var(--s3) !important;
+  padding-right: var(--s3) !important;
+  margin: 0 !important;
+}
+
+/*1st column padding for tables*/
+.padding-left-medium {
+  padding-left: var(--s3);
+}
+.margin-right-medium {
+  margin-right: var(--s3);
+}
+
+/*Top spacer to replace bootstrap classes*/
+/*Move to Container*/
+.padding-top-small {
+  padding-top: var(--m1);
+}
+
+.padding-top-medium {
+  padding-top: var(--m2);
+}
+
+/*Footer compensation padding*/
+.padding-bottom-large {
+  padding-bottom: var(--l1) !important;
+}
+
+/*Misc*/
+.htmx-indicator {
+  display: none;
+}
+
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator {
+  display: flex;
+}
+
+.organization-links .bi {
+  font-size: 1.4rem;
+}
+
+.organization-links .nav-link .text {
+  font-size: 0.85rem;
+}
+
+.changelog .badge {
+  width: 38px;
+}
+
+html[data-bs-theme="dark"] .changelog .badge {
+  color: #2c2c2c !important;
+}
+
+.changelog .badge.text-bg-success {
+  background-color: #6fcd7e !important;
+}
+
+.changelog .badge.text-bg-danger {
+  background-color: #cd5e5e !important;
+}
+
+.changelog .badge.text-bg-info {
+  color: #ffffff !important;
+  background-color: #93bfec !important;
+}
+
+html[data-bs-theme="light"] .card {
+  color: #000 !important;
+  background-color: RGBA(var(--bs-light-rgb), var(--bs-bg-opacity, 1)) !important;
+}
+
+/* copy-pasted from btn-light */
+html[data-bs-theme="light"] .btn-light-themed {
+  --bs-btn-color: #000;
+  --bs-btn-bg: #f8f9fa;
+  --bs-btn-border-color: #f8f9fa;
+  --bs-btn-hover-color: #000;
+  --bs-btn-hover-bg: #d3d4d5;
+  --bs-btn-hover-border-color: #c6c7c8;
+  --bs-btn-focus-shadow-rgb: 211, 212, 213;
+  --bs-btn-active-color: #000;
+  --bs-btn-active-bg: #c6c7c8;
+  --bs-btn-active-border-color: #babbbc;
+  --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  --bs-btn-disabled-color: #000;
+  --bs-btn-disabled-bg: #f8f9fa;
+  --bs-btn-disabled-border-color: #f8f9fa;
+}
+
+/* copy-pasted from btn-secondary */
+html[data-bs-theme="dark"] .btn-light-themed {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #6c757d;
+  --bs-btn-border-color: #6c757d;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #5c636a;
+  --bs-btn-hover-border-color: #565e64;
+  --bs-btn-focus-shadow-rgb: 130, 138, 145;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #565e64;
+  --bs-btn-active-border-color: #51585e;
+  --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #6c757d;
+  --bs-btn-disabled-border-color: #6c757d;
+}
+
+.platform-badge {
+  color: #3e3e43;
+  border: 0 none;
+  margin-right: 4px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 13px;
+  font-weight: normal;
+  line-height: 1.5;
+}
+
+.platform-badge-sm {
+  color: #3e3e43;
+  border: 0 none;
+  margin-right: 2px;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1;
+}
+
+.platform-badge-xxs {
+  color: #3e3e43;
+  border: 0 none;
+  margin-right: 2px;
+  padding: 6px 6px;
+}
+
+.platform-badge.platform-common,
+.platform-badge-sm.platform-common,
+.platform-badge-xxs.platform-common {
+  background-color: #DBDBDE !important;
+}
+
+.platform-badge.platform-jvm,
+.platform-badge-sm.platform-jvm,
+.platform-badge-xxs.platform-jvm {
+  background-color: #8DE59B !important;
+}
+
+.platform-badge.platform-androidJvm,
+.platform-badge-sm.platform-androidJvm,
+.platform-badge-xxs.platform-androidJvm {
+  background-color: #8DE59B !important;
+}
+
+.platform-badge.platform-js,
+.platform-badge-sm.platform-js,
+.platform-badge-xxs.platform-js {
+  background-color: #FFC700 !important;
+}
+
+.platform-badge.platform-native,
+.platform-badge-sm.platform-native,
+.platform-badge-xxs.platform-native {
+  background-color: #F1B2FD !important;
+}
+
+.platform-badge.platform-wasm,
+.platform-badge-sm.platform-wasm,
+.platform-badge-xxs.platform-wasm {
+  background-color: #B89FFF !important;
+}
+
+.navbar {
+  --bs-navbar-nav-link-padding-x: 12px;
+  --bs-navbar-toggler-padding-y: 8px;
+  --bs-navbar-toggler-padding-x: 8px;
+}
+
+.navbar-nav {
+  --bs-navbar-color: #fff;
+}
+
+.nav-link {
+  --bs-nav-link-font-size: 16px;
+}
+
+.x-btn-hotkey {
+  display: inline-block;
+  border-left: 1px solid rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.5);
+  padding-left: 8px;
+  margin-left: 4px;
+  line-height: 1;
+}
+
+.x-link-icon {
+  font-size: 18px;
+}
+
+.x-logo {
+  width: 100%;
+  max-width: 326px !important;
+}
+
+@media (min-width: 768px) {
+  .x-dropdown-toggle-left .dropdown-toggle {
+    &::after {
+      display: none;
+    }
+
+    &::before {
+      display: inline-block;
+      margin-right: 8px;
+      content: "";
+      border-top: 5px solid;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      vertical-align: 2px;
+    }
+  }
+
+  .navbar-nav .nav-item {
+    margin-right: 8px;
+  }
+}
+
+h1 img {
+  max-height: 1em;
+  height: fit-content;
+  width: auto;
+}

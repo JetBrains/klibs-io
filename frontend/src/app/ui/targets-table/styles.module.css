@@ -1,0 +1,89 @@
+/*Platform target table*/
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 368px;
+    gap: 4px;
+}
+
+.platformWrapper{
+    display: flex;
+    background-color: #d4d4d4;
+    justify-content: space-between;
+    border-radius: 4px;
+}
+
+.platformId {
+    padding: 5px 6px 3px 6px;
+    min-width: 92px !important;
+}
+
+.groupTargetWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 1px;
+    width: 100%;
+    min-height: 32px;
+}
+
+.groupWrapper:first-of-type {
+    border-radius: 0 3px 0 0;
+}
+.groupWrapper:last-of-type {
+    border-radius: 0 0 3px 0;
+}
+
+.groupWrapper{
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 4px 4px 4px 6px;
+    height: 100%;
+
+}
+
+.groupId{
+    min-width: 92px !important;
+}
+
+.targetWrapper{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 162px;
+    height: 100%;
+    overflow-wrap: break-word;
+}
+
+/*To be replaced with extra prop from data*/
+.JV, .An{
+    background-color: var(--jvm);
+}
+
+.Ko{
+    background-color: var(--kotlin-native);
+}
+
+.Ko .groupWrapper{
+    background-color: rgba(255,255,255,0.8);
+}
+
+.Wa{
+    background-color: var(--wasm);
+}
+
+.JS{
+    background-color: var(--js);
+}
+
+.Co{
+    background-color: var(--common);
+}
+
+@media (max-width: 640px) {
+    .wrapper {
+        min-width: auto;
+    }
+}
