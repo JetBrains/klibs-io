@@ -5,6 +5,8 @@ import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.integration.mcp.dto.api.ProjectSearchResponse
 import io.klibs.integration.mcp.mapper.McpToolMapper
 import io.klibs.integration.mcp.service.McpProjectSearchService
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.ai.tool.annotation.Tool
 import org.springframework.ai.tool.annotation.ToolParam
 import org.springframework.stereotype.Service
@@ -14,6 +16,7 @@ class McpProjectSearchTool(
     private val mcpProjectSearchService: McpProjectSearchService,
     private val mcpToolMapper: McpToolMapper
 ) {
+    private val logger: Logger = LoggerFactory.getLogger(McpPackageTool::class.java)
 
     @Tool(
         description = """Searches for Kotlin Multiplatform projects by keywords, platforms/targets, and kotlin version.
@@ -59,6 +62,7 @@ class McpProjectSearchTool(
         )
         targetFilters: Map<TargetGroup, Set<String>>? = emptyMap(),
     ): ProjectSearchResponse {
+        logger.info("MCP: Searching for projects with query: $query, platforms: $platforms, targetFilters: $targetFilters")
         val parsedPlatforms =
             platforms?.map { PackagePlatform.findBySerializableName(it) }.orEmpty()
         val result =
