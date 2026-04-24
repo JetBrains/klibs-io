@@ -284,7 +284,8 @@ class ProjectRepositoryJdbc(
                project.description,
                project.minimized_readme,
                project.latest_version,
-               project.latest_version_ts
+               project.latest_version_ts,
+               project.dependent_count
         FROM project
         JOIN scm_owner ON project.owner_id = scm_owner.id
         WHERE $conditions
