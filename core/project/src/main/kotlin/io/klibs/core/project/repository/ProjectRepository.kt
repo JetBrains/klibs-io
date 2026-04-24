@@ -39,4 +39,17 @@ interface ProjectRepository {
     fun findPlatformsById(projectId: Int): List<PackagePlatform>?
 
     fun findAllForSitemap(): List<SitemapProjectEntry>
+
+    /**
+     * Recomputes `project.dependent_count` for every project that owns any `(group, artifact)`
+     * pair in the given parallel arrays. Typical input is the declared `(dep_group_id, dep_artifact_id)`
+     * coordinates of a newly-indexed package.
+     */
+    fun recomputeDependentCountsForDepCoords(depGroupIds: Array<String>, depArtifactIds: Array<String>)
+
+    /**
+     * Full recompute of `project.dependent_count` for every project in the DB. Used by the
+     * scheduled refresh job.
+     */
+    fun recomputeAllDependentCounts()
 }

@@ -21,6 +21,7 @@ import io.klibs.core.pckg.repository.PackageDependencyRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
+import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
@@ -58,6 +59,7 @@ class PackageIndexingService(
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
     private val packageDependencyRepository: PackageDependencyRepository,
+    private val projectRepository: ProjectRepository,
     private val selfProvider: ObjectProvider<PackageIndexingService>
 ) {
 
@@ -478,6 +480,10 @@ class PackageIndexingService(
 
         packageDependencyRepository.saveAll(entities)
         logger.debug("Saved {} dependencies for {}", entities.size, mavenArtifact)
+
+        val depGroupIds = dependencies.map { it.first }.toTypedArray()
+        val depArtifactIds = dependencies.map { it.second }.toTypedArray()
+        projectRepository.recomputeDependentCountsForDepCoords(depGroupIds, depArtifactIds)
     }
 
     private companion object {
