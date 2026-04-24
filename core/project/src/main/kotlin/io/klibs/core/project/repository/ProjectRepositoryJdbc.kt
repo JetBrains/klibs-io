@@ -33,6 +33,7 @@ class ProjectRepositoryJdbc(
             .addValue("minimized_readme", projectEntity.minimizedReadme)
             .addValue("latest_version", projectEntity.latestVersion)
             .addValue("latest_version_ts", Timestamp.from(projectEntity.latestVersionTs))
+            .addValue("dependent_count", projectEntity.dependentCount)
 
         val id = projectInsert.executeAndReturnKey(params).toInt()
         return projectEntity.copy(id = id)
@@ -138,7 +139,8 @@ class ProjectRepositoryJdbc(
                    description,
                    minimized_readme,
                    latest_version,
-                   latest_version_ts
+                   latest_version_ts,
+                   dependent_count
             FROM project
             WHERE id = :id
         """.trimIndent()
@@ -159,7 +161,8 @@ class ProjectRepositoryJdbc(
                    description,
                    minimized_readme,
                    latest_version,
-                   latest_version_ts
+                   latest_version_ts,
+                   dependent_count
             FROM project
             WHERE scm_repo_id = :scmRepoId
         """.trimIndent()
@@ -180,7 +183,8 @@ class ProjectRepositoryJdbc(
                    project.description,
                    project.minimized_readme,
                    project.latest_version,
-                   project.latest_version_ts
+                   project.latest_version_ts,
+                   project.dependent_count
             FROM project
             WHERE project.minimized_readme IS NOT NULL
               AND project.description IS NULL
@@ -203,7 +207,8 @@ class ProjectRepositoryJdbc(
                    project.description,
                    project.minimized_readme,
                    project.latest_version,
-                   project.latest_version_ts
+                   project.latest_version_ts,
+                   project.dependent_count
             FROM project
             WHERE project.minimized_readme IS NOT NULL
               AND NOT EXISTS (
@@ -248,7 +253,8 @@ class ProjectRepositoryJdbc(
                    project.description,
                    project.minimized_readme,
                    project.latest_version,
-                   project.latest_version_ts
+                   project.latest_version_ts,
+                   project.dependent_count
             FROM project
             JOIN scm_owner ON project.owner_id = scm_owner.id
             WHERE project.name = :name
@@ -305,7 +311,8 @@ class ProjectRepositoryJdbc(
                    description,
                    minimized_readme,
                    latest_version,
-                   latest_version_ts
+                   latest_version_ts,
+                   dependent_count
             FROM project
             WHERE scm_repo_id = :scmRepoId
               AND name = :name
@@ -335,6 +342,68 @@ class ProjectRepositoryJdbc(
             }
             .optional()
             .getOrNull()
+    }
+
+    override fun recomputeDependentCountsForDepCoords(
+        depGroupIds: Array<String>,
+        depArtifactIds: Array<String>,
+    ) {
+        if (depGroupIds.isEmpty()) return
+        val sql = """
+            UPDATE project p
+            SET dependent_count = COALESCE(cnt.dependent_count, 0)
+            FROM (
+                SELECT DISTINCT pkg.project_id
+                FROM package pkg
+                JOIN unnest(:depGroupIds, :depArtifactIds) AS d(group_id, artifact_id)
+                  ON pkg.group_id = d.group_id AND pkg.artifact_id = d.artifact_id
+                WHERE pkg.project_id IS NOT NULL
+            ) targets
+            LEFT JOIN LATERAL (
+                SELECT COUNT(DISTINCT p_dep.project_id)::int AS dependent_count
+                FROM package_dependency pd
+                JOIN package p_dep ON p_dep.id = pd.package_id
+                WHERE (pd.dep_group_id, pd.dep_artifact_id) IN (
+                    SELECT DISTINCT group_id, artifact_id FROM package WHERE project_id = targets.project_id
+                )
+                  AND p_dep.project_id != targets.project_id
+            ) cnt ON TRUE
+            WHERE p.id = targets.project_id
+        """.trimIndent()
+
+        jdbcClient.sql(sql)
+            .param("depGroupIds", depGroupIds)
+            .param("depArtifactIds", depArtifactIds)
+            .update()
+    }
+
+    override fun recomputeAllDependentCounts() {
+        val sql = """
+            WITH ga_dep_projects AS (
+                SELECT pd.dep_group_id, pd.dep_artifact_id, p_dep.project_id AS dep_project_id
+                FROM package_dependency pd
+                JOIN package p_dep ON p_dep.id = pd.package_id
+                GROUP BY pd.dep_group_id, pd.dep_artifact_id, p_dep.project_id
+            ),
+            project_gas AS (
+                SELECT DISTINCT project_id, group_id, artifact_id FROM package
+            ),
+            dependent_counts AS (
+                SELECT proj.id AS project_id,
+                       COUNT(DISTINCT gdp.dep_project_id) FILTER (WHERE gdp.dep_project_id != proj.id)::int AS dependent_count
+                FROM project proj
+                LEFT JOIN project_gas pg ON pg.project_id = proj.id
+                LEFT JOIN ga_dep_projects gdp ON gdp.dep_group_id = pg.group_id AND gdp.dep_artifact_id = pg.artifact_id
+                GROUP BY proj.id
+            )
+            UPDATE project p
+            SET dependent_count = dc.dependent_count
+            FROM dependent_counts dc
+            WHERE p.id = dc.project_id
+              AND p.dependent_count IS DISTINCT FROM dc.dependent_count
+        """.trimIndent()
+
+        jdbcClient.sql(sql).update()
     }
 
     override fun findAllForSitemap(): List<SitemapProjectEntry> {
@@ -368,6 +437,7 @@ class ProjectRepositoryJdbc(
                 minimizedReadme = rs.getString("minimized_readme"),
                 latestVersion = rs.getString("latest_version"),
                 latestVersionTs = rs.getTimestamp("latest_version_ts").toInstant(),
+                dependentCount = rs.getInt("dependent_count"),
             )
         }
     }
