@@ -104,6 +104,7 @@ class MavenIndexDownloadingServiceTest {
             whenever(restClient.get()).thenReturn(requestHeadersUriSpec as RestClient.RequestHeadersUriSpec<Nothing>)
             whenever(requestHeadersUriSpec.uri(any<String>())).thenReturn(requestHeadersSpec as RestClient.RequestHeadersSpec<Nothing>)
             whenever(requestHeadersSpec.retrieve()).thenReturn(responseSpec)
+            whenever(responseSpec.hint(any<String>(), any())).thenReturn(responseSpec)
             whenever(responseSpec.body<String>()).thenReturn(props)
 
             whenever(indexUpdateResult.isFullUpdate).thenReturn(true)

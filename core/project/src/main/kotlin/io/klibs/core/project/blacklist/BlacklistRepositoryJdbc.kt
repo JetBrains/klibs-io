@@ -108,7 +108,7 @@ class BlacklistRepositoryJdbc(
         return jdbcClient.sql(sql)
             .param("groupId", groupId)
             .query(Int::class.java)
-            .list()
+            .list().filterNotNull()
     }
 
     private fun getShouldBeBannedPackageIdsByGroupAndArtifact(groupId: String, artifactId: String): List<Int> {
@@ -123,7 +123,7 @@ class BlacklistRepositoryJdbc(
             .param("groupId", groupId)
             .param("artifactId", artifactId)
             .query(Int::class.java)
-            .list()
+            .list().filterNotNull()
     }
 
     private fun getShouldBeBannedPackageIds(): List<Int> {
@@ -137,7 +137,7 @@ class BlacklistRepositoryJdbc(
 
         return jdbcClient.sql(sql)
             .query(Int::class.java)
-            .list()
+            .list().filterNotNull()
     }
 
     private fun deletePackageTargets(packageIds: List<Int>) {
