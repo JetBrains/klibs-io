@@ -1,0 +1,58 @@
+databaseChangeLog:
+  - changeSet:
+      id: create package_dependency table
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: package_dependency
+      changes:
+        - createTable:
+            tableName: package_dependency
+            columns:
+              - column:
+                  name: package_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    references: package(id)
+                    foreignKeyName: fk_package_dependency_package_id
+              - column:
+                  name: dep_group_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: dep_artifact_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: dep_version
+                  type: TEXT
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: package_dependency
+            columnNames: package_id, dep_group_id, dep_artifact_id, dep_version
+            constraintName: pk_package_dependency
+
+  - changeSet:
+      id: add reverse lookup index on package_dependency
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_dependency
+              indexName: idx_package_dependency_target
+      changes:
+        - createIndex:
+            tableName: package_dependency
+            indexName: idx_package_dependency_target
+            columns:
+              - column:
+                  name: dep_group_id
+              - column:
+                  name: dep_artifact_id
