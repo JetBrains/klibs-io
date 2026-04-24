@@ -61,7 +61,7 @@ class ChatGptSpringAiService(
         recordMetrics(response)
 
         // Process and return the response content
-        return response.result.output.text ?: ""
+        return response.result?.output?.text ?: ""
     }
 
     private fun recordMetrics(response: ChatResponse) {
