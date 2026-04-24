@@ -7,10 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 
 @Configuration
 class JacksonConfiguration {
@@ -29,14 +29,15 @@ class JacksonConfiguration {
 
     @Bean
     @Primary
-    fun objectMapper(builder: Jackson2ObjectMapperBuilder): ObjectMapper {
-        return builder.createXmlMapper(false).build<ObjectMapper>()
+    fun objectMapper(modules: List<Module>): ObjectMapper {
+        return ObjectMapper()
+            .apply { modules.forEach { registerModule(it) } }
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
     }
 
     @Bean
-    fun xmlMapper(builder: Jackson2ObjectMapperBuilder): XmlMapper {
-        return builder.createXmlMapper(true).build()
+    fun xmlMapper(modules: List<Module>): XmlMapper {
+        return XmlMapper().apply { modules.forEach { registerModule(it) } }
     }
 }
