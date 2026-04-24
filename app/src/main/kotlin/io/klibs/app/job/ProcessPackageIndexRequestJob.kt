@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.TimeUnit
 
 @Component
+@ConditionalOnProperty("klibs.indexing", havingValue = "true")
 class ProcessPackageIndexRequestJob(val packageIndexingService: PackageIndexingService) {
 
     @Scheduled(initialDelay = 0, fixedRate = 4, timeUnit = TimeUnit.HOURS)

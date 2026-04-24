@@ -1,14 +1,16 @@
 package io.klibs.app.configuration
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.Module
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import org.springframework.context.annotation.Primary
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 
 @Configuration
 class JacksonConfiguration {
@@ -27,12 +29,15 @@ class JacksonConfiguration {
 
     @Bean
     @Primary
-    fun objectMapper(builder: Jackson2ObjectMapperBuilder): ObjectMapper {
-        return builder.createXmlMapper(false).build()
+    fun objectMapper(modules: List<Module>): ObjectMapper {
+        return ObjectMapper()
+            .apply { modules.forEach { registerModule(it) } }
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
     }
 
     @Bean
-    fun xmlMapper(builder: Jackson2ObjectMapperBuilder): XmlMapper {
-        return builder.createXmlMapper(true).build()
+    fun xmlMapper(modules: List<Module>): XmlMapper {
+        return XmlMapper().apply { modules.forEach { registerModule(it) } }
     }
 }

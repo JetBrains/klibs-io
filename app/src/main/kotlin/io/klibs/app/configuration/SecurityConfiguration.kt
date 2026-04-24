@@ -67,6 +67,9 @@ class SecurityConfiguration(
                 authorize("/actuator/metrics", permitAll)
                 authorize("/actuator/prometheus", permitAll)
 
+                // Allow all requests to the MCP server
+                authorize("/mcp/**", permitAll)
+
                 authorize("/error", permitAll)
 
                 if (environment.matchesProfiles("prod")) {

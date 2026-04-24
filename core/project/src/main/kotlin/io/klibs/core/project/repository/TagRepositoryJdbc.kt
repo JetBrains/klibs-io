@@ -29,7 +29,7 @@ class TagRepositoryJdbc(
         return jdbcClient.sql(sql)
             .param("id", projectId)
             .query(String::class.java)
-            .list()
+            .list().filterNotNull()
     }
 
     fun getTotalProjectCount(): Long {

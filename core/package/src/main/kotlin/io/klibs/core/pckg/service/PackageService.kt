@@ -66,6 +66,11 @@ class PackageService(
     fun getLatestPackageDetails(groupId: String, artifactId: String): PackageDetails? =
         packageRepository.findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId, artifactId)?.toModel()
 
+    fun getLatestStablePackageDetails(groupId: String, artifactId: String): PackageDetails? =
+        packageRepository.findFirstByGroupIdAndArtifactIdAndVersionTypeOrderByReleaseTsDesc(
+            groupId, artifactId, VersionType.STABLE
+        )?.toModel()
+
     /**
      * @return **all** packages under the given [groupId] and [artifactId], meaning all versions
      */
