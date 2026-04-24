@@ -140,6 +140,7 @@ private fun ProjectDetails.toDTO(): ProjectDetailsDTO {
         linkIssues = this.getIssuesLink(),
         linkWiki = this.getWikiLink(),
         scmStars = this.stars,
+        dependentCount = this.dependentCount,
         createdAtMillis = this.createdAt.toEpochMilli(),
         openIssues = this.openIssues,
         licenseName = this.licenseName,
