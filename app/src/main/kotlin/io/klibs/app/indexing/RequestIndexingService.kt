@@ -7,6 +7,7 @@ import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.search.ArtifactData
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
+import io.klibs.integration.maven.search.paginateSearch
 import org.apache.maven.search.api.request.BooleanQuery
 import org.apache.maven.search.api.request.Query
 import org.slf4j.LoggerFactory
@@ -108,26 +109,16 @@ class RequestIndexingService(
         return query
     }
 
-    private fun paginateSearch(query: Query): List<ArtifactData> {
-        val results = mutableListOf<ArtifactData>()
-        var currentPage = 0
-
-        do {
-            val response = try {
-                centralSonatypeSearchClient.searchWithThrottle(currentPage, query)
-            } catch (e: Exception) {
-                logger.error("Central Sonatype search failed: ${e.message}", e)
-                throw ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
-                    "Central Sonatype search failed"
-                )
-            }
-            results.addAll(response.page)
-            currentPage++
-        } while (response.page.isNotEmpty())
-
-        return results
-    }
+    private fun paginateSearch(query: Query): List<ArtifactData> =
+        try {
+            centralSonatypeSearchClient.paginateSearch(query).toList()
+        } catch (e: Exception) {
+            logger.error("Central Sonatype search failed: ${e.message}", e)
+            throw ResponseStatusException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Central Sonatype search failed"
+            )
+        }
 
     private fun saveIndexRequests(mavenArtifacts: List<MavenArtifact>) {
         val requests = mavenArtifacts.map { it.toIndexRequest() }
