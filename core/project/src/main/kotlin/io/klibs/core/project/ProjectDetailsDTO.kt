@@ -125,6 +125,12 @@ data class ProjectDetailsDTO(
     val updatedAtMillis: Long,
 
     @Schema(
+        description = "Number of distinct other projects in the index that depend on this project's packages",
+        example = "42"
+    )
+    val dependentCount: Int,
+
+    @Schema(
         description = "Tags associated with the project. Can be used for filtering or grouping",
         example = "[Compose UI, Jetpack Compose]"
     )

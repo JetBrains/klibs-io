@@ -62,7 +62,8 @@ class ProjectService(
             scmRepositoryEntity = scmRepositoryEntity,
             projectPlatforms = projectPlatforms,
             projectMarkers = markerRepository.findAllByProjectId(projectEntity.idNotNull),
-            projectTags = tagRepository.getTagsByProjectId(projectEntity.idNotNull)
+            projectTags = tagRepository.getTagsByProjectId(projectEntity.idNotNull),
+            dependentCount = projectEntity.dependentCount,
         )
     }
 
@@ -169,6 +170,7 @@ private fun ProjectEntity.toDetails(
     projectPlatforms: List<PackagePlatform>,
     projectMarkers: List<Marker>,
     projectTags: List<String>,
+    dependentCount: Int,
 ): ProjectDetails {
     return ProjectDetails(
         id = this.idNotNull,
@@ -195,6 +197,7 @@ private fun ProjectEntity.toDetails(
         },
         licenseName = scmRepositoryEntity.licenseName,
         updatedAt = scmRepositoryEntity.updatedAtTs,
+        dependentCount = dependentCount,
         tags = projectTags,
         markers = projectMarkers.map { it.type }
     )
