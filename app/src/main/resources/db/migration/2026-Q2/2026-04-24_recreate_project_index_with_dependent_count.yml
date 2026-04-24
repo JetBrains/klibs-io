@@ -1,0 +1,55 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop project_index for dependent_count addition
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: |
+              SELECT COUNT(*)
+              FROM pg_matviews
+              WHERE schemaname = current_schema()
+                AND matviewname = 'project_index'
+      changes:
+        - sql:
+            sql: |
+              DROP MATERIALIZED VIEW IF EXISTS project_index;
+
+  - changeSet:
+      id: recreate project_index with dependent_count
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sqlFile:
+            path: 2026-04-24_recreate_project_index_with_dependent_count.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: recreate project_index indexes after dependent_count addition
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - sql:
+            sql: CREATE INDEX project_index_fts_gin_idx ON project_index USING GIN (fts)
+        - sql:
+            sql: CREATE INDEX project_index_platforms_vector_gin_idx ON project_index USING GIN (platforms_vector)
+        - sql:
+            sql: CREATE INDEX project_index_markers_gin_idx ON project_index USING GIN (markers)
+        - createIndex:
+            indexName: project_index_stars_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: stars
+        - createIndex:
+            indexName: project_index_project_id_idx
+            tableName: project_index
+            columns:
+              - column:
+                  name: project_id
+        - createIndex:
+            indexName: project_index_unique
+            tableName: project_index
+            unique: true
+            columns:
+              - column:
+                  name: project_id
