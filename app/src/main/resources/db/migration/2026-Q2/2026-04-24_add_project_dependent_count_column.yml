@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: add dependent_count column to project
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: project
+              columnName: dependent_count
+      changes:
+        - addColumn:
+            tableName: project
+            columns:
+              - column:
+                  name: dependent_count
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
