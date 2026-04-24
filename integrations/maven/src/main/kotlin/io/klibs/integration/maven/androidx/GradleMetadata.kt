@@ -37,6 +37,18 @@ data class Component(
 
 data class Variant(
     val attributes: Attributes? = null,
+    val dependencies: List<VariantDependency>? = null,
+)
+
+data class VariantDependency(
+    val group: String,
+    val module: String,
+    val version: VariantDependencyVersion? = null,
+)
+
+data class VariantDependencyVersion(
+    val requires: String? = null,
+    val prefers: String? = null,
 )
 
 
