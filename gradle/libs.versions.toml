@@ -1,6 +1,6 @@
 [versions]
 
-kotlin = "2.1.0"
+kotlin = "2.3.20"
 
 # Spring
 spring-boot = "3.5.9"
@@ -34,6 +34,8 @@ testcontainers = "1.21.4"
 markdown = "0.7.3"
 
 xml-util = "0.90.0"
+
+kotlin-semver = "3.0.0"
 
 [plugins]
 
@@ -103,6 +105,8 @@ prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
 markdown = { module = "org.jetbrains:markdown", version.ref = "markdown" }
 
 xml-util = { module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xml-util" }
+
+kotlin-semver = { module = "io.github.z4kn4fein:semver", version.ref = "kotlin-semver" }
 
 [bundles]
 maven-indexer = [
