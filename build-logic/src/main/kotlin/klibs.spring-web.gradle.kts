@@ -10,4 +10,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.reactor)
 
     implementation(libs.springdoc.openapi.starter)
+
+    testImplementation(libs.spring.boot.starter.webmvc.test)
 }

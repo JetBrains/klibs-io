@@ -6,7 +6,7 @@ plugins {
 dependencies {
     implementation(libs.spring.boot.starter.jdbc)
     implementation(libs.spring.boot.starter.data.jpa)
-    implementation(libs.liquibase.core)
+    implementation(libs.spring.boot.starter.liquibase)
     implementation(libs.postgresql)
 
     testImplementation(libs.bundles.testcontainers)

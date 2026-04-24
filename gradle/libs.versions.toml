@@ -3,16 +3,16 @@
 kotlin = "2.3.20"
 
 # Spring
-spring-boot = "3.5.9"
+spring-boot = "4.0.5"
 spring-dependencyManagement = "1.1.7"
-spring-doc = "2.8.15"
+spring-doc = "3.0.3"
 spring-ai = "2.0.0-M4"
-spring-cloud-aws = "3.4.2"
+spring-cloud-aws = "4.0.0"
 
 # Job / scheduling
 shedlock = "6.6.0"
 
-kohsuke-githubApi = "1.321"
+kohsuke-githubApi = "1.330"
 
 kotlinx-coroutines = "1.10.1"
 kotlinx-serialization = "1.6.3"
@@ -73,6 +73,7 @@ spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" 
 spring-boot-starter-logging = { module = "org.springframework.boot:spring-boot-starter-logging" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
 spring-boot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
@@ -96,7 +97,7 @@ mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.re
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
 
-liquibase-core = { module = "org.liquibase:liquibase-core" }
+spring-boot-starter-liquibase = { module = "org.springframework.boot:spring-boot-starter-liquibase" }
 postgresql = { module = "org.postgresql:postgresql" }
 
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
