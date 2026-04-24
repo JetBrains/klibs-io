@@ -155,4 +155,6 @@ databaseChangeLog:
       file: db/migration/2026-Q2/2026-04-10_create_package_dependency.yml
   - include:
       file: db/migration/2026-Q2/2026-04-24_add_project_dependent_count_column.yml
+  - include:
+      file: db/migration/2026-Q2/2026-04-24_recreate_project_index_with_dependent_count.yml
 
