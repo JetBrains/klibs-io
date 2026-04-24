@@ -8,6 +8,8 @@ import io.klibs.app.util.parseGitHubLink
 import io.klibs.app.util.toIndexRequest
 import io.klibs.core.pckg.dto.PackageDTO
 import io.klibs.core.pckg.entity.IndexingRequestEntity
+import io.klibs.core.pckg.entity.PackageDependencyEntity
+import io.klibs.core.pckg.entity.PackageDependencyKey
 import io.klibs.core.pckg.enums.IndexingRequestStatus
 import io.klibs.core.pckg.model.Configuration
 import io.klibs.core.pckg.model.PackageDeveloper
@@ -15,6 +17,7 @@ import io.klibs.core.pckg.model.PackageLicense
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.repository.IndexingRequestRepository
+import io.klibs.core.pckg.repository.PackageDependencyRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
@@ -23,6 +26,7 @@ import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.MavenPom
 import io.klibs.integration.maven.MavenStaticDataProvider
+import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateImpl
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
@@ -53,6 +57,7 @@ class PackageIndexingService(
     private val indexingRequestRepository: IndexingRequestRepository,
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
+    private val packageDependencyRepository: PackageDependencyRepository,
     private val selfProvider: ObjectProvider<PackageIndexingService>
 ) {
 
@@ -179,12 +184,16 @@ class PackageIndexingService(
 
         logger.trace("Persisting the package for {}", indexRequest)
         val packageDto = constructPackage(mavenArtifact, pom, toolingMetadata, project)
-        if (indexRequest.reindex) {
-            packageService.updateByCoordinates(packageDto)
+        val savedPackageId = if (indexRequest.reindex) {
+            val updated = packageService.updateByCoordinates(packageDto)
                 ?: error("Unable to update a non-existing artifact: $mavenArtifact")
+            updated.id
         } else {
-            packageRepository.save(packageDto.toEntity())
+            packageRepository.save(packageDto.toEntity()).id
         }
+
+        logger.trace("Extracting dependencies for {}", indexRequest)
+        extractAndSaveDependencies(provider, mavenArtifact, requireNotNull(savedPackageId), indexRequest.reindex)
     }
 
     private fun IndexingRequestEntity.getMavenArtifact(): MavenArtifact {
@@ -426,7 +435,76 @@ class PackageIndexingService(
         }
     }
 
+    private fun extractAndSaveDependencies(
+        provider: MavenStaticDataProvider,
+        mavenArtifact: MavenArtifact,
+        packageId: Long,
+        isReindex: Boolean,
+    ) {
+        val moduleMetadata = try {
+            provider.getModuleMetadata(mavenArtifact.groupId, mavenArtifact.artifactId, mavenArtifact.version)
+        } catch (e: Exception) {
+            logger.warn("Failed to fetch module metadata for dependency extraction: $mavenArtifact", e)
+            return
+        }
+
+        if (moduleMetadata == null) {
+            logger.debug("No module metadata found for {}, skipping dependency extraction", mavenArtifact)
+            return
+        }
+
+        val dependencies = aggregateVariantDependencies(
+            gradleMetadata = moduleMetadata.gradleMetadata,
+            selfGroupId = mavenArtifact.groupId,
+            selfArtifactId = mavenArtifact.artifactId,
+        )
+
+        if (dependencies.isEmpty()) return
+
+        if (isReindex) {
+            packageDependencyRepository.deleteAllByIdPackageId(packageId)
+        }
+
+        val entities = dependencies.map { (group, module, version) ->
+            PackageDependencyEntity(
+                id = PackageDependencyKey(
+                    packageId = packageId,
+                    depGroupId = group,
+                    depArtifactId = module,
+                    depVersion = version,
+                )
+            )
+        }
+
+        packageDependencyRepository.saveAll(entities)
+        logger.debug("Saved {} dependencies for {}", entities.size, mavenArtifact)
+    }
+
     private companion object {
         private val logger = LoggerFactory.getLogger(PackageIndexingService::class.java)
     }
+}
+
+/**
+ * Collects the union of dependency coordinates declared across all variants of a Gradle module,
+ * deduping by `(group, artifact, version)` and dropping self-references (a variant listing the
+ * root module itself). Dependencies without a resolvable version (neither `requires` nor `prefers`)
+ * are dropped.
+ */
+internal fun aggregateVariantDependencies(
+    gradleMetadata: GradleMetadata,
+    selfGroupId: String,
+    selfArtifactId: String,
+): Set<Triple<String, String, String>> {
+    return gradleMetadata.variants
+        ?.flatMap { variant -> variant.dependencies ?: emptyList() }
+        ?.mapNotNull { dep ->
+            val version = dep.version?.requires ?: dep.version?.prefers ?: return@mapNotNull null
+            Triple(dep.group, dep.module, version)
+        }
+        ?.filter { (group, module, _) ->
+            !(group == selfGroupId && module == selfArtifactId)
+        }
+        ?.toSet()
+        ?: emptySet()
 }
