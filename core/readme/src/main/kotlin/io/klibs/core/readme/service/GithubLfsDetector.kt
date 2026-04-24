@@ -5,13 +5,31 @@ import okhttp3.Request
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
+/**
+ * Some files used in GitHub readmes, such as images, are stored with Git LFS (Large File Storage).
+ * For such files using the default source path with https://raw.githubusercontent.com/ prefix
+ * does not work. Such paths lead to LFS pointers (in the text format), instead of actual files.
+ *
+ * This service detects if a file is stored using Git LFS, so it can be properly handled later.
+ */
 @Service
 class GithubLfsDetector(
     private val okHttpClient: OkHttpClient
 ) {
 
+
+    /**
+     * Determines if the file referenced by the given URL is stored using Git LFS.
+     *
+     * It sends HTTP requests to evaluate if the file's format matches the LFS pointer structure
+     *
+     * @param rawUrl The URL of the raw file to be checked.
+     * @return `true` if the file is identified as a Git LFS pointer file, `false` otherwise.
+     */
     fun isLfsFile(rawUrl: String): Boolean {
         return try {
+
+            // Send a HEAD request to check file characteristics
             val headRequest = Request.Builder()
                 .url(rawUrl)
                 .head()
@@ -33,6 +51,7 @@ class GithubLfsDetector(
                 return false
             }
 
+            // If the initial HEAD request was successful, send a GET request to check the content
             val getRequest = Request.Builder()
                 .url(rawUrl)
                 .header("Range", "bytes=0-${LFS_MAX_CONTENT_LENGTH_BYTES - 1}")
