@@ -1,6 +1,9 @@
 klibs:
   indexing: false
   ai: false
+  scheduling:
+    process-queue-job:
+      enabled: false
 
 spring:
   sql:
