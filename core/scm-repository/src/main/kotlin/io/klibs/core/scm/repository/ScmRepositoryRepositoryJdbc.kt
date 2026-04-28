@@ -273,6 +273,81 @@ class ScmRepositoryRepositoryJdbc(
             .getOrNull()
     }
 
+    override fun findMultipleForHealthEventSync(limit: Int): List<ScmRepositoryEntity> {
+        val sql = """
+            SELECT repo.id,
+                   repo.id_native,
+                   repo.name,
+                   repo.description,
+                   repo.default_branch,
+                   repo.created_ts,
+                   repo.owner_id,
+                   owner.type     owner_type,
+                   owner.login AS owner_login,
+                   repo.homepage,
+                   repo.has_gh_pages,
+                   repo.has_issues,
+                   repo.has_wiki,
+                   repo.has_readme,
+                   repo.license_key,
+                   repo.license_name,
+                   repo.stars,
+                   repo.open_issues,
+                   repo.last_activity_ts,
+                   repo.updated_at
+            FROM scm_repo repo
+                     JOIN scm_owner owner ON repo.owner_id = owner.id
+                     LEFT JOIN scm_repo_health_components c ON c.scm_repo_id = repo.id
+            WHERE repo.has_issues = TRUE
+              AND (c.last_event_sync_ts IS NULL
+                OR c.last_event_sync_ts < (current_timestamp - interval '7 days'))
+            ORDER BY c.last_event_sync_ts NULLS FIRST, repo.stars DESC
+            LIMIT :limit FOR UPDATE OF repo SKIP LOCKED
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("limit", limit)
+            .query(SCM_REPO_ENTITY_ROW_MAPPER)
+            .list()
+    }
+
+    override fun findMultipleForHealthScoreCompute(limit: Int): List<ScmRepositoryEntity> {
+        val sql = """
+            SELECT repo.id,
+                   repo.id_native,
+                   repo.name,
+                   repo.description,
+                   repo.default_branch,
+                   repo.created_ts,
+                   repo.owner_id,
+                   owner.type     owner_type,
+                   owner.login AS owner_login,
+                   repo.homepage,
+                   repo.has_gh_pages,
+                   repo.has_issues,
+                   repo.has_wiki,
+                   repo.has_readme,
+                   repo.license_key,
+                   repo.license_name,
+                   repo.stars,
+                   repo.open_issues,
+                   repo.last_activity_ts,
+                   repo.updated_at
+            FROM scm_repo repo
+                     JOIN scm_owner owner ON repo.owner_id = owner.id
+                     JOIN scm_repo_health_components c ON c.scm_repo_id = repo.id
+            WHERE c.next_health_compute_ts IS NOT NULL
+              AND c.next_health_compute_ts <= current_timestamp
+            ORDER BY c.next_health_compute_ts ASC, repo.stars DESC
+            LIMIT :limit FOR UPDATE OF repo SKIP LOCKED
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("limit", limit)
+            .query(SCM_REPO_ENTITY_ROW_MAPPER)
+            .list()
+    }
+
     override fun findMultipleForUpdate(limit: Int): List<ScmRepositoryEntity> {
         val sql = """
             SELECT repo.id,
