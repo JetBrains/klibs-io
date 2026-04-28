@@ -23,7 +23,7 @@
     "@rescui/button": "^0.16.4",
     "@rescui/card": "^0.10.8",
     "@rescui/checkbox": "^0.8.4",
-    "@rescui/chip-list": "^0.13.2",
+    "@rescui/chip-list": "^0.13.5",
     "@rescui/dropdown-menu": "^0.9.10",
     "@rescui/focus-manager": "^0.1.13",
     "@rescui/icons": "^1.6.2",
