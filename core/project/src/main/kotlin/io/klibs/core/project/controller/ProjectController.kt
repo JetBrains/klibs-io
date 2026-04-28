@@ -147,6 +147,7 @@ private fun ProjectDetails.toDTO(): ProjectDetailsDTO {
         lastActivityAtMillis = this.lastActivityAt.toEpochMilli(),
         updatedAtMillis = this.updatedAt.toEpochMilli(),
         tags = tags,
-        markers = markers
+        markers = markers,
+        ossHealthScore = ossHealthScore,
     )
 }

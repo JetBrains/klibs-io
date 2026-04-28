@@ -40,6 +40,8 @@ data class ProjectDetails(
 
     val tags: List<String>,
     val markers: List<MarkerType>,
+
+    val ossHealthScore: Int?,
 ) {
     private val isAndroidx: Boolean get() = ownerLogin == ANDROIDX_OWNER
 

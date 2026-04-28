@@ -41,6 +41,7 @@ class ProjectDetailsLinkTest {
             dependentCount = 0,
             tags = emptyList(),
             markers = emptyList(),
+            ossHealthScore = null,
         )
     }
 

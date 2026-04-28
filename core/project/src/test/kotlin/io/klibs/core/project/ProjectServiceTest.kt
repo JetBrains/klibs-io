@@ -9,6 +9,7 @@ import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
+import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
 import io.klibs.core.readme.service.ReadmeService
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
@@ -25,6 +26,7 @@ class ProjectServiceTest {
     private val tagRepository: TagRepository = mock()
     private val projectTagRepository: ProjectTagRepository = mock()
     private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mock()
+    private val scmRepoHealthComponentsRepository: ScmRepoHealthComponentsRepository = mock()
     private val project: ProjectEntity = mock()
 
     private val uut = ProjectService(
@@ -35,7 +37,8 @@ class ProjectServiceTest {
         markerRepository,
         tagRepository,
         projectTagRepository,
-        allowedProjectTagsRepository
+        allowedProjectTagsRepository,
+        scmRepoHealthComponentsRepository,
     )
 
     @Test
