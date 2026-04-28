@@ -7,7 +7,7 @@ spring-boot = "3.5.9"
 spring-dependencyManagement = "1.1.7"
 spring-doc = "2.8.15"
 spring-ai = "1.1.2"
-spring-cloud-aws = "3.4.2"
+spring-cloud-aws = "4.0.1"
 
 # Job / scheduling
 shedlock = "6.6.0"
