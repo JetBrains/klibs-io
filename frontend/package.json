@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@jetbrains/kotlin-web-site-ui": "^4.14.2",
-    "@next/third-parties": "^14.2.9",
+    "@next/third-parties": "^16.2.4",
     "@rescui/button": "^0.16.4",
     "@rescui/card": "^0.10.8",
     "@rescui/checkbox": "^0.8.4",
@@ -41,7 +41,7 @@
     "classnames": "^2.5.1",
     "date-fns": "^4.0.0-beta.1",
     "github-markdown-css": "^5.8.1",
-    "next": "^14.2.12",
+    "next": "^16.2.4",
     "react": "^18",
     "react-bootstrap": "^2.10.4",
     "react-dom": "^18",
