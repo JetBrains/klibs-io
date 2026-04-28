@@ -1,14 +1,16 @@
 package io.klibs.core.readme.impl
 
 import io.klibs.core.readme.ReadmeProcessor
+import io.klibs.core.readme.service.GithubLfsDetector
 import java.net.URI
 import java.net.URISyntaxException
 
-private const val ORIGINAL_PATH_PARAMETER_NAME = "<original_path>"
-
-abstract class LinksBaseReadmeProcessor : ReadmeProcessor {
+abstract class LinksBaseReadmeProcessor(
+    protected val lfsDetector: GithubLfsDetector
+) : ReadmeProcessor {
     protected val GITHUB_URL = "https://github.com"
     protected val GITHUB_RAW_CONTENT_BASE_URL = "https://raw.githubusercontent.com"
+    protected val GITHUB_LFS_CONTENT_BASE_URL = "https://media.githubusercontent.com/media"
     private val rawContentRegex = Regex("src=\"(?!https?://|#)([^\"]*)\"")
     private val hrefRelativeLinkRegex = Regex("href=\"(?!https?://|#)([^\"]*)\"")
 
@@ -20,37 +22,23 @@ abstract class LinksBaseReadmeProcessor : ReadmeProcessor {
     ): String {
         return replaceRelativeLinks(
             readmeContent,
-            constructNewHrefUrlPrefix(readmeOwner, readmeRepositoryName, repositoryDefaultBranch),
-            constructNewSrcUrlPrefix(readmeOwner, readmeRepositoryName, repositoryDefaultBranch)
+            hrefUrlBuilder = { link ->
+                "$GITHUB_URL/$readmeOwner/$readmeRepositoryName/blob/$repositoryDefaultBranch/$link"
+            },
+            srcUrlBuilder = { link ->
+                resolveLfsUrl("$GITHUB_RAW_CONTENT_BASE_URL/$readmeOwner/$readmeRepositoryName/$repositoryDefaultBranch/$link")
+            },
         )
     }
 
     protected fun replaceRelativeLinks(
         readmeContent: String,
-        hrefUrlPrefix: String,
-        srcUrlPrefix: String
+        hrefUrlBuilder: (String) -> String,
+        srcUrlBuilder: (String) -> String,
     ): String {
-        return readmeContent.replaceFirstGroupValue(hrefRelativeLinkRegex) { link ->
-            hrefUrlPrefix.replace(ORIGINAL_PATH_PARAMETER_NAME, link)
-        }.replaceFirstGroupValue(rawContentRegex) { link ->
-            srcUrlPrefix.replace(ORIGINAL_PATH_PARAMETER_NAME, link)
-        }
-    }
-
-    private fun constructNewSrcUrlPrefix(
-        readmeOwner: String,
-        readmeRepositoryName: String,
-        repositoryDefaultBranch: String
-    ): String {
-        return "src=\"$GITHUB_RAW_CONTENT_BASE_URL/$readmeOwner/$readmeRepositoryName/${repositoryDefaultBranch}/$ORIGINAL_PATH_PARAMETER_NAME\""
-    }
-
-    private fun constructNewHrefUrlPrefix(
-        readmeOwner: String,
-        readmeRepositoryName: String,
-        repositoryDefaultBranch: String
-    ): String {
-        return "href=\"$GITHUB_URL/${readmeOwner}/${readmeRepositoryName}/blob/${repositoryDefaultBranch}/$ORIGINAL_PATH_PARAMETER_NAME\""
+        return readmeContent
+            .replaceFirstGroupValue(hrefRelativeLinkRegex) { link -> "href=\"${hrefUrlBuilder(link)}\"" }
+            .replaceFirstGroupValue(rawContentRegex) { link -> "src=\"${srcUrlBuilder(link)}\"" }
     }
 
     private fun String.replaceFirstGroupValue(regex: Regex, replace: (match: String) -> String): String {
@@ -61,6 +49,14 @@ abstract class LinksBaseReadmeProcessor : ReadmeProcessor {
             } else {
                 replace(link)
             }
+        }
+    }
+
+    protected fun resolveLfsUrl(rawUrl: String): String {
+        return if (lfsDetector.isLfsFile(rawUrl)) {
+            rawUrl.replace(GITHUB_RAW_CONTENT_BASE_URL, GITHUB_LFS_CONTENT_BASE_URL)
+        } else {
+            rawUrl
         }
     }
 
