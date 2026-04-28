@@ -5,7 +5,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0
     groups:
       gradle-security-updates:
         applies-to: security-updates
@@ -16,7 +16,7 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0
     groups:
       npm-security-updates:
         applies-to: security-updates
