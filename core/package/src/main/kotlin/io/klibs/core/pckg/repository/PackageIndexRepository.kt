@@ -8,4 +8,6 @@ interface PackageIndexRepository : CrudRepository<PackageIndexEntity, PackageInd
     fun findByIdGroupId(groupId: String): List<PackageIndexEntity>
 
     fun findByProjectId(projectId: Int): List<PackageIndexEntity>
+
+    fun findByProjectIdIn(projectIds: Collection<Int>): List<PackageIndexEntity>
 }
