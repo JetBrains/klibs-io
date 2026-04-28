@@ -8,9 +8,11 @@ import org.springframework.stereotype.Service
 /**
  * Some files used in GitHub readmes, such as images, are stored with Git LFS (Large File Storage).
  * For such files using the default source path with https://raw.githubusercontent.com/ prefix
- * does not work. Such paths lead to LFS pointers (in the text format), instead of actual files.
+ * leads to an LFS pointer (in the text format), instead of an actual file.
  *
  * This service detects if a file is stored using Git LFS, so it can be properly handled later.
+ * It takes the URL of the raw file and checks if it's an LFS pointer by sending HTTP requests
+ * and veryfying the content of the response against the LFS pointer format.
  */
 @Service
 class GithubLfsDetector(
@@ -22,6 +24,15 @@ class GithubLfsDetector(
      * Determines if the file referenced by the given URL is stored using Git LFS.
      *
      * It sends HTTP requests to evaluate if the file's format matches the LFS pointer structure
+     * defined in the Git LFS specification: https://github.com/git-lfs/git-lfs/blob/main/docs/spec.md
+     *
+     * First, the HEAD request is sent to check the file size and type. LFS pointers are small plain-text files.
+     * If the URL actually points to a big binary file, doing a GET request directly would download it.
+     * Checking headers first acts as a fast, cheap filter.
+     *
+     * If the file looks like an LFS pointer based on headers, the actual content is fetched to confirm it.
+     * The content is checked against the LFS pointer format. The Range header in the GET request is used
+     * to safely download only the first kilobyte of content (the pointer length should not exceed this).
      *
      * @param rawUrl The URL of the raw file to be checked.
      * @return `true` if the file is identified as a Git LFS pointer file, `false` otherwise.
@@ -72,7 +83,7 @@ class GithubLfsDetector(
     }
 
     private companion object {
-        // According to Git LFS specification: https://github.com/git-lfs/git-lfs/blob/main/docs/spec.md
+        // Values according to Git LFS specification: https://github.com/git-lfs/git-lfs/blob/main/docs/spec.md
         private const val LFS_CONTENT_TYPE = "text/plain"
         private const val LFS_MAX_CONTENT_LENGTH_BYTES = 1024L
         private const val LFS_CONTENT_PREFIX = "version https://"

@@ -5,8 +5,6 @@ import io.klibs.core.readme.service.GithubLfsDetector
 import java.net.URI
 import java.net.URISyntaxException
 
-private const val ORIGINAL_PATH_PARAMETER_NAME = "<original_path>"
-
 abstract class LinksBaseReadmeProcessor(
     protected val lfsDetector: GithubLfsDetector
 ) : ReadmeProcessor {
@@ -24,39 +22,23 @@ abstract class LinksBaseReadmeProcessor(
     ): String {
         return replaceRelativeLinks(
             readmeContent,
-            constructNewHrefUrlPrefix(readmeOwner, readmeRepositoryName, repositoryDefaultBranch),
-            constructNewSrcUrlPrefix(readmeOwner, readmeRepositoryName, repositoryDefaultBranch)
+            hrefUrlBuilder = { link ->
+                "$GITHUB_URL/$readmeOwner/$readmeRepositoryName/blob/$repositoryDefaultBranch/$link"
+            },
+            srcUrlBuilder = { link ->
+                resolveLfsUrl("$GITHUB_RAW_CONTENT_BASE_URL/$readmeOwner/$readmeRepositoryName/$repositoryDefaultBranch/$link")
+            },
         )
     }
 
     protected fun replaceRelativeLinks(
         readmeContent: String,
-        hrefUrlPrefix: String,
-        srcUrlPrefix: String
+        hrefUrlBuilder: (String) -> String,
+        srcUrlBuilder: (String) -> String,
     ): String {
-        return readmeContent.replaceFirstGroupValue(hrefRelativeLinkRegex) { link ->
-            val rawUrl = hrefUrlPrefix.replace(ORIGINAL_PATH_PARAMETER_NAME, link)
-            "href=\"$rawUrl\""
-        }.replaceFirstGroupValue(rawContentRegex) { link ->
-            val rawUrl = srcUrlPrefix.replace(ORIGINAL_PATH_PARAMETER_NAME, link)
-            "src=\"${resolveLfsUrl(rawUrl)}\""
-        }
-    }
-
-    private fun constructNewSrcUrlPrefix(
-        readmeOwner: String,
-        readmeRepositoryName: String,
-        repositoryDefaultBranch: String
-    ): String {
-        return "$GITHUB_RAW_CONTENT_BASE_URL/$readmeOwner/$readmeRepositoryName/${repositoryDefaultBranch}/$ORIGINAL_PATH_PARAMETER_NAME"
-    }
-
-    private fun constructNewHrefUrlPrefix(
-        readmeOwner: String,
-        readmeRepositoryName: String,
-        repositoryDefaultBranch: String
-    ): String {
-        return "$GITHUB_URL/${readmeOwner}/${readmeRepositoryName}/blob/${repositoryDefaultBranch}/$ORIGINAL_PATH_PARAMETER_NAME"
+        return readmeContent
+            .replaceFirstGroupValue(hrefRelativeLinkRegex) { link -> "href=\"${hrefUrlBuilder(link)}\"" }
+            .replaceFirstGroupValue(rawContentRegex) { link -> "src=\"${srcUrlBuilder(link)}\"" }
     }
 
     private fun String.replaceFirstGroupValue(regex: Regex, replace: (match: String) -> String): String {
