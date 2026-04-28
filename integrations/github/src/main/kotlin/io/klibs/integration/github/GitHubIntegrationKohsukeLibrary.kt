@@ -1,15 +1,24 @@
 package io.klibs.integration.github
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.klibs.integration.github.health.GitHubRateLimitInfo
+import io.klibs.integration.github.model.GitHubIssue
 import io.klibs.integration.github.model.GitHubLicense
+import io.klibs.integration.github.model.GitHubPullRequest
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
+import io.klibs.integration.github.model.GqlCommitAuthorsResponse
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.kohsuke.github.GHDirection
+import org.kohsuke.github.GHIssueState
+import org.kohsuke.github.GHPullRequestQueryBuilder
 import org.kohsuke.github.GHRepository
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.MarkdownMode
@@ -20,8 +29,10 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.jvm.java
 
 @Component
 internal class GitHubIntegrationKohsukeLibrary(
@@ -33,6 +44,8 @@ internal class GitHubIntegrationKohsukeLibrary(
     private val okHttpClient: okhttp3.OkHttpClient,
     @Autowired
     private val gitHubIntegrationProperties: GitHubIntegrationProperties,
+    @Autowired
+    private val jsonMapper: ObjectMapper,
 ) : GitHubIntegration {
 
     private val lastSuccessfulRequestTime = AtomicReference(Instant.now())
@@ -45,6 +58,10 @@ internal class GitHubIntegrationKohsukeLibrary(
     private val markdownRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "markdown")
 
     private val topicsRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "topics")
+    private val issuesRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "issues")
+    private val prsRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "prs")
+    private val participationRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "stats-participation")
+    private val contributorsRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "graphql-commit-authors")
 
     init {
         Gauge.builder("klibs.github.lastSuccessfulRequestTime") {
@@ -238,14 +255,177 @@ internal class GitHubIntegrationKohsukeLibrary(
         return lastSuccessfulRequestTime.get()
     }
 
-    companion object {
-        private const val GITHUB_API_URL = "https://api.github.com"
-        private val logger = org.slf4j.LoggerFactory.getLogger(GitHubIntegrationKohsukeLibrary::class.java)
-    }
-
     override fun getRepositoryTopics(repositoryId: Long): List<String> {
         topicsRequestCounter.increment()
         val topics = getRepositoryById(repositoryId)?.listTopics() ?: emptyList()
         return topics.mapNotNull { it?.trim() }.filter { it.isNotEmpty() }
+    }
+
+    override fun recentIssues(repositoryId: Long, since: Instant): List<GitHubIssue> {
+        issuesRequestCounter.increment()
+        val repo = getRepositoryById(repositoryId) ?: return emptyList()
+
+        // GitHub treats PRs as a subtype of issues: the /issues endpoint returns BOTH issues and PRs
+        // in one response, with PRs flagged via isPullRequest. We drop PR rows here — PRs come
+        // through recentPrs() so we can pick up merged_at, which /issues doesn't expose cleanly.
+        return buildList {
+            val iterator = repo.queryIssues()
+                .state(GHIssueState.ALL)
+                .sort(org.kohsuke.github.GHIssueQueryBuilder.Sort.UPDATED)
+                .direction(GHDirection.DESC)
+                .since(Date.from(since))
+                .list()
+                .iterator()
+
+            while (iterator.hasNext()) {
+                val issue = try {
+                    iterator.next()
+                } catch (e: Exception) {
+                    logger.warn("Failed to page issues for repo $repositoryId: ${e.message}")
+                    break
+                }
+                if (issue.isPullRequest) continue
+                val updatedAt = issue.updatedAt?.toInstant() ?: continue
+                add(
+                    GitHubIssue(
+                        number = issue.number,
+                        createdAt = issue.createdAt.toInstant(),
+                        closedAt = issue.closedAt?.toInstant(),
+                        updatedAt = updatedAt,
+                    )
+                )
+            }
+        }
+    }
+
+    override fun recentPrs(repositoryId: Long, since: Instant): List<GitHubPullRequest> {
+        prsRequestCounter.increment()
+        val repo = getRepositoryById(repositoryId) ?: return emptyList()
+
+        // No `.since()` support on /pulls — sort updated-desc and stop as soon as we cross the window.
+        return buildList {
+            val iterator = repo.queryPullRequests()
+                .state(GHIssueState.ALL)
+                .sort(GHPullRequestQueryBuilder.Sort.UPDATED)
+                .direction(GHDirection.DESC)
+                .list()
+                .iterator()
+            while (iterator.hasNext()) {
+                val pr = try {
+                    iterator.next()
+                } catch (e: Exception) {
+                    logger.warn("Failed to page PRs for repo $repositoryId: ${e.message}")
+                    break
+                }
+                val updatedAt = pr.updatedAt?.toInstant() ?: continue
+                if (updatedAt.isBefore(since)) break
+                add(
+                    GitHubPullRequest(
+                        number = pr.number,
+                        createdAt = pr.createdAt.toInstant(),
+                        closedAt = pr.closedAt?.toInstant(),
+                        mergedAt = pr.mergedAt?.toInstant(),
+                        updatedAt = updatedAt,
+                    )
+                )
+            }
+        }
+    }
+
+    override fun getCommitsByWeek(repositoryId: Long): List<Int> {
+        participationRequestCounter.increment()
+        val repo = getRepositoryById(repositoryId)
+            ?: error("Repository not found for repoId=$repositoryId")
+        return repo.statistics.participation.allCommits
+            ?: error("Participation stats unavailable for repoId=$repositoryId")
+    }
+
+    override fun getCommitAuthorCounts(owner: String, name: String, since: Instant): Map<String, Int> {
+        contributorsRequestCounter.increment()
+        val sinceIso = DateTimeFormatter.ISO_INSTANT.format(since)
+        val counts = mutableMapOf<String, Int>()
+        var cursor: String? = null
+
+        while (true) {
+            val variables = buildMap<String, Any> {
+                put("owner", owner)
+                put("name", name)
+                put("since", sinceIso)
+                cursor?.let { put("cursor", it) }
+            }
+            val responseBody = postGraphQl(COMMIT_AUTHORS_QUERY, variables)
+                ?: error("GitHub GraphQL request failed for $owner/$name")
+            val response = jsonMapper.readValue(responseBody, GqlCommitAuthorsResponse::class.java)
+            if (!response.errors.isNullOrEmpty()) {
+                error("GraphQL errors for $owner/$name: ${response.errors.toString().take(300)}")
+            }
+            val history = response.data?.repository?.defaultBranchRef?.target?.history
+                ?: return emptyMap()
+
+            history.nodes.forEach { node ->
+                val identity = node.author?.user?.login ?: node.author?.email ?: return@forEach
+                counts[identity] = (counts[identity] ?: 0) + 1
+            }
+            if (!history.pageInfo.hasNextPage) break
+            cursor = history.pageInfo.endCursor ?: break
+        }
+        return counts
+    }
+
+    /** POSTs a GraphQL query+variables to GitHub. Returns the raw response body or null on non-200. */
+    private fun postGraphQl(query: String, variables: Map<String, Any>): String? {
+        val payload = jsonMapper.writeValueAsString(mapOf("query" to query, "variables" to variables))
+        val sample = Timer.start(meterRegistry)
+        try {
+            val builder = Request.Builder()
+                .url("$GITHUB_API_URL/graphql")
+                .post(payload.toRequestBody("application/json".toMediaType()))
+                .addHeader("Accept", "application/vnd.github+json")
+            gitHubIntegrationProperties.personalAccessToken?.takeIf { it.isNotBlank() }?.let { token ->
+                builder.addHeader("Authorization", "Bearer $token")
+            }
+            okHttpClient.newCall(builder.build()).execute().use { response ->
+                return when (response.code) {
+                    200 -> response.body?.string()
+                    else -> {
+                        logger.warn("GraphQL POST returned {}", response.code)
+                        null
+                    }
+                }
+            }
+        } finally {
+            sample.stop(meterRegistry.timer("klibs.github.request.time"))
+            lastSuccessfulRequestTime.set(Instant.now())
+        }
+    }
+
+    companion object {
+        private const val GITHUB_API_URL = "https://api.github.com"
+        private val logger = org.slf4j.LoggerFactory.getLogger(GitHubIntegrationKohsukeLibrary::class.java)
+
+        private val COMMIT_AUTHORS_QUERY = """
+            query CommitAuthors(${'$'}owner: String!, ${'$'}name: String!, ${'$'}since: GitTimestamp!, ${'$'}cursor: String) {
+              repository(owner: ${'$'}owner, name: ${'$'}name) {
+                defaultBranchRef {
+                  target {
+                    ... on Commit {
+                      history(since: ${'$'}since, first: 100, after: ${'$'}cursor) {
+                        nodes {
+                          author {
+                            user { login }
+                            email
+                          }
+                        }
+                        pageInfo {
+                          hasNextPage
+                          endCursor
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        """.trimIndent()
     }
 }

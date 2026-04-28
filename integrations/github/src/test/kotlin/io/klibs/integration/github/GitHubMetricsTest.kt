@@ -1,5 +1,6 @@
 package io.klibs.integration.github
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.BeforeEach
@@ -36,7 +37,8 @@ class GitHubMetricsTest {
             OkHttpClient(),
             GitHubIntegrationProperties(
                 cache = GitHubIntegrationProperties.Cache(),
-            )
+            ),
+            jacksonObjectMapper(),
         )
     }
 
