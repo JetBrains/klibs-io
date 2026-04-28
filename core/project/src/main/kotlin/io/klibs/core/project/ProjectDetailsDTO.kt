@@ -141,5 +141,14 @@ data class ProjectDetailsDTO(
         description = "Markers associated with the project",
         example = "[FEATURED, GRANT_WINNER_2023, GRANT_WINNER_2024]"
     )
-    val markers: List<MarkerType>
+    val markers: List<MarkerType>,
+
+    @Schema(
+        description = "OSS Health Index (0-100), combining commit consistency, issue responsiveness, " +
+                "PR management, and author diversity over the last 12 weeks. Null when insufficient " +
+                "data is available.",
+        example = "74",
+        nullable = true
+    )
+    val ossHealthScore: Int?
 )

@@ -9,6 +9,7 @@ import io.klibs.core.project.repository.MarkerRepository
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
+import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
 import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.project.repository.ProjectTagRepository
@@ -56,6 +57,9 @@ class ProjectServiceSmokeTest {
 
     @MockitoBean
     private lateinit var allowedProjectTagsRepository: AllowedProjectTagsRepository
+
+    @MockitoBean
+    private lateinit var scmRepoHealthComponentsRepository: ScmRepoHealthComponentsRepository
 
     @Test
     fun `getProjectDetailsByName returns null when project has no packages`() {

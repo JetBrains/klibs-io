@@ -13,6 +13,7 @@ import io.klibs.core.project.repository.SitemapProjectEntry
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
+import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.project.utils.normalizeTag
 import io.klibs.core.readme.AndroidxReadmeProvider
@@ -31,6 +32,7 @@ class ProjectService(
     private val tagRepository: TagRepository,
     private val projectTagRepository: ProjectTagRepository,
     private val allowedProjectTagsRepository: AllowedProjectTagsRepository,
+    private val scmRepoHealthComponentsRepository: ScmRepoHealthComponentsRepository,
 ) {
     @Transactional(readOnly = true)
     fun getProjectDetailsByName(ownerLogin: String, projectName: String): ProjectDetails? {
@@ -57,6 +59,7 @@ class ProjectService(
         // Fetch platforms from project_index; returns null if project has no packages
         val projectPlatforms = projectRepository.findPlatformsById(projectEntity.idNotNull) ?: return null
 
+        val healthScore = scmRepoHealthComponentsRepository.findById(scmRepositoryEntity.idNotNull)?.healthScore
         return projectEntity.toDetails(
             projectEntity = projectEntity,
             scmRepositoryEntity = scmRepositoryEntity,
@@ -64,6 +67,7 @@ class ProjectService(
             projectMarkers = markerRepository.findAllByProjectId(projectEntity.idNotNull),
             projectTags = tagRepository.getTagsByProjectId(projectEntity.idNotNull),
             dependentCount = projectEntity.dependentCount,
+            ossHealthScore = healthScore,
         )
     }
 
@@ -171,6 +175,7 @@ private fun ProjectEntity.toDetails(
     projectMarkers: List<Marker>,
     projectTags: List<String>,
     dependentCount: Int,
+    ossHealthScore: Int?,
 ): ProjectDetails {
     return ProjectDetails(
         id = this.idNotNull,
@@ -199,6 +204,7 @@ private fun ProjectEntity.toDetails(
         updatedAt = scmRepositoryEntity.updatedAtTs,
         dependentCount = dependentCount,
         tags = projectTags,
-        markers = projectMarkers.map { it.type }
+        markers = projectMarkers.map { it.type },
+        ossHealthScore = ossHealthScore,
     )
 }
