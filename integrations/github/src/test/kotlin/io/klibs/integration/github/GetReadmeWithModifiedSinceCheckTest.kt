@@ -1,5 +1,6 @@
 package io.klibs.integration.github
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -44,7 +45,8 @@ class GetReadmeWithModifiedSinceCheckTest {
             meterRegistry,
             githubApi,
             client,
-            props
+            props,
+            jacksonObjectMapper(),
         )
 
     @Test
