@@ -28,7 +28,7 @@
     "@rescui/focus-manager": "^0.1.13",
     "@rescui/icons": "^1.6.2",
     "@rescui/radio-button": "^0.8.10",
-    "@rescui/select": "^0.11.7",
+    "@rescui/select": "^0.15.1",
     "@rescui/switcher": "^0.12.5",
     "@rescui/tab-list": "^0.12.10",
     "@rescui/table": "^0.8.7",
