@@ -1,0 +1,34 @@
+name: Request indexing of a library
+description: Request adding a new library or a new version of a library
+title: "[Add a library]: "
+labels: [ "index-request" ]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Library details
+        
+        Fill out the details of a library you want to be indexed by klibs. If you leave the version blank, all versions will be indexed.
+        
+        Remember, that for a library to be indexed successfully, it must meet all the [requirements](https://klibs.io/faq#how-do-i-add-a-project).
+  - type: input
+    id: group_id
+    attributes:
+      label: Group ID
+      description: "Provide the group ID of the library, e.g., `org.jetbrains.kotlinx`."
+    validations:
+      required: true
+  - type: input
+    id: artifact_id
+    attributes:
+      label: Artifact ID
+      description: "Provide the artifact ID of the library, e.g., `kotlinx-coroutines-core`."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "Provide the version of the library, e.g., `1.10.2`. Leave blank if you want all versions to be indexed."
+    validations:
+      required: false
