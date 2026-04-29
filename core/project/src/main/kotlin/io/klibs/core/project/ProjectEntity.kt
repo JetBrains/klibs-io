@@ -12,6 +12,8 @@ data class ProjectEntity(
 
     val latestVersion: String,
     val latestVersionTs: Instant,
+
+    val dependentCount: Int = 0,
 ) {
     val idNotNull: Int get() = requireNotNull(id)
 }
