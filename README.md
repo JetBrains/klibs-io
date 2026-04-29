@@ -3,7 +3,7 @@
 A service to search and discover Kotlin Multiplatform libraries.
 It aggregates data from Maven Central and GitHub, enriched with AI-powered metadata generation.
 
-> **Note:** The frontend code will be added to this repository soon.
+The repository contains both the backend (this README) and the web frontend (see [Frontend](frontend/README.md)).
 
 ## Build & Run
 
