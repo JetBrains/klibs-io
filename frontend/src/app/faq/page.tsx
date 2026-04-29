@@ -13,6 +13,8 @@ import cn from "classnames";
 
 const SUBMIT_ISSUE_URL =
     "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=question&projects=&template=question.md&title=";
+const REQUEST_INDEXING_URL =
+    "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=index-request&projects=&template=index_request.yml";
 const POM_EXAMPLE_URL =
     "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0.pom";
 const TOOLING_METADATA_EXAMPLE_URL =
@@ -67,16 +69,14 @@ export default function Faq() {
                     <h4 id='how-do-i-add-a-project'>How can I submit my own KMP library or project to be listed?</h4>
                     <div>
                         <p>
-                            Projects are added automatically within <b>one month</b> (it is a frequency
-                            of <a href="https://repo1.maven.org/maven2/.index/">maven central public index</a> update)
-                            if they meet the following criteria:
+                            For a project to be listed on klibs.io, it must first meet the following criteria:
                         </p>
 
                         <ul>
                             <li>The project is open source and is available on GitHub.</li>
                             <li>At least one artifact is published to Maven Central.</li>
                             <li>
-                                At least one artifact is multiplatform
+                                At least one artifact is multiplatform &ndash;
                                 must have <a href={TOOLING_METADATA_EXAMPLE_URL} target="_blank"
                                              className={"link-secondary"}>kotlin-tooling-metadata.json</a>.
                             </li>
@@ -90,9 +90,16 @@ export default function Faq() {
                         </ul>
 
                         <p>
+                            All projects fulfilling the criteria are added automatically within <b>one month</b> (it is
+                            a frequency of <a href="https://repo1.maven.org/maven2/.index/">maven central public
+                            index</a> update).
                             If your project is already presented in the klibs.io,
                             then new versions should appear the <b>next day</b> after
                             they are published to Maven Central.
+                        </p>
+
+                        <p>
+                            If you prefer not to wait for the automatic sync, you can <b>submit an indexing request</b> <a href={REQUEST_INDEXING_URL} target="_blank" className={"link-secondary"}>here</a>.
                         </p>
 
                         <p>
