@@ -5,6 +5,7 @@ export enum GAEvent {
   SLACK_CLICK = "slack-click",
 
   FILTER_PLATFORM_CHANGE = "filter-platform-change",
+  FILTER_SORT_CHANGE = "filter-sort-change",
   SEARCH_MODE_TRIGGER_CHANGE = "search-mode-trigger-change",
   SEARCH_MODE_DROPDOWN_CLICK = "search-mode-dropdown-click",
   FILTER_DROPDOWN_CLICK = "filter-dropdown-click",
@@ -47,6 +48,7 @@ export type GAEventParams = {
   [GAEvent.SLACK_CLICK]: NoParams;
 
   [GAEvent.FILTER_PLATFORM_CHANGE]: { eventCategory: string };
+  [GAEvent.FILTER_SORT_CHANGE]: { eventCategory: string };
   [GAEvent.SEARCH_MODE_TRIGGER_CHANGE]: { eventCategory: string };
   [GAEvent.SEARCH_MODE_DROPDOWN_CLICK]: NoParams;
   [GAEvent.FILTER_DROPDOWN_CLICK]: NoParams;
