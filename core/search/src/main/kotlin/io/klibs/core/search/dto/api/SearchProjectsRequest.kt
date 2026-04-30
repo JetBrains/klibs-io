@@ -30,7 +30,7 @@ data class SearchProjectsRequest(
     val owner: String? = null,
     @Schema(
         description = "Sorting order",
-        allowableValues = ["most-stars", "relevance"],
+        allowableValues = ["most-stars", "most-healthy", "relevance"],
         defaultValue = "relevance"
     )
     val sortBy: String = "relevance",
