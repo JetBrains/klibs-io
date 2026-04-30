@@ -92,6 +92,13 @@ data class SearchProjectResultDTO(
         example = "42"
     )
     val dependentCount: Int,
+
+    @Schema(
+        description = "OSS Health Index (0-100). Null when insufficient data is available.",
+        example = "74",
+        nullable = true
+    )
+    val ossHealthScore: Int?,
 )
 
 fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
@@ -110,5 +117,6 @@ fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
         tags = this.tags,
         markers = markers,
         dependentCount = this.dependentCount,
+        ossHealthScore = this.ossHealthScore,
     )
 }
