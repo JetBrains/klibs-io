@@ -1,0 +1,39 @@
+.intro {
+    margin-bottom: 32px;
+}
+
+.section {
+    margin-bottom: 56px;
+}
+
+.sectionTitle {
+    margin-bottom: 8px;
+}
+
+.sectionSubtitle {
+    margin-bottom: 16px;
+}
+
+.spinnerWrapper {
+    display: flex;
+    justify-content: center;
+    padding: 48px 0;
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+}
+
+.rankCol {
+    width: 56px;
+    text-align: right;
+}
+
+.numericCol {
+    text-align: right;
+    white-space: nowrap;
+}

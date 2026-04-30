@@ -159,4 +159,8 @@ databaseChangeLog:
       file: db/migration/2026-Q2/2026-04-24_recreate_project_index_with_dependent_count.yml
   - include:
       file: db/migration/2026-Q2/2026-04-10_backfill_package_dependencies.yml
+  - include:
+      file: db/migration/2026-Q2/2026-04-24_oss_health_metric.yml
+  - include:
+      file: db/migration/2026-Q2/2026-04-30_recreate_project_index_with_health_score.yml
 

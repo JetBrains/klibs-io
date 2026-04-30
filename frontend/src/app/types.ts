@@ -12,6 +12,8 @@ export interface ProjectSearchResults {
 	platforms: Platform[];
 	tags: string[];
 	markers: string[];
+	dependentCount: number;
+	ossHealthScore: number | null;
 }
 
 export interface ProjectDetails extends ProjectSearchResults {
@@ -20,6 +22,8 @@ export interface ProjectDetails extends ProjectSearchResults {
 	createdAtMillis: number;
 	openIssues: null | number;
 	linkIssues: null | string;
+	dependentCount: number;
+	ossHealthScore: null | number;
 	lastActivityAtMillis: number;
 	linkHomepage: string;
 	linkScm: string;
@@ -262,7 +266,16 @@ export interface OwnerOrganization extends Owner{
 	"type": "organization";
 }
 
-export type SearchSort = 'most-stars' | 'relevance';
+export type SearchSort = 'relevance' | 'most-stars' | 'most-dependents' | 'most-healthy';
+
+export const PROJECT_SORT_OPTIONS: { value: SearchSort; label: string }[] = [
+	{ value: 'relevance', label: 'Relevance' },
+	{ value: 'most-stars', label: 'Most stars' },
+	{ value: 'most-dependents', label: 'Most dependents' },
+	{ value: 'most-healthy', label: 'Most healthy' },
+];
+
+export const DEFAULT_PROJECT_SORT: SearchSort = 'relevance';
 
 export type SearchMode = 'projects' | 'packages';
 

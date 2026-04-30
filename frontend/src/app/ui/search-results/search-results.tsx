@@ -4,6 +4,7 @@ import cn from 'classnames';
 import ProjectCard from "@/app/ui/project-card";
 import PackageCard from "@/app/ui/package-card";
 import KodeeSpinner from "@/app/ui/kodee-spinner";
+import SearchSortSelect from "@/app/ui/search-sort";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { PackageSearchResults, ProjectSearchResults, SearchParams } from "@/app/types";
 import { searchProjects, searchPackages } from "@/app/api";
@@ -15,12 +16,14 @@ import { textCn } from '@rescui/typography'
 
 interface SearchResultsProps {
     filters: SearchParams;
+    setFilters: (params: SearchParams) => void;
+    updateURLFromState: (state: SearchParams) => void;
     isPackageSearch: boolean;
 }
 
 const SEARCH_LIMIT = 18;
 
-export function SearchResults({ filters, isPackageSearch }: SearchResultsProps) {
+export function SearchResults({ filters, setFilters, updateURLFromState, isPackageSearch }: SearchResultsProps) {
     const [projects, setProjects] = useState<ProjectSearchResults[] | null>(null);
     const [packages, setPackages] = useState<PackageSearchResults[] | null>(null);
     const [loading, setLoading] = useState(true);
@@ -129,19 +132,28 @@ export function SearchResults({ filters, isPackageSearch }: SearchResultsProps) 
         );
     } else if (packages?.length || projects?.length) {
         return (
-            <Container mode="wrapper" cardGrid>
-                {/*Search results cards*/}
-                {isPackageSearch
-                    ? packages?.map((item) => (
-                        <PackageCard search={filters?.query} featuredPackage={item} key={item.id} />
-                    ))
-                    : projects?.map((item) => (
-                        <ProjectCard search={filters?.query} featuredProject={item} key={item.id} />
-                    ))
-                }
+            <>
+                {!isPackageSearch && (
+                    <SearchSortSelect
+                        filters={filters}
+                        setFilters={setFilters}
+                        updateURLFromState={updateURLFromState}
+                    />
+                )}
+                <Container mode="wrapper" cardGrid>
+                    {/*Search results cards*/}
+                    {isPackageSearch
+                        ? packages?.map((item) => (
+                            <PackageCard search={filters?.query} featuredPackage={item} key={item.id} />
+                        ))
+                        : projects?.map((item) => (
+                            <ProjectCard search={filters?.query} featuredProject={item} key={item.id} />
+                        ))
+                    }
 
-                <div ref={loadMoreRef}></div>
-            </Container>
+                    <div ref={loadMoreRef}></div>
+                </Container>
+            </>
         );
     } else {
         return (

@@ -1,0 +1,184 @@
+databaseChangeLog:
+  - changeSet:
+      id: create scm_repo_issue_event table
+      author: nikita.vlaev@jetbrains.com
+      comment: "KTL-4386: Sliding-window store of closed issues and merged PRs for OSS Health index."
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: scm_repo_issue_event
+      changes:
+        - createTable:
+            tableName: scm_repo_issue_event
+            columns:
+              - column:
+                  name: scm_repo_id
+                  type: INT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_scm_repo_issue_event_scm_repo_id
+                    references: scm_repo(id)
+              - column:
+                  name: gh_number
+                  type: INT
+                  remarks: "GitHub's per-repo issue/PR number (the integer in /issues/N URLs); together with scm_repo_id, this is the upsert dedup key."
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(8)
+                  remarks: "ISSUE or PR. Aggregate queries filter by this since I and P sub-scores are computed separately."
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: closed_at
+                  type: TIMESTAMP
+              - column:
+                  name: merged_at
+                  type: TIMESTAMP
+              - column:
+                  name: duration_days
+                  type: INT
+        - addPrimaryKey:
+            tableName: scm_repo_issue_event
+            columnNames: scm_repo_id, gh_number
+            constraintName: pk_scm_repo_issue_event
+
+  - changeSet:
+      id: index scm_repo_issue_event on repo/type/closed
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: scm_repo_issue_event
+              indexName: scm_repo_issue_event_repo_type_closed_idx
+      changes:
+        - createIndex:
+            indexName: scm_repo_issue_event_repo_type_closed_idx
+            tableName: scm_repo_issue_event
+            columns:
+              - column:
+                  name: scm_repo_id
+              - column:
+                  name: type
+              - column:
+                  name: closed_at
+
+  - changeSet:
+      id: index scm_repo_issue_event on repo/type/created
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: scm_repo_issue_event
+              indexName: scm_repo_issue_event_repo_type_created_idx
+      changes:
+        - createIndex:
+            indexName: scm_repo_issue_event_repo_type_created_idx
+            tableName: scm_repo_issue_event
+            columns:
+              - column:
+                  name: scm_repo_id
+              - column:
+                  name: type
+              - column:
+                  name: created_at
+
+  - changeSet:
+      id: create scm_repo_health_components table
+      author: nikita.vlaev@jetbrains.com
+      comment: "KTL-4386: Per-repo OSS Health components snapshot (one row per repo, overwritten each run)."
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: scm_repo_health_components
+      changes:
+        - createTable:
+            tableName: scm_repo_health_components
+            columns:
+              - column:
+                  name: scm_repo_id
+                  type: INT
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    foreignKeyName: fk_scm_repo_health_components_scm_repo_id
+                    references: scm_repo(id)
+              - column:
+                  name: score_recomputed_ts
+                  type: TIMESTAMP
+              - column:
+                  name: issue_opened_count
+                  type: INT
+              - column:
+                  name: issue_closed_count
+                  type: INT
+              - column:
+                  name: median_issue_close_days
+                  type: DOUBLE PRECISION
+              - column:
+                  name: pr_opened_count
+                  type: INT
+              - column:
+                  name: pr_merged_count
+                  type: INT
+              - column:
+                  name: median_pr_merge_days
+                  type: DOUBLE PRECISION
+              - column:
+                  name: commits_cv
+                  type: DOUBLE PRECISION
+              - column:
+                  name: active_contributors
+                  type: INT
+              - column:
+                  name: top_contributor_share
+                  type: DOUBLE PRECISION
+              - column:
+                  name: c_score
+                  type: DOUBLE PRECISION
+              - column:
+                  name: i_score
+                  type: DOUBLE PRECISION
+              - column:
+                  name: p_score
+                  type: DOUBLE PRECISION
+              - column:
+                  name: a_score
+                  type: DOUBLE PRECISION
+              - column:
+                  name: health_score
+                  type: INT
+              - column:
+                  name: last_event_sync_ts
+                  type: TIMESTAMP
+                  remarks: "Last time the event sync job populated I/P inputs for this repo; drives the event sync queue."
+              - column:
+                  name: next_health_compute_ts
+                  type: TIMESTAMP
+                  remarks: "Next time the score job should pick this repo up; encodes regular cadence and 202-deferred retries."
+
+  - changeSet:
+      id: seed scm_repo_health_components with star-biased event sync ts
+      author: nikita.vlaev@jetbrains.com
+      comment: "KTL-4386: Seed last_event_sync_ts at 12-13 weeks ago so the first sync naturally fetches the full 12-week window via pickSince. The 1-week spread is biased by stars so high-star repos are seeded earlier and rise to the front of the event-sync queue (which orders by last_event_sync_ts NULLS FIRST, stars DESC)."
+      preConditions:
+        - onFail: MARK_RAN
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO scm_repo_health_components (scm_repo_id, last_event_sync_ts)
+              SELECT id,
+                     current_timestamp - interval '12 weeks'
+                       - (PERCENT_RANK() OVER (ORDER BY stars ASC NULLS FIRST)) * interval '7 days'
+              FROM scm_repo
+              ON CONFLICT (scm_repo_id) DO NOTHING;

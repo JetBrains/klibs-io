@@ -1,5 +1,7 @@
 package io.klibs.integration.github
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import okhttp3.OkHttpClient
@@ -19,11 +21,14 @@ class GitHubIntegrationTest {
     private val meterRegistry = SimpleMeterRegistry()
     private val githubApi = GitHubBuilder().build()
     
+    private val jsonMapper: ObjectMapper = jacksonObjectMapper()
+
     private val gitHubIntegration: GitHubIntegration = GitHubIntegrationKohsukeLibrary(
         meterRegistry,
         githubApi,
         OkHttpClient(),
-        GitHubIntegrationProperties(cache = GitHubIntegrationProperties.Cache())
+        GitHubIntegrationProperties(cache = GitHubIntegrationProperties.Cache()),
+        jsonMapper,
     )
 
     @Test
