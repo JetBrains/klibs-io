@@ -27,4 +27,6 @@ data class SearchProjectResult(
     val markers: List<String>,
 
     val dependentCount: Int = 0,
+
+    val ossHealthScore: Int? = null,
 )

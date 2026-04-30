@@ -12,6 +12,8 @@ export interface ProjectSearchResults {
 	platforms: Platform[];
 	tags: string[];
 	markers: string[];
+	dependentCount: number;
+	ossHealthScore: number | null;
 }
 
 export interface ProjectDetails extends ProjectSearchResults {
