@@ -17,4 +17,12 @@ interface MavenCentralLogRepository : JpaRepository<MavenCentralLogEntity, Int> 
 
     @Query("SELECT l.mavenIndexTimestamp FROM MavenCentralLogEntity l WHERE l.id = 1")
     fun retrieveMavenIndexTimestamp(): Instant
+
+    @Transactional
+    @Modifying
+    @Query("UPDATE MavenCentralLogEntity l SET l.indexRequestCheckTimestamp = :instant WHERE l.id = 1")
+    fun saveIndexRequestCheckTimestamp(instant: Instant)
+
+    @Query("SELECT l.indexRequestCheckTimestamp FROM MavenCentralLogEntity l WHERE l.id = 1")
+    fun retrieveIndexRequestCheckTimestamp(): Instant
 }
