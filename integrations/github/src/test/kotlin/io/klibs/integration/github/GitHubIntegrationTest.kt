@@ -20,8 +20,11 @@ class GitHubIntegrationTest {
 
     private val meterRegistry = SimpleMeterRegistry()
     private val githubApi = GitHubBuilder().build()
-    
+
     private val jsonMapper: ObjectMapper = jacksonObjectMapper()
+
+    private val klibsRepoName = "JetBrains/klibs-io"
+    private val processedLabel = "triaged"
 
     private val gitHubIntegration: GitHubIntegration = GitHubIntegrationKohsukeLibrary(
         meterRegistry,
@@ -29,6 +32,9 @@ class GitHubIntegrationTest {
         OkHttpClient(),
         GitHubIntegrationProperties(cache = GitHubIntegrationProperties.Cache()),
         jsonMapper,
+        GitHubIntegrationProperties(cache = GitHubIntegrationProperties.Cache()),
+        klibsRepoName,
+        processedLabel,
     )
 
     @Test

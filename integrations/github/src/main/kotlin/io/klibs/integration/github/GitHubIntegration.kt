@@ -82,5 +82,11 @@ interface GitHubIntegration {
      * Returns an empty map when the repo has no default branch.
      */
     fun getCommitAuthorCounts(owner: String, name: String, since: Instant): Map<String, Int>
+
+    fun getKlibsIssuesByLabel(label: String, since: Instant): List<GitHubIssue>
+
+    fun addKlibsIssueLabel(number: Int, label: String)
+
+    fun addKlibsIssueComment(number: Int, body: String)
 }
 
