@@ -8,6 +8,9 @@ import java.time.Instant
  */
 data class GitHubIssue(
     val number: Int,
+    val title: String,
+    val body: String?,
+    val labels: List<String>,
     val createdAt: Instant,
     val closedAt: Instant?,
     val updatedAt: Instant,

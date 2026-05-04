@@ -23,6 +23,7 @@ import org.kohsuke.github.GHRepository
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.MarkdownMode
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.io.FileNotFoundException
 import java.time.Instant
@@ -46,9 +47,20 @@ internal class GitHubIntegrationKohsukeLibrary(
     private val gitHubIntegrationProperties: GitHubIntegrationProperties,
     @Autowired
     private val jsonMapper: ObjectMapper,
+    @Value("\${klibs.integration.github.index-requests.repository}:JetBrains/klibs-io")
+    private val klibsRepoName: String,
+    @Value("\${klibs.integration.github.index-requests.processed-label:triaged}")
+    private val processedLabel: String,
 ) : GitHubIntegration {
 
     private val lastSuccessfulRequestTime = AtomicReference(Instant.now())
+
+    private val klibsRepo: GHRepository by lazy {
+        repositoryRequestCounter.increment()
+
+        executeNullable { githubApi.getRepository(klibsRepoName) }
+            ?: throw IllegalStateException("Could not fetch target repository: $klibsRepoName")
+    }
 
     init {
         Gauge.builder("klibs.github.lastSuccessfulRequestTime") {
@@ -364,6 +376,44 @@ internal class GitHubIntegrationKohsukeLibrary(
         } finally {
             sample.stop(meterRegistry.timer("klibs.github.request.time"))
             lastSuccessfulRequestTime.set(Instant.now())
+        }
+    }
+
+    override fun getKlibsIssuesByLabel(label: String, since: Instant): List<GitHubIssue> {
+        issueRequestCounter.increment()
+
+        return executeNullable {
+            klibsRepo.queryIssues()
+                .label(label)
+                .state(org.kohsuke.github.GHIssueState.OPEN)
+                .since(java.util.Date.from(since))
+                .list()
+                .toList()
+                .filter { !it.isPullRequest }
+                .filter { issue -> issue.labels.none { it.name == processedLabel } }
+                .map { gh ->
+                    GitHubIssue(
+                        number = gh.number,
+                        title = gh.title,
+                        body = gh.body,
+                        labels = gh.labels.map { it.name },
+                        updatedAt = gh.updatedAt.toInstant(),
+                    )
+                }
+        } ?: emptyList()
+    }
+
+    override fun addKlibsIssueLabel(number: Int, label: String) {
+        issueRequestCounter.increment()
+        executeNullable {
+            klibsRepo.getIssue(number).addLabels(label)
+        }
+    }
+
+    override fun addKlibsIssueComment(number: Int, body: String) {
+        issueRequestCounter.increment()
+        executeNullable {
+            klibsRepo.getIssue(number).comment(body)
         }
     }
 

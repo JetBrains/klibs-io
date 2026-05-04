@@ -7,8 +7,12 @@ import jakarta.persistence.Table
 import java.time.Instant
 
 /**
- * Stores information about the updates from the Maven Central.
- * It has only one log entry and represents the state of the last processed index and package.
+ * Stores timestamps for periodic indexing jobs.
+ *
+ * The table holds exactly one row (with [id] = 1) and saves
+ * progress for two independent processes:
+ *  - the Maven Central indexing job
+ *  - the GitHub index-request issues polling job
  */
 @Entity
 @Table(name = "maven_central_log")
@@ -18,8 +22,16 @@ class MavenCentralLogEntity(
     val id: Int = 1,
 
     /**
-     * Timestamp indicating the latest processed .index
+     * Timestamp indicating the latest processed .index from Maven Central
      */
     @Column(name = "maven_index_timestamp")
-    var mavenIndexTimestamp: Instant
+    var mavenIndexTimestamp: Instant,
+
+    /**
+     * Timestamp of the last successful poll of GitHub index-request issues.
+     * Updated only when a polling run completes without any server errors
+     */
+    @Column(name = "index_request_check_timestamp")
+    var indexRequestCheckTimestamp: Instant
+
 )
