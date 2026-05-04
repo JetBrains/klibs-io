@@ -31,6 +31,8 @@ class GetReadmeWithModifiedSinceCheckTest {
     private lateinit var githubApi: GitHub
 
     private lateinit var props: GitHubIntegrationProperties
+    private val klibsRepoName = "JetBrains/klibs-io"
+    private val processedLabel = "triaged"
 
     @BeforeEach
     fun setUp() {
@@ -47,6 +49,9 @@ class GetReadmeWithModifiedSinceCheckTest {
             client,
             props,
             jacksonObjectMapper(),
+            props,
+            klibsRepoName,
+            processedLabel,
         )
 
     @Test
