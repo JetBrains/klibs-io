@@ -137,11 +137,22 @@ Two places to update:
 1. `build-logic/templates/kotlin-jvm.module-template.yaml` — `settings.jvm.jdk.version`. All JVM modules inherit from this template, so this is the build-time source of truth.
 2. `app/module.yaml` — `plugins.jib.baseImage.fullName`. The container runtime must match the build JDK.
 
-## Updaring Amper version
+## Updating Amper version
 
 `./amper update`, if it's a dev version then `./amper update --dev`
 
 JVM runtime which Amper runs on is tied to Amper distribution, hence updating Amper updates the JVM runtime under the hood.
+
+## Build Plugins
+
+If some functionality is not natively supported by Amper's declarative YAML configuration, you can use [local plugins](https://amper.org/latest/user-guide/plugins/overview/) to extend the build. This is the escape hatch for custom build logic — feel free to use it when needed.
+If Amper does not provide some functionality out of the box, but an equivalent Gradle plugin exists, do not try to reuse or adapt the Gradle plugin inside this project. Reimplement the needed behavior using Amper's local plugin system instead.
+
+When a library's standard workflow includes a build-time processing step (code generation from declarative files, schema compilation, resource transformation, etc.), that step must be implemented as an Amper local plugin. Do not bypass or skip the processing step by manually writing code that the tool is designed to generate, or by using the library in a degraded/runtime-only mode. Preserve the library's full intended workflow.
+
+### Build Tool Policy
+
+Treat Amper as a fixed project requirement. Do not ask to switch to Gradle or re-open the Amper/Gradle tradeoff just because some library or tool commonly uses Gradle-oriented workflows. When build-time processing is needed, implement it within the Amper workflow and keep the discussion focused on the chosen repository approach rather than on alternative build systems or plugin-name specifics, unless the user explicitly asks for that detail.
 
 ## Claude Code Working Agreement (Milestone Gating)
 
