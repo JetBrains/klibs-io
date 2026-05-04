@@ -30,7 +30,15 @@ const faqSchema = {
             "name": "How can I submit my own KMP library or project to be listed?",
             "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Projects are added automatically within one month (it is a frequency of maven central public index update) if they meet the following criteria: The project is open source and is available on GitHub. At least one artifact is published to Maven Central. At least one artifact is multiplatform — must have kotlin-tooling-metadata.json. At least one artifact's POM contains a valid link to the GitHub repository, either under \"url\" or \"scm.url\". If your project is already presented in the klibs.io, then new versions should appear the next day after they are published to Maven Central. If you believe your project satisfies all criteria, yet it's still not available, or new versions are not appearing, please submit an issue."
+                "text":
+                    "For a project to be listed on klibs.io, it must first meet the following criteria: " +
+                    "The project is open source and is available on GitHub. " +
+                    "At least one artifact is published to Maven Central. " +
+                    "At least one artifact is multiplatform – must have kotlin-tooling-metadata.json. " +
+                    "At least one artifact's POM contains a valid link to the GitHub repository, either under \"url\" or \"scm.url\" example. " +
+                    "All projects fulfilling the criteria are added automatically within one month (it is a frequency of maven central public index update). If your project is already presented in the klibs.io, then new versions should appear the next day after they are published to Maven Central. " +
+                    "If you prefer not to wait for the automatic sync, you can submit an indexing request. " +
+                    "If you believe your project satisfies all criteria, yet it's still not available, or new versions are not appearing, please submit an issue."
             }
         },
         {

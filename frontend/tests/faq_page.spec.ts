@@ -66,4 +66,11 @@ test.describe('FAQ page links', () => {
         const link = page.locator(`a[href="${href}"]`);
         await expect(link).toBeVisible();
     });
+
+
+    test('Link 11: Submit an indexing request', async ({ page }) => {
+        const href = 'https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=question&projects=&template=question.md&title=';
+        const link = page.locator(`a[href="${href}"]`);
+        await expect(link).toBeVisible();
+    });
 });
