@@ -67,6 +67,7 @@ klibs:
         index-endpoint: ${KLIBS_MAVEN_INDEX_ENDPOINT:https://repo1.maven.org/maven2}
         index-dir: ${KLIBS_MAVEN_INDEX_CACHE_DIR:${user.dir}/cache/maven-index}
         content-endpoint: ${KLIBS_MAVEN_CONTENT_ENDPOINT:https://cache-redirector.jetbrains.com/repo1.maven.org/maven2/}
+        content-fallback-endpoint: ${KLIBS_MAVEN_CONTENT_FALLBACK_ENDPOINT:https://search.maven.org/remotecontent?filepath=}
     github:
       personal-access-token: ${KLIBS_GITHUB_TOKEN}
       cache:
