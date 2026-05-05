@@ -16,3 +16,4 @@ klibs:
         indexEndpoint: http://localhost:8080/index
         indexDir: /tmp/maven-index
         content-endpoint: http://localhost:8080/content/
+        content-fallback-endpoint: http://localhost:8080/fallback/

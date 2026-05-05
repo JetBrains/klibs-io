@@ -129,6 +129,36 @@ class BaseMavenSearchClientRedirectTest {
         assertNull(result, "Expected null for HTTP 404 response")
     }
 
+    @Test
+    fun `pom 404 on primary falls back to upstream and returns the pom`() {
+        val pom = minimalPom("org.example", "example-artifact", "1.0.0")
+        val primary404 = mockResponse(code = 404)
+        val upstreamOk = mockResponse(code = 200, body = pom)
+        whenever(transport.get(any(), any())).thenReturn(primary404, upstreamOk)
+
+        val fallbackClient = TestClient(transport, fallbackPrefix = "https://upstream/maven2/")
+        val result = fallbackClient.getPom(
+            MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
+        )
+
+        assertNotNull(result, "Expected POM via fallback after primary 404")
+        assertEquals("example-artifact", result.artifactId)
+    }
+
+    @Test
+    fun `pom 404 on both primary and fallback returns null`() {
+        val primary404 = mockResponse(code = 404)
+        val fallback404 = mockResponse(code = 404)
+        whenever(transport.get(any(), any())).thenReturn(primary404, fallback404)
+
+        val fallbackClient = TestClient(transport, fallbackPrefix = "https://upstream/maven2/")
+        val result = fallbackClient.getPom(
+            MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
+        )
+
+        assertNull(result, "Expected null when fallback also returns 404")
+    }
+
     private fun minimalPom(groupId: String, artifactId: String, version: String): String = """
         |<?xml version="1.0" encoding="UTF-8"?>
         |<project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -161,7 +191,10 @@ class BaseMavenSearchClientRedirectTest {
         return response
     }
 
-    private class TestClient(transport: Transport) : BaseMavenSearchClient(
+    private class TestClient(
+        transport: Transport,
+        private val fallbackPrefix: String? = null,
+    ) : BaseMavenSearchClient(
         xmlMapper = XmlMapper().apply { registerKotlinModule() },
         rateLimiter = UnlimitedRateLimiter(),
         logger = LoggerFactory.getLogger(TestClient::class.java),
@@ -171,6 +204,8 @@ class BaseMavenSearchClientRedirectTest {
         override fun getContentUrlPrefix(): String {
             return "https://test/remotecontent?filepath="
         }
+
+        override fun getContentFallbackUrlPrefix(): String? = fallbackPrefix
 
         override fun searchWithThrottle(
             page: Int,
