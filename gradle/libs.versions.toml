@@ -35,6 +35,8 @@ markdown = "0.7.3"
 
 xml-util = "0.90.0"
 
+auth0-jwt = "4.4.0"
+
 [plugins]
 
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
@@ -103,6 +105,8 @@ prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
 markdown = { module = "org.jetbrains:markdown", version.ref = "markdown" }
 
 xml-util = { module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xml-util" }
+
+auth0-jwt = { module = "com.auth0:java-jwt", version.ref = "auth0-jwt" }
 
 [bundles]
 maven-indexer = [
