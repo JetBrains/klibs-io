@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-2025-grant-winner-markers
+      author: nikita.vlaev@jetbrains.com
+      comment: "KTL-4208: Add 2025 Kotlin Foundation grant winners."
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'GRANT_WINNER_2025'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'firebase-kotlin-sdk' AND scm_owner.login = 'GitLiveApp')
+                 OR (scm_repo.name = 'Mokkery' AND scm_owner.login = 'lupuuss')
+                 OR (scm_repo.name = 'kobweb' AND scm_owner.login = 'varabyte')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-grant-winner-2025-to-category
+      author: nikita.vlaev@jetbrains.com
+      comment: "KTL-4208: Include GRANT_WINNER_2025 in the Grant winners category."
+      changes:
+        - sql:
+            sql: |
+              UPDATE category
+              SET markers = markers || ARRAY['GRANT_WINNER_2025']
+              WHERE name = 'Grant winners';

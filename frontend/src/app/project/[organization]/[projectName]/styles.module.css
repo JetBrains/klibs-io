@@ -1,0 +1,213 @@
+.titleWrapper {
+    gap: 48px;
+    margin: 24px 0;
+}
+
+.titleWrapper * {
+    margin: 0;
+}
+
+.bodyWrapper {
+    gap: 32px;
+}
+
+.card {
+    background-color: #F3F1F3 !important;
+    border: 0 !important;
+    padding: 24px !important;
+}
+
+@media (min-width: 1001px) and (max-width: 1276px) {
+    .card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    .descriptionRow {
+        margin-top: auto;
+    }
+}
+
+/*Resc override only required in card container*/
+.card p {
+    margin-bottom: 0 !important;
+}
+
+.tableButton {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    border-radius: 4px !important;
+
+    /*Couldn't move this to global css as variable. All links will use this blue color*/
+    color: #0067FF !important;
+}
+
+.rightSideColumnWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.rightSideColumnWrapper hr {
+    margin: 0;
+}
+
+.firstColumn {
+    padding-left: 16px;
+}
+
+.hoverIcon {
+    cursor: pointer;
+    display: contents;
+}
+
+.tagsRow {
+    margin-top: 24px;
+}
+
+.descriptionRow {
+    display: flex;
+    gap: 24px;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.editLink {
+    color: var(--link-blue) !important;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/*Adjustment for split screens*/
+/*Medium 1000px - 641px */
+@media only screen and (max-width: 1000px) {
+    .rightSideColumnWrapper {
+        max-width: 400px;
+    }
+
+    .metadataWrapper span {
+        white-space: nowrap;
+    }
+
+    .dataValue {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .metadataWrapper div {
+        gap: 24px;
+    }
+}
+
+.packageListTableHeading {
+    width: 100%;
+    border-bottom: 1px solid var(--b20);
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    padding: 8px 12px;
+    font-weight: 700 !important;
+    @media (min-width: 1001px) {
+        display: grid;
+    }
+}
+
+.packageListTableItem {
+    padding: 12px;
+    border-bottom: 1px solid var(--b20);
+    position: relative;
+    &:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+}
+
+@media screen and (min-width: 1001px) {
+    .packageListTableItem {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.packageListLink {
+    text-decoration: none;
+    display: contents;
+}
+
+.packageCoordinates {
+    padding-right: 16px;
+    white-space: wrap;
+    word-break: break-word;
+}
+
+.packageCoordinatesTitle {
+    color: var(--link-blue);
+    text-decoration: none;
+}
+
+.platformsAndTargetsWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+}
+
+@media (max-width: 1000px) {
+    .platformsAndTargetsWrapper {
+        margin-top: 10px;
+    }
+}
+
+.listWrapper {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 4px
+}
+
+.packageDropdown {
+    flex-shrink: 0;
+    display: none;
+    opacity: 0.5;
+}
+
+
+.projectTabsWrapperMobile {
+    display: none;
+}
+
+@media (max-width: 1276px) {
+    .projectTabsWrapperMobile {
+        display: block;
+    }
+    .projectTabsWrapperDesktop {
+        display: none;
+    }
+}
+
+@media (min-width: 1001px) and (max-width: 1276px) {
+    .projectTabsWrapper {
+        margin-top: 32px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .packageDropdown {
+        position: absolute;
+        top: 8px;
+        right: 0;
+    }
+
+}
+
+@media (max-width: 640px) {
+    .listWrapper {
+        flex-direction: row;
+    }
+}
+
+@media screen and (min-width: 641px) {
+    .packageDropdown {
+        display: block;
+    }
+}

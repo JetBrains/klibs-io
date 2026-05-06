@@ -32,6 +32,10 @@ class SecurityConfiguration(
 
             authorizeHttpRequests {
                 authorize(HttpMethod.GET, "/categories.json", permitAll)
+                authorize(HttpMethod.GET, "/sitemap.xml", permitAll)
+
+                authorize(HttpMethod.GET, "/categories/**", permitAll)
+                authorize(HttpMethod.OPTIONS, "/categories/**", permitAll)
 
                 authorize(HttpMethod.GET, "/tags/**", permitAll)
                 authorize(HttpMethod.OPTIONS, "/tags/**", permitAll)
@@ -52,6 +56,9 @@ class SecurityConfiguration(
                 authorize(HttpMethod.GET, "/ping", permitAll)
                 authorize(HttpMethod.OPTIONS, "/ping", permitAll)
 
+                authorize(HttpMethod.POST, "/compare/**", permitAll)
+                authorize(HttpMethod.OPTIONS, "/compare/**", permitAll)
+
                 // NOTE:
                 //  - /actuator/metrics and /actuator/prometheus are intentionally OPEN at the application level
                 //  - They are CLOSED at the nginx level
@@ -70,12 +77,16 @@ class SecurityConfiguration(
                     authorize("/api-docs/**", hasRole("api-docs"))
                     authorize("/package-description/**", hasRole("ADMIN"))
                     authorize(HttpMethod.PATCH, "/content/**", hasRole("content-manager"))
+                    authorize(HttpMethod.POST, "/tags/allowed/**", hasRole("ADMIN"))
+                    authorize(HttpMethod.DELETE, "/tags/allowed/**", hasRole("ADMIN"))
                 } else {
                     authorize("/blacklist/**", permitAll)
                     authorize("/actuator/**", permitAll)
                     authorize("/api-docs/**", permitAll)
                     authorize(HttpMethod.PATCH, "/content/**", permitAll)
                     authorize("/package-description/**", permitAll)
+                    authorize(HttpMethod.POST, "/tags/allowed/**", permitAll)
+                    authorize(HttpMethod.DELETE, "/tags/allowed/**", permitAll)
                 }
 
                 authorize(anyRequest, authenticated)

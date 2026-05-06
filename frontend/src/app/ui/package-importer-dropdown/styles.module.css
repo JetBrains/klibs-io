@@ -1,0 +1,7 @@
+.dropdown {
+    --rs-theme-dark: 1;
+}
+
+.button {
+    --rs-theme-dark: 0;
+}

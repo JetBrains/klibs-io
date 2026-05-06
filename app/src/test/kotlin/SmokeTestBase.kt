@@ -1,13 +1,17 @@
 import io.awspring.cloud.s3.S3Template
 import io.klibs.app.Application
 import io.klibs.integration.ai.AiService
-import org.springframework.ai.model.openai.autoconfigure.*
+import org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+import org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
+import org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+import org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+import org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
+import org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
@@ -15,6 +19,7 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.testcontainers.containers.PostgreSQLContainer
 
@@ -31,10 +36,10 @@ import org.testcontainers.containers.PostgreSQLContainer
 @Import(SmokeTestBase.TestConfig::class)
 abstract class SmokeTestBase {
 
-    @MockBean
+    @MockitoBean
     private lateinit var aiService: AiService
 
-    @MockBean
+    @MockitoBean
     private lateinit var s3Template: S3Template
 
     @Autowired

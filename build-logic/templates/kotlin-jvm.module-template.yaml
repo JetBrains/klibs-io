@@ -1,0 +1,11 @@
+apply:
+  - ./base.module-template.yaml
+
+settings:
+  kotlin:
+    version: 2.1.10
+    serialization:
+      version: 1.6.3
+  jvm:
+    jdk:
+      version: 21

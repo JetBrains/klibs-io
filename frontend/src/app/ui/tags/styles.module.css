@@ -1,0 +1,11 @@
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.tag {
+  list-style-type: none;
+}

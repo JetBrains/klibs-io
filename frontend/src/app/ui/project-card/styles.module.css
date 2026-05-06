@@ -1,0 +1,165 @@
+.card {
+    /*Gap not working*/
+    /*gap: 16px;*/
+    display: flex !important;
+    flex-direction: column;
+    padding-top: 12px !important;
+
+    /*For icons*/
+    color: rgb(0, 0, 0);
+
+    background: rgba(243, 241, 243, 1) !important;
+    border: none !important;
+
+    /*Fix outline nad box-shadow overflow clipping*/
+    -webkit-mask-image: none !important;
+}
+
+.card:focus, .card:focus-within, .card:focus-visible {
+    box-shadow: rgba(107, 87, 255, .8) 0 0 0 4px !important;
+}
+
+.card:active {
+    padding: 12px 16px 16px 16px !important;
+}
+
+@media (min-width: 641px) {
+    .card:hover {
+        box-shadow: var(--b) 0 0 0 1px !important;
+    }
+}
+
+.card * {
+    /*outline: 1px solid rgba(255, 0, 0, 0.49);*/
+    margin-bottom: 0;
+}
+
+.bodyWrapper {
+    margin-bottom: 16px;
+}
+
+.headingWrapper {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.headingLeftSideWrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.headingRightSideWrapper {
+    display: flex;
+    height: fit-content;
+    /*align-items: center;*/
+}
+
+.headingRightSideWrapper svg {
+    margin-top: 2px;
+}
+
+.headingRightSideWrapper p {
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: 'ss20' on, 'liga' off, 'clig' off;
+}
+
+.headingAuthorWrapper {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.authorLabel {
+    margin-right: 8px;
+}
+
+.cardDescription {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    margin-bottom: 8px;
+    min-height: 60px;
+    /* Fallback for browsers without line clamp support */
+    max-height: 60px;
+}
+
+.tagsRow {
+    white-space: wrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.footerWrapper {
+    /*    min-height: 80px;*/
+    display: flex;
+    flex-direction: column;
+    /*    justify-content: flex-end;*/
+    gap: 8px;
+    margin-top: auto;
+}
+
+.footerRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.footerPlatforms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.highlight {
+    display: inline;
+    background-color: #ffd603;
+}
+
+.featuredProject {
+    background: #F3F1F3 radial-gradient(70.71% 70.71% at 0% 0%, rgba(161, 170, 255, 0.33) 0%, rgba(255, 255, 255, 0.00) 100%) !important;
+
+    .title {
+        color: #0008EE;
+    }
+
+    .featuredIcon path {
+        fill: #0008EE;
+    }
+
+    .featuredTitle {
+        color: #0008EE;
+    }
+}
+
+.grantProject {
+    background: #F3F1F3 radial-gradient(70.71% 70.71% at 0% 0%, rgba(255, 178, 210, 0.33) 0%, rgba(255, 255, 255, 0.00) 100%) !important;
+
+    .title {
+        color: #F7006F;
+    }
+
+    .featuredIcon path {
+        fill: #F7006F;
+    }
+
+    .featuredTitle {
+        color: #F7006F;
+    }
+}
+
+.featuredLabel {
+    display: flex;
+    align-items: center;
+}
+
+.featuredIcon {
+    margin-right: 2px;
+}
+
+
+.licenseIcon {
+    opacity: 0.3;
+}

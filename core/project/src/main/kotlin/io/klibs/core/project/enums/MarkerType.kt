@@ -7,6 +7,7 @@ enum class MarkerType {
     FEATURED,
     GRANT_WINNER_2023,
     GRANT_WINNER_2024,
+    GRANT_WINNER_2025,
     LOCAL_STORAGE,
     COMPOSE_UI,
     NAVIGATION,

@@ -1,0 +1,24 @@
+product: jvm/lib
+
+apply:
+  - ../../build-logic/templates/persistence.module-template.yaml
+
+dependencies:
+  - $kotlin.serialization.json: exported
+  - $libs.bucket4j
+  - $libs.jackson.dataformat.xml: exported
+  - $libs.kotlin.toolingMetadata: exported
+  - $libs.maven.indexer.indexer.core
+  - $libs.maven.indexer.search.api
+  - $libs.maven.indexer.search.backend.indexer
+  - $libs.maven.indexer.search.backend.smo
+  - $libs.maven.model: exported
+  - $libs.spring.webflux
+  - $libs.xml.util: exported
+
+test-dependencies:
+  - $libs.mockito.kotlin
+
+settings:
+  kotlin:
+    serialization: enabled

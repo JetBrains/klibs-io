@@ -1,0 +1,76 @@
+.img1 {
+    width: 534px;
+    height: 534px;
+    position: fixed;
+
+    bottom: -50px;
+    right: -50px;
+
+    animation-name: kodeeMove;
+    animation-duration: 60s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    z-index: 1;
+}
+
+.img2{
+    width: 534px;
+    height: 534px;
+    position: fixed;
+
+    bottom: -50px;
+    right: -50px;
+
+    animation-name: kodeeMove;
+    animation-duration: 80s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    z-index: 2;
+}
+
+.img3{
+    width: 534px;
+    height: 534px;
+    position: fixed;
+
+    bottom: -50px;
+    right: -50px;
+
+    animation-name: kodeeMove;
+    animation-duration: 90s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    z-index: 3;
+}
+
+.textWrapper{
+    max-width: 600px;
+    gap: 24px;
+}
+
+.questionWrapper{
+    gap: 0px;
+
+    z-index: 4;
+}
+
+.questionWrapper h4 {
+    margin-top: 24px;
+}
+
+.slackWrapper{
+    gap: 24px;
+    z-index: 4;
+}
+
+@keyframes kodeeMove {
+    0%   {
+        transform: rotate(0deg) translateX(0px)
+    }
+    50% {
+        transform: rotate(180deg) translateX(-120px);
+    }
+    100% {
+        transform: rotate(360deg) translateX(0px);
+    }
+}

@@ -1,0 +1,89 @@
+apiVersion: skaffold/v4beta8
+kind: Config
+metadata:
+ name: klibs-frontend
+build:
+ tagPolicy:
+   sha256: {}
+ artifacts:
+   - image: registry.jetbrains.team/p/klibs-io/containers/klibs-frontend
+     docker:
+       buildArgs:
+         APP_ENV: "production"
+ local:
+   useDockerCLI: false
+   useBuildkit: true
+deploy:
+  helm:
+    releases:
+      - name: klibs-frontend
+        remoteChart: oci://registry.jetbrains.team/p/cb/helm-charts/simple-app # You can leave it or specify any your helm chart or from your repo
+        version: 0.2.1
+        upgradeOnChange: true
+        setValueTemplates:
+          image: "{{.IMAGE_FULLY_QUALIFIED}}" # Must match you container image path from Space
+          imagePullSecret: "{{.IMAGE_PULL_SECRET}}"
+          applicationName: "{{.APPLICATION_NAME}}"
+        valuesFiles:
+          - values.yaml
+profiles:
+  - name: features
+    build:
+      artifacts:
+        - image: registry.jetbrains.team/p/klibs-io/containers/klibs-frontend
+          docker:
+            buildArgs:
+              APP_ENV: "features"
+    deploy:
+      helm:
+        releases:
+          - name: klibs-frontend
+            remoteChart: oci://registry.jetbrains.team/p/cb/helm-charts/simple-app
+            version: 0.2.1
+            upgradeOnChange: true
+            setValueTemplates:
+              image: "{{.IMAGE_FULLY_QUALIFIED}}"
+              imagePullSecret: "{{.IMAGE_PULL_SECRET}}"
+              applicationName: "{{.APPLICATION_NAME}}"
+            valuesFiles:
+              - values-features.yaml
+  - name: staging
+    build:
+      artifacts:
+        - image: registry.jetbrains.team/p/klibs-io/containers/klibs-frontend
+          docker:
+            buildArgs:
+              APP_ENV: "test"
+    deploy:
+      helm:
+        releases:
+          - name: klibs-frontend
+            remoteChart: oci://registry.jetbrains.team/p/cb/helm-charts/simple-app
+            version: 0.2.1
+            upgradeOnChange: true
+            setValueTemplates:
+              image: "{{.IMAGE_FULLY_QUALIFIED}}"
+              imagePullSecret: "{{.IMAGE_PULL_SECRET}}"
+              applicationName: "{{.APPLICATION_NAME}}"
+            valuesFiles:
+              - values-staging.yaml
+  - name: staging2
+    build:
+      artifacts:
+        - image: registry.jetbrains.team/p/klibs-io/containers/klibs-frontend
+          docker:
+            buildArgs:
+              APP_ENV: "test"
+    deploy:
+      helm:
+        releases:
+          - name: klibs-frontend-2
+            remoteChart: oci://registry.jetbrains.team/p/cb/helm-charts/simple-app # You can leave it or specify any your helm chart or from your repo
+            version: 0.2.1
+            upgradeOnChange: true
+            setValueTemplates:
+              image: "{{.IMAGE_FULLY_QUALIFIED}}" # Must match you container image path from Space
+              imagePullSecret: "{{.IMAGE_PULL_SECRET}}"
+              applicationName: "{{.APPLICATION_NAME}}"
+            valuesFiles:
+              - values-staging.yaml

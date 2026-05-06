@@ -1,163 +1,120 @@
 # klibs.io
 
-## Context
+A service to search and discover Kotlin Multiplatform libraries.
+It aggregates data from Maven Central and GitHub, enriched with AI-powered metadata generation.
 
-This project was [started outside of JetBrains](https://twitter.com/IgnatBeresnev/status/1796374018259640609) as a PoC 
-and was never meant to be a serious project.
-
-Initially, the website pages were served by the backend (SSR with Thymeleaf), but before the project 
-was transferred to JetBrains, it was re-implemented to be an independent backend with REST API. 
-Last commit with SSR: `f4e46939`.
-
-While most of the project was refactored to look consistent and more like a decent codebase, you may still see traces
-of the early PoC stage with cut corners, hacks and TODOs.
-
-## Modules
-
-The structure of the project tries to follow the "module by feature" approach, encapsulating distinct parts of the app
-in separate modules.
-
-* `app` - the main server module. Contains high-level configurations for the whole app. Serves as glue for all other 
-  modules. Runnable.
-
-Core modules represent the essential parts of the app:
-
-* `core/package` - Maven Packages (arfitacts). 
-  For example, [kotlinx-coroutines-core](https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/)
-* `core/project` - Most high-level aggregating entity. Maps to an `scm-repository`, consists of a number of packages.
-* `core/scm-owner` - Owners of `scm-repository` entities, be it organizations or individual authors. 
-  For example, [github.com/Kotlin](https://github.com/Kotlin)
-* `core/scm-repository` - (Git) repositories of `project` entities. 
-  For example, [github.com/Kotlin/kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines).
-* `core/search` - Search functionality across all data (projects, packages, owners, repositories)
-
-Third party integrations reside separately:
-
-* `integrations/ai` - Integration with OpenAI. For example, for generating descriptions of libraries.
-* `integrations/github` - Integration with GitHub to collect info for `scm-repository` and `scm-owner`
-* `integrations/maven` - Integration Maven Central to scan for new `package` entities.
-
-## Profiles & configuration properties
-
-Spring [profiles](https://docs.spring.io/spring-boot/reference/features/profiles.html) are used to run the app
-in different environments. Profile-specific configuration properties can be found in 
-[app/src/main/resources](app/src/main/resources).
-
-The `prod` profile is used to run the app in production, it hides or restricts some debug utilities. A separate `local`
-profile can be used for testing the app locally.
-
-Note: [application-prod.yml](app/src/main/resources/application-prod.yml) is just a template, it contains configuration
-properties that need to be configured for the app to work. Adapt it and/or use 
-[externalized configuration](https://docs.spring.io/spring-boot/reference/features/external-config.html) if necessary.
-
-Scanning of Maven Central and indexing of packages can be enabled/disabled by setting the `klibs.indexing` property.
-
-### Files on disk
-
-This app needs to store files on disk:
-
-* Cache of requests to GitHub's API, [managed by OkHttp](https://square.github.io/okhttp/features/caching/).
-  Helps with avoiding rate limits. Configuration property: `klibs.integration.github.cache.request-cache-path`.
-* README files from GitHub, both in Markdown and in HTML. These are stored in S3. 
-  Configuration properties: `klibs.readme.mode`, `klibs.readme.cache-dir`, `klibs.readme.s3.bucket-name`, `klibs.readme.s3.prefix`.
+The repository contains both the backend (this README) and the web frontend (see [Frontend](frontend/README.md)).
 
 ## Build & Run
 
-### Boot Jar
+### Prerequisites
 
-Run
+- JDK 21+
+- Docker (for local PostgreSQL via docker-compose and LocalStack for S3)
+
+### Build & test
 
 ```bash
-./gradlew bootJar
+./amper build   # build without running tests
+./amper test    # run tests
+./amper check   # run project checks
 ```
 
-Output: `app/build/libs/app.jar`
+### Executable Jar
+
+```bash
+./amper package
+```
+
+Output: `build/tasks/_app_executableJarJvm/app-jvm-executable.jar`
 
 ### Run locally
 
-Note: we use docker compose to run the app locally. So you need to have docker installed.
+From CLI:
 
-You can run the `main` function from `Application` it will loads spring boot application with `local` profile.
+```bash
+./amper run -m app
+```
+
+or 
+
+```bash
+./amper run
+```
+
+Or run the `main` function from `Application` in IntelliJ — both use the `local` profile.
+
+### Configuration
+
+Spring [profiles](https://docs.spring.io/spring-boot/reference/features/profiles.html) are used to run the app
+in different environments. Profile-specific files are in [app/src/main/resources](app/src/main/resources).
+
+- `local` — local development (docker-compose for DB)
+- `prod` — production (restricts debug utilities).
+  [application-prod.yml](app/src/main/resources/application-prod.yml) is a template; adapt it or use
+  [externalized configuration](https://docs.spring.io/spring-boot/reference/features/external-config.html).
+
+Indexing of packages can be enabled/disabled via `klibs.indexing`.
+Fine-grained indexing sources (Central Sonatype, Google Maven) and executor settings are under `klibs.indexing-configuration`.
+
+#### Files on disk
+
+- GitHub API request cache ([managed by OkHttp](https://square.github.io/okhttp/features/caching/)).
+  Property: `klibs.integration.github.cache.request-cache-path`.
+- README files (Markdown + HTML) stored in S3 with local disk cache.
+  Properties: `klibs.readme.cache-dir`, `klibs.readme.s3.*`.
+
+### Endpoints
+
+- Swagger UI: `/api-docs/swagger-ui.html`
+- Actuator: `/actuator/health`, `/actuator/info`
 
 ### Troubleshooting
 
-In case of problems, check [troubleshooting.md](troubleshooting.md).
+See [troubleshooting.md](troubleshooting.md).
 
-## Endpoints
+## Modules
 
-### Swagger
+The project follows a "module by feature" approach:
 
-Swagger API is available under `/api-docs/swagger-ui.html`
+* `app` — main Spring Boot module. Configurations, scheduled jobs, glue for all other modules. Runnable.
+* `core/*` — domain modules (package, project, scm-owner, scm-repository, readme, search, storage).
+* `integrations/*` — third-party integrations (ai, github, maven).
 
-### Actuator
-
-[Spring Actuator](https://docs.spring.io/spring-boot/reference/actuator/endpoints.html) is used.
-
-* `/actuator/health` - has custom health indicators
-* `/actuator/info` - has custom info contributors
-
-## Workflow
-
-You can find information about the development workflow in [workflow.md](workflow.md).
-
-## Implementation details
+## Architecture
 
 ### Indexing logic
-
-This is by far the most confusing part of the whole backend. 
 
 The general flow:
 
 1. Check for new artifacts (published since the last check) using Maven Central's API.
-2. If new artifacts are available, add them to the processing queue (table `package_index_request`)
-3. Process the package indexing queue in a separate thread, one by one. If indexing of a package fails, increment 
+2. If new artifacts are available, add them to the processing queue (table `package_index_request`).
+3. Process the queue in a separate thread, one by one. If indexing of a package fails, increment
    its `failed_attempts`. Try to process each package up to N times. Projects and SCM owner/info are created in the
    process of indexing packages.
 
-AI descriptions are generated by a separate scheduled task because the rate limits of OpenAI are much lower 
+AI descriptions are generated by a separate scheduled task because the rate limits of OpenAI are much lower
 than of GitHub and Maven Central, so it's significantly slower.
 
-Information taken from GitHub (repository/owner) is updated by a separate scheduled task too, 
-based on `github_repo.updated_at`
+Information taken from GitHub (repository/owner) is updated by a separate scheduled task too,
+based on `github_repo.updated_at`.
 
 ### Full Text Search
 
-As of this moment, PostgresSQL's [Full Text Search](https://www.postgresql.org/docs/15/textsearch.html) is used for FTS.
-All relevant data is aggregated in a single materialized view `project_index`, which is updated periodically and is 
-used for search queries. While it gets the job done, it leaves a lot to be desired.
+PostgreSQL's [Full Text Search](https://www.postgresql.org/docs/17/textsearch.html) is used for FTS.
+Relevant data is aggregated in two materialized views — `project_index` and `package_index` — which are updated
+periodically and used for search queries. Known tech debt: at some point this might need to be replaced with
+Solr / ElasticSearch. All search-related logic is contained in the `search` module (`ProjectSearchRepository`,
+`PackageSearchRepository`), so the migration surface is limited.
 
-At some point, FTS might need to be re-implemented to use Solr / ElasticSearch or something similar. Code-wise,
-it shouldn't be too difficult because all search-related logic is contained in the `search` module, so hopefully
-it's just a matter of re-implementing `SearchRepository`.
+## Development
 
-This is probably the biggest technical task (the rest of the tech debt is less scary)
-
+Development workflow: [workflow.md](workflow.md).
 
 ### How to update JVM version
-There are 3 places, which should be updated:
-1) Build logic module toolchain version: [build.gradle.kts](build-logic/build.gradle.kts)
-2) Toolchain version in base jvm convention plugin: [klibs.kotlin-jvm.gradle.kts](build-logic/src/main/kotlin/klibs.kotlin-jvm.gradle.kts)
-3) Gradle daemon jvm version. Update jvm version in task `updateDaemonJvm`: [build.gradle.kts](build.gradle.kts) and run `updateDaemonJvm` task:
-```shell
-./gradlew updateDaemonJvm 
-```
 
-### Gradle Build Scans
+JVM toolchain version is defined in the base Kotlin/JVM module template:
+[kotlin-jvm.module-template.yaml](build-logic/templates/kotlin-jvm.module-template.yaml)
+(`settings.jvm.jdk.version`). All modules inherit from this template.
 
-[Gradle Build Scans](https://scans.gradle.com/) can provide insights into an klibs.io backend Build.
-JetBrains runs a [Gradle Develocity server](https://ge.jetbrains.com/scans?search.rootProjectNames=kotlinx-atomicfu) that can be used to automatically upload reports.
-
-To automatically opt in add the following to `$GRADLE_USER_HOME/gradle.properties`.
-
-```properties
-io.klibs.build.scan.enabled=true
-# optionally provide a username that will be attached to each report
-io.klibs.build.scan.username=John Wick
-```
-
-Also, you need to create an access key:
-```bash
-./gradlew provisionDevelocityAccessKey
-```
-
-A Build Scan may contain identifiable information. See the Terms of Use https://gradle.com/legal/terms-of-use/.
+The JVM version used by Amper is tied to the Amper distribution, so updating Amper also updates the JVM runtime it runs on.

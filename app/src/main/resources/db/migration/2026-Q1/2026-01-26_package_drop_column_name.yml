@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: remove name column from package table
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - dropColumn:
+            tableName: package
+            columnName: name

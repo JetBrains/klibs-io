@@ -1,0 +1,22 @@
+.featuredLabel {
+    display: flex;
+    height: 48px;
+    padding: 4px 12px;
+    align-items: center;
+    justify-content: flex-start;
+    border-radius: 4px;
+}
+
+.featuredIcon {
+    margin-right: 12px;
+}
+
+.isGrantWinner {
+    color: rgba(247, 0, 111, 1);
+    background: linear-gradient(270deg, rgba(255, 255, 255, 0.00) 0%, rgba(247, 0, 111, 0.10) 100%);
+}
+
+.isFeatured {
+    color: rgba(4, 12, 238, 1);
+    background: linear-gradient(270deg, rgba(255, 255, 255, 0.00) 0%, rgba(0, 8, 238, 0.10) 100%);
+}

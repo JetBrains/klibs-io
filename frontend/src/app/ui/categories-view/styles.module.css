@@ -1,0 +1,12 @@
+.categoryWrapper {
+    &:not(:last-child) {
+        margin-bottom: 72px
+    }
+}
+
+.categoryHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}

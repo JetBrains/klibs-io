@@ -1,0 +1,114 @@
+/*Page boundaries*/
+.container {
+    display: flex;
+    flex-direction: column;
+    align-self: center;
+
+    padding-left: 22px;
+    padding-right: 22px;
+
+    position: relative;
+}
+
+/*Sections inside .containers*/
+.wrapper {
+    display: flex;
+    flex-direction: column;
+
+    position: relative;
+
+    width: 100%;
+}
+
+/*Changes the default column direction*/
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+/*Used for split layout*/
+.split {
+    display: flex;
+    flex-direction: row;
+    gap: var(--m2);
+}
+
+/*Temporary fix for flex overflowing items*/
+/*Source: https://stackoverflow.com/questions/36230944/prevent-flex-items-from-overflowing-a-container*/
+.split * {
+    min-width: 0;
+}
+
+/*Sets right side section to fixed width*/
+.smallColumn{
+    max-width: 368px !important;
+    flex-shrink: 0;
+}
+
+/*Custom padding for nav button compensation*/
+/* calc(WebTeam container padding - button padding)*/
+.nav{
+    padding-left: calc(22px - 12px);
+}
+
+
+/*Card grid*/
+.cardGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-auto-rows: max-content;
+    column-gap: 12px;
+    row-gap: 12px;
+}
+
+.cardColumn {
+    gap: 12px;
+}
+
+
+/*WebTeamUI breakpoints*/
+/*Max    XXXXpx - 1277px */
+@media only screen and (min-width: 1277px) {
+    .container{
+        max-width: 1276px;
+        width: 100%;
+    }
+}
+
+/*Large  1276px - 1001px */
+@media only screen and (max-width: 1276px) {
+    .container{
+        max-width: 996px;
+        width: 100%;
+    }
+    .cardGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/*Medium 1000px - 641px */
+@media only screen and (max-width: 1000px) {
+    .split{
+        flex-direction: column;
+    }
+    .cardGrid {
+        grid-template-columns: 1fr;
+        row-gap: 4px;
+    }
+
+}
+
+/*Small   640px - XXXpx */
+@media only screen and (max-width: 640px) {
+    /*Compensation spacing for nav buttons*/
+    .nav{
+        padding: 0 calc(16px - 12px) !important;
+    }
+    .container {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    .cardColumn{
+        gap: 4px;
+    }
+}

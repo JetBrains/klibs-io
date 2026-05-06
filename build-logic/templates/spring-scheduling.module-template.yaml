@@ -1,0 +1,6 @@
+apply:
+  - ./spring.module-template.yaml
+
+dependencies:
+  - $libs.shedlock.spring
+  - $libs.shedlock.jdbc

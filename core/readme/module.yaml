@@ -1,0 +1,10 @@
+product: jvm/lib
+
+apply:
+  - ../../build-logic/templates/persistence.module-template.yaml
+  - ../../build-logic/templates/mock.module-template.yaml
+
+dependencies:
+  - ../storage
+  - ../../integrations/github
+  - $libs.markdown

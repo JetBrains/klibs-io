@@ -1,0 +1,65 @@
+.mainWrapper {
+    display: none;
+    padding-top: 32px;
+    margin-bottom: 48px;
+}
+
+@media (min-width: 1001px) {
+    .mainWrapper {
+        display: block;
+    }
+}
+
+.skeletonContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skeletonTag {
+    width: 70px;
+    height: 40px;
+    background-color: var(--rs-color-bg-skeleton, #e0e0e0);
+    border-radius: 8px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.tagsWrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    margin-bottom: 24px;
+}
+
+.tagsWrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tagsDropdownTrigger {
+    transform: translateX(4px);
+
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.menuDropdownWrapper {
+    padding: 8px 0;
+}
+
+.tabListOverride span:not([id]) {
+    opacity: 0;
+}

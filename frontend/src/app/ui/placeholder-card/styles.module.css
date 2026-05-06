@@ -1,0 +1,41 @@
+.card {
+    cursor: pointer;
+    border: 1px dashed #4D00FF;
+    background: linear-gradient(115deg, rgba(255, 255, 255, 0.00) 0.06%, rgba(77, 0, 255, 0.05) 97.23%);
+    min-height: 220px !important;
+    -webkit-mask-image: none !important;
+    &:hover {
+        background: linear-gradient(115deg, rgba(255, 255, 255, 0.00) 0.06%, rgba(77, 0, 255, 0.10) 97.23%);
+        .iconWrapper {
+            background: rgba(77, 0, 255, 0.15);
+        }
+    }
+    &:focus, &:focus-visible {
+        box-shadow: rgba(107, 87, 255, .8) 0 0 0 4px !important;
+    }
+}
+
+.cardContent {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.iconWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #4D00FF;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+}
+
+.cardText {
+    margin-bottom: 0;
+}

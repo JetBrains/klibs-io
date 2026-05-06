@@ -4,4 +4,4 @@
 *.sh text eol=lf
 *.bat text eol=crlf
 
-gradlew text eol=lf
+amper text eol=lf

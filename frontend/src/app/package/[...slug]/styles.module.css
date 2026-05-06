@@ -1,0 +1,222 @@
+/*Merge this with project page styling, these are the same*/
+.titleWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    /*Temporary solution, not sure yet how we will set up the layout styling*/
+    margin: 24px 0;
+}
+
+.titleWrapper * {
+    margin: 0;
+}
+
+.bodyWrapper {
+    gap: var(--m2);
+    container-type: inline-size;
+}
+
+.metadataWrapper {
+    /*border: 1px solid var(--b20);*/
+    background-color: var(--wrapper-grey);
+    border-radius: 8px;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-auto-rows: max-content;
+    column-gap: 24px;
+    row-gap: 24px;
+
+    padding: 24px 16px;
+}
+
+.metadataNode {
+    display: flex;
+    flex-direction: column;
+}
+
+.metadataIcon {
+    width: 24px !important;
+    margin-bottom: 4px;
+    opacity: 30%;
+}
+
+.infoWrapper {
+    border: 1px solid var(--b20);
+    /*background-color: var(--wrapper-grey);*/
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.linkWrapper {
+    display: flex;
+    gap: 8px;
+}
+
+.linkDivider {
+    background-color: rgba(25, 25, 25, 0.2);
+    height: 24px;
+    width: 1px;
+}
+
+.versionTable {
+    /* nesting is intentional to overwrite rescui selector */
+}
+
+.versionTable .versionTableActionCol {
+    width: 46px;
+    padding-right: 4px;
+}
+
+.platformsTargetsWrapper {
+    min-width: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.platformsListWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.packageVersionLink {
+    text-decoration: none;
+    display: block;
+    color: var(--link-blue);
+}
+
+.packageReleaseDate {
+    white-space: nowrap;
+    display: flex;
+}
+
+.packageReleaseDateMobileTitle {
+}
+
+.packageDropdown {
+    opacity: 0.5;
+}
+
+.tableRow {
+    position: relative;
+    &:hover {
+        background: rgba(0, 0, 0, 0.03);
+    }
+}
+
+.tableRowLink {
+    display: contents;
+}
+
+.versionHistoryWrapperMobile {
+    display: none;
+}
+
+@media (max-width: 1276px) {
+    .versionHistoryWrapper {
+        margin-top: 32px;
+    }
+    .versionHistoryWrapperMobile {
+        display: block;
+    }
+    .versionHistoryWrapperDesktop {
+        display: none;
+    }
+}
+
+.platformsAndTargetsCell {
+    padding-right: 8px !important;
+}
+
+/* Container queries */
+/*Needs container-type to work*/
+@container (width < 520px) {
+    .metadataWrapper {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Media queries for max-width: 640px */
+@media only screen and (max-width: 640px) {
+    .linkWrapper {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 640px) {
+    .packageDropdown {
+        display: none;
+    }
+
+    .platformsListWrapper {
+        flex-direction: row;
+    }
+}
+
+/* max-width: 1000px */
+@media (max-width: 1000px) {
+    .versionTable {
+        display: block;
+        min-width: auto !important;
+    }
+
+    .platformsListWrapper {
+        margin-top: 10px;
+    }
+
+    .tableHead {
+        display: none;
+    }
+
+    .tableBody {
+        display: block;
+        width: 100%;
+        border-top: 1px solid var(--b20);
+    }
+
+    .tableRow {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: none;
+        min-width: auto;
+        border-bottom: 1px solid var(--b20);
+        padding: 12px;
+    }
+
+    .tableRow > td {
+        display: block;
+        border: 0 !important;
+        padding: 0 !important;
+    }
+
+    .packageDropdown {
+        position: absolute;
+        top: 8px;
+        right: 0;
+    }
+}
+
+/* min-width: 1001px */
+@media (min-width: 1001px) {
+    .packageReleaseDateMobileTitle {
+        display: none;
+    }
+
+    .versionHistoryTabs {
+        border-bottom: 1px solid var(--b20);
+    }
+}
+
+@media (min-width: 1277px) {
+
+    .versionCell {
+        /*width: 140px !important;*/
+        /*padding-right: 8px !important;*/
+    }
+}
+

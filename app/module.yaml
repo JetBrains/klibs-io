@@ -1,0 +1,36 @@
+product: jvm/app
+
+apply:
+  - ../build-logic/templates/spring-web.module-template.yaml
+  - ../build-logic/templates/persistence.module-template.yaml
+  - ../build-logic/templates/mock.module-template.yaml
+  - ../build-logic/templates/spring-scheduling.module-template.yaml
+  - ../build-logic/templates/spring-cloud.module-template.yaml
+
+dependencies:
+  - ../core/package
+  - ../core/project
+  - ../core/readme
+  - ../core/scm-owner
+  - ../core/scm-repository
+  - ../core/search
+  - ../core/storage
+  - ../integrations/ai
+  - ../integrations/maven
+  - ../integrations/github
+
+test-dependencies:
+  - $libs.okhttp
+  - $libs.kohsuke.githubApi
+
+settings:
+  jvm:
+    mainClass: io.klibs.app.ApplicationKt
+
+plugins:
+  jib:
+    enabled: true
+    baseImage:
+      fullName:  eclipse-temurin:21-jre
+    container:
+      mainClass: io.klibs.app.ApplicationKt

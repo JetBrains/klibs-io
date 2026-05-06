@@ -1,0 +1,21 @@
+.separator {
+    margin-bottom: var(--s3);
+}
+
+.codeWrapper {
+    background-color: var(--wrapper-grey);
+    margin-bottom: 0;
+
+    position: relative;
+    min-height: var(--ta2);
+}
+
+.copyButton {
+    position: absolute !important;
+    top: 6px;
+    right: 8px;
+}
+
+.codeHighlight {
+    color: var(--code-green);
+}

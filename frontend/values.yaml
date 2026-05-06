@@ -1,0 +1,21 @@
+containerPort: 3000
+health:
+  path: /api/health
+ingress:
+  enabled: false
+runAsUser: 101
+runAsGroup: 101
+minReplicaCount: 3
+autoscaling:
+  enabled: false
+deployStrategy:
+  rollingUpdate:
+    maxUnavailable: 50%
+  type: RollingUpdate
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 2000m
+    memory: 2048Mi

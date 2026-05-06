@@ -1,0 +1,103 @@
+.grantWinnerBanner {
+    margin-top: 72px;
+    padding: 38px 24px 0;
+    border-radius: 8px;
+    background: linear-gradient(312deg, rgba(247, 0, 111, 0.30) 28.49%, rgba(251, 33, 255, 0.15) 75.74%);
+    text-align: center;
+    position: relative;
+}
+
+.content, .imageContainer {
+    position: relative;
+    z-index: 1;
+}
+
+.title {
+    margin: 0;
+}
+
+.text {
+    margin: 16px 0 0;
+}
+
+.buttonsBlock {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.imageWrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 48%;
+    height: 0;
+    margin-top: 24px;
+}
+
+@media (min-width: 768px) {
+    .grantWinnerBanner {
+        padding: 48px 100px 0;
+    }
+    .buttonsBlock {
+        display: grid;
+        grid-template-columns: min-content min-content;
+        justify-content: center;
+    }
+
+    .imageWrapper {
+        width: 520px;
+        padding-top: 250px;
+        margin: 30px auto 0;
+    }
+}
+
+@media (min-width: 1276px) {
+    .grantWinnerBanner {
+        padding: 46px 0 0 70px;
+        position: relative;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .title, .text, .buttonsBlock {
+        width: 380px;
+    }
+
+    .content {
+
+    }
+
+    .buttonsBlock {
+        margin-bottom: 46px;
+        justify-content: flex-start;
+    }
+
+    .imageWrapper {
+        margin: 0;
+    }
+}
+
+@media (min-width: 1440px) {
+    .grantWinnerBanner {
+        padding-top: 70px;
+        margin-top: 97px;
+    }
+
+    .title, .text, .buttonsBlock {
+        width: 460px;
+    }
+
+    .imageContainer {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+    }
+    .imageWrapper {
+        width: 710px;
+        padding-top: 340px;
+        margin: 0;
+    }
+}

@@ -1,0 +1,43 @@
+apiVersion: skaffold/v4beta8
+kind: Config
+metadata:
+  name: klibs
+build:
+  tagPolicy:
+    sha256: {}
+  artifacts:
+    - image: registry.jetbrains.team/p/klibs-io/containers/klibs-test
+      custom:
+        buildCommand: ./amper do jib
+  local:
+    useDockerCLI: false
+    useBuildkit: true
+deploy:
+  helm:
+    releases:
+      - name: go-web-app
+        remoteChart: oci://registry.jetbrains.team/p/cb/helm-charts/simple-app
+        version: 0.3.4
+        upgradeOnChange: true
+        setValueTemplates:
+          image: "{{.IMAGE_FULLY_QUALIFIED}}"
+          imagePullSecret: "{{.IMAGE_PULL_SECRET}}"
+          applicationName: "{{.APPLICATION_NAME}}"
+        valuesFiles:
+          - values.yaml
+profiles:
+  - name: prod
+    patches:
+      - op: replace
+        path: /build/artifacts/0/image
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-prod
+  - name: stage
+    patches:
+      - op: replace
+        path: /build/artifacts/0/image
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-stage
+  - name: test
+    patches:
+      - op: replace
+        path: /build/artifacts/0/image
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-
