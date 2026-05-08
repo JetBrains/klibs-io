@@ -1,23 +1,38 @@
 .intro {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
 }
 
-.section {
-    margin-bottom: 56px;
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    justify-content: flex-end;
 }
 
-.sectionTitle {
-    margin-bottom: 8px;
+.controlsLabel {
+    white-space: nowrap;
 }
 
-.sectionSubtitle {
-    margin-bottom: 16px;
+.controlsSelect {
+    min-width: 220px;
+}
+
+@media (max-width: 640px) {
+    .controls {
+        justify-content: flex-start;
+    }
+
+    .controlsSelect {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
 }
 
 .spinnerWrapper {
     display: flex;
     justify-content: center;
-    padding: 48px 0;
+    padding: 32px 0;
 }
 
 .tableWrapper {
