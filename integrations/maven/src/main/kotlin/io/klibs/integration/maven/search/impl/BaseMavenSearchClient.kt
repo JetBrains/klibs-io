@@ -165,6 +165,11 @@ abstract class BaseMavenSearchClient(
         )
     }
 
+    /**
+     * One logical fetch consumes a single rate-limit token regardless of how many redirect hops the
+     * upstream takes. Hops within a chain (e.g. `cache-redirector.jetbrains.com` → an internal proxy)
+     * are followed without re-acquiring the bucket; only the entry call (`redirectCount == 0`) throttles.
+     */
     private fun <R> followRedirects(
         serviceUri: String,
         headers: Map<String, String>,
@@ -172,7 +177,7 @@ abstract class BaseMavenSearchClient(
         redirectCount: Int,
         requestExecutor: (String, Map<String, String>) -> Transport.Response
     ): R? {
-        return executeWithThrottle {
+        val fetch: () -> R? = {
             requestExecutor.invoke(serviceUri, headers).use { response ->
                 when (response.code) {
                     HttpURLConnection.HTTP_OK -> converter.invoke(response)
@@ -197,6 +202,7 @@ abstract class BaseMavenSearchClient(
                 }
             }
         }
+        return if (redirectCount == 0) executeWithThrottle(fetch) else fetch()
     }
 
     private fun validate(metadata: KotlinToolingMetadata): KotlinToolingMetadata {

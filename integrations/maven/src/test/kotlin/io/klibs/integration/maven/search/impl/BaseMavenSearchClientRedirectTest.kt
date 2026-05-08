@@ -5,6 +5,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
+import io.klibs.integration.maven.request.RequestRateLimiter
 import io.klibs.integration.maven.request.impl.UnlimitedRateLimiter
 import io.klibs.integration.maven.search.MavenSearchResponse
 import org.apache.maven.search.api.request.Query
@@ -146,6 +147,43 @@ class BaseMavenSearchClientRedirectTest {
     }
 
     @Test
+    fun `one rate-limit token per logical fetch regardless of redirect hops`() {
+        val pom = minimalPom("org.example", "example-artifact", "1.0.0")
+        val redirects = (1..MAX_REDIRECTS).map { idx ->
+            mockResponse(code = 302, headers = mapOf("location" to "https://example.com/redirect/$idx"))
+        }
+        val ok = mockResponse(code = 200, body = pom)
+        whenever(transport.get(any(), any())).thenReturn(redirects[0], *redirects.subList(1, redirects.size).toTypedArray(), ok)
+
+        val limiter = CountingRateLimiter()
+        val countingClient = TestClient(transport, rateLimiter = limiter)
+
+        val result = countingClient.getPom(
+            MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
+        )
+
+        assertNotNull(result)
+        assertEquals(1, limiter.tokens, "Redirect chain must consume a single rate-limit token")
+    }
+
+    @Test
+    fun `fallback path consumes a separate token from the primary chain`() {
+        val pom = minimalPom("org.example", "example-artifact", "1.0.0")
+        val primary404 = mockResponse(code = 404)
+        val upstreamOk = mockResponse(code = 200, body = pom)
+        whenever(transport.get(any(), any())).thenReturn(primary404, upstreamOk)
+
+        val limiter = CountingRateLimiter()
+        val fallbackClient = TestClient(transport, fallbackPrefix = "https://upstream/maven2/", rateLimiter = limiter)
+        val result = fallbackClient.getPom(
+            MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
+        )
+
+        assertNotNull(result)
+        assertEquals(2, limiter.tokens, "Primary 404 + fallback success must consume two tokens (one per chain)")
+    }
+
+    @Test
     fun `pom 404 on both primary and fallback returns null`() {
         val primary404 = mockResponse(code = 404)
         val fallback404 = mockResponse(code = 404)
@@ -191,12 +229,23 @@ class BaseMavenSearchClientRedirectTest {
         return response
     }
 
+    private class CountingRateLimiter : RequestRateLimiter {
+        var tokens: Int = 0
+            private set
+
+        override fun <T> withRateLimitBlocking(action: () -> T): T {
+            tokens++
+            return action()
+        }
+    }
+
     private class TestClient(
         transport: Transport,
         private val fallbackPrefix: String? = null,
+        rateLimiter: RequestRateLimiter = UnlimitedRateLimiter(),
     ) : BaseMavenSearchClient(
         xmlMapper = XmlMapper().apply { registerKotlinModule() },
-        rateLimiter = UnlimitedRateLimiter(),
+        rateLimiter = rateLimiter,
         logger = LoggerFactory.getLogger(TestClient::class.java),
         objectMapper = ObjectMapper(),
         clientTransport = transport
