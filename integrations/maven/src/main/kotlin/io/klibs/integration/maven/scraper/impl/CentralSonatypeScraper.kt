@@ -6,6 +6,7 @@ import io.klibs.integration.maven.scraper.MavenCentralScraper
 import io.klibs.integration.maven.search.MavenSearchClient
 import io.klibs.integration.maven.search.impl.BaseMavenSearchClient
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
+import io.klibs.integration.maven.search.paginateSearch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
@@ -54,13 +55,9 @@ class CentralSonatypeScraper(
         lastUpdatedSince: Instant,
         errorChannel: Channel<Exception>
     ) {
-        var currentPage = 0
-        var pageCount = 0
-        do {
-            runCatching {
-                val response = client.searchWithThrottle(currentPage, query, lastUpdatedSince)
-
-                val artifacts = response.page.map {
+        runCatching {
+            client.paginateSearch(query, lastUpdatedSince).forEach {
+                emit(
                     MavenArtifact(
                         it.groupId,
                         it.artifactId,
@@ -68,18 +65,13 @@ class CentralSonatypeScraper(
                         scraperType,
                         it.releasedAt
                     )
-                }
-                for (artifact in artifacts) {
-                    emit(artifact)
-                }
-                pageCount = response.page.size
-            }.onFailure { exception ->
-                errorChannel.send(
-                    Exception("Could not process request for artifacts: $query", exception)
                 )
             }
-            currentPage++
-        } while (pageCount > 0)
+        }.onFailure { exception ->
+            errorChannel.send(
+                Exception("Could not process request for artifacts: $query", exception)
+            )
+        }
     }
 
     private suspend fun FlowCollector<MavenArtifact>.executeFindAllVersionForArtifactQuery(

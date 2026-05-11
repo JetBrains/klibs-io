@@ -31,6 +31,8 @@ dependencies {
     implementation(projects.integrations.maven)
     implementation(projects.integrations.github)
 
+    implementation(libs.bundles.maven.indexer)
+
     testImplementation(libs.okhttp)
     testImplementation(libs.kohsuke.githubApi)
 }
