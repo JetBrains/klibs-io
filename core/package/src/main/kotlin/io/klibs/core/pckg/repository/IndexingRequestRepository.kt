@@ -64,4 +64,10 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
           )
     """, nativeQuery = true)
     fun removeRepeating(): Int
+
+    fun findByGroupIdAndArtifactIdAndVersion(
+        groupId: String,
+        artifactId: String,
+        version: String
+    ): IndexingRequestEntity?
 }
