@@ -47,6 +47,7 @@ fun generateGitProperties(
         setProperty("git.build.user.email", gitInfo.userEmail.orEmpty())
         setProperty("git.build.user.name", gitInfo.userName.orEmpty())
 
+
         // TODO no access to module settings here
         // setProperty("git.build.version", module.settings.publishing.version)
 
