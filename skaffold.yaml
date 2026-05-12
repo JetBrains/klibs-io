@@ -40,4 +40,4 @@ profiles:
     patches:
       - op: replace
         path: /build/artifacts/0/image
-        value: registry.jetbrains.team/p/klibs-io/containers/klibs-
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-test
