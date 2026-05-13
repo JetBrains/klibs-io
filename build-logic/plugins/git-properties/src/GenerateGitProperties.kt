@@ -5,13 +5,12 @@ import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.RepositoryBuilder
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.revwalk.RevWalk
-import org.jetbrains.amper.plugins.ExecutionAvoidance
 import org.jetbrains.amper.plugins.Input
 import org.jetbrains.amper.plugins.Output
 import org.jetbrains.amper.plugins.TaskAction
+import java.io.StringWriter
 import java.net.InetAddress
 import java.nio.file.Path
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.io.path.createParentDirectories
@@ -19,9 +18,7 @@ import kotlin.io.path.div
 import kotlin.io.path.isDirectory
 import kotlin.io.path.outputStream
 
-@TaskAction(
-    ExecutionAvoidance.Disabled
-)
+@TaskAction
 fun generateGitProperties(
     @Input settings: GitCommitIdSettings,
     @Output propertiesFile: Path,
@@ -36,13 +33,11 @@ fun generateGitProperties(
     val gitInfo = collectGitInfo(gitDir, worktree, settings.abbrevLength)
     val head = gitInfo.head
 
-    val time = ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
     val hostname: String = InetAddress.getLocalHost().hostName
 
     val properties = Properties().apply {
         setProperty("git.branch", gitInfo.currentBranch.orEmpty())
         setProperty("git.build.host", hostname)
-        setProperty("git.build.time", time)
 
         setProperty("git.build.user.email", gitInfo.userEmail.orEmpty())
         setProperty("git.build.user.name", gitInfo.userName.orEmpty())
@@ -83,13 +78,16 @@ fun generateGitProperties(
         setProperty("git.total.commit.count", gitInfo.totalCommitsInHead.toString())
     }
 
-    propertiesFile.createParentDirectories().outputStream().buffered().use { out ->
-        // this adds a comment at the top of the file: the date of the file generation
-        // if we want to get rid of it, we should either write ourselves
-        // (need to escape stuff if needed, and sort the properties beforehand),
-        // or remove the line after writing
-        properties.store(out, null)
-    }
+    // Properties.store() always prepends a "#<Date>" comment line; strip it so the
+    // output is byte-identical across builds at the same commit, otherwise downstream
+    // resource/jar tasks see a changed input on every build and re-execute.
+    val buffer = StringWriter()
+    properties.store(buffer, null)
+    val deterministic = buffer.toString().lineSequence()
+        .dropWhile { it.startsWith("#") }
+        .filter { it.isNotEmpty() }
+        .joinToString(separator = "\n", postfix = "\n")
+    propertiesFile.createParentDirectories().toFile().writeText(deterministic)
 }
 
 fun findGitRoot(): Path? {

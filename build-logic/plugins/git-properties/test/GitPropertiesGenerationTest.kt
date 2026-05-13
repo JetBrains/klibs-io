@@ -36,6 +36,4 @@ class GitPropertiesGenerationTest {
 
     private fun String.sanitizeGeneratedValues() = this
         .replace(Regex("git.build.host=.*"), "git.build.host=<HOST>")
-        .replace(Regex("git.build.time=.*"), "git.build.time=<TIME>")
-        .replace(Regex("#.*"), "#<TIME>")
 }
