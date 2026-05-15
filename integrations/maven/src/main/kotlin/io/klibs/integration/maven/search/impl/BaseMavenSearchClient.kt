@@ -116,6 +116,15 @@ abstract class BaseMavenSearchClient(
 
     protected abstract fun getContentUrlPrefix(): String
 
+    /**
+     * URL prefix to retry content fetches against when [getContentUrlPrefix] returns 404. Returning `null`
+     * (the default) disables the fallback.
+     *
+     * Used to bypass intermediaries (e.g. cache-redirector) that may return spurious 404s for newly published
+     * artifacts that exist on the upstream origin.
+     */
+    protected open fun getContentFallbackUrlPrefix(): String? = null
+
     protected fun <T> executeWithThrottle(body: () -> T): T {
         try {
             return rateLimiter.withRateLimitBlocking {
@@ -132,8 +141,23 @@ abstract class BaseMavenSearchClient(
         headers: Map<String, String> = emptyMap(),
         converter: (response: Transport.Response) -> R,
     ): R? {
-        return followRedirects(
+        val primary = followRedirects(
             serviceUri = serviceUri,
+            headers = headers,
+            converter = converter,
+            redirectCount = 0,
+            requestExecutor = clientTransport::get
+        )
+        if (primary != null) return primary
+
+        val primaryPrefix = getContentUrlPrefix()
+        val fallbackPrefix = getContentFallbackUrlPrefix() ?: return null
+        if (fallbackPrefix == primaryPrefix || !serviceUri.startsWith(primaryPrefix)) return null
+
+        val fallbackUri = fallbackPrefix + serviceUri.removePrefix(primaryPrefix)
+        logger.warn("Primary content endpoint returned 404 for {}, retrying via {}", serviceUri, fallbackUri)
+        return followRedirects(
+            serviceUri = fallbackUri,
             headers = headers,
             converter = converter,
             redirectCount = 0,

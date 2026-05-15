@@ -27,6 +27,8 @@ class CentralSonatypeSearchClient(
     objectMapper: ObjectMapper,
     @Value("\${klibs.integration.maven.central.content-endpoint}")
     private val contentEndpoint: String,
+    @Value("\${klibs.integration.maven.central.content-fallback-endpoint}")
+    private val contentFallbackEndpoint: String,
 ) : BaseMavenSearchClient(
     xmlMapper,
     mavenCentralRateLimiter,
@@ -60,6 +62,10 @@ class CentralSonatypeSearchClient(
 
     override fun getContentUrlPrefix(): String {
         return contentEndpoint
+    }
+
+    override fun getContentFallbackUrlPrefix(): String {
+        return contentFallbackEndpoint
     }
 
     private fun Record.toArtifactData(): ArtifactData {
