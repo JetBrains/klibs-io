@@ -36,6 +36,8 @@ data class ProjectDetails(
     val lastActivityAt: Instant,
     val updatedAt: Instant,
 
+    val dependentCount: Int,
+
     val tags: List<String>,
     val markers: List<MarkerType>,
 ) {

@@ -151,4 +151,12 @@ databaseChangeLog:
       file: db/migration/2026-Q2/2026-04-09_package_index_add_kotlin_version.yml
   - include:
       file: db/migration/2026-Q2/2026-04-15_add_2025_grant_winners.yml
+  - include:
+      file: db/migration/2026-Q2/2026-04-10_create_package_dependency.yml
+  - include:
+      file: db/migration/2026-Q2/2026-04-24_add_project_dependent_count_column.yml
+  - include:
+      file: db/migration/2026-Q2/2026-04-24_recreate_project_index_with_dependent_count.yml
+  - include:
+      file: db/migration/2026-Q2/2026-04-10_backfill_package_dependencies.yml
 

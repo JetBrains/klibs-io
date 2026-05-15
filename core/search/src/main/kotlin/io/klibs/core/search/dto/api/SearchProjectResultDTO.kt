@@ -86,6 +86,12 @@ data class SearchProjectResultDTO(
         example = "[Compose UI, Jetpack Compose]"
     )
     val markers: List<String>,
+
+    @Schema(
+        description = "Number of distinct other projects in the index that depend on this project's packages",
+        example = "42"
+    )
+    val dependentCount: Int,
 )
 
 fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
@@ -102,6 +108,7 @@ fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
         latestReleasePublishedAtMillis = this.latestVersionPublishedAt.toEpochMilli(),
         platforms = this.platforms.map { it.serializableName },
         tags = this.tags,
-        markers = markers
+        markers = markers,
+        dependentCount = this.dependentCount,
     )
 }
