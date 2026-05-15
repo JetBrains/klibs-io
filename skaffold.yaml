@@ -15,7 +15,7 @@ build:
 deploy:
   helm:
     releases:
-      - name: go-web-app
+      - name: klibs-io-backend
         remoteChart: oci://registry.jetbrains.team/p/cb/helm-charts/simple-app
         version: 0.3.4
         upgradeOnChange: true
