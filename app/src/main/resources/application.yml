@@ -73,6 +73,12 @@ klibs:
         request-cache-path: ${KLIBS_CACHE_DIR_REQUESTS:${user.dir}/cache/request-cache}
         request-cache-size-mb: ${KLIBS_CACHE_DIR_REQUEST_SIZE_MB:10}
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
+  auth:
+    github:
+      client-id: ${KLIBS_GITHUB_OAUTH_CLIENT_ID:}
+      client-secret: ${KLIBS_GITHUB_OAUTH_CLIENT_SECRET:}
+    jwt:
+      secret: ${KLIBS_JWT_SECRET:}
   indexing: ${KLIBS_ENABLE_INDEXING:false}
   indexing-configuration:
     executor:

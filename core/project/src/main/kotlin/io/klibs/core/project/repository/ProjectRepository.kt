@@ -41,4 +41,6 @@ interface ProjectRepository {
     fun findPlatformsById(projectId: Int): List<PackagePlatform>?
 
     fun findAllForSitemap(): List<SitemapProjectEntry>
+
+    fun findOwnerByProjectId(projectId: Int): ProjectOwnerRef?
 }

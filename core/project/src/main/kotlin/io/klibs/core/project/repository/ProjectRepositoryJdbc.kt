@@ -1,5 +1,6 @@
 package io.klibs.core.project.repository
 
+import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.project.ProjectEntity
 import org.hibernate.type.SqlTypes
@@ -355,6 +356,26 @@ class ProjectRepositoryJdbc(
                 )
             }
             .list()
+    }
+
+    override fun findOwnerByProjectId(projectId: Int): ProjectOwnerRef? {
+        val sql = """
+            SELECT o.login, o.type
+            FROM project p
+            JOIN scm_owner o ON p.owner_id = o.id
+            WHERE p.id = :projectId
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("projectId", projectId)
+            .query { rs, _ ->
+                ProjectOwnerRef(
+                    login = rs.getString("login"),
+                    type = ScmOwnerType.findBySerializableName(rs.getString("type"))
+                )
+            }
+            .optional()
+            .getOrNull()
     }
 
     private companion object {

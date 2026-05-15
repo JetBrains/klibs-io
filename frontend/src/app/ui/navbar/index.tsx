@@ -32,6 +32,7 @@ import {KotlinEcosystemDropdown} from "@/app/ui/kotlin-ecosystem-dropdown/kotlin
 import {KotlinEcosystemMobileMenu} from "@/app/ui/kotlin-ecosystem-dropdown/kotlin-ecosystem-mobile-menu";
 
 import {trackEvent, GAEvent} from "@/app/analytics";
+import {UserWidget} from "@/app/ui/navbar/UserWidget";
 
 const ISSUES_LINK = "https://github.com/JetBrains/klibs-io-issue-management/issues/new/choose"
 
@@ -185,6 +186,8 @@ export default function Navbar() {
                             />
 
                             <KotlinEcosystemDropdown/>
+
+                            <UserWidget/>
                         </div>
                     }
 
@@ -249,6 +252,8 @@ export default function Navbar() {
                                 />
 
                                 <KotlinEcosystemDropdown/>
+
+                                <UserWidget/>
                             </div>
                         </>
                     }

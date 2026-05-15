@@ -38,5 +38,7 @@ interface GitHubIntegration {
     fun getRateLimitInfo(): GitHubRateLimitInfo
 
     fun getLastSuccessfulRequestTime(): Instant
+
+    fun isOrgMember(org: String, login: String): Boolean
 }
 

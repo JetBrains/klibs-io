@@ -6,6 +6,11 @@
 #
 klibs:
   auth:
+    github:
+      client-id: ${KLIBS_GITHUB_OAUTH_CLIENT_ID}
+      client-secret: ${KLIBS_GITHUB_OAUTH_CLIENT_SECRET}
+    jwt:
+      secret: ${KLIBS_JWT_SECRET}
     users:
       - username: ${KLIBS_MAIN_USERNAME}
         password: ${KLIBS_MAIN_PASSWORD}

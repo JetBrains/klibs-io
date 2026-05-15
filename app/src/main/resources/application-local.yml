@@ -6,7 +6,7 @@ spring:
   docker:
     compose:
       lifecycle-management: start_and_stop
-      enabled: true
+      enabled: false
   ai:
     openai:
       api-key: ${PERSONAL_AI_TOKEN:"FAKE"}
@@ -24,6 +24,12 @@ spring:
       endpoint: http://s3.localhost.localstack.cloud:4566
 
 klibs:
+  auth:
+    github:
+      client-id: ${KLIBS_GITHUB_OAUTH_CLIENT_ID:}
+      client-secret: ${KLIBS_GITHUB_OAUTH_CLIENT_SECRET:}
+    jwt:
+      secret: ${KLIBS_JWT_SECRET:local-dev-secret-change-me}
   ai: false
   indexing: false
   readme:

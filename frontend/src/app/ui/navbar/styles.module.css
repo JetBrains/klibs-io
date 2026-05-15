@@ -116,3 +116,140 @@
         height: 56px;
     }
 }
+
+/* Auth / user widget */
+
+.loginBtn {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    min-height: 72px;
+    padding: 2px 14px 0;
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+
+.loginBtn:hover {
+    color: #fff;
+    box-shadow: inset 0 -2px var(--w);
+    background-color: var(--w5);
+}
+
+.userWidget {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    height: 100%;
+    flex-shrink: 0;
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    position: relative;
+}
+
+.avatar {
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.userLogin {
+    font-weight: 500;
+    color: #fff;
+}
+
+.topRepo {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.topRepo:hover {
+    color: rgba(255,255,255,0.85);
+    border-color: rgba(255,255,255,0.35);
+}
+
+.starCount {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+}
+
+.userBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.userBtn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.chevron {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    margin-left: 2px;
+}
+
+.userMenu {
+    position: absolute;
+    top: calc(100% - 4px);
+    right: 0;
+    background: #2d2e32;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    overflow: hidden;
+    min-width: 130px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    z-index: 2000;
+}
+
+.userMenuItem {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.userMenuItem:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+
+@media (max-width: 640px) {
+    .topRepo {
+        display: none;
+    }
+    .loginBtn {
+        min-height: 56px;
+    }
+    .userWidget {
+        padding: 0 10px;
+        gap: 6px;
+    }
+}

@@ -1,5 +1,6 @@
 package io.klibs.app.configuration
 
+import io.klibs.app.auth.JwtAuthFilter
 import io.klibs.app.configuration.properties.AuthProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -11,10 +12,12 @@ import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
 class SecurityConfiguration(
-    private val environment: Environment
+    private val environment: Environment,
+    private val jwtAuthFilter: JwtAuthFilter
 ) {
 
     @Bean
@@ -29,6 +32,8 @@ class SecurityConfiguration(
             }
 
             httpBasic { }
+
+            addFilterBefore<UsernamePasswordAuthenticationFilter>(jwtAuthFilter)
 
             authorizeHttpRequests {
                 authorize(HttpMethod.GET, "/categories.json", permitAll)
@@ -68,6 +73,7 @@ class SecurityConfiguration(
                 authorize("/actuator/prometheus", permitAll)
 
                 authorize("/error", permitAll)
+                authorize("/auth/**", permitAll)
 
                 if (environment.matchesProfiles("prod")) {
                     authorize("/blacklist/**", hasRole("ADMIN"))

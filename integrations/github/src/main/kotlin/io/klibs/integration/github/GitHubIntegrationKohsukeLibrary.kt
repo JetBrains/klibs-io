@@ -248,4 +248,14 @@ internal class GitHubIntegrationKohsukeLibrary(
         val topics = getRepositoryById(repositoryId)?.listTopics() ?: emptyList()
         return topics.mapNotNull { it?.trim() }.filter { it.isNotEmpty() }
     }
+
+    override fun isOrgMember(org: String, login: String): Boolean {
+        return try {
+            val ghOrg = githubApi.getOrganization(org) ?: return false
+            val ghUser = githubApi.getUser(login) ?: return false
+            ghOrg.hasMember(ghUser)
+        } catch (_: Exception) {
+            false
+        }
+    }
 }

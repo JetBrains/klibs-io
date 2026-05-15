@@ -31,6 +31,8 @@ dependencies {
     implementation(projects.integrations.maven)
     implementation(projects.integrations.github)
 
-    testImplementation(libs.okhttp)
+    implementation(libs.auth0.jwt)
+    implementation(libs.okhttp)
+
     testImplementation(libs.kohsuke.githubApi)
 }
