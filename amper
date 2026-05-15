@@ -17,9 +17,9 @@
 set -e -u
 
 # The version of the Amper distribution to provision and use
-amper_version=0.11.0-dev-3930
+amper_version=0.11.0-dev-3937
 # Establish chain of trust from here by specifying exact checksum of Amper distribution to be run
-amper_sha256=9e92b20f1b752dd4be6469ed82c44d26aba74485ea24743ebafc9aa242e02feb
+amper_sha256=44aac0b8766dc9904f7fc60a950bdc8bdfdae5414b8875a7fc1e9238a7dff5d3
 
 AMPER_DOWNLOAD_ROOT="${AMPER_DOWNLOAD_ROOT:-https://packages.jetbrains.team/maven/p/amper/amper}"
 
@@ -173,6 +173,73 @@ check_sha() {
   return 1
 }
 
+
+# ********** Project-local version detection **********
+
+# 1. Search upwards for an executable `amper` file and/or `project.yaml`
+# Sets wrapper_script to the found wrapper path, or empty string if not found.
+find_project_context() {
+  wrapper_script=""
+  this_script="$(realpath "$0")"
+  project_dir=$(pwd)
+  while [ "$project_dir" != "/" ] && [ -n "$project_dir" ]; do
+    wrapper_candidate="$project_dir/amper"
+    if [ "$this_script" = "$wrapper_candidate" ]; then
+      # Found itself (local wrapper case), no need to update any version or search further.
+      return 1
+    fi
+
+    if [ -f "$wrapper_candidate" ] && [ -x "$wrapper_candidate" ]; then
+      # Found the wrapper — check that a project context exists alongside it
+      if [ -f "$project_dir/project.yaml" ] || [ -f "$project_dir/module.yaml" ]; then
+        wrapper_script="$wrapper_candidate"
+        return 0
+      else
+        echo "WARNING: Found wrapper script '$wrapper_candidate', but no project.yaml or module.yaml near it. Skipping." >&2
+        # Continue the search
+      fi
+    elif [ -f "$project_dir/project.yaml" ]; then
+      # Found project.yaml but no executable wrapper alongside it
+      echo "WARNING: Found a project.yaml in '$project_dir', but the wrapper script is missing; using $amper_version." >&2
+      return 1
+    fi
+
+    project_dir=$(dirname "$project_dir")
+  done
+  # Do not check root '/' - it's an unlikely candidate for a project
+
+  return 1
+}
+
+parse_project_context() {
+  # Parse amper_version and amper_sha256 from "$wrapper_script" without executing it.
+  parsed_amper_version=$(
+    sed -n 's/^amper_version=\([A-Za-z0-9._+-]\{1,\}\)[[:space:]]*$/\1/p' "$wrapper_script" \
+      | head -n 1
+  )
+  parsed_amper_sha256=$(
+    sed -n 's/^amper_sha256=\([0-9a-fA-F]\{64\}\)[[:space:]]*$/\1/p' "$wrapper_script" \
+      | head -n 1
+  )
+
+  if [ -z "$parsed_amper_version" ]; then
+    echo "ERROR: Suspicious local wrapper script: failed to detect the distribution version in '$wrapper_script'" >&2
+    return 1
+  fi
+  if [ -z "$parsed_amper_sha256" ]; then
+    echo "ERROR: Suspicious local wrapper script: failed to detect the distribution checksum in '$wrapper_script'" >&2
+    return 1
+  fi
+
+  # overwrite builtin values and proceed
+  amper_version=$parsed_amper_version
+  amper_sha256=$parsed_amper_sha256
+  return 0
+}
+
+if [ -z "${AMPER_WRAPPER_ALWAYS_USE_INTRINSIC_VERSION:-}" ]; then
+  find_project_context && parse_project_context
+fi
 
 # ********** System detection **********
 
