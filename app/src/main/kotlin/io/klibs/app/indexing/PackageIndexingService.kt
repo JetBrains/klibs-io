@@ -9,6 +9,7 @@ import io.klibs.app.util.toIndexRequest
 import io.klibs.core.pckg.dto.PackageDTO
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.enums.IndexingRequestStatus
+import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.model.Configuration
 import io.klibs.core.pckg.model.PackageDeveloper
 import io.klibs.core.pckg.model.PackageLicense
@@ -245,6 +246,7 @@ class PackageIndexingService(
             licenses = pom.extractLicenses(),
             configuration = toolingMetadata.toPackageConfiguration(),
             generatedDescription = descriptionWasGenerated,
+            versionType = VersionType.from(pom.version),
             targets = toolingMetadata.projectTargets.map { it.toPackageTarget() }
                 .distinct()
         )

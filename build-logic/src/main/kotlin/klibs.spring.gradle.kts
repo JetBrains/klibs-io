@@ -8,10 +8,9 @@ plugins {
 }
 
 tasks.withType<KotlinCompile> {
-    @Suppress("DEPRECATION")
-    kotlinOptions {
+    compilerOptions {
         // https://kotlinlang.org/docs/java-interop.html#jsr-305-support
-        freeCompilerArgs += "-Xjsr305=strict"
+        freeCompilerArgs.add("-Xjsr305=strict")
     }
 }
 

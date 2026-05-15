@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: add version_type column to package
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package
+              columnName: version_type
+      changes:
+        - addColumn:
+            tableName: package
+            columns:
+              - column:
+                  name: version_type
+                  type: VARCHAR(20)
