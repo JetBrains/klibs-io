@@ -5,26 +5,26 @@
 @rem
 
 @rem Possible environment variables:
-@rem   AMPER_DOWNLOAD_ROOT        Maven repository to download Amper dist from
+@rem   KOTLIN_CLI_DOWNLOAD_ROOT        Maven repository to download the Kotlin CLI dist from
 @rem                              default: https://packages.jetbrains.team/maven/p/amper/amper
-@rem   AMPER_JRE_DOWNLOAD_ROOT    Url prefix to download Amper JRE from.
+@rem   KOTLIN_CLI_JRE_DOWNLOAD_ROOT    Url prefix to download the Kotlin CLI JRE from.
 @rem                              default: https:/
-@rem   AMPER_BOOTSTRAP_CACHE_DIR  Cache directory to store extracted JRE and Amper distribution
-@rem   AMPER_JAVA_HOME            JRE to run Amper itself (optional, does not affect compilation)
-@rem   AMPER_JAVA_OPTIONS         JVM options to pass to the JVM running Amper (does not affect the user's application)
-@rem   AMPER_NO_WELCOME_BANNER    Disables the first-run welcome message if set to a non-empty value
+@rem   KOTLIN_CLI_BOOTSTRAP_CACHE_DIR  Cache directory to store the extracted JRE and Kotlin CLI distribution
+@rem   KOTLIN_CLI_JAVA_HOME            JRE to run the Kotlin CLI itself (optional, does not affect compilation)
+@rem   KOTLIN_CLI_JAVA_OPTIONS         JVM options to pass to the JVM running the Kotlin CLI (does not affect the user's application)
+@rem   KOTLIN_CLI_NO_WELCOME_BANNER    Disables the first-run welcome message if set to a non-empty value
 
 setlocal
 
-@rem The version of the Amper distribution to provision and use
-set amper_version=0.11.0-dev-3937
-@rem Establish chain of trust from here by specifying exact checksum of Amper distribution to be run
-set amper_sha256=44aac0b8766dc9904f7fc60a950bdc8bdfdae5414b8875a7fc1e9238a7dff5d3
+@rem The version of the Kotlin Toolchain distribution to provision and use
+set kotlin_cli_version=0.11.0-dev-3940
+@rem Establish chain of trust from here by specifying the exact checksum of the Kotlin Toolchain distribution to be run
+set kotlin_cli_sha256=9052a6e5f5d5b60f2f80b186cc0e5482208d1f995f40ae42d9567d55726fa15b
 
-if not defined AMPER_DOWNLOAD_ROOT set AMPER_DOWNLOAD_ROOT=https://packages.jetbrains.team/maven/p/amper/amper
-if not defined AMPER_BOOTSTRAP_CACHE_DIR set AMPER_BOOTSTRAP_CACHE_DIR=%LOCALAPPDATA%\JetBrains\Amper
+if not defined KOTLIN_CLI_DOWNLOAD_ROOT set KOTLIN_CLI_DOWNLOAD_ROOT=https://packages.jetbrains.team/maven/p/amper/amper
+if not defined KOTLIN_CLI_BOOTSTRAP_CACHE_DIR set KOTLIN_CLI_BOOTSTRAP_CACHE_DIR=%LOCALAPPDATA%\JetBrains\Kotlin\cli
 @rem remove trailing \ if present
-if [%AMPER_BOOTSTRAP_CACHE_DIR:~-1%] EQU [\] set AMPER_BOOTSTRAP_CACHE_DIR=%AMPER_BOOTSTRAP_CACHE_DIR:~0,-1%
+if [%KOTLIN_CLI_BOOTSTRAP_CACHE_DIR:~-1%] EQU [\] set KOTLIN_CLI_BOOTSTRAP_CACHE_DIR=%KOTLIN_CLI_BOOTSTRAP_CACHE_DIR:~0,-1%
 
 goto :after_function_declarations
 
@@ -46,9 +46,32 @@ if exist "%flag_file%" (
     if "%current_flag%" == "%sha%" exit /b
 )
 
+setlocal enableDelayedExpansion
+set NL=^
+
+
+@rem two empty lines required above for the NL character
+
+@rem We have to build the welcome banner here as an env var because we
+@rem can't pass a multiline string through the single line powershell
+set welcome_banner=!NL! ^
+Welcome to !NL! ^
+ !NL! ^
+@@@        @@@@                               @@@    @@@ !NL! ^
+@@@      @@@@                       @@@       @@@    @@@ !NL! ^
+@@@    #@@@^"                       ,@@@       @@@ !NL! ^
+@@@  ,@@@%%         ,@@@@@@@,     @@@@@@@@@@   @@@    @@@    @@@  ,@@@@@, !NL! ^
+@@@ @@@@         @@@@@%%^"%%@@@@@   @@@@@@@@@@   @@@    @@@    @@@@@@%%%%@@@@@ !NL! ^
+@@@@@@%%         @@@%%       %%@@@     @@@       @@@    @@@    @@@@      %%@@%% !NL! ^
+@@@ @@@@=      #@@@         @@@#    @@@       @@@    @@@    @@@        @@@ !NL! ^
+@@@   @@@@     #@@@         @@@#    @@@       @@@    @@@    @@@        @@@ !NL! ^
+@@@    *@@@%%    @@@@       @@@@     @@@       @@@    @@@    @@@        @@@ !NL! ^
+@@@      %%@@@=   %%@@@@*,*@@@@%%      @@@@###   @@@    @@@    @@@        @@@ !NL! ^
+@@@        @@@@    ^"@@@@@@@^"         %%@@@@@   @@@    @@@    @@@        @@@ !NL!
+
 @rem This multiline string is actually passed as a single line to powershell, meaning #-comments are not possible.
 @rem So here are a few comments about the code below:
-@rem  - we need to support both .zip and .tar.gz archives (for the Amper distribution and the JRE)
+@rem  - we need to support both .zip and .tar.gz archives (for the Kotlin Toolchain distribution and the JRE)
 @rem  - tar should be present in all Windows machines since 2018 (and usable from both cmd and powershell)
 @rem  - tar requires the destination dir to exist
 @rem  - We use (New-Object Net.WebClient).DownloadFile instead of Invoke-WebRequest for performance. See the issue
@@ -59,25 +82,25 @@ Set-StrictMode -Version 3.0; ^
 $ErrorActionPreference = 'Stop'; ^
  ^
 $createdNew = $false; ^
-$lock = New-Object System.Threading.Mutex($true, ('Global\amper-bootstrap.' + '%target_dir%'.GetHashCode().ToString()), [ref]$createdNew); ^
+$lock = New-Object System.Threading.Mutex($true, ('Global\kotlin-cli-bootstrap.' + '%target_dir%'.GetHashCode().ToString()), [ref]$createdNew); ^
 if (-not $createdNew) { ^
-    Write-Host 'Another Amper instance is bootstrapping. Waiting for our turn...'; ^
+    Write-Host 'Another Kotlin CLI instance is bootstrapping. Waiting for our turn...'; ^
     [void]$lock.WaitOne(); ^
 } ^
  ^
 try { ^
     if ((Get-Content '%flag_file%' -ErrorAction Ignore) -ne '%sha%') { ^
-        if (('%show_banner_on_cache_miss%' -eq 'true') -and [string]::IsNullOrEmpty('%AMPER_NO_WELCOME_BANNER%')) { ^
-            Write-Host '*** Welcome to Amper v.%amper_version%! ***'; ^
+        if (('%show_banner_on_cache_miss%' -eq 'true') -and [string]::IsNullOrEmpty('%KOTLIN_CLI_NO_WELCOME_BANNER%')) { ^
+            Write-Host \"$env:welcome_banner\"; ^
             Write-Host ''; ^
-            Write-Host 'This is the first run of this version, so we need to download the actual Amper distribution.'; ^
+            Write-Host 'This is the first run of the Kotlin CLI v%kotlin_cli_version%, so we need to download the Kotlin Toolchain.'; ^
             Write-Host 'Please give us a few seconds now, subsequent runs will be faster.'; ^
             Write-Host ''; ^
         } ^
-        $temp_file = '%AMPER_BOOTSTRAP_CACHE_DIR%\' + [System.IO.Path]::GetRandomFileName(); ^
+        $temp_file = '%KOTLIN_CLI_BOOTSTRAP_CACHE_DIR%\' + [System.IO.Path]::GetRandomFileName(); ^
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; ^
         Write-Host 'Downloading %moniker%...'; ^
-        [void](New-Item '%AMPER_BOOTSTRAP_CACHE_DIR%' -ItemType Directory -Force); ^
+        [void](New-Item '%KOTLIN_CLI_BOOTSTRAP_CACHE_DIR%' -ItemType Directory -Force); ^
         if (Get-Command curl.exe -errorAction SilentlyContinue) { ^
             curl.exe -L --silent --show-error --fail --output $temp_file '%url%'; ^
         } else { ^
@@ -121,7 +144,7 @@ if errorlevel 1 exit /b 1
 exit /b 0
 
 :find_project_context
-@rem Search upwards for an amper.bat wrapper file and/or project.yaml
+@rem Search upwards for a kotlin.bat wrapper file and/or project.yaml
 @rem Sets wrapper_script to the found wrapper path, or empty string if not found.
 @rem Returns errorlevel 0 if a valid wrapper (that is not this script itself) was found, 1 otherwise.
 set wrapper_script=
@@ -129,7 +152,7 @@ set this_script=%~f0
 set project_dir=%CD%
 
 :find_loop
-set wrapper_candidate=%project_dir%\amper.bat
+set wrapper_candidate=%project_dir%\kotlin.bat
 if "%this_script%"=="%wrapper_candidate%" (
     @rem Found itself (local wrapper case), no need to update any version or search further.
     exit /b 1
@@ -152,7 +175,7 @@ if exist "%wrapper_candidate%" (
 
 if exist "%project_dir%\project.yaml" (
     @rem Found project.yaml but no wrapper alongside it
-    echo WARNING: Found a project.yaml in '%project_dir%', but the wrapper script is missing; using $amper_version. >&2
+    echo WARNING: Found a project.yaml in '%project_dir%', but the wrapper script is missing; using Kotlin Toolchain v$kotlin_cli_version. >&2
     exit /b 1
 )
 
@@ -167,40 +190,40 @@ set project_dir=%parent_dir%
 goto :find_loop
 
 :parse_project_context
-@rem Parse amper_version and amper_sha256 from the found wrapper_script without executing it.
-set parsed_amper_version=
-set parsed_amper_sha256=
+@rem Parse kotlin_cli_version and kotlin_cli_sha256 from the found wrapper_script without executing it.
+set parsed_kotlin_cli_version=
+set parsed_kotlin_cli_sha256=
 
-for /f "tokens=2 delims==" %%A in ('findstr /r /c:"^set amper_version=[A-Za-z0-9._+-]*$" "%wrapper_script%"') do (
-    if not defined parsed_amper_version set parsed_amper_version=%%A
+for /f "tokens=2 delims==" %%A in ('findstr /r /c:"^set kotlin_cli_version=[A-Za-z0-9._+-]*$" "%wrapper_script%"') do (
+    if not defined parsed_kotlin_cli_version set parsed_kotlin_cli_version=%%A
 )
-for /f "tokens=2 delims==" %%A in ('findstr /r /c:"^set amper_sha256=[0-9a-fA-F]*$" "%wrapper_script%"') do (
-    if not defined parsed_amper_sha256 set parsed_amper_sha256=%%A
+for /f "tokens=2 delims==" %%A in ('findstr /r /c:"^set kotlin_cli_sha256=[0-9a-fA-F]*$" "%wrapper_script%"') do (
+    if not defined parsed_kotlin_cli_sha256 set parsed_kotlin_cli_sha256=%%A
 )
 
-if not defined parsed_amper_version (
+if not defined parsed_kotlin_cli_version (
     echo ERROR: Suspicious local wrapper script: failed to detect the distribution version in '%wrapper_script%' >&2
     exit /b 1
 )
-if not defined parsed_amper_sha256 (
+if not defined parsed_kotlin_cli_sha256 (
     echo ERROR: Suspicious local wrapper script: failed to detect the distribution checksum in '%wrapper_script%' >&2
     exit /b 1
 )
 
 @rem Overwrite builtin values and proceed
-set amper_version=%parsed_amper_version%
-set amper_sha256=%parsed_amper_sha256%
+set kotlin_cli_version=%parsed_kotlin_cli_version%
+set kotlin_cli_sha256=%parsed_kotlin_cli_sha256%
 exit /b 0
 
 :fail
-echo ERROR: Amper bootstrap failed, see errors above
+echo ERROR: Kotlin CLI bootstrap failed, see errors above
 exit /b 1
 
 :after_function_declarations
 
 REM ********** Project-local version detection **********
 
-if defined AMPER_WRAPPER_ALWAYS_USE_INTRINSIC_VERSION goto :after_local_version_detection
+if defined KOTLIN_CLI_WRAPPER_ALWAYS_USE_INTRINSIC_VERSION goto :after_local_version_detection
 
 call :find_project_context
 if errorlevel 1 goto :after_local_version_detection
@@ -208,20 +231,20 @@ call :parse_project_context
 if errorlevel 1 goto fail
 :after_local_version_detection
 
-REM ********** Provision Amper distribution **********
+REM ********** Provision the Kotlin Toolchain distribution **********
 
-set amper_url=%AMPER_DOWNLOAD_ROOT%/org/jetbrains/amper/amper-cli/%amper_version%/amper-cli-%amper_version%-dist.tgz
-set amper_target_dir=%AMPER_BOOTSTRAP_CACHE_DIR%\amper-cli-%amper_version%
-call :download_and_extract "Amper distribution v%amper_version%" "%amper_url%" "%amper_target_dir%" "%amper_sha256%" "256" "true"
+set kotlin_cli_url=%KOTLIN_CLI_DOWNLOAD_ROOT%/org/jetbrains/kotlin/kotlin-cli/%kotlin_cli_version%/kotlin-cli-%kotlin_cli_version%-dist.tgz
+set kotlin_cli_target_dir=%KOTLIN_CLI_BOOTSTRAP_CACHE_DIR%\kotlin-cli-%kotlin_cli_version%
+call :download_and_extract "Kotlin Toolchain distribution v%kotlin_cli_version%" "%kotlin_cli_url%" "%kotlin_cli_target_dir%" "%kotlin_cli_sha256%" "256" "true"
 if errorlevel 1 goto fail
 
-REM ********** Launch Amper **********
+REM ********** Launch the Kotlin CLI **********
 
 rem Determine the correct busybox binary based on architecture
 if "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
-    set busybox_exe=%amper_target_dir%\bin\busybox64a.exe
+    set busybox_exe=%kotlin_cli_target_dir%\bin\busybox64a.exe
 ) else if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    set busybox_exe=%amper_target_dir%\bin\busybox64u.exe
+    set busybox_exe=%kotlin_cli_target_dir%\bin\busybox64u.exe
 ) else (
     echo Unsupported architecture %PROCESSOR_ARCHITECTURE% >&2
     goto fail
@@ -229,6 +252,6 @@ if "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
 
 rem We use busybox here because it doesn't reinterpret the user-passed command-line arguments (that we pass via %*).
 rem Also this way we can use the unified launcher script (.sh)
-set AMPER_WRAPPER_PATH=%~f0
-"%busybox_exe%" sh "%amper_target_dir%\bin\launcher.sh" %*
+set KOTLIN_CLI_WRAPPER_PATH=%~f0
+"%busybox_exe%" sh "%kotlin_cli_target_dir%\bin\launcher.sh" %*
 exit /B %ERRORLEVEL%
