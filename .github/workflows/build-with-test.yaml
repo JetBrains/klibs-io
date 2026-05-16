@@ -23,7 +23,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'corretto'
-      - name: Grant execute permission for amper
-        run: chmod +x amper
-      - name: Amper check
-        run: ./amper check
+      - name: Grant execute permission for kotlin toolchain
+        run: chmod +x kotlin
+      - name: Kotlin check
+        run: ./kotlin check

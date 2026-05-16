@@ -8,7 +8,7 @@ build:
   artifacts:
     - image: registry.jetbrains.team/p/klibs-io/containers/klibs-test
       custom:
-        buildCommand: ./amper do jib
+        buildCommand: ./kotlin do jib
   local:
     useDockerCLI: false
     useBuildkit: true
