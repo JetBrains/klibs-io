@@ -25,8 +25,8 @@ jobs:
           distribution: 'corretto'
       - name: Print IP address
         run: |
-          apt update
-          apt install -y iproute2
+          sudo apt update
+          sudo apt install -y iproute2
           ip addr
       - name: Grant execute permission for kotlin toolchain
         run: chmod +x kotlin
