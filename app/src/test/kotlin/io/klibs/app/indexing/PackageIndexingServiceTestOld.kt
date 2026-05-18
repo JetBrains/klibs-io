@@ -33,6 +33,7 @@ class PackageIndexingServiceTestOld {
     private val gitHubIndexingService: GitHubIndexingService = mock()
     private val projectIndexingService: ProjectIndexingService = mock()
     private val pomIndexingService: PomIndexingService = mock()
+    private val kotlinToolingMetadataIndexingService: KotlinToolingMetadataIndexingService = mock()
     private val packageDescriptionGenerator: PackageDescriptionGenerator = mock()
     private val indexingRequestRepository: IndexingRequestRepository = mock()
     private val packageService: PackageService = mock()
@@ -52,6 +53,7 @@ class PackageIndexingServiceTestOld {
             gitHubIndexingService,
             projectIndexingService,
             pomIndexingService,
+            kotlinToolingMetadataIndexingService,
             packageDescriptionGenerator,
             indexingRequestRepository,
             packageService,
