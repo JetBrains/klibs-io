@@ -74,6 +74,9 @@ klibs:
         request-cache-size-mb: ${KLIBS_CACHE_DIR_REQUEST_SIZE_MB:10}
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
   indexing: ${KLIBS_ENABLE_INDEXING:false}
+  scheduling:
+    process-indexing-queue:
+      enabled: true
   indexing-configuration:
     executor:
       thread-count: 2

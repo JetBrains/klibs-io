@@ -4,9 +4,7 @@ import io.klibs.app.indexing.discoverer.PackageDiscoverer
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.repository.IndexingRequestRepository
-import io.klibs.core.pckg.repository.PackageDependencyRepository
 import io.klibs.core.pckg.repository.PackageRepository
-import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.MavenStaticDataProvider
@@ -34,12 +32,11 @@ class PackageIndexingServiceTestOld {
     )
     private val gitHubIndexingService: GitHubIndexingService = mock()
     private val projectIndexingService: ProjectIndexingService = mock()
+    private val pomIndexingService: PomIndexingService = mock()
     private val packageDescriptionGenerator: PackageDescriptionGenerator = mock()
     private val indexingRequestRepository: IndexingRequestRepository = mock()
     private val packageService: PackageService = mock()
     private val packageRepository: PackageRepository = mock()
-    private val packageDependencyRepository: PackageDependencyRepository = mock()
-    private val projectRepository: ProjectRepository = mock()
     private val transactionTemplate: TransactionTemplate = mock()
     private val selfProvider: ObjectProvider<PackageIndexingService> = mock()
 
@@ -54,12 +51,11 @@ class PackageIndexingServiceTestOld {
             providers,
             gitHubIndexingService,
             projectIndexingService,
+            pomIndexingService,
             packageDescriptionGenerator,
             indexingRequestRepository,
             packageService,
             packageRepository,
-            packageDependencyRepository,
-            projectRepository,
             selfProvider
         )
     }

@@ -10,9 +10,8 @@ import java.util.concurrent.TimeUnit
 
 @Component
 @ConditionalOnProperty(
-    value = ["klibs.scheduling.process-queue-job.enabled"],
+    value = ["klibs.scheduling.process-indexing-queue.enabled"],
     havingValue = "true",
-    matchIfMissing = true,
 )
 class ProcessPackageIndexRequestJob(val packageIndexingService: PackageIndexingService) {
 

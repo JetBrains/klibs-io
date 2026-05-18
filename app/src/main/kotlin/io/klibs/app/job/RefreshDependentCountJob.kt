@@ -1,6 +1,7 @@
 package io.klibs.app.job
 
 import io.klibs.core.project.repository.ProjectRepository
+import io.micrometer.core.annotation.Timed
 import net.javacrumbs.shedlock.core.LockAssert
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
@@ -15,14 +16,14 @@ class RefreshDependentCountJob(
 
     @Scheduled(initialDelay = 0, fixedRate = 6, timeUnit = TimeUnit.HOURS)
     @SchedulerLock(name = "refreshDependentCountLock", lockAtMostFor = "1h")
+    @Timed(
+        value = "klibs.project.refresh_dependent_count.time",
+        description = "Klibs: Time taken to refresh project.dependent_count",
+    )
     fun refreshDependentCounts() {
         LockAssert.assertLocked()
-        val started = System.currentTimeMillis()
         projectRepository.recomputeAllDependentCounts()
-        logger.info(
-            "Refreshed project.dependent_count in {} ms",
-            System.currentTimeMillis() - started
-        )
+        logger.info("Refreshed project.dependent_count")
     }
 
     private companion object {

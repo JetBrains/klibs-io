@@ -1,34 +1,24 @@
 package io.klibs.app.indexing
 
 import io.klibs.app.indexing.discoverer.PackageDiscoverer
-import io.klibs.app.util.ANDROIDX_OWNER_AND_GITHUB_REPOSITORY
-import io.klibs.app.util.isAndroidxProject
 import io.klibs.app.util.normalizeGitHubLink
-import io.klibs.app.util.parseGitHubLink
 import io.klibs.app.util.toIndexRequest
 import io.klibs.core.pckg.dto.PackageDTO
 import io.klibs.core.pckg.entity.IndexingRequestEntity
-import io.klibs.core.pckg.entity.PackageDependencyEntity
-import io.klibs.core.pckg.entity.PackageDependencyKey
 import io.klibs.core.pckg.enums.IndexingRequestStatus
 import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.model.Configuration
-import io.klibs.core.pckg.model.PackageDeveloper
-import io.klibs.core.pckg.model.PackageLicense
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.repository.IndexingRequestRepository
-import io.klibs.core.pckg.repository.PackageDependencyRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
-import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.MavenPom
 import io.klibs.integration.maven.MavenStaticDataProvider
-import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateImpl
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
@@ -54,13 +44,12 @@ class PackageIndexingService(
     private val providers: Map<String, MavenStaticDataProvider>,
     private val gitHubIndexingService: GitHubIndexingService,
     private val projectIndexingService: ProjectIndexingService,
+    private val pomIndexingService: PomIndexingService,
     private val packageDescriptionGenerator: PackageDescriptionGenerator,
 
     private val indexingRequestRepository: IndexingRequestRepository,
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
-    private val packageDependencyRepository: PackageDependencyRepository,
-    private val projectRepository: ProjectRepository,
     private val selfProvider: ObjectProvider<PackageIndexingService>
 ) {
 
@@ -196,7 +185,7 @@ class PackageIndexingService(
         }
 
         logger.trace("Extracting dependencies for {}", indexRequest)
-        extractAndSaveDependencies(provider, mavenArtifact, requireNotNull(savedPackageId), indexRequest.reindex)
+        pomIndexingService.indexDependencies(pom, requireNotNull(savedPackageId), indexRequest.reindex)
     }
 
     private fun IndexingRequestEntity.getMavenArtifact(): MavenArtifact {
@@ -215,19 +204,8 @@ class PackageIndexingService(
 
     private fun indexGitHubInfoIfPresent(pom: MavenPom): ScmRepositoryEntity? {
         // TODO an older version might not have the GitHub link set, but a newer one might have it. add a check
-        val (ownerLogin, name) = pom.extractGitHubRepoInfo() ?: return null
+        val (ownerLogin, name) = pomIndexingService.extractGitHubRepoInfo(pom) ?: return null
         return gitHubIndexingService.indexRepository(ownerLogin, name)
-    }
-
-    /**
-     * @return owner name to repo name
-     */
-    private fun MavenPom.extractGitHubRepoInfo(): Pair<String, String>? {
-        val parsedGitHubLink = scm?.url?.let(::parseGitHubLink) ?: url?.let(::parseGitHubLink)
-        if (parsedGitHubLink != null) return parsedGitHubLink
-
-        val isAndroidx = scm?.url?.isAndroidxProject() == true || url?.isAndroidxProject() == true
-        return if (isAndroidx) ANDROIDX_OWNER_AND_GITHUB_REPOSITORY else null
     }
 
     private fun constructPackage(
@@ -253,8 +231,8 @@ class PackageIndexingService(
             buildTool = toolingMetadata.buildSystem,
             buildToolVersion = toolingMetadata.buildSystemVersion,
             kotlinVersion = toolingMetadata.kotlinVersion,
-            developers = pom.extractDevelopers(),
-            licenses = pom.extractLicenses(),
+            developers = pomIndexingService.extractDevelopers(pom),
+            licenses = pomIndexingService.extractLicenses(pom),
             configuration = toolingMetadata.toPackageConfiguration(),
             generatedDescription = descriptionWasGenerated,
             versionType = VersionType.from(pom.version),
@@ -287,32 +265,6 @@ class PackageIndexingService(
             }
         }
         return Pair(description, descriptionWasGenerated)
-    }
-
-    private fun MavenPom.extractDevelopers(): List<PackageDeveloper> {
-        val developers = this.developers ?: return emptyList()
-
-        return developers.mapNotNull { dev ->
-            val name = (dev.name ?: dev.organization)
-                ?.takeIf { it.isNotBlank() }
-                ?: return@mapNotNull null
-
-            PackageDeveloper(
-                name = name,
-                url = dev.url ?: dev.email?.let { "mailto:$it" } ?: dev.organizationUrl
-            )
-        }
-    }
-
-    private fun MavenPom.extractLicenses(): List<PackageLicense> {
-        val licenses = this.licenses ?: return emptyList()
-        return licenses.mapNotNull { license ->
-            val name = license.name?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-            PackageLicense(
-                name = name,
-                url = license.url
-            )
-        }
     }
 
     private fun KotlinToolingMetadataDelegate.toPackageConfiguration(): Configuration? {
@@ -439,80 +391,7 @@ class PackageIndexingService(
         }
     }
 
-    private fun extractAndSaveDependencies(
-        provider: MavenStaticDataProvider,
-        mavenArtifact: MavenArtifact,
-        packageId: Long,
-        isReindex: Boolean,
-    ) {
-        val moduleMetadata = try {
-            provider.getModuleMetadata(mavenArtifact.groupId, mavenArtifact.artifactId, mavenArtifact.version)
-        } catch (e: Exception) {
-            logger.warn("Failed to fetch module metadata for dependency extraction: $mavenArtifact", e)
-            return
-        }
-
-        if (moduleMetadata == null) {
-            logger.debug("No module metadata found for {}, skipping dependency extraction", mavenArtifact)
-            return
-        }
-
-        val dependencies = aggregateVariantDependencies(
-            gradleMetadata = moduleMetadata.gradleMetadata,
-            selfGroupId = mavenArtifact.groupId,
-            selfArtifactId = mavenArtifact.artifactId,
-        )
-
-        if (dependencies.isEmpty()) return
-
-        if (isReindex) {
-            packageDependencyRepository.deleteAllByIdPackageId(packageId)
-        }
-
-        val entities = dependencies.map { (group, module, version) ->
-            PackageDependencyEntity(
-                id = PackageDependencyKey(
-                    packageId = packageId,
-                    depGroupId = group,
-                    depArtifactId = module,
-                    depVersion = version,
-                )
-            )
-        }
-
-        packageDependencyRepository.saveAll(entities)
-        logger.debug("Saved {} dependencies for {}", entities.size, mavenArtifact)
-
-        val depGroupIds = dependencies.map { it.first }.toTypedArray()
-        val depArtifactIds = dependencies.map { it.second }.toTypedArray()
-        projectRepository.recomputeDependentCountsForDepCoords(depGroupIds, depArtifactIds)
-    }
-
     private companion object {
         private val logger = LoggerFactory.getLogger(PackageIndexingService::class.java)
     }
-}
-
-/**
- * Collects the union of dependency coordinates declared across all variants of a Gradle module,
- * deduping by `(group, artifact, version)` and dropping self-references (a variant listing the
- * root module itself). Dependencies without a resolvable version (neither `requires` nor `prefers`)
- * are dropped.
- */
-internal fun aggregateVariantDependencies(
-    gradleMetadata: GradleMetadata,
-    selfGroupId: String,
-    selfArtifactId: String,
-): Set<Triple<String, String, String>> {
-    return gradleMetadata.variants
-        ?.flatMap { variant -> variant.dependencies ?: emptyList() }
-        ?.mapNotNull { dep ->
-            val version = dep.version?.requires ?: dep.version?.prefers ?: return@mapNotNull null
-            Triple(dep.group, dep.module, version)
-        }
-        ?.filter { (group, module, _) ->
-            !(group == selfGroupId && module == selfArtifactId)
-        }
-        ?.toSet()
-        ?: emptySet()
 }

@@ -345,39 +345,6 @@ class ProjectRepositoryJdbc(
             .getOrNull()
     }
 
-    override fun recomputeDependentCountsForDepCoords(
-        depGroupIds: Array<String>,
-        depArtifactIds: Array<String>,
-    ) {
-        if (depGroupIds.isEmpty()) return
-        val sql = """
-            UPDATE project p
-            SET dependent_count = COALESCE(cnt.dependent_count, 0)
-            FROM (
-                SELECT DISTINCT pkg.project_id
-                FROM package pkg
-                JOIN unnest(:depGroupIds, :depArtifactIds) AS d(group_id, artifact_id)
-                  ON pkg.group_id = d.group_id AND pkg.artifact_id = d.artifact_id
-                WHERE pkg.project_id IS NOT NULL
-            ) targets
-            LEFT JOIN LATERAL (
-                SELECT COUNT(DISTINCT p_dep.project_id)::int AS dependent_count
-                FROM package_dependency pd
-                JOIN package p_dep ON p_dep.id = pd.package_id
-                WHERE (pd.dep_group_id, pd.dep_artifact_id) IN (
-                    SELECT DISTINCT group_id, artifact_id FROM package WHERE project_id = targets.project_id
-                )
-                  AND p_dep.project_id != targets.project_id
-            ) cnt ON TRUE
-            WHERE p.id = targets.project_id
-        """.trimIndent()
-
-        jdbcClient.sql(sql)
-            .param("depGroupIds", depGroupIds)
-            .param("depArtifactIds", depArtifactIds)
-            .update()
-    }
-
     override fun recomputeAllDependentCounts() {
         val sql = """
             WITH ga_dep_projects AS (
