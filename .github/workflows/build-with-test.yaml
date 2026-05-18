@@ -23,9 +23,14 @@ jobs:
         with:
           java-version: '21'
           distribution: 'corretto'
+      - name: Print IP address
+        run: |
+          apt update
+          apt install -y iproute2
+          ip addr
       - name: Grant execute permission for kotlin toolchain
         run: chmod +x kotlin
       - name: Kotlin check
-        env:
-          AMPER_OVERRIDE_MAVEN_CENTRAL_URL_TO_CACHE_REDIRECTOR: 'true'
+#        env:
+#          AMPER_OVERRIDE_MAVEN_CENTRAL_URL_TO_CACHE_REDIRECTOR: 'true'
         run: ./kotlin check
