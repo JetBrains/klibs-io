@@ -6,11 +6,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class IndexRequestCheckServiceParseBodyTest {
+class UserRequestCheckServiceParseBodyTest {
 
-    private fun uut() = IndexRequestCheckService(
+    private fun uut() = UserRequestCheckService(
         gitHubIntegration = mock(),
-        requestIndexingService = mock(),
+        userRequestIndexingService = mock(),
         mavenCentralLogRepository = mock(),
         requestLabel = "index-request",
         processedLabel = "triaged",
@@ -26,7 +26,7 @@ class IndexRequestCheckServiceParseBodyTest {
     fun `should return parsed values for a well-formed body`() {
         val parsed = uut().parseBody(
             body(
-                "org.jetbrains.kotlinx_test",
+                "org.jetbrains.kotlinx",
                 "kotlinx-coroutines-core",
                 "1.10.2"
             )
