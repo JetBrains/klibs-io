@@ -6,11 +6,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class IndexRequestCheckServiceValidateRequestTest {
+class UserRequestCheckServiceValidateRequestTest {
 
-    private fun uut() = IndexRequestCheckService(
+    private fun uut() = UserRequestCheckService(
         gitHubIntegration = mock(),
-        requestIndexingService = mock(),
+        userRequestIndexingService = mock(),
         mavenCentralLogRepository = mock(),
         requestLabel = "index-request",
         processedLabel = "triaged",
@@ -18,7 +18,7 @@ class IndexRequestCheckServiceValidateRequestTest {
 
     @Test
     fun `should return null for correct input`() {
-        val parsed = IndexRequestCheckService.ParsedRequest(
+        val parsed = UserRequestCheckService.ParsedRequest(
             groupId = "org.jetbrains.kotlinx_test",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
@@ -30,7 +30,7 @@ class IndexRequestCheckServiceValidateRequestTest {
 
     @Test
     fun `should return error when group id contains invalid characters`() {
-        val parsed = IndexRequestCheckService.ParsedRequest(
+        val parsed = UserRequestCheckService.ParsedRequest(
             groupId = "org.jetbrains/kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
@@ -43,7 +43,7 @@ class IndexRequestCheckServiceValidateRequestTest {
 
     @Test
     fun `should return error when artifact id contains spaces`() {
-        val parsed = IndexRequestCheckService.ParsedRequest(
+        val parsed = UserRequestCheckService.ParsedRequest(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx coroutines core",
             version = "1.10.2"
@@ -56,7 +56,7 @@ class IndexRequestCheckServiceValidateRequestTest {
 
     @Test
     fun `should allow special characters in version`() {
-        val parsed = IndexRequestCheckService.ParsedRequest(
+        val parsed = UserRequestCheckService.ParsedRequest(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2-revision._$~=+:"
@@ -68,7 +68,7 @@ class IndexRequestCheckServiceValidateRequestTest {
 
     @Test
     fun `should allow null version for indexing all versions`() {
-        val parsed = IndexRequestCheckService.ParsedRequest(
+        val parsed = UserRequestCheckService.ParsedRequest(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = null

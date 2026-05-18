@@ -10,9 +10,9 @@ import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 
 @Service
-class IndexRequestCheckService(
+class UserRequestCheckService(
     private val gitHubIntegration: GitHubIntegration,
-    private val requestIndexingService: RequestIndexingService,
+    private val userRequestIndexingService: UserRequestIndexingService,
     private val mavenCentralLogRepository: MavenCentralLogRepository,
     @Value("\${klibs.integration.github.index-requests.request-label}")
     private val requestLabel: String,
@@ -20,12 +20,11 @@ class IndexRequestCheckService(
     private val processedLabel: String,
 ) {
 
-    // TODO(Zofia Wiora): rename all index request to something with user_issue_request / github_issue_request
     // TODO(Zofia Wiora): Change zwiora/klibs in application-local before moving to PR? testing?
 
     // TODO(Zofia Wiora): comment
-    fun checkIndexRequests() {
-        val since = mavenCentralLogRepository.retrieveIndexRequestCheckTimestamp()
+    fun checkUserRequests() {
+        val since = mavenCentralLogRepository.retrieveUserRequestCheckTimestamp()
         val runStartedAt = Instant.now()
 
         // Get list of issues from GitHub
@@ -40,7 +39,7 @@ class IndexRequestCheckService(
             // Check if issue used correct template
             val parsed = parseBody(issue.body)
             if (parsed == null) {
-                publishIssueStatus(issue.number, IndexRequestMessages.parseFailure())
+                publishIssueStatus(issue.number, UserRequestMessages.parseFailure())
                 return@mapNotNull null
             }
 
@@ -49,7 +48,7 @@ class IndexRequestCheckService(
             if (validationError != null) {
                 publishIssueStatus(
                     issue.number,
-                    IndexRequestMessages.failure(parsed.groupId, parsed.artifactId, parsed.version, validationError)
+                    UserRequestMessages.failure(parsed.groupId, parsed.artifactId, parsed.version, validationError)
                 )
                 return@mapNotNull null
             }
@@ -75,7 +74,7 @@ class IndexRequestCheckService(
         // If any issue could not be processed because of errors that were not user's fault,
         // we don't update timestamp so that we can retry processing later
         if (!anyServerError) {
-            mavenCentralLogRepository.saveIndexRequestCheckTimestamp(runStartedAt)
+            mavenCentralLogRepository.saveUserRequestCheckTimestamp(runStartedAt)
         } else {
             logger.warn("Server errors occurred; not updating index_request_check_timestamp")
         }
@@ -89,7 +88,6 @@ class IndexRequestCheckService(
         parsed: ParsedRequest,
         processedRequests: MutableList<Pair<ParsedRequest, Int>>
     ): Boolean {
-
         val (groupId, artifactId, version) = parsed
 
         // Duplicate check
@@ -98,17 +96,17 @@ class IndexRequestCheckService(
         if (duplicateIssueNumber != null) {
             publishIssueStatus(
                 issue.number,
-                IndexRequestMessages.duplicate(groupId, artifactId, version, duplicateIssueNumber)
+                UserRequestMessages.duplicate(groupId, artifactId, version, duplicateIssueNumber)
             )
             return true
         }
 
         // Try saving the package index request
         return try {
-            requestIndexingService.requestIndexing(groupId, artifactId, version)
+            userRequestIndexingService.indexUserRequest(groupId, artifactId, version)
             publishIssueStatus(
                 issue.number,
-                IndexRequestMessages.success(groupId, artifactId, version)
+                UserRequestMessages.success(groupId, artifactId, version)
             )
 
             // Add successfully processed requests to list for future duplicate check
@@ -119,7 +117,7 @@ class IndexRequestCheckService(
             if (e is ResponseStatusException && e.statusCode.is4xxClientError) {
                 publishIssueStatus(
                     issue.number,
-                    IndexRequestMessages.failure(groupId, artifactId, version, e.reason ?: "Unknown error")
+                    UserRequestMessages.failure(groupId, artifactId, version, e.reason ?: "Unknown error")
                 )
                 true
             }
@@ -134,7 +132,7 @@ class IndexRequestCheckService(
     internal data class ParsedRequest(val groupId: String, val artifactId: String, val version: String?)
 
     /**
-     * @return null if the issue body is not a valid index-request
+     * @return null if the expected values cannot be extracted from the issue body
      */
     internal fun parseBody(body: String?): ParsedRequest? {
         if (body.isNullOrBlank()) return null
@@ -199,11 +197,11 @@ class IndexRequestCheckService(
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(IndexRequestCheckService::class.java)
+        private val logger = LoggerFactory.getLogger(UserRequestCheckService::class.java)
     }
 }
 
-private object IndexRequestMessages {
+private object UserRequestMessages {
     fun success(groupId: String, artifactId: String, version: String?) = """
         ✅ Indexing request accepted
 
