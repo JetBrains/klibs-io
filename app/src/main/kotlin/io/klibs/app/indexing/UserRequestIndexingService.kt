@@ -17,22 +17,22 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
 @Service
-class RequestIndexingService(
+class UserRequestIndexingService(
     private val centralSonatypeSearchClient: CentralSonatypeSearchClient,
     private val indexingRequestRepository: IndexingRequestRepository,
     private val packageRepository: PackageRepository,
 ) {
     /**
-     * Discovers and saves packages for indexing after a manual request
+     * Discovers and saves packages for indexing after a user's request
      *
      * @param groupId Maven group ID (required)
      * @param artifactId Maven artifact ID (optional - if null, all artifacts in the group are indexed)
      * @param version Maven version (optional - if null, all versions of the artifact(s) are indexed)
      */
     @Transactional
-    fun requestIndexing(groupId: String, artifactId: String?, version: String?) {
+    fun indexUserRequest(groupId: String, artifactId: String?, version: String?) {
         val artifacts = discoverArtifacts(groupId, artifactId, version)
-        saveIndexRequests(artifacts)
+        saveUserRequests(artifacts)
     }
 
     private fun discoverArtifacts(
@@ -69,7 +69,7 @@ class RequestIndexingService(
     }
 
     private fun resolveSpecificVersion(groupId: String, artifactId: String, version: String): MavenArtifact {
-        val artifact = MavenArtifact(groupId, artifactId, version, ScraperType.MANUAL_REQUEST)
+        val artifact = MavenArtifact(groupId, artifactId, version, ScraperType.USER_REQUEST)
         if (isAlreadyIndexedOrQueued(artifact)) throw badRequest("Artifact $groupId:$artifactId:$version is already indexed or queued")
 
         centralSonatypeSearchClient.getKotlinToolingMetadata(artifact)
@@ -120,18 +120,18 @@ class RequestIndexingService(
             )
         }
 
-    private fun saveIndexRequests(mavenArtifacts: List<MavenArtifact>) {
+    private fun saveUserRequests(mavenArtifacts: List<MavenArtifact>) {
         val requests = mavenArtifacts.map { it.toIndexRequest() }
 
         try {
             indexingRequestRepository.saveAll(requests)
-            logger.info("Saved ${requests.size} index requests")
+            logger.info("Saved ${requests.size} user requests")
         } catch (e: Exception) {
-            logger.error("Failed to save index requests: ${e.message}")
+            logger.error("Failed to save user requests: ${e.message}")
 
             throw ResponseStatusException(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "Failed to save index requests"
+                "Failed to save user requests"
             )
         }
     }
@@ -140,7 +140,7 @@ class RequestIndexingService(
         groupId = groupId,
         artifactId = artifactId,
         version = version,
-        scraperType = ScraperType.MANUAL_REQUEST,
+        scraperType = ScraperType.USER_REQUEST,
         releasedAt = releasedAt,
     )
 
@@ -148,6 +148,6 @@ class RequestIndexingService(
         ResponseStatusException(HttpStatus.BAD_REQUEST, message)
 
     companion object {
-        private val logger = LoggerFactory.getLogger(RequestIndexingService::class.java)
+        private val logger = LoggerFactory.getLogger(UserRequestIndexingService::class.java)
     }
 }

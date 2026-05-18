@@ -31,7 +31,7 @@ class MavenCentralLogEntity(
      * Timestamp of the last successful poll of GitHub index-request issues.
      * Updated only when a polling run completes without any server errors
      */
-    @Column(name = "index_request_check_timestamp")
-    var indexRequestCheckTimestamp: Instant
+    @Column(name = "user_request_check_timestamp")
+    var userRequestCheckTimestamp: Instant
 
 )

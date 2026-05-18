@@ -20,9 +20,9 @@ interface MavenCentralLogRepository : JpaRepository<MavenCentralLogEntity, Int> 
 
     @Transactional
     @Modifying
-    @Query("UPDATE MavenCentralLogEntity l SET l.indexRequestCheckTimestamp = :instant WHERE l.id = 1")
-    fun saveIndexRequestCheckTimestamp(instant: Instant)
+    @Query("UPDATE MavenCentralLogEntity l SET l.userRequestCheckTimestamp = :instant WHERE l.id = 1")
+    fun saveUserRequestCheckTimestamp(instant: Instant)
 
-    @Query("SELECT l.indexRequestCheckTimestamp FROM MavenCentralLogEntity l WHERE l.id = 1")
-    fun retrieveIndexRequestCheckTimestamp(): Instant
+    @Query("SELECT l.userRequestCheckTimestamp FROM MavenCentralLogEntity l WHERE l.id = 1")
+    fun retrieveUserRequestCheckTimestamp(): Instant
 }

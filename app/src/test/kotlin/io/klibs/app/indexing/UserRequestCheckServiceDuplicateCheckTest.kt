@@ -5,17 +5,17 @@ import org.mockito.Mockito.mock
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class IndexRequestCheckServiceDuplicateCheckTest {
+class UserRequestCheckServiceDuplicateCheckTest {
 
-    private fun uut() = IndexRequestCheckService(
+    private fun uut() = UserRequestCheckService(
         gitHubIntegration = mock(),
-        requestIndexingService = mock(),
+        userRequestIndexingService = mock(),
         mavenCentralLogRepository = mock(),
         requestLabel = "index-request",
         processedLabel = "triaged",
     )
 
-    private val baseRequest = IndexRequestCheckService.ParsedRequest(
+    private val baseRequest = UserRequestCheckService.ParsedRequest(
         groupId = "org.jetbrains.kotlinx",
         artifactId = "kotlinx-coroutines-core",
         version = "1.10.2"
@@ -31,8 +31,8 @@ class IndexRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return null when there are no matching processed requests`() {
         val processedRequests = listOf(
-            IndexRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0") to 10,
-            IndexRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "different-artifact", "1.10.2") to 11
+            UserRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0") to 10,
+            UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "different-artifact", "1.10.2") to 11
         )
 
         val duplicateNumber = uut().findDuplicateIssueNumber(baseRequest, processedRequests)
@@ -43,8 +43,8 @@ class IndexRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return null when previous request was for a specific version and current is for a different one`() {
         val processedRequests = listOf(
-            IndexRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.0.0") to 10,
-            IndexRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0") to 11
+            UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.0.0") to 10,
+            UserRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0") to 11
         )
 
         val duplicateNumber = uut().findDuplicateIssueNumber(baseRequest, processedRequests)
@@ -55,8 +55,8 @@ class IndexRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return issue number when exact duplicate is found`() {
         val processedRequests = listOf(
-            IndexRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2") to 10,
-            IndexRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0") to 11
+            UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2") to 10,
+            UserRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0") to 11
         )
 
         val duplicateNumber = uut().findDuplicateIssueNumber(baseRequest, processedRequests)
@@ -67,8 +67,8 @@ class IndexRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return issue number when previous request was for all versions`() {
         val processedRequests = listOf(
-            IndexRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", null) to 10,
-            IndexRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0") to 11
+            UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", null) to 10,
+            UserRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0") to 11
         )
 
         val duplicateNumber = uut().findDuplicateIssueNumber(baseRequest, processedRequests)

@@ -21,10 +21,10 @@ import org.springframework.web.server.ResponseStatusException
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
+class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
-    private lateinit var uut: RequestIndexingService
+    private lateinit var uut: UserRequestIndexingService
 
     @Autowired
     private lateinit var indexingRequestRepository: IndexingRequestRepository
@@ -42,7 +42,7 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(null)
 
         val exception = assertThrows<ResponseStatusException> {
-            uut.requestIndexing("com.example", "lib", "1.0.0")
+            uut.indexUserRequest("com.example", "lib", "1.0.0")
         }
 
         assertEquals(400, exception.statusCode.value())
@@ -53,12 +53,12 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    @Sql(value = ["classpath:sql/RequestIndexingServiceTest/insert-into-package.sql"])
+    @Sql(value = ["classpath:sql/UserRequestIndexingServiceTest/insert-into-package.sql"])
     fun `should throw 400 when a specific artifact is already indexed`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
         val exception = assertThrows<ResponseStatusException> {
-            uut.requestIndexing("com.example", "lib", "1.0.0")
+            uut.indexUserRequest("com.example", "lib", "1.0.0")
         }
 
         assertEquals(400, exception.statusCode.value())
@@ -66,12 +66,12 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    @Sql(value = ["classpath:sql/RequestIndexingServiceTest/insert-into-package-index-request.sql"])
+    @Sql(value = ["classpath:sql/UserRequestIndexingServiceTest/insert-into-package-index-request.sql"])
     fun `should throw 400 when a specific artifact is already in package_index_request`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
         val exception = assertThrows<ResponseStatusException> {
-            uut.requestIndexing("com.example", "lib", "1.0.0")
+            uut.indexUserRequest("com.example", "lib", "1.0.0")
         }
 
         assertEquals(400, exception.statusCode.value())
@@ -82,14 +82,14 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
     fun `should save index request for valid specific version`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
-        uut.requestIndexing("com.example", "lib", "1.0.0")
+        uut.indexUserRequest("com.example", "lib", "1.0.0")
 
         val saved = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "lib", "1.0.0")
         assertTrue(saved != null, "Index request should be saved")
         assertEquals("com.example", saved.groupId, "Wrong groupId")
         assertEquals("lib", saved.artifactId, "Wrong artifactId")
         assertEquals("1.0.0", saved.version, "Wrong version")
-        assertEquals(ScraperType.MANUAL_REQUEST, saved.repo, "Wrong scraper type")
+        assertEquals(ScraperType.USER_REQUEST, saved.repo, "Wrong scraper type")
     }
 
     // Tests when no specific version is provided
@@ -100,7 +100,7 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
             .thenThrow(RuntimeException("Connection timeout"))
 
         val exception = assertThrows<ResponseStatusException> {
-            uut.requestIndexing("com.example", null, null)
+            uut.indexUserRequest("com.example", null, null)
         }
 
         assertEquals(503, exception.statusCode.value())
@@ -113,7 +113,7 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
             .thenReturn(MavenSearchResponse(totalHits = 0, currentHits = 0, page = emptyList()))
 
         val exception = assertThrows<ResponseStatusException> {
-            uut.requestIndexing("com.example", null, null)
+            uut.indexUserRequest("com.example", null, null)
         }
 
         assertEquals(400, exception.statusCode.value())
@@ -126,7 +126,7 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
             .thenReturn(MavenSearchResponse(totalHits = 0, currentHits = 0, page = emptyList()))
 
         val exception = assertThrows<ResponseStatusException> {
-            uut.requestIndexing("com.example", "lib", null)
+            uut.indexUserRequest("com.example", "lib", null)
         }
 
         assertEquals(400, exception.statusCode.value())
@@ -145,7 +145,7 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(centralSonatypeSearchClient.searchWithThrottle(eq(1), any(), any()))
             .thenReturn(MavenSearchResponse(totalHits = 3, currentHits = 0, page = emptyList()))
 
-        uut.requestIndexing("com.example", null, null)
+        uut.indexUserRequest("com.example", null, null)
 
         val saved1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "1.0.0")
         val saved2 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "2.0.0")
@@ -153,13 +153,13 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertTrue(saved1 != null, "First artifact should be saved")
         assertTrue(saved2 != null, "Second artifact should be saved")
         assertTrue(saved3 != null, "Third artifact should be saved")
-        assertEquals(ScraperType.MANUAL_REQUEST, saved1.repo)
-        assertEquals(ScraperType.MANUAL_REQUEST, saved2.repo)
-        assertEquals(ScraperType.MANUAL_REQUEST, saved3.repo)
+        assertEquals(ScraperType.USER_REQUEST, saved1.repo)
+        assertEquals(ScraperType.USER_REQUEST, saved2.repo)
+        assertEquals(ScraperType.USER_REQUEST, saved3.repo)
     }
 
     @Test
-    @Sql(value = ["classpath:sql/RequestIndexingServiceTest/insert-into-package.sql"])
+    @Sql(value = ["classpath:sql/UserRequestIndexingServiceTest/insert-into-package.sql"])
     fun `should save index request for multiple artifacts that aren't indexed yet`() {
         val artifacts = listOf(
             ArtifactData("com.example", "libA", "1.0.0"),
@@ -174,7 +174,7 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
             .thenReturn(MavenSearchResponse(totalHits = 5, currentHits = 0, page = emptyList()))
 
 
-        uut.requestIndexing("com.example", null, null)
+        uut.indexUserRequest("com.example", null, null)
 
         val old1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "1.0.0")
         val old2 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "2.0.0")
@@ -186,12 +186,12 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(old3, null, "Third artifact shouldn't be saved")
         assertTrue(saved1 != null, "Fourth artifact should be saved")
         assertTrue(saved2 != null, "Fifth artifact should be saved")
-        assertEquals(ScraperType.MANUAL_REQUEST, saved1.repo)
-        assertEquals(ScraperType.MANUAL_REQUEST, saved2.repo)
+        assertEquals(ScraperType.USER_REQUEST, saved1.repo)
+        assertEquals(ScraperType.USER_REQUEST, saved2.repo)
     }
 
     @Test
-    @Sql(value = ["classpath:sql/RequestIndexingServiceTest/insert-into-package.sql"])
+    @Sql(value = ["classpath:sql/UserRequestIndexingServiceTest/insert-into-package.sql"])
     fun `should throw 400 when all artifacts are already indexed`() {
         val artifacts = listOf(
             ArtifactData("com.example", "libA", "1.0.0"),
@@ -205,7 +205,7 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
 
         val exception = assertThrows<ResponseStatusException> {
-            uut.requestIndexing("com.example", null, null)
+            uut.indexUserRequest("com.example", null, null)
         }
 
         assertEquals(400, exception.statusCode.value())
@@ -224,7 +224,7 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(centralSonatypeSearchClient.searchWithThrottle(eq(1), any(), any()))
             .thenReturn(MavenSearchResponse(totalHits = 3, currentHits = 0, page = emptyList()))
 
-        uut.requestIndexing("com.example", null, "1.0.0")
+        uut.indexUserRequest("com.example", null, "1.0.0")
 
         val saved1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "1.0.0")
         val saved2 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "2.0.0")
@@ -232,8 +232,8 @@ class RequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertTrue(saved1 != null, "First artifact should be saved")
         assertTrue(saved2 != null, "Second artifact should be saved")
         assertTrue(saved3 != null, "Third artifact should be saved")
-        assertEquals(ScraperType.MANUAL_REQUEST, saved1.repo)
-        assertEquals(ScraperType.MANUAL_REQUEST, saved2.repo)
-        assertEquals(ScraperType.MANUAL_REQUEST, saved3.repo)
+        assertEquals(ScraperType.USER_REQUEST, saved1.repo)
+        assertEquals(ScraperType.USER_REQUEST, saved2.repo)
+        assertEquals(ScraperType.USER_REQUEST, saved3.repo)
     }
 }
