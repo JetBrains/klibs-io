@@ -1,8 +1,10 @@
-package io.klibs.app.indexing
+package io.klibs.app.service.impl
 
 import BaseUnitWithDbLayerTest
 import io.klibs.integration.github.GitHubIntegration
-import io.klibs.integration.github.model.GitHubIssue
+import io.klibs.integration.github.model.GitHubUserRequestIssue
+import io.klibs.integration.github.model.GitHubUserRequestIssuesBatch
+import io.klibs.integration.maven.dto.MavenCentralLogType
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.*
@@ -55,20 +57,26 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
         number: Int,
         body: String?,
         labels: List<String> = listOf("index-request"),
-    ) = GitHubIssue(
+    ) = GitHubUserRequestIssue(
         number = number,
-        title = "t",
         body = body,
         labels = labels,
-        updatedAt = Instant.now(),
+        createdAt = Instant.now(),
     )
 
     @Test
     fun `should comment, label as triaged and update timestamp on success`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
-            .thenReturn(listOf(issue(123, body("g", "a", null))))
+            .thenReturn(
+                GitHubUserRequestIssuesBatch(
+                    issues = listOf(
+                        issue(123, body("g", "a", null))
+                    ),
+                    hasMore = false
+                )
+            )
 
         uut.checkUserRequests()
 
@@ -81,10 +89,15 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `should update timestamp when no new issues were found`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
-            .thenReturn(emptyList())
+            .thenReturn(
+                GitHubUserRequestIssuesBatch(
+                    issues = emptyList(),
+                    hasMore = false
+                )
+            )
 
         uut.checkUserRequests()
 
@@ -97,10 +110,17 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `should comment with reason, label as triaged and update timestamp on user's error (4xx)`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
-            .thenReturn(listOf(issue(123, body("g", "a", null))))
+            .thenReturn(
+                GitHubUserRequestIssuesBatch(
+                    issues = listOf(
+                        issue(123, body("g", "a", null))
+                    ),
+                    hasMore = false
+                )
+            )
         whenever(userRequestIndexingService.indexUserRequest("g", "a", null))
             .thenThrow(
                 ResponseStatusException(
@@ -122,10 +142,17 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `should comment, label as triaged and update timestamp on incorrect issue body`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
-            .thenReturn(listOf(issue(123, "incorrect body")))
+            .thenReturn(
+                GitHubUserRequestIssuesBatch(
+                    issues = listOf(
+                        issue(123, "incorrect body")
+                    ),
+                    hasMore = false
+                )
+            )
 
         uut.checkUserRequests()
 
@@ -138,10 +165,17 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `should comment with validation error, label as triaged and update timestamp on invalid request data`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
-            .thenReturn(listOf(issue(123, body("group with spaces", "a", "1.0.0"))))
+            .thenReturn(
+                GitHubUserRequestIssuesBatch(
+                    issues = listOf(
+                        issue(123, body("group with spaces", "a", "1.0.0"))
+                    ),
+                    hasMore = false
+                )
+            )
 
         uut.checkUserRequests()
 
@@ -157,10 +191,17 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `should neither comment, label, nor update timestamp on server error (5xx)`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
-            .thenReturn(listOf(issue(123, body("g", "a", null))))
+            .thenReturn(
+                GitHubUserRequestIssuesBatch(
+                    issues = listOf(
+                        issue(123, body("g", "a", null))
+                    ),
+                    hasMore = false
+                )
+            )
         whenever(userRequestIndexingService.indexUserRequest("g", "a", null))
             .thenThrow(ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Central Sonatype search failed"))
 
@@ -170,20 +211,24 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
         verify(gitHubIntegration, never()).addKlibsIssueComment(any(), any())
         verify(gitHubIntegration, never()).addKlibsIssueLabel(any(), any())
 
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
     }
 
     @Test
     fun `should comment and label issues where possible and not update timestamp if server error (5xx) occurred for any`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
             .thenReturn(
-                listOf(
-                    issue(101, body("g1", "a1", null)),
-                    issue(102, body("g2", "a2", null)),
+                GitHubUserRequestIssuesBatch(
+                    issues = listOf(
+                        issue(101, body("g1", "a1", null)),
+                        issue(102, body("g2", "a2", null)),
+                    ),
+                    hasMore = false
                 )
             )
+
         whenever(userRequestIndexingService.indexUserRequest("g1", "a1", null))
             .thenThrow(ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Central Sonatype search failed"))
 
@@ -194,12 +239,12 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
         verify(gitHubIntegration, never()).addKlibsIssueLabel(101, processedLabel)
         verify(gitHubIntegration).addKlibsIssueComment(eq(102), argThat { contains("accepted") })
         verify(gitHubIntegration).addKlibsIssueLabel(102, processedLabel)
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
     }
 
     @Test
     fun `should exit early and not update timestamp when failed to list issues`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
             .thenThrow(RuntimeException("unexpected exception"))
@@ -208,15 +253,22 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
 
         verify(userRequestIndexingService, never()).indexUserRequest(any(), any(), any())
 
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
     }
 
     @Test
     fun `should treat unexpected exception during processing as server error`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
-            .thenReturn(listOf(issue(123, body("g", "a", null))))
+            .thenReturn(
+                GitHubUserRequestIssuesBatch(
+                    issues = listOf(
+                        issue(123, body("g", "a", null))
+                    ),
+                    hasMore = false
+                )
+            )
         whenever(userRequestIndexingService.indexUserRequest("g", "a", null))
             .thenThrow(IllegalStateException("unexpected exception"))
 
@@ -225,55 +277,39 @@ class UserRequestCheckServiceTest : BaseUnitWithDbLayerTest() {
         verify(gitHubIntegration, never()).addKlibsIssueComment(any(), any())
         verify(gitHubIntegration, never()).addKlibsIssueLabel(any(), any())
 
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
     }
 
     @Test
     fun `should process first request and mark exact subsequent requests as duplicate`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
+        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK))
 
         whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
             .thenReturn(
-                listOf(
-                    issue(101, body("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2")),
-                    issue(102, body("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2"))
+                GitHubUserRequestIssuesBatch(
+                    issues = listOf(
+                        issue(101, body("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2")),
+                        issue(102, body("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2"))
+                    ),
+                    hasMore = false
                 )
             )
 
         uut.checkUserRequests()
 
-        verify(userRequestIndexingService, times(1)).indexUserRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2")
+        verify(userRequestIndexingService, times(1)).indexUserRequest(
+            "org.jetbrains.kotlinx",
+            "kotlinx-coroutines-core",
+            "1.10.2"
+        )
         verify(gitHubIntegration).addKlibsIssueComment(eq(101), argThat { contains("accepted") })
         verify(gitHubIntegration).addKlibsIssueLabel(101, processedLabel)
         verify(gitHubIntegration).addKlibsIssueComment(eq(102), argThat { contains("duplicate of #101") })
         verify(gitHubIntegration).addKlibsIssueLabel(102, processedLabel)
     }
 
-    @Test
-    fun `should sort requests to process 'all versions' first and mark specific versions as duplicates`() {
-        assertEquals(defaultTimestamp(), mavenCentralLogRepository.retrieveUserRequestCheckTimestamp())
-
-        whenever(gitHubIntegration.getKlibsIssuesByLabel(requestLabel, defaultTimestamp()))
-            .thenReturn(
-                listOf(
-                    issue(101, body("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2")),
-                    issue(102, body("org.jetbrains.kotlinx", "kotlinx-coroutines-core", null))
-                )
-            )
-
-        uut.checkUserRequests()
-
-        verify(userRequestIndexingService).indexUserRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", null)
-        verify(gitHubIntegration).addKlibsIssueComment(eq(102), argThat { contains("accepted") })
-        verify(gitHubIntegration).addKlibsIssueLabel(102, processedLabel)
-
-        verify(userRequestIndexingService, never()).indexUserRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2")
-        verify(gitHubIntegration).addKlibsIssueComment(eq(101), argThat { contains("duplicate of #102") })
-        verify(gitHubIntegration).addKlibsIssueLabel(101, processedLabel)
-    }
-
     private fun verifyTimestampWasUpdated() {
-        val retrieved = mavenCentralLogRepository.retrieveUserRequestCheckTimestamp()
+        val retrieved = mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK)
         val now = Instant.now()
         assert(retrieved >= now.minusSeconds(60) && retrieved <= now)
     }

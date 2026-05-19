@@ -1,5 +1,6 @@
 package io.klibs.integration.github
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import okhttp3.OkHttpClient
@@ -7,20 +8,25 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertNull
 import org.junit.jupiter.api.extension.ExtendWith
 import org.kohsuke.github.*
+import org.mockito.Answers
 import org.mockito.Mock
-import org.mockito.Mockito.lenient
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
+import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.mockito.quality.Strictness
 import java.io.FileNotFoundException
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
 
 @ExtendWith(MockitoExtension::class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class GitHubIntegrationKohsukeLibraryGetKlibsIssuesTest {
 
     @Mock
@@ -38,7 +44,7 @@ class GitHubIntegrationKohsukeLibraryGetKlibsIssuesTest {
     @Mock
     private lateinit var klibsRepo: GHRepository
 
-    @Mock
+    @Mock(answer = Answers.RETURNS_SELF)
     private lateinit var issueQueryBuilder: GHIssueQueryBuilder.ForRepository
 
     @Mock
@@ -48,136 +54,148 @@ class GitHubIntegrationKohsukeLibraryGetKlibsIssuesTest {
 
     private val klibsRepoName = "JetBrains/klibs-io"
     private val processedLabel = "triaged"
+    private val batchSize = 5
 
     @BeforeEach
     fun setUp() {
         meterRegistry = SimpleMeterRegistry()
 
         whenever(githubApi.getRepository(klibsRepoName)).thenReturn(klibsRepo)
+        whenever(klibsRepo.queryIssues()).thenReturn(issueQueryBuilder)
+        whenever(issueQueryBuilder.list()).thenReturn(pagedIterable)
 
         library = GitHubIntegrationKohsukeLibrary(
             meterRegistry = meterRegistry,
             githubApi = githubApi,
             okHttpClient = okHttpClient,
             gitHubIntegrationProperties = gitHubIntegrationProperties,
+            jsonMapper = jacksonObjectMapper(),
             klibsRepoName = klibsRepoName,
-            processedLabel = processedLabel
+            processedLabel = processedLabel,
+            batchSize = batchSize
         )
     }
 
     @Test
     fun `should return empty list when no issues are found`() {
-        val since = Instant.now()
-        setupIssueQueryMock(since)
-        whenever(pagedIterable.toList()).thenReturn(emptyList())
+        mockPagedIterable(emptyList())
 
-        val result = library.getKlibsIssuesByLabel("index-request", since)
+        val result = library.getKlibsIssuesByLabel("index-request", Instant.now())
 
-        assertTrue(result.isEmpty())
+        assertTrue(result.issues.isEmpty())
+        assertTrue(result.hasMore == false)
     }
 
     @Test
     fun `should filter out pull requests`() {
-        val since = Instant.now()
-        setupIssueQueryMock(since)
+        val prIssue = mockIssue(isPullRequest = true, body = "PR Body")
+        val normalIssue = mockIssue(isPullRequest = false, body = "Issue Body")
 
-        val prIssue = mockIssue(isPullRequest = true, title = "PR Title")
-        val normalIssue = mockIssue(isPullRequest = false, title = "Issue Title")
+        mockPagedIterable(listOf(prIssue, normalIssue))
 
-        whenever(pagedIterable.toList()).thenReturn(listOf(prIssue, normalIssue))
+        val result = library.getKlibsIssuesByLabel("index-request", Instant.now())
 
-        val result = library.getKlibsIssuesByLabel("index-request", since)
-
-        assertEquals(1, result.size)
-        assertEquals("Issue Title", result[0].title)
+        assertEquals(1, result.issues.size)
+        assertEquals("Issue Body", result.issues[0].body)
+        assertTrue(result.hasMore == false)
     }
 
     @Test
     fun `should filter out issues with triaged label`() {
-        val since = Instant.now()
-        setupIssueQueryMock(since)
+        val triagedIssue =
+            mockIssue(isPullRequest = false, body = "Triaged Issue", labelNames = listOf("index-request", "triaged"))
+        val untriagedIssue =
+            mockIssue(isPullRequest = false, body = "Untriaged Issue", labelNames = listOf("index-request"))
 
-        val triagedIssue = mockIssue(isPullRequest = false, title = "Triaged Issue", labelNames = listOf("index-request", "triaged"))
-        val untriagedIssue = mockIssue(isPullRequest = false, title = "Untriaged Issue", labelNames = listOf("index-request"))
+        mockPagedIterable(listOf(triagedIssue, untriagedIssue))
 
-        whenever(pagedIterable.toList()).thenReturn(listOf(triagedIssue, untriagedIssue))
+        val result = library.getKlibsIssuesByLabel("index-request", Instant.now())
 
-        val result = library.getKlibsIssuesByLabel("index-request", since)
-
-        assertEquals(1, result.size)
-        assertEquals("Untriaged Issue", result[0].title)
+        assertEquals(1, result.issues.size)
+        assertEquals("Untriaged Issue", result.issues[0].body)
+        assertTrue(result.hasMore == false)
     }
 
     @Test
     fun `should correctly map GHIssue to GitHubIssue`() {
         val since = Instant.now()
-        setupIssueQueryMock(since)
-
-        val issueDate = Date.from(since)
         val issue = mockIssue(
             number = 42,
-            title = "Test Issue",
             body = "Issue Body",
             isPullRequest = false,
             labelNames = listOf("index-request"),
-            updatedAt = issueDate
+            createdAt = Date.from(since)
         )
 
-        whenever(pagedIterable.toList()).thenReturn(listOf(issue))
+        mockPagedIterable(listOf(issue))
 
         val result = library.getKlibsIssuesByLabel("index-request", since)
 
-        assertEquals(1, result.size)
-        val mappedIssue = result[0]
+        assertEquals(1, result.issues.size)
+        val mappedIssue = result.issues[0]
         assertEquals(42, mappedIssue.number)
-        assertEquals("Test Issue", mappedIssue.title)
         assertEquals("Issue Body", mappedIssue.body)
         assertEquals(listOf("index-request"), mappedIssue.labels)
-        assertEquals(since.truncatedTo(ChronoUnit.MILLIS), mappedIssue.updatedAt)
+        assertEquals(since.truncatedTo(ChronoUnit.MILLIS), mappedIssue.createdAt)
+        assertTrue(result.hasMore == false)
     }
 
     @Test
     fun `should return empty list when FileNotFoundException is thrown`() {
-        val since = Instant.now()
-        setupIssueQueryMock(since)
-        whenever(pagedIterable.toList()).thenAnswer { throw FileNotFoundException() }
+        whenever(pagedIterable.iterator()).thenAnswer { throw FileNotFoundException() }
 
-        val result = library.getKlibsIssuesByLabel("index-request", since)
+        val result = library.getKlibsIssuesByLabel("index-request", Instant.now())
 
-        assertTrue(result.isEmpty())
+        assertTrue(result.issues.isEmpty())
+        assertNull(result.hasMore)
     }
 
+    @Test
+    fun `should respect batch size and drop the last issue if limit is exceeded`() {
+        val issues = (1..7).map { i ->
+            mockIssue(number = i, body = "Issue $i", isPullRequest = false)
+        }
 
-    private fun setupIssueQueryMock(since: Instant) {
-        whenever(klibsRepo.queryIssues()).thenReturn(issueQueryBuilder)
-        whenever(issueQueryBuilder.label(any())).thenReturn(issueQueryBuilder)
-        whenever(issueQueryBuilder.state(GHIssueState.OPEN)).thenReturn(issueQueryBuilder)
-        whenever(issueQueryBuilder.since(Date.from(since))).thenReturn(issueQueryBuilder)
-        whenever(issueQueryBuilder.list()).thenReturn(pagedIterable)
+        mockPagedIterable(issues)
+
+        val result = library.getKlibsIssuesByLabel("index-request", Instant.now())
+
+        assertEquals(batchSize, result.issues.size)
+        assertEquals("Issue 1", result.issues.first().body)
+        assertEquals("Issue 5", result.issues.last().body)
+        assertTrue(result.hasMore == true)
+    }
+
+    private fun mockPagedIterable(issues: List<GHIssue>) {
+        val listIterator = issues.iterator()
+        val iteratorMock = mock<PagedIterator<GHIssue>> {
+            on { hasNext() } doAnswer { listIterator.hasNext() }
+            on { next() } doAnswer { listIterator.next() }
+        }
+        whenever(pagedIterable.iterator()).thenReturn(iteratorMock)
     }
 
     private fun mockIssue(
         number: Int = 1,
-        title: String = "Title",
         body: String = "Body",
         isPullRequest: Boolean = false,
         labelNames: List<String> = emptyList(),
-        updatedAt: Date = Date()
+        createdAt: Date = Date()
     ): GHIssue {
-        val issue = mock<GHIssue>()
-        lenient().whenever(issue.number).thenReturn(number)
-        lenient().whenever(issue.title).thenReturn(title)
-        lenient().whenever(issue.body).thenReturn(body)
-        lenient().whenever(issue.isPullRequest).thenReturn(isPullRequest)
-        lenient().whenever(issue.updatedAt).thenReturn(updatedAt)
-
-        val labels = labelNames.map { name ->
-            val label = mock<GHLabel>()
-            lenient().whenever(label.name).thenReturn(name)
-            label
+        val mockedLabels = labelNames.map { name ->
+            mock<GHLabel> { on { it.name } doReturn name }
         }
-        lenient().whenever(issue.labels).thenReturn(labels)
+
+        val issue = mock<GHIssue> {
+            on { it.number } doReturn number
+            on { it.body } doReturn body
+            on { it.isPullRequest } doReturn isPullRequest
+            on { it.labels } doReturn mockedLabels
+        }
+
+        // We can't simply put it into the mock structure because Mockito clashes with Kohsuke's hidden bridge methods
+        doAnswer { createdAt }.whenever(issue).getCreatedAt()
+
         return issue
     }
-
 }
