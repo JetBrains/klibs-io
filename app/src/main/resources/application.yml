@@ -82,6 +82,7 @@ klibs:
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
       index-requests:
         repository: JetBrains/klibs-io
+        batch-size: 100
         request-label: index-request
         processed-label: triaged
   indexing: ${KLIBS_ENABLE_INDEXING:false}

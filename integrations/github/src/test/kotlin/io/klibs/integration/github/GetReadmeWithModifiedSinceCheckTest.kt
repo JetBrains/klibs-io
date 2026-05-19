@@ -33,6 +33,7 @@ class GetReadmeWithModifiedSinceCheckTest {
     private lateinit var props: GitHubIntegrationProperties
     private val klibsRepoName = "JetBrains/klibs-io"
     private val processedLabel = "triaged"
+    private val batchSize = 5
 
     @BeforeEach
     fun setUp() {
@@ -49,9 +50,9 @@ class GetReadmeWithModifiedSinceCheckTest {
             client,
             props,
             jacksonObjectMapper(),
-            props,
             klibsRepoName,
             processedLabel,
+            batchSize,
         )
 
     @Test

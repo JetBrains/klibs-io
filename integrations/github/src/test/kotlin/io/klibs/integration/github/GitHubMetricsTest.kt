@@ -31,6 +31,7 @@ class GitHubMetricsTest {
     private lateinit var gitHubIntegration: GitHubIntegration
     private val klibsRepoName = "JetBrains/klibs-io"
     private val processedLabel = "triaged"
+    private val batchSize = 5
 
     @BeforeEach
     fun setUp() {
@@ -46,6 +47,7 @@ class GitHubMetricsTest {
             jacksonObjectMapper(),
             klibsRepoName,
             processedLabel,
+            batchSize
         )
     }
 

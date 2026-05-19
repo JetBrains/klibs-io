@@ -1,6 +1,6 @@
 package io.klibs.app.job
 
-import io.klibs.app.indexing.UserRequestCheckService
+import io.klibs.app.service.impl.UserRequestCheckService
 import net.javacrumbs.shedlock.core.LockAssert
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.springframework.stereotype.Component
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 class UserRequestCheckJob(private val userRequestCheckService: UserRequestCheckService) {
 
     @Scheduled(initialDelay = 0, fixedRate = 1, timeUnit = TimeUnit.HOURS)
-    @SchedulerLock(name = "indexRequestCheckLock", lockAtMostFor = "1h")
+    @SchedulerLock(name = "userRequestCheckLock", lockAtMostFor = "1h")
     fun checkUserRequests() {
         LockAssert.assertLocked()
         userRequestCheckService.checkUserRequests()

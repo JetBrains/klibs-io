@@ -1,6 +1,7 @@
 package io.klibs.app.util.instant
 
 import BaseUnitWithDbLayerTest
+import io.klibs.integration.maven.dto.MavenCentralLogType
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -19,9 +20,9 @@ class MavenCentralLogRepositoryTest : BaseUnitWithDbLayerTest() {
     @Transactional
     fun `should save and retrieve maven index timestamp`() {
         val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-        repository.saveMavenIndexTimestamp(now)
+        repository.saveTimestamp(MavenCentralLogType.MAVEN_INDEX, now)
         
-        val retrieved = repository.retrieveMavenIndexTimestamp()
+        val retrieved = repository.retrieveTimestamp(MavenCentralLogType.MAVEN_INDEX)
         assertNotNull(retrieved)
         assertEquals(now, retrieved)
     }
