@@ -1,7 +1,7 @@
 package io.klibs.app.indexing
 
 import io.klibs.integration.github.GitHubIntegration
-import io.klibs.integration.github.model.GitHubIssue
+import io.klibs.integration.github.model.GitHubUserRequestIssue
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -9,6 +9,16 @@ import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 
+/**
+ * Service responsible for periodically checking GitHub for new user-submitted
+ * package indexing requests and processing them.
+ *
+ * @property gitHubIntegration Client to interact with the GitHub API.
+ * @property userRequestIndexingService Service to execute the actual package indexing.
+ * @property mavenCentralLogRepository Repository to track the last check timestamp.
+ * @property requestLabel The label used to identify issues that contain indexing requests.
+ * @property processedLabel The label applied to issues after they have been processed.
+ */
 @Service
 class UserRequestCheckService(
     private val gitHubIntegration: GitHubIntegration,
@@ -20,26 +30,32 @@ class UserRequestCheckService(
     private val processedLabel: String,
 ) {
 
-    // TODO(Zofia Wiora): Change zwiora/klibs in application-local before moving to PR? testing?
-
-    // TODO(Zofia Wiora): comment
+    /**
+     * Entry point for the scheduled job.
+     *
+     * Retrieves a batch of new GitHub issues since the last recorded check timestamp.
+     * Iterates through the issues, validating and processing them individually.
+     * Updates the timestamp in the database only if all issues were processed
+     * without server-side errors.
+     */
     fun checkUserRequests() {
         val since = mavenCentralLogRepository.retrieveUserRequestCheckTimestamp()
         val runStartedAt = Instant.now()
 
-        // Get list of issues from GitHub
-        val issues = try {
+        // Get batch of issues from GitHub
+        val issuesBatch = try {
             gitHubIntegration.getKlibsIssuesByLabel(requestLabel, since)
         } catch (e: Exception) {
             logger.error("Failed to list index-request issues: ${e.message}", e)
             return
         }
 
-        val issuesToProcess = issues.mapNotNull { issue ->
+        val issuesToProcess = issuesBatch.issues.mapNotNull { issue ->
             // Check if issue used correct template
             val parsed = parseBody(issue.body)
             if (parsed == null) {
                 publishIssueStatus(issue.number, UserRequestMessages.parseFailure())
+                logger.debug("Published parse failure comment to issue #${issue.number}")
                 return@mapNotNull null
             }
 
@@ -50,16 +66,15 @@ class UserRequestCheckService(
                     issue.number,
                     UserRequestMessages.failure(parsed.groupId, parsed.artifactId, parsed.version, validationError)
                 )
+                logger.debug("Published failure comment to issue #${issue.number}: $validationError")
                 return@mapNotNull null
             }
 
             issue to parsed
         }
-            .sortedBy { (_, parsed) -> parsed.version != null } // for duplicate check we place issues with `null` versions before issues with specific versions
 
-        var anyServerError = false
-        val processedRequests =
-            mutableListOf<Pair<ParsedRequest, Int>>() // for duplicate check we track processed requests
+        var anyServerError = false // tracked for timestamp update
+        val processedRequests = mutableListOf<ProcessedRequestInfo>()  // tracked for duplicate check
 
         // Process issues
         for ((issue, parsed) in issuesToProcess) {
@@ -71,22 +86,46 @@ class UserRequestCheckService(
             }
         }
 
-        // If any issue could not be processed because of errors that were not user's fault,
-        // we don't update timestamp so that we can retry processing later
+        // Update timestamp
         if (!anyServerError) {
-            mavenCentralLogRepository.saveUserRequestCheckTimestamp(runStartedAt)
+            if (issuesBatch.hasMore == true) {
+                // If not all requests were processed, next time only issues newer than the last processed will be fetched
+                mavenCentralLogRepository.saveUserRequestCheckTimestamp(issuesBatch.issues.last().createdAt)
+                logger.debug(
+                    "Successfully processed all users' indexing requests fetched; updating user_request_check_timestamp to last issue's created_at: {}",
+                    issuesBatch.issues.last().createdAt
+                )
+            } else {
+                // If all requests were processed, next time only newly appeared issues will be fetched
+                mavenCentralLogRepository.saveUserRequestCheckTimestamp(runStartedAt)
+                if (issuesBatch.issues.isEmpty()) {
+                    logger.debug(
+                        "No users' indexing requests to be processed; updating user_request_check_timestamp to current date: {}",
+                        runStartedAt
+                    )
+                } else {
+                    logger.debug(
+                        "Successfully processed all users' indexing requests; updating user_request_check_timestamp to current date: {}",
+                        runStartedAt
+                    )
+                }
+            }
         } else {
+            // If any issue could not be processed because of errors that were not user's fault,
+            // timestamp is not updated, so that failed issues can be reprocessed
             logger.warn("Server errors occurred; not updating index_request_check_timestamp")
         }
     }
 
     /**
-     * @return true if the outcome is final (success or 4xx), false if server error occurred (5xx) — timestamp should not be updated
+     * Processes a single user request.
+     *
+     * Returns true if the outcome is final (success or 4xx), false if server error occurred (5xx) — timestamp should not be updated
      */
     private fun processValidRequest(
-        issue: GitHubIssue,
+        issue: GitHubUserRequestIssue,
         parsed: ParsedRequest,
-        processedRequests: MutableList<Pair<ParsedRequest, Int>>
+        processedRequests: MutableList<ProcessedRequestInfo>
     ): Boolean {
         val (groupId, artifactId, version) = parsed
 
@@ -98,7 +137,10 @@ class UserRequestCheckService(
                 issue.number,
                 UserRequestMessages.duplicate(groupId, artifactId, version, duplicateIssueNumber)
             )
+            logger.debug("Published comment to issue #${issue.number}: duplicate of #$duplicateIssueNumber")
             return true
+        } else {
+            processedRequests.add(ProcessedRequestInfo(parsed, issue.number))
         }
 
         // Try saving the package index request
@@ -109,8 +151,7 @@ class UserRequestCheckService(
                 UserRequestMessages.success(groupId, artifactId, version)
             )
 
-            // Add successfully processed requests to list for future duplicate check
-            processedRequests.add(parsed to issue.number)
+            logger.debug("Published success comment to issue #${issue.number}")
             true
         } catch (e: Exception) {
             // User's error occurred
@@ -119,6 +160,8 @@ class UserRequestCheckService(
                     issue.number,
                     UserRequestMessages.failure(groupId, artifactId, version, e.reason ?: "Unknown error")
                 )
+
+                logger.debug("Published failure comment to issue #${issue.number}: ${e.reason ?: "Unknown error"}")
                 true
             }
             // Other error occurred
@@ -129,27 +172,43 @@ class UserRequestCheckService(
         }
     }
 
-    internal data class ParsedRequest(val groupId: String, val artifactId: String, val version: String?)
+    internal data class ParsedRequest(
+        val groupId: String,
+        val artifactId: String,
+        val version: String?
+    )
+
+    internal data class ProcessedRequestInfo(
+        val request: ParsedRequest,
+        val issueNumber: Int
+    )
 
     /**
-     * @return null if the expected values cannot be extracted from the issue body
+     * Extracts groupId, artifactId, and version from the Markdown issue body.
+     *
+     * Returns null if the expected values cannot be extracted from the issue body
      */
     internal fun parseBody(body: String?): ParsedRequest? {
         if (body.isNullOrBlank()) return null
 
-        val groupId = extractField(body, "Group ID")?.trim() ?: return null
-        val artifactId = extractField(body, "Artifact ID")?.trim() ?: return null
-        val version = extractField(body, "Version")?.trim()?.takeIf { it.isNotBlank() }
+        val groupId = extractField(body, "Group ID") ?: return null
+        val artifactId = extractField(body, "Artifact ID") ?: return null
+        val version = extractField(body, "Version")
 
         return ParsedRequest(groupId, artifactId, version)
     }
 
     /**
-     * @return null if the request is valid, or an error message if it is not
+     * Checks if the submitted data is in valid format.
+     *
+     * Returns null if the request is valid, or an error message if it is not
      */
     internal fun validateRequest(parsed: ParsedRequest): String? {
         // Regex for group id and artifact id: Alphanumeric characters, dots, underscores, and hyphens.
         val regex = "^[A-Za-z0-9_.-]+$".toRegex()
+
+        // Regex for version: Forbidding control characters, and characters manipulating URL path
+        val versionRegex = "^[^\\p{Cntrl}/\\\\%?#&]+$".toRegex()
 
         if (!parsed.groupId.matches(regex)) {
             return "Invalid Group ID format. Only alphanumeric characters, dots, underscores, and hyphens are allowed."
@@ -157,8 +216,9 @@ class UserRequestCheckService(
         if (!parsed.artifactId.matches(regex)) {
             return "Invalid Artifact ID format. Only alphanumeric characters, dots, underscores, and hyphens are allowed."
         }
-
-        // We don't validate version format as it can include almost any characters
+        if (parsed.version != null && !parsed.version.matches(versionRegex)) {
+            return "Invalid Version format. Newlines, other control characters, and the following characters are not allowed: /, \\, %, ?, #, &."
+        }
 
         return null
     }
@@ -166,20 +226,20 @@ class UserRequestCheckService(
     /**
      * Checks if the current request is a duplicate of an already processed request in the current batch.
      *
-     * Issue is considered a duplicate if it has the same Group ID, Artifact ID,
-     * and either Version is the same, or the previous request was for all versions (version == null)
-     *
-     * @return the issue number of the duplicate, or null if it is not a duplicate.
+     * Returns the issue number of the duplicate, or null if it is not a duplicate.
      */
     internal fun findDuplicateIssueNumber(
         currentRequest: ParsedRequest,
-        processedRequests: List<Pair<ParsedRequest, Int>>
+        processedRequests: List<ProcessedRequestInfo>
     ): Int? {
-        return processedRequests.firstOrNull { (prevReq, _) ->
+        return processedRequests.firstOrNull { prev ->
+            val prevReq = prev.request
+
             prevReq.groupId == currentRequest.groupId &&
                     prevReq.artifactId == currentRequest.artifactId &&
-                    (prevReq.version == null || prevReq.version == currentRequest.version)
-        }?.second
+                    prevReq.version == currentRequest.version
+
+        }?.issueNumber
     }
 
     private fun publishIssueStatus(issueNumber: Int, comment: String) {
@@ -188,10 +248,22 @@ class UserRequestCheckService(
     }
 
     private fun extractField(body: String, label: String): String? {
-        // GitHub issue forms render fields as `### <Label>\n\n<value>\n\n### <next>`
-        // In case user does not fill in the field, the value will be rendered as `_No response_`
-        val regex = Regex("###\\s+${Regex.escape(label)}\\s*\\n+([\\s\\S]*?)(?=\\n###\\s|\\z)")
-        val raw = regex.find(body)?.groupValues?.get(1)?.trim() ?: return null
+        // GitHub issue forms render fields as `### <Label>\n\n<value>\n\n### <next>`.
+        // In case user does not fill in the field, the value will be rendered as `_No response_`.
+        // We don't use regex here to avoid potential performance issues in case of large input
+        // (it shouldn't be a case for valid requests, but can happen in case of malicious intent)
+
+        val text = body.replace("\r\n", "\n")
+
+        val header = "### $label\n"
+
+        if (!text.contains(header)) return null
+
+        val raw = text
+            .substringAfter(header)
+            .substringBefore("\n### ")
+            .trim()
+
         if (raw.isBlank() || raw.equals("_No response_", ignoreCase = true)) return null
         return raw
     }
@@ -201,46 +273,57 @@ class UserRequestCheckService(
     }
 }
 
+/**
+ * Messages displayed to users when their indexing request is processed.
+ */
 private object UserRequestMessages {
+    /**
+     * Sanitizes raw user input for safe display inside GitHub inline code blocks.
+     * Removes newlines, normalizes whitespace, escapes backticks, and truncates long strings.
+     */
+    private fun sanitize(input: String): String {
+        val singleLine = input.replace(Regex("\\s+"), " ").replace("`", "'").trim()
+        return if (singleLine.length > 50) "${singleLine.take(47)}..." else singleLine
+    }
+
     fun success(groupId: String, artifactId: String, version: String?) = """
         ✅ Indexing request accepted
 
         Your request has been queued for indexing:
 
-        - **Group ID:** `$groupId`
-        - **Artifact ID:** `$artifactId`
-        - **Version:** ${if (version.isNullOrBlank()) "`all versions`" else "`$version`"}
-
+        - **Group ID:** `${sanitize(groupId)}`
+        - **Artifact ID:** `${sanitize(artifactId)}`
+        - **Version:** ${if (version.isNullOrBlank()) "`all versions`" else "`${sanitize(version)}`"}
+        
         The library will appear on https://klibs.io once indexing completes. A comment will be posted here with the final status once the processing is finished.
     """.trimIndent()
 
     fun failure(groupId: String, artifactId: String, version: String?, reason: String) = """
         ❌ Indexing request could not be processed
 
-        - **Group ID:** `$groupId`
-        - **Artifact ID:** `$artifactId`
-        - **Version:** ${if (version.isNullOrBlank()) "`all versions`" else "`$version`"}
+        - **Group ID:** `${sanitize(groupId)}`
+        - **Artifact ID:** `${sanitize(artifactId)}`
+        - **Version:** ${if (version.isNullOrBlank()) "`all versions`" else "`${sanitize(version)}`"}
 
         **Reason:** $reason
 
         Please make sure the library meets the [indexing requirements](https://klibs.io/faq#how-do-i-add-a-project), then open a new issue with corrected details.
 
-        Once you have reviewed this and are ready to open a new request, please close this issue.
+        Once you have reviewed this comment and are ready to open a new request, please close this issue.
     """.trimIndent()
 
     fun duplicate(groupId: String, artifactId: String, version: String?, duplicateOfIssueNumber: Int) = """
         ❌ Indexing request could not be processed
 
-        - **Group ID:** `$groupId`
-        - **Artifact ID:** `$artifactId`
-        - **Version:** ${if (version.isNullOrBlank()) "`all versions`" else "`$version`"}
+        - **Group ID:** `${sanitize(groupId)}`
+        - **Artifact ID:** `${sanitize(artifactId)}`
+        - **Version:** ${if (version.isNullOrBlank()) "`all versions`" else "`${sanitize(version)}`"}
 
         **Reason:** This request is a duplicate of #$duplicateOfIssueNumber.
-        ${if (!version.isNullOrBlank()) " Note, that if the other request was for all versions, this one is considered a duplicate as well." else ""} 
 
         Please follow the existing request instead of opening another one.
 
-        Once you have reviewed this, please close this issue.
+        Once you have reviewed this comment, please close this issue.
     """.trimIndent()
 
     fun parseFailure() = """
@@ -248,6 +331,6 @@ private object UserRequestMessages {
 
         We couldn't parse the input fields from this issue. Please open a new issue using the *"Request indexing of a library"* template and fill in all required fields.
 
-        Once you have reviewed this and are ready to open a new request, please close this issue.
+        Once you have reviewed this comment and are ready to open a new request, please close this issue.
     """.trimIndent()
 }
