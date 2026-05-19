@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.benmanes.caffeine.cache.Caffeine
 import io.klibs.integration.github.health.GitHubRateLimitInfo
 import io.klibs.integration.github.model.GitHubIssue
+import io.klibs.integration.github.model.GitHubUserRequestIssuesBatch
 import io.klibs.integration.github.model.GitHubLicense
 import io.klibs.integration.github.model.GitHubPullRequest
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
+import io.klibs.integration.github.model.GitHubUserRequestIssue
 import io.klibs.integration.github.model.GqlCommitAuthorsResponse
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.Gauge
@@ -17,6 +19,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.kohsuke.github.GHDirection
+import org.kohsuke.github.GHIssueQueryBuilder
 import org.kohsuke.github.GHIssueState
 import org.kohsuke.github.GHPullRequestQueryBuilder
 import org.kohsuke.github.GHRepository
@@ -47,17 +50,17 @@ internal class GitHubIntegrationKohsukeLibrary(
     private val gitHubIntegrationProperties: GitHubIntegrationProperties,
     @Autowired
     private val jsonMapper: ObjectMapper,
-    @Value("\${klibs.integration.github.index-requests.repository}:JetBrains/klibs-io")
+    @Value("\${klibs.integration.github.index-requests.repository:JetBrains/klibs-io}")
     private val klibsRepoName: String,
     @Value("\${klibs.integration.github.index-requests.processed-label:triaged}")
     private val processedLabel: String,
+    @Value("\${klibs.integration.github.index-requests.batch-size:100}")
+    private val batchSize: Int
 ) : GitHubIntegration {
 
     private val lastSuccessfulRequestTime = AtomicReference(Instant.now())
 
     private val klibsRepo: GHRepository by lazy {
-        repositoryRequestCounter.increment()
-
         executeNullable { githubApi.getRepository(klibsRepoName) }
             ?: throw IllegalStateException("Could not fetch target repository: $klibsRepoName")
     }
@@ -215,7 +218,7 @@ internal class GitHubIntegrationKohsukeLibrary(
     private fun <T> executeNullable(block: () -> T): T? {
         // Start timing the request
         val sample = Timer.start(meterRegistry)
-        
+
         return try {
             block()
         } catch (e: FileNotFoundException) {
@@ -379,39 +382,52 @@ internal class GitHubIntegrationKohsukeLibrary(
         }
     }
 
-    override fun getKlibsIssuesByLabel(label: String, since: Instant): List<GitHubIssue> {
-        issueRequestCounter.increment()
-
+    override fun getKlibsIssuesByLabel(label: String, since: Instant): GitHubUserRequestIssuesBatch {
         return executeNullable {
-            klibsRepo.queryIssues()
+            val fetchedIssues = klibsRepo.queryIssues()
                 .label(label)
-                .state(org.kohsuke.github.GHIssueState.OPEN)
-                .since(java.util.Date.from(since))
+                .state(GHIssueState.OPEN)
+                .since(Date.from(since))
+                .sort(GHIssueQueryBuilder.Sort.CREATED)
+                .direction(GHDirection.ASC)
                 .list()
-                .toList()
+                .asSequence()
                 .filter { !it.isPullRequest }
                 .filter { issue -> issue.labels.none { it.name == processedLabel } }
+                .take(batchSize + 1) // limit the batch size to avoid hitting the GitHub API rate limit, for example, in case of spam attack
                 .map { gh ->
-                    GitHubIssue(
+                    GitHubUserRequestIssue(
                         number = gh.number,
-                        title = gh.title,
                         body = gh.body,
                         labels = gh.labels.map { it.name },
-                        updatedAt = gh.updatedAt.toInstant(),
+                        createdAt = gh.createdAt.toInstant()
                     )
                 }
-        } ?: emptyList()
+                .toList()
+
+            if (fetchedIssues.size > batchSize) {
+                logger.warn("Not all users' requests for indexing were fetched in this run. Reached limit of $batchSize.")
+                GitHubUserRequestIssuesBatch(
+                    issues = fetchedIssues.dropLast(1),
+                    hasMore = true
+                )
+            } else {
+                logger.debug("Successfully fetched all users' requests for indexing")
+                GitHubUserRequestIssuesBatch(
+                    issues = fetchedIssues,
+                    hasMore = false
+                )
+            }
+        } ?: GitHubUserRequestIssuesBatch(emptyList())
     }
 
     override fun addKlibsIssueLabel(number: Int, label: String) {
-        issueRequestCounter.increment()
         executeNullable {
             klibsRepo.getIssue(number).addLabels(label)
         }
     }
 
     override fun addKlibsIssueComment(number: Int, body: String) {
-        issueRequestCounter.increment()
         executeNullable {
             klibsRepo.getIssue(number).comment(body)
         }

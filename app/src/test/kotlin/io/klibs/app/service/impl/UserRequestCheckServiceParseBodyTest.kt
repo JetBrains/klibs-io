@@ -1,4 +1,4 @@
-package io.klibs.app.indexing
+package io.klibs.app.service.impl
 
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
