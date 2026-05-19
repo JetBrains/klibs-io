@@ -25,6 +25,7 @@ class GitHubIntegrationTest {
 
     private val klibsRepoName = "JetBrains/klibs-io"
     private val processedLabel = "triaged"
+    private val batchSize = 5
 
     private val gitHubIntegration: GitHubIntegration = GitHubIntegrationKohsukeLibrary(
         meterRegistry,
@@ -32,9 +33,9 @@ class GitHubIntegrationTest {
         OkHttpClient(),
         GitHubIntegrationProperties(cache = GitHubIntegrationProperties.Cache()),
         jsonMapper,
-        GitHubIntegrationProperties(cache = GitHubIntegrationProperties.Cache()),
         klibsRepoName,
         processedLabel,
+        batchSize,
     )
 
     @Test
