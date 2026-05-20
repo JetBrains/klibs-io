@@ -36,10 +36,11 @@ data class PackageDTO(
     val targets: List<PackageTarget> = emptyList()
 ) {
     /**
-     * Converts this DTO to an entity.
+     * Converts this DTO to an entity and applying maven artifact to it
+     *
      * @return PackageEntity created from this DTO
      */
-    fun toEntity(): PackageEntity {
+    fun toEntity(mavenArtifact: MavenArtifactDTO): PackageEntity {
         val entity = PackageEntity(
             id = id,
             projectId = projectId,
@@ -58,7 +59,8 @@ data class PackageDTO(
             licenses = licenses,
             configuration = configuration,
             generatedDescription = generatedDescription,
-            versionType = versionType
+            versionType = versionType,
+            mavenArtifact = mavenArtifact.toEntityRef(),
         )
 
         // Add targets to the entity

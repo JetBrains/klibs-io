@@ -3,18 +3,21 @@
 CREATE OR REPLACE FUNCTION truncate_all_tables()
     RETURNS void AS '
     DECLARE
-        stmt TEXT;
+        tables TEXT;
     BEGIN
-        SELECT INTO stmt string_agg(
-            format(''TRUNCATE TABLE %I.%I CASCADE;'', schemaname, tablename),
-            '' ''
+        SELECT INTO tables string_agg(
+            format(''%I.%I'', schemaname, tablename),
+            '', ''
+            ORDER BY schemaname, tablename
         )
         FROM pg_tables
         WHERE schemaname = current_schema()
           AND tablename NOT IN (''databasechangelog'', ''maven_central_log'', ''category'', ''allowed_project_tags'');
 
-        IF stmt IS NOT NULL THEN
-            EXECUTE stmt;
+        IF tables IS NOT NULL THEN
+            -- Wait up to 5s for conflicting locks instead of failing instantly with a deadlock.
+            EXECUTE ''SET LOCAL lock_timeout = ''''5s'''''';
+            EXECUTE ''TRUNCATE TABLE '' || tables || '' CASCADE'';
         END IF;
     END;
 ' LANGUAGE plpgsql;

@@ -347,28 +347,21 @@ class ProjectRepositoryJdbc(
 
     override fun recomputeAllDependentCounts() {
         val sql = """
-            WITH ga_dep_projects AS (
-                SELECT pd.dep_group_id, pd.dep_artifact_id, p_dep.project_id AS dep_project_id
+            WITH dependent_counts AS (
+                SELECT producer.project_id,
+                       COUNT(DISTINCT consumer.project_id)::int AS dependent_count
                 FROM package_dependency pd
-                JOIN package p_dep ON p_dep.id = pd.package_id
-                GROUP BY pd.dep_group_id, pd.dep_artifact_id, p_dep.project_id
-            ),
-            project_gas AS (
-                SELECT DISTINCT project_id, group_id, artifact_id FROM package
-            ),
-            dependent_counts AS (
-                SELECT proj.id AS project_id,
-                       COUNT(DISTINCT gdp.dep_project_id) FILTER (WHERE gdp.dep_project_id != proj.id)::int AS dependent_count
-                FROM project proj
-                LEFT JOIN project_gas pg ON pg.project_id = proj.id
-                LEFT JOIN ga_dep_projects gdp ON gdp.dep_group_id = pg.group_id AND gdp.dep_artifact_id = pg.artifact_id
-                GROUP BY proj.id
+                JOIN package producer ON pd.dep_maven_artifact_id = producer.maven_artifact_id
+                JOIN package consumer ON consumer.id = pd.package_id
+                WHERE consumer.project_id IS DISTINCT FROM producer.project_id
+                GROUP BY producer.project_id
             )
+            
             UPDATE project p
-            SET dependent_count = dc.dependent_count
-            FROM dependent_counts dc
-            WHERE p.id = dc.project_id
-              AND p.dependent_count IS DISTINCT FROM dc.dependent_count
+            SET dependent_count = COALESCE(dc.dependent_count, 0)
+            FROM project pd 
+            LEFT JOIN dependent_counts dc ON dc.project_id = pd.id
+            WHERE p.id = pd.id AND p.dependent_count IS DISTINCT FROM COALESCE(dc.dependent_count, 0)
         """.trimIndent()
 
         jdbcClient.sql(sql).update()

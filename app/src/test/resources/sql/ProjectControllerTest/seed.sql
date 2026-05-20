@@ -1,4 +1,4 @@
--- scm_owner (matching data.sql semantics)
+
 INSERT INTO public.scm_owner (
     id, id_native, followers, updated_at,
     login, type, name, description,
@@ -9,7 +9,7 @@ INSERT INTO public.scm_owner (
              'https://kotlinlang.org', 'kotlin', NULL, NULL, NULL
          );
 
--- scm_repo (matching data.sql semantics)
+
 INSERT INTO public.scm_repo (
     id_native, id, owner_id,
     has_gh_pages, has_issues, has_wiki, has_readme,
@@ -26,7 +26,7 @@ INSERT INTO public.scm_repo (
              'other', 'Other', 'master'
          );
 
--- project
+
 INSERT INTO public.project (
     id, scm_repo_id,
     latest_version_ts, latest_version,
@@ -43,45 +43,19 @@ INSERT INTO public.project (
              23
          );
 
--- package: older version (no description)
-INSERT INTO public.package (
-    id, project_id,
-    release_ts, created_at,
-    group_id, artifact_id, version,
-    description,
-    url, scm_url,
-    build_tool, build_tool_version, kotlin_version,
-    configuration, developers, licenses
-) VALUES (
-             498, 18,
-             CURRENT_TIMESTAMP - INTERVAL '365 days', CURRENT_TIMESTAMP - INTERVAL '365 days',
-             'org.jetbrains.kotlinx', 'atomicfu', '0.25.0',
-             NULL,
-             'https://github.com/Kotlin/kotlinx.atomicfu', 'https://github.com/Kotlin/kotlinx.atomicfu',
-             'Gradle', '8.0', '2.0.0',
-             '{}'::jsonb, '[]'::jsonb, '[]'::jsonb
-         );
 
--- package: latest version (has description the test asserts)
-INSERT INTO public.package (
-    id, project_id,
-    release_ts, created_at,
-    group_id, artifact_id, version,
-    description,
-    url, scm_url,
-    build_tool, build_tool_version, kotlin_version,
-    configuration, developers, licenses
-) VALUES (
-             497, 18,
-             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-             'org.jetbrains.kotlinx', 'atomicfu', '0.26.0',
-             'AtomicFU utilities',
-             'https://github.com/Kotlin/kotlinx.atomicfu', 'https://github.com/Kotlin/kotlinx.atomicfu',
-             'Gradle', '8.7', '2.0.21',
-             '{}'::jsonb, '[]'::jsonb, '[]'::jsonb
-         );
 
--- targets for both versions
+INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+    (1022148281, 'org.jetbrains.kotlinx', 'atomicfu', '0.25.0'),
+    (1041806903, 'org.jetbrains.kotlinx', 'atomicfu', '0.26.0')
+ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
+
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES (498, 18, CURRENT_TIMESTAMP - INTERVAL '365 days', CURRENT_TIMESTAMP - INTERVAL '365 days', 'org.jetbrains.kotlinx', 'atomicfu', '0.25.0', NULL, 'https://github.com/Kotlin/kotlinx.atomicfu', 'https://github.com/Kotlin/kotlinx.atomicfu', 'Gradle', '8.0', '2.0.0', '{}'::jsonb, '[]'::jsonb, '[]'::jsonb, 1022148281);
+
+
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES (497, 18, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.jetbrains.kotlinx', 'atomicfu', '0.26.0', 'AtomicFU utilities', 'https://github.com/Kotlin/kotlinx.atomicfu', 'https://github.com/Kotlin/kotlinx.atomicfu', 'Gradle', '8.7', '2.0.21', '{}'::jsonb, '[]'::jsonb, '[]'::jsonb, 1041806903);
+
+
 INSERT INTO public.package_target (package_id, platform, target) VALUES
                                                                      (498, 'JVM', '1.8'),
                                                                      (497, 'JVM', '1.8');

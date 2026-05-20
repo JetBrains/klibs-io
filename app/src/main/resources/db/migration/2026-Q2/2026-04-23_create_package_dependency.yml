@@ -18,24 +18,17 @@ databaseChangeLog:
                     nullable: false
                     references: package(id)
                     foreignKeyName: fk_package_dependency_package_id
+                    deleteCascade: true
               - column:
-                  name: dep_group_id
-                  type: TEXT
+                  name: dep_maven_artifact_id
+                  type: BIGINT
                   constraints:
                     nullable: false
-              - column:
-                  name: dep_artifact_id
-                  type: TEXT
-                  constraints:
-                    nullable: false
-              - column:
-                  name: dep_version
-                  type: TEXT
-                  constraints:
-                    nullable: false
+                    references: maven_artifact(id)
+                    foreignKeyName: fk_package_dependency_dep_maven_artifact_id
         - addPrimaryKey:
             tableName: package_dependency
-            columnNames: package_id, dep_group_id, dep_artifact_id, dep_version
+            columnNames: package_id, dep_maven_artifact_id
             constraintName: pk_package_dependency
 
   - changeSet:
@@ -46,13 +39,11 @@ databaseChangeLog:
         - not:
             indexExists:
               tableName: package_dependency
-              indexName: idx_package_dependency_target
+              indexName: idx_package_dependency_dep_maven_artifact_id
       changes:
         - createIndex:
             tableName: package_dependency
-            indexName: idx_package_dependency_target
+            indexName: idx_package_dependency_dep_maven_artifact_id
             columns:
               - column:
-                  name: dep_group_id
-              - column:
-                  name: dep_artifact_id
+                  name: dep_maven_artifact_id

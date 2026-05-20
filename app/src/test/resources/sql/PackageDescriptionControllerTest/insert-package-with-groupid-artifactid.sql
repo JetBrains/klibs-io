@@ -3,7 +3,7 @@ INSERT INTO public.scm_owner (id_native, id, followers, updated_at, login, type,
 VALUES (118642511, 198, 0, current_timestamp, 'k-libs', 'organization', 'k-libs', null, null, null, null,
         null, null);
 
--- Repository for the test
+
 INSERT INTO public.scm_repo (id_native, id, owner_id, has_gh_pages, has_issues, has_wiki, has_readme, created_ts,
                              updated_at, last_activity_ts, stars, open_issues, name, description, homepage, license_key,
                              license_name, default_branch)
@@ -12,8 +12,12 @@ VALUES (598863246, 368, 198, true, true, true, true, '2023-02-08 01:28:54.000000
         '2023-02-19 17:44:36.000000', 0, 0, 'k-big-numbers', null, null, 'mit', 'MIT License', 'main');
 
 
--- Insert test project
+
 INSERT INTO public.project VALUES (10004, 368, CURRENT_TIMESTAMP, '2.0.0', CURRENT_TIMESTAMP, 'k-big-numbers', NULL, 198);
 
--- Insert test package with groupId and artifactId
-INSERT INTO public.package VALUES (10004, 10004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-library', '2.0.0', 'Old description', 'https://example.com/test-library', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN');
+
+INSERT INTO public.maven_artifact (id, group_id, artifact_id, version)
+VALUES (10004, 'org.example', 'test-library', '2.0.0');
+
+
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, scraper_type, generated_description, maven_artifact_id) VALUES (10004, 10004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'test-library', '2.0.0', 'Old description', 'https://example.com/test-library', NULL, 'gradle', '7.0', '1.6.0', NULL, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false, 10004);

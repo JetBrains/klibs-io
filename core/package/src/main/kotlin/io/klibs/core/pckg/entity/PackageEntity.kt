@@ -11,10 +11,15 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinTable
+import jakarta.persistence.ManyToMany
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.annotations.JdbcTypeCode
@@ -85,9 +90,21 @@ data class PackageEntity(
     @Enumerated(EnumType.STRING)
     @Column(name = "version_type")
     val versionType: VersionType? = null,
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "maven_artifact_id", nullable = false)
+    val mavenArtifact: MavenArtifactEntity,
 ) {
     @OneToMany(mappedBy = "packageEntity", cascade = [CascadeType.ALL], orphanRemoval = true)
     val targets: MutableList<PackageTargetEntity> = mutableListOf()
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "package_dependency",
+        joinColumns = [JoinColumn(name = "package_id")],
+        inverseJoinColumns = [JoinColumn(name = "dep_maven_artifact_id")],
+    )
+    val dependencies: MutableSet<MavenArtifactEntity> = mutableSetOf()
 
     val idNotNull: Long get() = requireNotNull(id)
 
@@ -118,6 +135,7 @@ data class PackageEntity(
      * @param configuration The configuration of the new entity, defaults to the current entity's configuration
      * @param generatedDescription Whether the description was generated, defaults to the current entity's value
      * @param versionType The version type of the new entity, defaults to the current entity's version type
+     * @param mavenArtifact The normalized `maven_artifact` row this package points at, defaults to the current entity's reference
      * @return A new PackageEntity instance with specified properties changed and targets reattached
      */
     fun deepCopy(
@@ -138,7 +156,8 @@ data class PackageEntity(
         licenses: List<PackageLicense> = this.licenses,
         configuration: Configuration? = this.configuration,
         generatedDescription: Boolean = this.generatedDescription,
-        versionType: VersionType? = this.versionType
+        versionType: VersionType? = this.versionType,
+        mavenArtifact: MavenArtifactEntity = this.mavenArtifact
     ): PackageEntity {
         // Create a copy of the entity with specified fields changed
         val copy = PackageEntity(
@@ -159,7 +178,8 @@ data class PackageEntity(
             licenses = licenses,
             configuration = configuration,
             generatedDescription = generatedDescription,
-            versionType = versionType
+            versionType = versionType,
+            mavenArtifact = mavenArtifact,
         )
 
         // Create new copies of each target and attach them to the new entity

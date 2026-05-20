@@ -5,14 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.core.owner.ScmOwnerEntity
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.owner.ScmOwnerType
-import io.klibs.core.pckg.repository.PackageRepository
-import io.klibs.core.pckg.service.PackageService
-import io.klibs.core.pckg.model.Configuration
 import io.klibs.core.pckg.dto.PackageDTO
+import io.klibs.core.pckg.model.Configuration
+import io.klibs.core.pckg.dto.MavenCoordinatesDTO
 import io.klibs.core.pckg.model.PackageDeveloper
 import io.klibs.core.pckg.model.PackageLicense
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.PackageTarget
+import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.pckg.service.MavenArtifactService
+import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
@@ -37,6 +39,9 @@ class BlacklistSmokeTest : SmokeTestBase() {
 
     @Autowired
     private lateinit var packageService: PackageService
+
+    @Autowired
+    private lateinit var mavenArtifactService: MavenArtifactService
 
     @Autowired
     private lateinit var projectRepository: ProjectRepository
@@ -193,7 +198,10 @@ class BlacklistSmokeTest : SmokeTestBase() {
             ))
         )
 
-        val savedPackage = packageRepository.save(packageDTO.toEntity())
+        val mavenArtifact = mavenArtifactService.resolveOrCreate(
+            MavenCoordinatesDTO(packageDTO.groupId, packageDTO.artifactId, packageDTO.version)
+        )
+        val savedPackage = packageRepository.save(packageDTO.toEntity(mavenArtifact))
         savedPackageId = savedPackage.id
 
         // Refresh search index to make the project searchable
