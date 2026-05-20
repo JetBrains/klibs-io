@@ -1,9 +1,10 @@
 package io.klibs.core.pckg.service
 
-import io.klibs.core.pckg.entity.PackageEntity
-import io.klibs.core.pckg.entity.PackageTargetEntity
+import io.klibs.core.pckg.dto.MavenArtifactDTO
 import io.klibs.core.pckg.dto.PackageDTO
+import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.entity.PackageIndexEntity
+import io.klibs.core.pckg.entity.PackageTargetEntity
 import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.model.PackageDetails
 import io.klibs.core.pckg.model.PackageDeveloper
@@ -37,7 +38,8 @@ class PackageService(
             packageDTO.version
         ) ?: return null
 
-        val updatedPackage = packageDTO.toEntity().deepCopy(id = existingPackage.id)
+        val updatedPackage = packageDTO.toEntity(MavenArtifactDTO.fromEntity(existingPackage.mavenArtifact))
+            .deepCopy(id = existingPackage.id)
 
         val existingTargetsByKey = existingPackage.targets.associateBy { it.platform to it.target }
 

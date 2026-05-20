@@ -1,0 +1,195 @@
+databaseChangeLog:
+  - changeSet:
+      id: create maven_artifact table and seed it from package
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: maven_artifact
+      changes:
+        - createTable:
+            tableName: maven_artifact
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_maven_artifact
+              - column:
+                  name: group_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: artifact_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: TEXT
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: |
+              INSERT INTO maven_artifact (id, group_id, artifact_id, version)
+              SELECT
+                  row_number() OVER (ORDER BY group_id, artifact_id, version) AS id,
+                  group_id, artifact_id, version
+              FROM (
+                  SELECT DISTINCT group_id, artifact_id, version FROM package
+              ) g;
+
+  - changeSet:
+      id: add unique index on maven_artifact gav
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: maven_artifact
+              indexName: uindex_maven_artifact_gav
+      changes:
+        - createIndex:
+            tableName: maven_artifact
+            indexName: uindex_maven_artifact_gav
+            unique: true
+            columns:
+              - column:
+                  name: group_id
+              - column:
+                  name: artifact_id
+              - column:
+                  name: version
+
+  - changeSet:
+      id: add ga index on maven_artifact for reverse lookup
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: maven_artifact
+              indexName: idx_maven_artifact_ga
+      changes:
+        - createIndex:
+            tableName: maven_artifact
+            indexName: idx_maven_artifact_ga
+            columns:
+              - column:
+                  name: group_id
+              - column:
+                  name: artifact_id
+
+  - changeSet:
+      id: create maven_artifact sequence
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            sequenceExists:
+              sequenceName: maven_artifact_id_seq
+      changes:
+        - sql:
+            sql: |
+              CREATE SEQUENCE maven_artifact_id_seq
+                  AS BIGINT
+                  INCREMENT BY 50
+                  START WITH 1;
+
+              SELECT setval('maven_artifact_id_seq', GREATEST(COALESCE((SELECT MAX(id) FROM maven_artifact), 0), 1), (SELECT COUNT(*) FROM maven_artifact) > 0);
+
+  - changeSet:
+      id: add package.maven_artifact_id column
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package
+              columnName: maven_artifact_id
+      changes:
+        - addColumn:
+            tableName: package
+            columns:
+              - column:
+                  name: maven_artifact_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: backfill package.maven_artifact_id from maven_artifact
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: package
+        - tableExists:
+            tableName: maven_artifact
+        - columnExists:
+            tableName: package
+            columnName: maven_artifact_id
+      changes:
+        - sql:
+            sql: |
+              UPDATE package p
+              SET maven_artifact_id = ma.id
+              FROM maven_artifact ma
+              WHERE ma.group_id = p.group_id
+                AND ma.artifact_id = p.artifact_id
+                AND ma.version = p.version
+                AND p.maven_artifact_id IS NULL;
+
+  - changeSet:
+      id: add package.maven_artifact_id foreign key
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            foreignKeyConstraintExists:
+              foreignKeyName: fk_package_maven_artifact_id
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_package_maven_artifact_id
+            baseTableName: package
+            baseColumnNames: maven_artifact_id
+            referencedTableName: maven_artifact
+            referencedColumnNames: id
+
+  - changeSet:
+      id: add index on package.maven_artifact_id
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package
+              indexName: idx_package_maven_artifact_id
+      changes:
+        - createIndex:
+            tableName: package
+            indexName: idx_package_maven_artifact_id
+            columns:
+              - column:
+                  name: maven_artifact_id
+
+  - changeSet:
+      id: make package.maven_artifact_id NOT NULL
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: HALT
+        - columnExists:
+            tableName: package
+            columnName: maven_artifact_id
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT COUNT(*) FROM package WHERE maven_artifact_id IS NULL
+      changes:
+        - addNotNullConstraint:
+            tableName: package
+            columnName: maven_artifact_id
+            columnDataType: BIGINT
