@@ -1,22 +1,8 @@
--- Seed data: one existing package com.example:lib-a
--- Minimal viable insert following schema used in other tests
-INSERT INTO public.package
-VALUES (
-    8001,               -- id
-    NULL,               -- project_id
-    CURRENT_TIMESTAMP,  -- release_ts (created_at in some schemas)
-    CURRENT_TIMESTAMP,  -- updated_at / release_ts depending on schema
-    'com.example',      -- group_id
-    'lib-a',            -- artifact_id
-    '1.0.0',            -- version
-    'Example A',        -- description
-    'https://example.com/lib-a', -- url
-    'gradle',           -- build_tool
-    '8.0',              -- build_tool_version
-    '2.0.0',            -- kotlin_version
-    '[]'::jsonb,        -- developers
-    NULL,               -- configuration
-    '[]'::jsonb,        -- licenses
-    '[]'::jsonb,        -- extra json column if exists (kept for compatibility)
-    'SEARCH_MAVEN'      -- scraper_type
-);
+
+
+
+INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+    (1075077997, 'com.example', 'lib-a', '1.0.0')
+ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
+
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, build_tool, build_tool_version, kotlin_version, developers, configuration, licenses, scraper_type, maven_artifact_id) VALUES (8001, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-a', '1.0.0', 'Example A', 'https://example.com/lib-a', 'gradle', '8.0', '2.0.0', '[]'::jsonb, NULL, '[]'::jsonb, 'SEARCH_MAVEN', 1075077997);

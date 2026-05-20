@@ -156,7 +156,13 @@ class PackageEntityTest {
             developers = listOf(PackageDeveloper("Test Developer", "https://example.com/developer")),
             licenses = listOf(PackageLicense("MIT", "https://opensource.org/licenses/MIT")),
             configuration = configuration,
-            generatedDescription = false
+            generatedDescription = false,
+            mavenArtifact = MavenArtifactEntity(
+                id = 9001L,
+                groupId = "io.klibs",
+                artifactId = "test-package",
+                version = "1.0.0",
+            ),
         )
     }
 }

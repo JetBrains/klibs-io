@@ -6,9 +6,11 @@ import io.klibs.app.util.toIndexRequest
 import io.klibs.core.pckg.dto.PackageDTO
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.enums.IndexingRequestStatus
+import io.klibs.core.pckg.dto.MavenCoordinatesDTO
 import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.pckg.service.MavenArtifactService
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.scm.repository.ScmRepositoryEntity
@@ -45,6 +47,7 @@ class PackageIndexingService(
     private val indexingRequestRepository: IndexingRequestRepository,
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
+    private val mavenArtifactService: MavenArtifactService,
     private val selfProvider: ObjectProvider<PackageIndexingService>
 ) {
 
@@ -176,7 +179,10 @@ class PackageIndexingService(
                 ?: error("Unable to update a non-existing artifact: $mavenArtifact")
             updated.id
         } else {
-            packageRepository.save(packageDto.toEntity()).id
+            val mavenArtifactDto = mavenArtifactService.resolveOrCreate(
+                MavenCoordinatesDTO(pom.groupId, pom.artifactId, pom.version)
+            )
+            packageRepository.save(packageDto.toEntity(mavenArtifactDto)).id
         }
 
         logger.trace("Extracting dependencies for {}", indexRequest)

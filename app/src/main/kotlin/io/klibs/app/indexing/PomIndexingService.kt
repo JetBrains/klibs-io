@@ -3,14 +3,15 @@ package io.klibs.app.indexing
 import io.klibs.app.util.ANDROIDX_OWNER_AND_GITHUB_REPOSITORY
 import io.klibs.app.util.isAndroidxProject
 import io.klibs.app.util.parseGitHubLink
-import io.klibs.core.pckg.entity.PackageDependencyEntity
-import io.klibs.core.pckg.entity.PackageDependencyKey
+import io.klibs.core.pckg.dto.MavenCoordinatesDTO
 import io.klibs.core.pckg.model.PackageDeveloper
 import io.klibs.core.pckg.model.PackageLicense
-import io.klibs.core.pckg.repository.PackageDependencyRepository
+import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.pckg.service.MavenArtifactService
 import io.klibs.integration.maven.MavenPom
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 /**
  * Owns everything derived from a package's POM during indexing: pure extractors for fields
@@ -23,7 +24,8 @@ import org.springframework.stereotype.Service
  */
 @Service
 class PomIndexingService(
-    private val packageDependencyRepository: PackageDependencyRepository,
+    private val packageRepository: PackageRepository,
+    private val mavenArtifactService: MavenArtifactService,
 ) {
 
     /**
@@ -62,30 +64,30 @@ class PomIndexingService(
         }
     }
 
+    @Transactional
     fun indexDependencies(pom: MavenPom, packageId: Long, isReindex: Boolean) {
         val dependencies = pom.extractDependencies()
 
+        if (!isReindex && dependencies.isEmpty()) return
+
+        val packageEntity = requireNotNull(packageRepository.findById(packageId).orElse(null)) {
+            "Package with id=$packageId not found while indexing dependencies"
+        }
+
         if (isReindex) {
-            packageDependencyRepository.deleteAllByIdPackageId(packageId)
+            packageEntity.dependencies.clear()
         }
 
-        if (dependencies.isEmpty()) return
-
-        val entities = dependencies.map { coords ->
-            PackageDependencyEntity(
-                id = PackageDependencyKey(
-                    packageId = packageId,
-                    depGroupId = coords.groupId,
-                    depArtifactId = coords.artifactId,
-                    depVersion = coords.version,
-                )
-            )
+        if (dependencies.isNotEmpty()) {
+            val artifactsByCoords = mavenArtifactService.resolveOrCreateAll(dependencies)
+            packageEntity.dependencies.addAll(artifactsByCoords.values.map { it.toEntityRef() })
         }
-        packageDependencyRepository.saveAll(entities)
-        logger.debug("Saved {} dependencies for package id={}", entities.size, packageId)
+
+        packageRepository.save(packageEntity)
+        logger.debug("Saved {} dependencies for package id={}", packageEntity.dependencies.size, packageId)
     }
 
-    private fun MavenPom.extractDependencies(): Set<DependencyCoordinates> =
+    private fun MavenPom.extractDependencies(): Set<MavenCoordinatesDTO> =
         dependencies
             ?.asSequence()
             ?.mapNotNull { dep ->
@@ -93,17 +95,11 @@ class PomIndexingService(
                 val artifact = dep.artifactId?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
                 val version = dep.version?.takeIf { it.isNotBlank() && !it.contains("\${") }
                     ?: return@mapNotNull null
-                DependencyCoordinates(groupId = group, artifactId = artifact, version = version)
+                MavenCoordinatesDTO(groupId = group, artifactId = artifact, version = version)
             }
             ?.filterNot { coords -> groupId == coords.groupId && artifactId == coords.artifactId }
             ?.toSet()
             .orEmpty()
-
-    private data class DependencyCoordinates(
-        val groupId: String,
-        val artifactId: String,
-        val version: String,
-    )
 
     private companion object {
         private val logger = LoggerFactory.getLogger(PomIndexingService::class.java)

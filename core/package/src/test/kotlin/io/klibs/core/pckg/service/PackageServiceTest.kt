@@ -1,5 +1,6 @@
 package io.klibs.core.pckg.service
 
+import io.klibs.core.pckg.entity.MavenArtifactEntity
 import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.repository.PackageIndexRepository
@@ -140,7 +141,13 @@ class PackageServiceTest {
             licenses = emptyList(),
             configuration = null,
             generatedDescription = false,
-            versionType = versionType
+            versionType = versionType,
+            mavenArtifact = MavenArtifactEntity(
+                id = id,
+                groupId = "io.klibs",
+                artifactId = "test-package",
+                version = version,
+            ),
         )
     }
 
