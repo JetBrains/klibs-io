@@ -10,15 +10,15 @@ One or two sentences.
 - Who's affected (end users, library authors, developers)?
 
 ## 3. User scenarios & acceptance
-### Scenario 1 — <title> (P1)
-- **Given:** <state>
-- **When:** <action>
-- **Then:** <observable outcome>
-- **Independent test:** <how to verify in isolation>
+### Scenario 1 — `<title>` (P1)
+- **Given:** `<state>`
+- **When:** `<action>`
+- **Then:** `<observable outcome>`
+- **Independent test:** `<how to verify in isolation>`
 
 ### Edge cases
-- What happens when <boundary>?
-- How does the system handle <error / partial failure>?
+- What happens when `<boundary>`?
+- How does the system handle `<error / partial failure>`?
 
 ## 4. Functional requirements
 - **FR-001:** System MUST …
@@ -52,16 +52,16 @@ Explicit list.
 ## 8. Design options considered
 *Skip when the implementation is the only sensible one.*
 
-### Option A — <name>
+### Option A — `<name>`
 - Approach / pros / cons
 
-### Option B — <name>
+### Option B — `<name>`
 - …
 
-**Decision:** Option <X>. Rationale: …
+**Decision:** Option `<X>`. Rationale: …
 
 ## 9. Key entities (only if data model changes)
-- **<EntityName>:** purpose, key fields, relationships, lifecycle
+- **`<EntityName>`:** purpose, key fields, relationships, lifecycle
 
 ## 10. Database schema diagram (only if schema changes)
 *Mermaid ER diagram of the resulting tables. Mark new tables/columns with `(new)`, removed ones with `(removed)`. Skip if schema is unchanged. Renders natively in GitHub and IntelliJ.*

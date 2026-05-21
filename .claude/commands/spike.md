@@ -15,7 +15,7 @@ A specific question, hypothesis, or build target. Examples (small to large):
 - "Can we extract dependents count from Maven Central without exceeding the solrsearch rate limit?"
 - "Does the OssHealth score still make sense if we drop the issue-velocity component?"
 - "Try PostgreSQL FTS `rank_cd` vs `ts_rank` — which gives better results for our queries?"
-- "Build a rough end-to-end implementation of the OSS health metric per <design doc link> — find out where the design breaks down before we formalize."
+- "Build a rough end-to-end implementation of the OSS health metric per `<design doc link>` — find out where the design breaks down before we formalize."
 
 If `$ARGUMENTS` is vague (e.g. "spike a thing"), STOP and ask for a specific question or build target.
 
