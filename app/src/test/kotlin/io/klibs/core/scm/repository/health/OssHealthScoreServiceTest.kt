@@ -1,12 +1,10 @@
-package io.klibs.app.oss_health
+package io.klibs.core.scm.repository.health
 
 import BaseUnitWithDbLayerTest
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
 import io.klibs.integration.github.GitHubIntegration
-import io.klibs.integration.github.model.GitHubCommitAuthor
-import io.klibs.integration.github.model.GitHubParticipationStats
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -45,56 +43,89 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     private val twelveWeeksAgo: Instant = now.minus(12 * 7L, ChronoUnit.DAYS)
 
     @Test
-    fun `computeOldestRepo returns false when no repo is queued`() {
-        // No scm_repo + no components row → queue empty.
-        assertFalse(uut.computeOldestRepo())
+    @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
+    fun `isDue returns false when no components row exists`() {
+        // Issue/PR sync has never run for this repo, so there's no I/P data to compose a score from.
+        assertFalse(uut.isDue(seededRepo(), now))
     }
 
     @Test
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
-    fun `computeOldestRepo returns true when a repo's next_health_compute_ts is due`() {
+    fun `isDue returns false when issue-or-pr sync has not run yet`() {
         val repo = seededRepo()
-        // Make this repo eligible for the score queue.
-        healthComponentsRepository.setNextHealthComputeTs(repo.idNotNull, now.minus(1, ChronoUnit.HOURS))
-        // Simplest path: participation null → service defers and returns true.
-        whenever(gitHubIntegration.getParticipationStats(repo.nativeId)).thenReturn(null)
-
-        assertTrue(uut.computeOldestRepo())
+        // Components row exists from some other write, but lastIssueOrPrSyncTs is still null.
+        healthComponentsRepository.upsertScoreComponents(
+            scmRepoId = repo.idNotNull,
+            scoreRecomputedTs = now.minus(1, ChronoUnit.DAYS),
+            activeContributors = null, topContributorShare = null,
+            cScore = null, aScore = null, healthScore = null,
+        )
+        assertFalse(uut.isDue(repo, now))
     }
 
     @Test
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
-    fun `computeOne defers next_health_compute_ts by 2 minutes when participation is null`() {
+    fun `isDue returns true when issue-or-pr sync ran but score has not`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getParticipationStats(repo.nativeId)).thenReturn(null)
+        healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, now)
+        assertTrue(uut.isDue(repo, now))
+    }
+
+    @Test
+    @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
+    fun `isDue returns false when score was recomputed at or after the last issue-or-pr sync`() {
+        val repo = seededRepo()
+        val syncTs = now.minus(1, ChronoUnit.DAYS)
+        healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, syncTs)
+        healthComponentsRepository.upsertScoreComponents(
+            scmRepoId = repo.idNotNull,
+            scoreRecomputedTs = syncTs,
+            activeContributors = null, topContributorShare = null,
+            cScore = null, aScore = null, healthScore = null,
+        )
+        assertFalse(uut.isDue(repo, now))
+    }
+
+    @Test
+    @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
+    fun `isDue returns true when score is older than the last issue-or-pr sync`() {
+        val repo = seededRepo()
+        healthComponentsRepository.upsertScoreComponents(
+            scmRepoId = repo.idNotNull,
+            scoreRecomputedTs = now.minus(2, ChronoUnit.DAYS),
+            activeContributors = null, topContributorShare = null,
+            cScore = null, aScore = null, healthScore = null,
+        )
+        healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, now.minus(1, ChronoUnit.DAYS))
+        assertTrue(uut.isDue(repo, now))
+    }
+
+    @Test
+    @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
+    fun `computeOne writes nothing when getCommitsByWeek throws`() {
+        val repo = seededRepo()
+        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId))
+            .thenThrow(RuntimeException("simulated 202 from /stats/participation"))
 
         uut.computeOne(repo, now)
 
-        val components = assertNotNull(healthComponentsRepository.findByScmRepoId(repo.idNotNull))
-        assertEquals(now.plus(2, ChronoUnit.MINUTES), components.nextHealthComputeTs)
-        // No score columns written.
-        assertNull(components.cScore)
-        assertNull(components.aScore)
-        assertNull(components.healthScore)
-        // GraphQL is never called when participation is null.
+        // No components row created; nothing to retry-schedule — next repo update tick re-checks.
+        assertNull(healthComponentsRepository.findByScmRepoId(repo.idNotNull))
+        // GraphQL is never called when the commits-by-week call fails.
         verify(gitHubIntegration, org.mockito.kotlin.never()).getCommitAuthorCounts(any(), any(), any())
     }
 
     @Test
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
-    fun `computeOne defers next_health_compute_ts by 1 hour when author counts are null`() {
+    fun `computeOne writes nothing when getCommitAuthorCounts throws`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getParticipationStats(repo.nativeId))
-            .thenReturn(GitHubParticipationStats(weeklyAllCommits = List(52) { 5 }))
-        whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo)).thenReturn(null)
+        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
+        whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
+            .thenThrow(RuntimeException("simulated GraphQL failure"))
 
         uut.computeOne(repo, now)
 
-        val components = assertNotNull(healthComponentsRepository.findByScmRepoId(repo.idNotNull))
-        assertEquals(now.plus(1, ChronoUnit.HOURS), components.nextHealthComputeTs)
-        assertNull(components.cScore)
-        assertNull(components.aScore)
-        assertNull(components.healthScore)
+        assertNull(healthComponentsRepository.findByScmRepoId(repo.idNotNull))
     }
 
     @Test
@@ -109,14 +140,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
             iScore = 0.7, pScore = 0.6,
         )
 
-        whenever(gitHubIntegration.getParticipationStats(repo.nativeId))
-            .thenReturn(GitHubParticipationStats(weeklyAllCommits = List(52) { 5 }))
+        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
         whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(listOf(
-                GitHubCommitAuthor("alice", 8),
-                GitHubCommitAuthor("bob", 7),
-                GitHubCommitAuthor("carol", 5),
-            ))
+            .thenReturn(mapOf("alice" to 8, "bob" to 7, "carol" to 5))
 
         uut.computeOne(repo, now)
 
@@ -129,7 +155,6 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(components.cScore)
         assertNotNull(components.aScore)
         assertNotNull(components.healthScore)
-        assertEquals(now.plus(7, ChronoUnit.DAYS), components.nextHealthComputeTs)
         // I/P side untouched by the score upsert.
         assertEquals(5, components.issueOpenedCount)
         assertEquals(0.7, components.iScore)
@@ -141,10 +166,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     fun `computeOne writes null healthScore when no prior I or P components exist`() {
         val repo = seededRepo()
         // No upsertIssuePrComponents call → I and P remain null → composeScore returns null.
-        whenever(gitHubIntegration.getParticipationStats(repo.nativeId))
-            .thenReturn(GitHubParticipationStats(weeklyAllCommits = List(12) { 5 }))
+        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
         whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(listOf(GitHubCommitAuthor("alice", 5)))
+            .thenReturn(mapOf("alice" to 5))
 
         uut.computeOne(repo, now)
 
@@ -159,10 +183,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne writes topContributorShare equal to 1_0 when a single author owns all commits`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getParticipationStats(repo.nativeId))
-            .thenReturn(GitHubParticipationStats(weeklyAllCommits = List(12) { 5 }))
+        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
         whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(listOf(GitHubCommitAuthor("alice", 30)))
+            .thenReturn(mapOf("alice" to 30))
 
         uut.computeOne(repo, now)
 
@@ -175,10 +198,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne writes zero activeContributors and null topShare when author counts are empty`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getParticipationStats(repo.nativeId))
-            .thenReturn(GitHubParticipationStats(weeklyAllCommits = List(12) { 5 }))
+        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
         whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(emptyList())
+            .thenReturn(emptyMap())
 
         uut.computeOne(repo, now)
 
@@ -193,10 +215,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne writes null cScore when every week has zero commits`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getParticipationStats(repo.nativeId))
-            .thenReturn(GitHubParticipationStats(weeklyAllCommits = List(52) { 0 }))
+        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 0 })
         whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(listOf(GitHubCommitAuthor("alice", 1)))
+            .thenReturn(mapOf("alice" to 1))
 
         uut.computeOne(repo, now)
 
@@ -208,9 +229,8 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne calls getCommitAuthorCounts with now minus 12 weeks as the cutoff`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getParticipationStats(repo.nativeId))
-            .thenReturn(GitHubParticipationStats(weeklyAllCommits = List(12) { 1 }))
-        whenever(gitHubIntegration.getCommitAuthorCounts(eq(repo.ownerLogin), eq(repo.name), any())).thenReturn(emptyList())
+        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 1 })
+        whenever(gitHubIntegration.getCommitAuthorCounts(eq(repo.ownerLogin), eq(repo.name), any())).thenReturn(emptyMap())
 
         uut.computeOne(repo, now)
 

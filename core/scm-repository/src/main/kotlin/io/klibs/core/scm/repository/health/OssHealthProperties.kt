@@ -1,4 +1,4 @@
-package io.klibs.app.configuration.properties
+package io.klibs.core.scm.repository.health
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 

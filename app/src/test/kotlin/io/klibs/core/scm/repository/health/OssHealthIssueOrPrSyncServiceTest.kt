@@ -1,4 +1,4 @@
-package io.klibs.app.oss_health
+package io.klibs.core.scm.repository.health
 
 import BaseUnitWithDbLayerTest
 import io.klibs.core.owner.ScmOwnerType
@@ -21,9 +21,11 @@ import org.springframework.test.context.jdbc.Sql
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * End-to-end integration tests against Testcontainer Postgres. Drives the real
@@ -49,9 +51,33 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
     private val windowStart: Instant = now.minus(12 * 7L, ChronoUnit.DAYS)
 
     @Test
-    fun `syncOldestRepo returns false when no repo is queued`() {
-        // No scm_repo rows seeded — queue is empty.
-        assertFalse(uut.syncOldestRepo())
+    @Sql("classpath:sql/OssHealthIssueOrPrSyncServiceTest/seed-repo.sql")
+    fun `isDue returns true when no components row exists and hasIssues is true`() {
+        val repo = seededRepo()
+        assertTrue(uut.isDue(repo, now))
+    }
+
+    @Test
+    @Sql("classpath:sql/OssHealthIssueOrPrSyncServiceTest/seed-repo.sql")
+    fun `isDue returns false when hasIssues is false`() {
+        val repo = seededRepo().copy(hasIssues = false)
+        assertFalse(uut.isDue(repo, now))
+    }
+
+    @Test
+    @Sql("classpath:sql/OssHealthIssueOrPrSyncServiceTest/seed-repo.sql")
+    fun `isDue returns false when last sync was less than 7 days ago`() {
+        val repo = seededRepo()
+        healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, now.minus(1, ChronoUnit.DAYS))
+        assertFalse(uut.isDue(repo, now))
+    }
+
+    @Test
+    @Sql("classpath:sql/OssHealthIssueOrPrSyncServiceTest/seed-repo.sql")
+    fun `isDue returns true when last sync was more than 7 days ago`() {
+        val repo = seededRepo()
+        healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, now.minus(8, ChronoUnit.DAYS))
+        assertTrue(uut.isDue(repo, now))
     }
 
     @Test
@@ -95,7 +121,6 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(components.iScore)
         assertNotNull(components.pScore)
         assertEquals(now, components.lastIssueOrPrSyncTs)
-        assertEquals(now, components.nextHealthComputeTs)
     }
 
     @Test
@@ -122,24 +147,16 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql("classpath:sql/OssHealthIssueOrPrSyncServiceTest/seed-repo.sql")
-    fun `syncOne advances only last_issue_or_pr_sync_ts when the GitHub call throws`() {
+    fun `syncOne propagates and writes nothing when the GitHub call throws`() {
         val repo = seededRepo()
         whenever(gitHubIntegration.recentIssues(eq(repo.nativeId), any()))
             .thenThrow(RuntimeException("network blip"))
 
-        uut.syncOne(repo, now)
+        assertFailsWith<RuntimeException> { uut.syncOne(repo, now) }
 
-        // No rows written.
+        // No rows written, no components row created — retry happens on the next repo update tick.
         assertEquals(0, issueOrPrRepository.findActiveSince(repo.idNotNull, windowStart).size)
-
-        // Components row exists with only last_issue_or_pr_sync_ts set; no aggregates, no next compute ts.
-        val components = healthComponentsRepository.findByScmRepoId(repo.idNotNull)
-        assertNotNull(components)
-        assertEquals(now, components.lastIssueOrPrSyncTs)
-        assertNull(components.issueOpenedCount)
-        assertNull(components.iScore)
-        assertNull(components.pScore)
-        assertNull(components.nextHealthComputeTs)
+        assertNull(healthComponentsRepository.findByScmRepoId(repo.idNotNull))
     }
 
     @Test

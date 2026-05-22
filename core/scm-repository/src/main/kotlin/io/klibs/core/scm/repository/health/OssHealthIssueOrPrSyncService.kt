@@ -1,8 +1,6 @@
-package io.klibs.app.oss_health
+package io.klibs.core.scm.repository.health
 
-import io.klibs.app.configuration.properties.OssHealthProperties
 import io.klibs.core.scm.repository.ScmRepositoryEntity
-import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.health.entity.ScmRepoIssueOrPrEntity
 import io.klibs.core.scm.repository.health.enums.ScmRepoIssueOrPrType
 import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
@@ -30,21 +28,24 @@ import java.time.temporal.ChronoUnit
  */
 @Service
 class OssHealthIssueOrPrSyncService(
-    private val scmRepositoryRepository: ScmRepositoryRepository,
     private val issueOrPrRepository: ScmRepoIssueOrPrRepository,
     private val healthComponentsRepository: ScmRepoHealthComponentsRepository,
     private val gitHubIntegration: GitHubIntegration,
     private val ossHealthProperties: OssHealthProperties,
 ) {
 
-    @Transactional
-    fun syncOldestRepo(): Boolean {
-        val repos = scmRepositoryRepository.findMultipleForHealthEventSync(limit = 1)
-        val repo = repos.firstOrNull() ?: return false
-        syncOne(repo, Instant.now())
-        return true
+    /**
+     * Whether [repo] needs an OSS issue/PR sync right now: it must have issues enabled and either
+     * have never been synced or have been synced more than 7 days ago.
+     */
+    fun isDue(repo: ScmRepositoryEntity, now: Instant): Boolean {
+        if (!repo.hasIssues) return false
+        val lastSync = healthComponentsRepository.findByScmRepoId(repo.idNotNull)?.lastIssueOrPrSyncTs
+            ?: return true
+        return lastSync.isBefore(now.minus(SYNC_CADENCE_DAYS, ChronoUnit.DAYS))
     }
 
+    @Transactional
     fun syncOne(repo: ScmRepositoryEntity, now: Instant) {
         val windowStart = now.minus(WINDOW_WEEKS.toLong() * 7, ChronoUnit.DAYS)
 
@@ -56,22 +57,8 @@ class OssHealthIssueOrPrSyncService(
             repo.idNotNull, repo.ownerLogin, repo.name, since
         )
 
-        val fetchedIssues = runCatching {
-            gitHubIntegration.recentIssues(repo.nativeId, since)
-        }.onFailure { e ->
-            logger.warn("Failed to fetch issues for ${repo.ownerLogin}/${repo.name}: ${e.message}")
-            healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, now)
-            return
-        }.getOrThrow()
-
-        val fetchedPrs = runCatching {
-            gitHubIntegration.recentPrs(repo.nativeId, since)
-        }.onFailure { e ->
-            logger.warn("Failed to fetch PRs for ${repo.ownerLogin}/${repo.name}: ${e.message}")
-            healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, now)
-            return
-        }.getOrThrow()
-
+        val fetchedIssues = gitHubIntegration.recentIssues(repo.nativeId, since)
+        val fetchedPrs = gitHubIntegration.recentPrs(repo.nativeId, since)
         val fetchedCount = fetchedIssues.size + fetchedPrs.size
 
         if (fetchedCount > 0) {
@@ -116,10 +103,6 @@ class OssHealthIssueOrPrSyncService(
         )
 
         healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, now)
-
-        // If we have never computed a score before, seed `next_health_compute_ts` to now
-        // so the score job will pick this repo up on its next tick.
-        healthComponentsRepository.setNextHealthComputeTs(repo.idNotNull, now)
 
         logger.info(
             "OSS health issues/PRs synced for repoId={}: fetched={}, window issues o/c={}/{}, prs o/m={}/{}, " +
@@ -191,6 +174,7 @@ class OssHealthIssueOrPrSyncService(
 
     companion object {
         private const val WINDOW_WEEKS = 12
+        private const val SYNC_CADENCE_DAYS = 7L
         private val logger = LoggerFactory.getLogger(OssHealthIssueOrPrSyncService::class.java)
     }
 }

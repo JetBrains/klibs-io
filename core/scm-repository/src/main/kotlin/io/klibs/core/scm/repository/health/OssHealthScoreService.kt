@@ -1,8 +1,6 @@
-package io.klibs.app.oss_health
+package io.klibs.core.scm.repository.health
 
-import io.klibs.app.configuration.properties.OssHealthProperties
 import io.klibs.core.scm.repository.ScmRepositoryEntity
-import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
 import io.klibs.integration.github.GitHubIntegration
 import org.slf4j.LoggerFactory
@@ -14,42 +12,44 @@ import java.time.temporal.ChronoUnit
 /**
  * Computes the final OSS Health score for one repo by combining:
  *  - I/P components already written by [OssHealthIssueOrPrSyncService]
- *  - Commit consistency (C) from `/stats/participation`
+ *  - Commit consistency (C) from `/stats/participation` (`getCommitsByWeek`)
  *  - Author diversity (A) from the GraphQL commit history (`getCommitAuthorCounts`)
  *
- * If either GitHub call fails / returns null (rate limit, 202, network), this run is
- * skipped and `next_health_compute_ts` is bumped forward 15 minutes so the queue retries.
+ * If either GitHub call throws (rate limit, 202, network), this run is skipped and the next
+ * attempt happens on the next repo-update tick (`isDue` stays true until the score catches up
+ * to the latest issue/PR sync).
  */
 @Service
 class OssHealthScoreService(
-    private val scmRepositoryRepository: ScmRepositoryRepository,
     private val healthComponentsRepository: ScmRepoHealthComponentsRepository,
     private val gitHubIntegration: GitHubIntegration,
     private val ossHealthProperties: OssHealthProperties,
 ) {
 
-    @Transactional
-    fun computeOldestRepo(): Boolean {
-        val repos = scmRepositoryRepository.findMultipleForHealthScoreCompute(limit = 1)
-        val repo = repos.firstOrNull() ?: return false
-        computeOne(repo, Instant.now())
-        return true
+    /**
+     * Whether [repo]'s OSS health score needs a recompute right now. Cadence is driven by the
+     * issue/PR sync: a score is due iff issue/PR sync has run at least once AND the score is older
+     * than that last issue/PR sync (or never computed). This way failed scores retry every tick
+     * until they catch up.
+     */
+    fun isDue(repo: ScmRepositoryEntity, now: Instant): Boolean {
+        val components = healthComponentsRepository.findByScmRepoId(repo.idNotNull) ?: return false
+        val lastIssueOrPrSync = components.lastIssueOrPrSyncTs ?: return false
+        val lastScore = components.scoreRecomputedTs ?: return true
+        return lastScore.isBefore(lastIssueOrPrSync)
     }
 
+    @Transactional
     fun computeOne(repo: ScmRepositoryEntity, now: Instant) {
         val twelveWeeksAgo = now.minus(WINDOW_DAYS, ChronoUnit.DAYS)
 
-        val participation = runCatching { gitHubIntegration.getParticipationStats(repo.nativeId) }
-            .onFailure { logger.warn("participation stats failed for ${repo.ownerLogin}/${repo.name}: ${it.message}") }
+        val commitsByWeek = runCatching { gitHubIntegration.getCommitsByWeek(repo.nativeId) }
+            .onFailure { logger.warn("commitsByWeek failed for ${repo.ownerLogin}/${repo.name}: ${it.message}") }
             .getOrNull()
-        if (participation == null) {
-            // /stats/participation 202s on first touch while GitHub builds the cache async;
-            // it's usually ready within a minute or two, so a short backoff is enough.
-            val retryAt = now.plus(2, ChronoUnit.MINUTES)
-            healthComponentsRepository.setNextHealthComputeTs(repo.idNotNull, retryAt)
+        if (commitsByWeek == null) {
             logger.info(
-                "Deferring OSS health score for repoId={} {}/{}: participation null — retry at {}",
-                repo.idNotNull, repo.ownerLogin, repo.name, retryAt
+                "Deferring OSS health score for repoId={} {}/{}: commitsByWeek null — retry on next repo update",
+                repo.idNotNull, repo.ownerLogin, repo.name
             )
             return
         }
@@ -60,27 +60,23 @@ class OssHealthScoreService(
             logger.warn("commit author counts failed for ${repo.ownerLogin}/${repo.name}: ${it.message}")
         }.getOrNull()
         if (authorCounts == null) {
-            // GraphQL failure is network/rate-limit, not async cache build — back off long enough
-            // for a hourly rate-limit window to reset.
-            val retryAt = now.plus(1, ChronoUnit.HOURS)
-            healthComponentsRepository.setNextHealthComputeTs(repo.idNotNull, retryAt)
             logger.info(
-                "Deferring OSS health score for repoId={} {}/{}: authorCounts null — retry at {}",
-                repo.idNotNull, repo.ownerLogin, repo.name, retryAt
+                "Deferring OSS health score for repoId={} {}/{}: authorCounts null — retry on next repo update",
+                repo.idNotNull, repo.ownerLogin, repo.name
             )
             return
         }
 
-        val last12WeekCommits = participation.weeklyAllCommits.takeLast(12)
+        val last12WeekCommits = commitsByWeek.takeLast(12)
         val c = OssHealthFormula.commitConsistency(
             weeklyCommits = last12WeekCommits,
             cvDenominator = ossHealthProperties.commitCvDenominator,
         )
 
-        val activeContributors = authorCounts.count { it.commits > 0 }
-        val totalCommits12w = authorCounts.sumOf { it.commits }
+        val activeContributors = authorCounts.values.count { it > 0 }
+        val totalCommits12w = authorCounts.values.sum()
         val topShare: Double? = if (totalCommits12w > 0) {
-            authorCounts.maxOf { it.commits }.toDouble() / totalCommits12w
+            authorCounts.values.max().toDouble() / totalCommits12w
         } else null
         val a = OssHealthFormula.authorDiversity(
             activeContributors = activeContributors,
@@ -104,9 +100,6 @@ class OssHealthScoreService(
             aScore = a,
             healthScore = composed,
         )
-
-        // Schedule the next recompute in ~7 days.
-        healthComponentsRepository.setNextHealthComputeTs(repo.idNotNull, now.plus(7, ChronoUnit.DAYS))
 
         logger.info(
             "OSS health score for repoId={} {}/{}: C={} I={} P={} A={} → score={}",

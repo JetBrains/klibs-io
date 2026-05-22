@@ -60,11 +60,6 @@ class ScmRepoHealthComponentsEntity(
     @Column(name = "health_score")
     val healthScore: Int?,
 
-    /** Drives the issue/PR sync queue. */
     @Column(name = "last_issue_or_pr_sync_ts")
     val lastIssueOrPrSyncTs: Instant?,
-
-    /** Drives the score compute queue (regular cadence + 202 retry delays). */
-    @Column(name = "next_health_compute_ts")
-    val nextHealthComputeTs: Instant?,
 )

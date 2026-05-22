@@ -50,7 +50,6 @@ class ScmRepoHealthComponentsRepositoryDbTest : BaseUnitWithDbLayerTest() {
         assertNotNull(row)
         assertEquals(ts, row.lastIssueOrPrSyncTs)
         // All other columns remain null on the insert path.
-        assertNull(row.nextHealthComputeTs)
         assertNull(row.issueOpenedCount)
         assertNull(row.iScore)
         assertNull(row.cScore)
@@ -92,32 +91,6 @@ class ScmRepoHealthComponentsRepositoryDbTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql("classpath:sql/ScmRepoHealthComponentsRepositoryDbTest/seed-repo.sql")
-    fun `setNextHealthComputeTs inserts a new row when none exists`() {
-        val ts = Instant.parse("2026-05-10T00:00:00Z")
-        repo.setNextHealthComputeTs(SCM_REPO_ID, ts)
-
-        val row = assertNotNull(repo.findByScmRepoId(SCM_REPO_ID))
-        assertEquals(ts, row.nextHealthComputeTs)
-        assertNull(row.lastIssueOrPrSyncTs)
-    }
-
-    @Test
-    @Sql("classpath:sql/ScmRepoHealthComponentsRepositoryDbTest/seed-repo.sql")
-    fun `setNextHealthComputeTs updates only its column on an existing row`() {
-        val initialLast = Instant.parse("2026-04-20T00:00:00Z")
-        repo.setLastIssueOrPrSyncTs(SCM_REPO_ID, initialLast)
-
-        val nextCompute = Instant.parse("2026-05-10T00:00:00Z")
-        repo.setNextHealthComputeTs(SCM_REPO_ID, nextCompute)
-
-        val row = assertNotNull(repo.findByScmRepoId(SCM_REPO_ID))
-        assertEquals(nextCompute, row.nextHealthComputeTs)
-        // lastIssueOrPrSyncTs from the prior call is preserved.
-        assertEquals(initialLast, row.lastIssueOrPrSyncTs)
-    }
-
-    @Test
-    @Sql("classpath:sql/ScmRepoHealthComponentsRepositoryDbTest/seed-repo.sql")
     fun `upsertIssuePrComponents inserts a new row with the 9 I-P columns set`() {
         repo.upsertIssuePrComponents(
             scmRepoId = SCM_REPO_ID,
@@ -153,7 +126,7 @@ class ScmRepoHealthComponentsRepositoryDbTest : BaseUnitWithDbLayerTest() {
             cScore = 0.5, aScore = 0.8, healthScore = 65,
         )
 
-        // Issue/PR sync side overwrites later — must not clobber the score side.
+        // Issue/PR-sync side overwrites later — must not clobber the score side.
         repo.upsertIssuePrComponents(
             scmRepoId = SCM_REPO_ID,
             issueOpenedCount = 11, issueClosedCount = 10, medianIssueCloseDays = 4.0,
@@ -174,7 +147,7 @@ class ScmRepoHealthComponentsRepositoryDbTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql("classpath:sql/ScmRepoHealthComponentsRepositoryDbTest/seed-repo.sql")
-    fun `upsertScoreComponents inserts a new row with the 6 score-side columns set`() {
+    fun `upsertScoreComponents inserts a new row with the 7 score-side columns set`() {
         val recomputedTs = Instant.parse("2026-04-29T12:00:00Z")
         repo.upsertScoreComponents(
             scmRepoId = SCM_REPO_ID,

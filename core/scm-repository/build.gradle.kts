@@ -6,4 +6,5 @@ plugins {
 
 dependencies {
     implementation(projects.core.scmOwner)
+    implementation(projects.integrations.github)
 }

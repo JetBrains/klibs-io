@@ -1,7 +1,5 @@
-package io.klibs.app.oss_health
+package io.klibs.core.scm.repository.health
 
-import java.math.BigDecimal
-import java.math.RoundingMode
 import kotlin.math.sqrt
 
 /**
@@ -128,7 +126,4 @@ object OssHealthFormula {
         val raw = 100.0 * (WEIGHT_C * c + WEIGHT_I * i + WEIGHT_P * p + WEIGHT_A * a)
         return raw.coerceIn(0.0, 100.0).toInt()
     }
-
-    fun Double.toBigDecimalOrNull4(): BigDecimal = BigDecimal(this).setScale(4, RoundingMode.HALF_UP)
-    fun Double.toBigDecimal2(): BigDecimal = BigDecimal(this).setScale(2, RoundingMode.HALF_UP)
 }

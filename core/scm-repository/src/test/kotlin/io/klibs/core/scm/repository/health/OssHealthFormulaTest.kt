@@ -1,4 +1,4 @@
-package io.klibs.app.oss_health
+package io.klibs.core.scm.repository.health
 
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals

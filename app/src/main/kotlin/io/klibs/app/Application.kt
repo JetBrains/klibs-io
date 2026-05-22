@@ -3,7 +3,7 @@ package io.klibs.app
 import io.klibs.app.configuration.properties.GoogleMavenCacheConfigurationProperties
 import io.klibs.app.configuration.properties.ApiDocsProperties
 import io.klibs.app.configuration.properties.AuthProperties
-import io.klibs.app.configuration.properties.OssHealthProperties
+import io.klibs.core.scm.repository.health.OssHealthProperties
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.domain.EntityScan

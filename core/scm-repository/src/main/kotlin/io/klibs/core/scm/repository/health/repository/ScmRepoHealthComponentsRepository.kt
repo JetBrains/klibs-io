@@ -106,7 +106,7 @@ interface ScmRepoHealthComponentsRepository : JpaRepository<ScmRepoHealthCompone
         @Param("healthScore") healthScore: Int?,
     )
 
-    /** Marks the time when the issue/PR sync last ran for this repo. Drives the issue/PR sync queue. */
+    /** Marks the time when the issue/PR sync last ran for this repo. */
     @Modifying
     @Transactional
     @Query("""
@@ -115,17 +115,4 @@ interface ScmRepoHealthComponentsRepository : JpaRepository<ScmRepoHealthCompone
         ON CONFLICT(scmRepoId) DO UPDATE SET lastIssueOrPrSyncTs = :ts
     """)
     fun setLastIssueOrPrSyncTs(@Param("scmRepoId") scmRepoId: Int, @Param("ts") ts: Instant)
-
-    /**
-     * Schedules the next time the score job should pick this repo up. Used both for the regular
-     * weekly cadence and for short retries when GitHub stats endpoints return 202 Accepted.
-     */
-    @Modifying
-    @Transactional
-    @Query("""
-        INSERT INTO ScmRepoHealthComponentsEntity (scmRepoId, nextHealthComputeTs)
-        VALUES (:scmRepoId, :ts)
-        ON CONFLICT(scmRepoId) DO UPDATE SET nextHealthComputeTs = :ts
-    """)
-    fun setNextHealthComputeTs(@Param("scmRepoId") scmRepoId: Int, @Param("ts") ts: Instant)
 }
