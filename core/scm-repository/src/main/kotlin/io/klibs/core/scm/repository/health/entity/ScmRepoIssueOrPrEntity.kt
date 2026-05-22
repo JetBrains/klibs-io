@@ -5,16 +5,26 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
-import jakarta.persistence.IdClass
+import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
 @Table(name = "scm_repo_issue_or_pr")
-@IdClass(ScmRepoIssueOrPrKey::class)
 class ScmRepoIssueOrPrEntity(
     @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "scm_repo_issue_or_pr_id_seq")
+    @SequenceGenerator(
+        name = "scm_repo_issue_or_pr_id_seq",
+        sequenceName = "scm_repo_issue_or_pr_id_seq",
+        allocationSize = 50,
+    )
+    @Column(name = "id")
+    val id: Long? = null,
+
     @Column(name = "scm_repo_id")
     val scmRepoId: Int,
 
@@ -23,7 +33,6 @@ class ScmRepoIssueOrPrEntity(
      * Combined with [scmRepoId], this is the upsert dedup key — re-fetching the
      * same item updates in place rather than inserting a duplicate row.
      */
-    @Id
     @Column(name = "gh_number")
     val ghNumber: Int,
 
@@ -46,13 +55,4 @@ class ScmRepoIssueOrPrEntity(
 
     @Column(name = "duration_days")
     val durationDays: Int?,
-)
-
-/**
- * Composite identifier for [ScmRepoIssueOrPrEntity]. Nullable defaults satisfy JPA's
- * no-arg requirement for @IdClass; same shape as [io.klibs.core.project.entity.MarkerKey].
- */
-data class ScmRepoIssueOrPrKey(
-    val scmRepoId: Int? = null,
-    val ghNumber: Int? = null,
 )

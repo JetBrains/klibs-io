@@ -1,7 +1,6 @@
 package io.klibs.core.scm.repository.health.repository
 
 import io.klibs.core.scm.repository.health.entity.ScmRepoIssueOrPrEntity
-import io.klibs.core.scm.repository.health.entity.ScmRepoIssueOrPrKey
 import io.klibs.core.scm.repository.health.enums.ScmRepoIssueOrPrType
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -10,7 +9,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
-interface ScmRepoIssueOrPrRepository : JpaRepository<ScmRepoIssueOrPrEntity, ScmRepoIssueOrPrKey> {
+interface ScmRepoIssueOrPrRepository : JpaRepository<ScmRepoIssueOrPrEntity, Long> {
 
     @Modifying
     @Transactional
