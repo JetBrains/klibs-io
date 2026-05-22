@@ -13,6 +13,13 @@ databaseChangeLog:
             tableName: scm_repo_issue_or_pr
             columns:
               - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_scm_repo_issue_or_pr
+              - column:
                   name: scm_repo_id
                   type: INT
                   constraints:
@@ -45,10 +52,26 @@ databaseChangeLog:
               - column:
                   name: duration_days
                   type: INT
-        - addPrimaryKey:
+        - addUniqueConstraint:
             tableName: scm_repo_issue_or_pr
             columnNames: scm_repo_id, gh_number
-            constraintName: pk_scm_repo_issue_or_pr
+            constraintName: uq_scm_repo_issue_or_pr_repo_number
+
+  - changeSet:
+      id: create scm_repo_issue_or_pr sequence
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            sequenceExists:
+              sequenceName: scm_repo_issue_or_pr_id_seq
+      changes:
+        - sql:
+            sql: |
+              CREATE SEQUENCE scm_repo_issue_or_pr_id_seq
+                  AS BIGINT
+                  INCREMENT BY 50
+                  START WITH 1;
 
   - changeSet:
       id: index scm_repo_issue_or_pr on repo/type/closed
