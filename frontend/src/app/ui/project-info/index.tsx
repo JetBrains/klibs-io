@@ -39,14 +39,18 @@ export function ProjectInfo({projectOverview}: {projectOverview: ProjectDetails}
                     </Link>
                 </div>
 
-                {/*Open issues*/}
+                {/*Dependents*/}
                 <div>
-                    <span>Open issues</span>
-                    {projectOverview && projectOverview.openIssues && projectOverview.linkIssues &&
-                        <Link href={projectOverview.linkIssues} target="_blank" onClick={() => {trackEvent(GAEvent.PROJECT_INFO_LINK_CLICK, {eventCategory: projectOverview.name, eventLabel: 'Open issues'})}}>
-                            {projectOverview.openIssues}
-                        </Link>
-                    }
+                    <span>Dependents</span>
+                    <span className={styles.dataValue}>{projectOverview && projectOverview.dependentCount}</span>
+                </div>
+
+                {/*OSS Health*/}
+                <div>
+                    <span>OSS Health</span>
+                    <span className={styles.dataValue}>
+                        {projectOverview && projectOverview.ossHealthScore !== null ? projectOverview.ossHealthScore : '—'}
+                    </span>
                 </div>
 
                 {/*License*/}

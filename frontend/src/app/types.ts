@@ -20,6 +20,8 @@ export interface ProjectDetails extends ProjectSearchResults {
 	createdAtMillis: number;
 	openIssues: null | number;
 	linkIssues: null | string;
+	dependentCount: number;
+	ossHealthScore: null | number;
 	lastActivityAtMillis: number;
 	linkHomepage: string;
 	linkScm: string;

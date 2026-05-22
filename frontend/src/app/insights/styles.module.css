@@ -1,0 +1,54 @@
+.intro {
+    margin-bottom: 24px;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    justify-content: flex-end;
+}
+
+.controlsLabel {
+    white-space: nowrap;
+}
+
+.controlsSelect {
+    min-width: 220px;
+}
+
+@media (max-width: 640px) {
+    .controls {
+        justify-content: flex-start;
+    }
+
+    .controlsSelect {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+}
+
+.spinnerWrapper {
+    display: flex;
+    justify-content: center;
+    padding: 32px 0;
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+}
+
+.rankCol {
+    width: 56px;
+    text-align: right;
+}
+
+.numericCol {
+    text-align: right;
+    white-space: nowrap;
+}
