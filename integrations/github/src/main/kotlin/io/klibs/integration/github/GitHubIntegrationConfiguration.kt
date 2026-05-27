@@ -1,5 +1,6 @@
 package io.klibs.integration.github
 
+import io.micrometer.core.instrument.MeterRegistry
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import org.kohsuke.github.GHRateLimit
@@ -19,9 +20,15 @@ import org.springframework.context.annotation.Configuration
 class GitHubIntegrationConfiguration {
 
     @Bean
-    fun okHttpClient(gitHubIntegrationProperties: GitHubIntegrationProperties): OkHttpClient {
+    fun okHttpClient(
+        gitHubIntegrationProperties: GitHubIntegrationProperties,
+        meterRegistry: MeterRegistry,
+    ): OkHttpClient {
         val requestCache = createRequestCache(gitHubIntegrationProperties)
-        return OkHttpClient.Builder().cache(requestCache).build()
+        return OkHttpClient.Builder()
+            .cache(requestCache)
+            .addInterceptor(GitHubRequestMeteringInterceptor(meterRegistry))
+            .build()
     }
 
     @Bean
