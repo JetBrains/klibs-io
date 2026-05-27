@@ -50,19 +50,6 @@ internal class GitHubIntegrationKohsukeLibrary(
 
     private val lastSuccessfulRequestTime = AtomicReference(Instant.now())
 
-    // Specific request type counters
-    private val repositoryRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "repository")
-    private val userRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "user")
-    private val licenseRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "license")
-    private val readmeRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "readme")
-    private val markdownRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "markdown")
-
-    private val topicsRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "topics")
-    private val issuesRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "issues")
-    private val prsRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "prs")
-    private val participationRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "stats-participation")
-    private val contributorsRequestCounter = meterRegistry.counter("klibs.github.requests", "type", "graphql-commit-authors")
-
     init {
         Gauge.builder("klibs.github.lastSuccessfulRequestTime") {
             (Instant.now().toEpochMilli() - lastSuccessfulRequestTime.get().toEpochMilli()).toDouble()
@@ -78,15 +65,11 @@ internal class GitHubIntegrationKohsukeLibrary(
 
 
     override fun getRepository(nativeId: Long): GitHubRepository? {
-        repositoryRequestCounter.increment()
-        
         val repo = getRepositoryById(nativeId)
         return repo?.toModel()
     }
 
     override fun getRepository(owner: String, name: String): GitHubRepository? {
-        repositoryRequestCounter.increment()
-        
         val ghRepository = executeNullable {
             githubApi.getRepository("$owner/$name")
         } ?: return null
@@ -97,8 +80,6 @@ internal class GitHubIntegrationKohsukeLibrary(
     }
 
     override fun getUser(login: String): GitHubUser? {
-        userRequestCounter.increment()
-        
         githubApi.refreshCache()
 
         val ghUser = executeNullable {
@@ -141,8 +122,6 @@ internal class GitHubIntegrationKohsukeLibrary(
     }
 
     override fun getLicense(repositoryId: Long): GitHubLicense? {
-        licenseRequestCounter.increment()
-        
         val license = getRepositoryById(repositoryId)?.license ?: return null
         return GitHubLicense(
             key = license.key,
@@ -154,8 +133,6 @@ internal class GitHubIntegrationKohsukeLibrary(
         repositoryId: Long,
         modifiedSince: Instant
     ): ReadmeFetchResult {
-        readmeRequestCounter.increment()
-
         val sample = Timer.start(meterRegistry)
         try {
             val url = "$GITHUB_API_URL/repositories/$repositoryId/readme"
@@ -200,14 +177,10 @@ internal class GitHubIntegrationKohsukeLibrary(
     }
 
     override fun markdownRender(markdownText: String, contextRepositoryId: Long): String? {
-        markdownRequestCounter.increment()
-        
         return getRepositoryById(contextRepositoryId)?.markdownRender(markdownText, MarkdownMode.MARKDOWN)
     }
 
     override fun markdownToHtml(markdownText: String, contextRepositoryId: Long?): String? {
-        markdownRequestCounter.increment()
-        
         return if (contextRepositoryId == null) {
             githubApi.renderMarkdown(markdownText).readText()
         } else {
@@ -256,13 +229,11 @@ internal class GitHubIntegrationKohsukeLibrary(
     }
 
     override fun getRepositoryTopics(repositoryId: Long): List<String> {
-        topicsRequestCounter.increment()
         val topics = getRepositoryById(repositoryId)?.listTopics() ?: emptyList()
         return topics.mapNotNull { it?.trim() }.filter { it.isNotEmpty() }
     }
 
     override fun recentIssues(repositoryId: Long, since: Instant): List<GitHubIssue> {
-        issuesRequestCounter.increment()
         val repo = getRepositoryById(repositoryId) ?: return emptyList()
 
         // GitHub treats PRs as a subtype of issues: the /issues endpoint returns BOTH issues and PRs
@@ -299,7 +270,6 @@ internal class GitHubIntegrationKohsukeLibrary(
     }
 
     override fun recentPrs(repositoryId: Long, since: Instant): List<GitHubPullRequest> {
-        prsRequestCounter.increment()
         val repo = getRepositoryById(repositoryId) ?: return emptyList()
 
         // No `.since()` support on /pulls — sort updated-desc and stop as soon as we cross the window.
@@ -333,7 +303,6 @@ internal class GitHubIntegrationKohsukeLibrary(
     }
 
     override fun getCommitsByWeek(repositoryId: Long): List<Int> {
-        participationRequestCounter.increment()
         val repo = getRepositoryById(repositoryId)
             ?: error("Repository not found for repoId=$repositoryId")
         return repo.statistics.participation.allCommits
@@ -341,7 +310,6 @@ internal class GitHubIntegrationKohsukeLibrary(
     }
 
     override fun getCommitAuthorCounts(owner: String, name: String, since: Instant): Map<String, Int> {
-        contributorsRequestCounter.increment()
         val sinceIso = DateTimeFormatter.ISO_INSTANT.format(since)
         val counts = mutableMapOf<String, Int>()
         var cursor: String? = null
