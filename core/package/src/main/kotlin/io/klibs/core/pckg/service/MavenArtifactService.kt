@@ -4,15 +4,17 @@ import io.klibs.core.pckg.dto.MavenArtifactDTO
 import io.klibs.core.pckg.entity.MavenArtifactEntity
 import io.klibs.core.pckg.dto.MavenCoordinatesDTO
 import io.klibs.core.pckg.repository.MavenArtifactRepository
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-@Transactional
+@Transactional(propagation = Propagation.REQUIRES_NEW)
 class MavenArtifactService(
     private val mavenArtifactRepository: MavenArtifactRepository,
 ) {
+
+    private val log = org.slf4j.LoggerFactory.getLogger(MavenArtifactService::class.java)
 
     /**
      * Resolves the given [coordinates] to their `maven_artifact` rows, inserting any
@@ -53,24 +55,23 @@ class MavenArtifactService(
         return MavenArtifactDTO.fromEntity(existing ?: insertOrLookup(coords))
     }
 
+    /**
+     * Inserts a `maven_artifact` row for the given [coords] if it does not exist yet, then
+     * reads and returns the row.
+     */
     private fun insertOrLookup(coords: MavenCoordinatesDTO): MavenArtifactEntity {
-        return try {
-            mavenArtifactRepository.save(
-                MavenArtifactEntity(
-                    groupId = coords.groupId,
-                    artifactId = coords.artifactId,
-                    version = coords.version,
-                )
+        val inserted = mavenArtifactRepository.saveIfAbsent(
+            coords.groupId, coords.artifactId, coords.version,
+        )
+        if (inserted == 0.toLong()) {
+            log.debug("Lost race on ${coords.groupId}:${coords.artifactId}:${coords.version}, re-reading it")
+        }
+        return requireNotNull(
+            mavenArtifactRepository.findByGroupIdAndArtifactIdAndVersion(
+                coords.groupId, coords.artifactId, coords.version,
             )
-        } catch (_: DataIntegrityViolationException) {
-            // A concurrent transaction inserted the same GAV first — re-read it.
-            requireNotNull(
-                mavenArtifactRepository.findByGroupIdAndArtifactIdAndVersion(
-                    coords.groupId, coords.artifactId, coords.version,
-                )
-            ) {
-                "Lost race on maven_artifact insert and the row is still missing for $coords"
-            }
+        ) {
+            "maven_artifact row is still missing after upsert for $coords"
         }
     }
 
