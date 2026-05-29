@@ -41,8 +41,8 @@ profiles:
       - op: replace
         path: /build/artifacts/0/image
         value: registry.jetbrains.team/p/klibs-io/containers/klibs-test
-  - name: amper
+  - name: kotlintoolchain
     patches:
       - op: replace
         path: /build/artifacts/0/image
-        value: registry.jetbrains.team/p/klibs-io/containers/klibs-amper
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-kotlin-toolchain
