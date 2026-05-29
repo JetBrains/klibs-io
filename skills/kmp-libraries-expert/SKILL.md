@@ -40,7 +40,7 @@ MCP config:
 {
     "mcpServers": {
         "klibs": {
-            "url": "http://localhost:8080/mcp"
+            "url": "https://api.klibs.io/mcp"
         }
     }
 }
