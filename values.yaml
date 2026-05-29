@@ -1,5 +1,3 @@
-health:
-  path: /actuator/health
 minReplicaCount: 1
 autoscaling:
   enabled: false
