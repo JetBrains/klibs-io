@@ -1,4 +1,4 @@
-package org.amper.gitcommitid
+package org.kotlintoolchain.plugin.gitcommitid
 
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.PersonIdent

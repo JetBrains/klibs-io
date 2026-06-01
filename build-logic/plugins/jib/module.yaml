@@ -1,7 +1,7 @@
 product: jvm/amper-plugin
 
 pluginInfo:
-  settingsClass: JibSettings
+  settingsClass: org.kotlintoolchain.plugin.jib.JibSettings
 
 dependencies:
   - com.google.cloud.tools:jib-core:0.28.1

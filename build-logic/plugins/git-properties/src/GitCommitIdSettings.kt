@@ -1,4 +1,4 @@
-package org.amper.gitcommitid
+package org.kotlintoolchain.plugin.gitcommitid
 
 import org.jetbrains.amper.plugins.Configurable
 import java.nio.file.Path

@@ -1,5 +1,5 @@
-import org.amper.gitcommitid.GitCommitIdSettings
-import org.amper.gitcommitid.generateGitProperties
+import org.kotlintoolchain.plugin.gitcommitid.GitCommitIdSettings
+import org.kotlintoolchain.plugin.gitcommitid.generateGitProperties
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files

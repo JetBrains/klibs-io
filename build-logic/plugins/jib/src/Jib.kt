@@ -1,3 +1,5 @@
+package org.kotlintoolchain.plugin.jib
+
 import com.google.cloud.tools.jib.api.*
 import com.google.cloud.tools.jib.frontend.CredentialRetrieverFactory
 import org.jetbrains.amper.plugins.*

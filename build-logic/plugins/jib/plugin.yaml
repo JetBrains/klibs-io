@@ -1,18 +1,18 @@
 tasks:
   jib:
-    action: !buildAndPush
+    action: !org.kotlintoolchain.plugin.jib.buildAndPush
       runtimeClasspath: ${module.runtimeClasspath}
       container: ${pluginSettings.container}
       baseImage: ${pluginSettings.baseImage}
       targetImage: ${pluginSettings.targetImage}
   jibDockerBuild:
-    action: !buildToDockerDaemon
+    action: !org.kotlintoolchain.plugin.jib.buildToDockerDaemon
       runtimeClasspath: ${module.runtimeClasspath}
       container: ${pluginSettings.container}
       baseImage: ${pluginSettings.baseImage}
       targetImage: ${pluginSettings.targetImage}
   jibBuildTar:
-    action: !buildTar
+    action: !org.kotlintoolchain.plugin.jib.buildTar
       runtimeClasspath: ${module.runtimeClasspath}
       container: ${pluginSettings.container}
       baseImage: ${pluginSettings.baseImage}

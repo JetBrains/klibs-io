@@ -15,15 +15,15 @@ The repository contains both the backend (this README) and the web frontend (see
 ### Build & test
 
 ```bash
-./amper build   # build without running tests
-./amper test    # run tests
-./amper check   # run project checks
+./kotlin build   # build without running tests
+./kotlin test    # run tests
+./kotlin check   # run project checks
 ```
 
 ### Executable Jar
 
 ```bash
-./amper package
+./kotlin package
 ```
 
 Output: `build/tasks/_app_executableJarJvm/app-jvm-executable.jar`
@@ -33,13 +33,13 @@ Output: `build/tasks/_app_executableJarJvm/app-jvm-executable.jar`
 From CLI:
 
 ```bash
-./amper run -m app
+./kotlin run -m app
 ```
 
 or 
 
 ```bash
-./amper run
+./kotlin run
 ```
 
 Or run the `main` function from `Application` in IntelliJ — both use the `local` profile.
@@ -122,4 +122,4 @@ JVM toolchain version is defined in the base Kotlin/JVM module template:
 [kotlin-jvm.module-template.yaml](build-logic/templates/kotlin-jvm.module-template.yaml)
 (`settings.jvm.jdk.version`). All modules inherit from this template.
 
-The JVM version used by Amper is tied to the Amper distribution, so updating Amper also updates the JVM runtime it runs on.
+The JVM version used by Kotlin Toolchain is tied to the Kotlin Toolchain distribution, so updating Kotlin Toolchain also updates the JVM runtime it runs on.
