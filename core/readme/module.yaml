@@ -8,3 +8,4 @@ dependencies:
   - ../storage
   - ../../integrations/github
   - $libs.markdown
+  - $libs.okhttp
