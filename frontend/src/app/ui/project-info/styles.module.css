@@ -27,6 +27,24 @@
     color: black;
 }
 
+.metricLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.metricLabelIcon {
+    color: var(--rs-color-icon-secondary, #9b9b9b);
+    cursor: help;
+    flex-shrink: 0;
+    outline: none;
+}
+
+.metricLabelIcon:hover,
+.metricLabelIcon:focus-visible {
+    color: var(--rs-color-icon, currentColor);
+}
+
 .linkWrapper {
     display: flex;
     gap: 8px;

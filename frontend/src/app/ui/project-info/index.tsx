@@ -6,6 +6,32 @@ import cn from "classnames";
 import styles from "./styles.module.css";
 import FeaturedLabel from "@/app/ui/featured-label";
 import {trackEvent, GAEvent} from "@/app/analytics";
+import {Tooltip, TooltipPlacement} from "@rescui/tooltip";
+import {InfoOutlineIcon} from "@rescui/icons";
+
+const DEPENDENTS_HINT = "The number of other libraries in the klibs.io catalog that depend on this project.";
+const OSS_HEALTH_HINT = "A 0–100 score of how actively the project is maintained on GitHub.";
+
+function MetricLabel(
+    {label, hint, learnMoreHref, placement = "top"}:
+    {label: string; hint: string; learnMoreHref?: string; placement?: TooltipPlacement}
+) {
+    const content = learnMoreHref ? (
+        <>
+            {hint}{" "}
+            <Link href={learnMoreHref} className="link-secondary">How it&apos;s calculated</Link>
+        </>
+    ) : hint;
+
+    return (
+        <span className={styles.metricLabel}>
+            {label}
+            <Tooltip placement={placement} content={content}>
+                <InfoOutlineIcon className={styles.metricLabelIcon} size="s" tabIndex={0} aria-label={`${label}: ${hint}`}/>
+            </Tooltip>
+        </span>
+    );
+}
 
 export function ProjectInfo({projectOverview}: {projectOverview: ProjectDetails}) {
     // Owner link for metadata while it is not in a separate component
@@ -41,13 +67,13 @@ export function ProjectInfo({projectOverview}: {projectOverview: ProjectDetails}
 
                 {/*Dependents*/}
                 <div>
-                    <span>Dependents</span>
+                    <MetricLabel label="Dependents" hint={DEPENDENTS_HINT}/>
                     <span className={styles.dataValue}>{projectOverview && projectOverview.dependentCount}</span>
                 </div>
 
                 {/*OSS Health*/}
                 <div>
-                    <span>OSS Health</span>
+                    <MetricLabel label="OSS Health" hint={OSS_HEALTH_HINT} learnMoreHref="/faq#oss-health" placement="bottom"/>
                     <span className={styles.dataValue}>
                         {projectOverview && projectOverview.ossHealthScore !== null ? projectOverview.ossHealthScore : '—'}
                     </span>

@@ -17,6 +17,7 @@ const POM_EXAMPLE_URL =
     "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0.pom";
 const TOOLING_METADATA_EXAMPLE_URL =
     "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0-kotlin-tooling-metadata.json";
+const REPOSITORY_STABILITY_PAPER_URL = "https://arxiv.org/abs/2504.00542";
 
 export default function Faq() {
     return (
@@ -109,6 +110,45 @@ export default function Faq() {
                         platforms. Ranking may consider factors such as relevance to your query, popularity, and project
                         activity. The ranking logic can evolve over time as the platform improves.
                     </p>
+
+                    <h4 id='oss-health'>How is the OSS Health score calculated?</h4>
+                    <div>
+                        <p>
+                            The OSS Health score is a number from <b>0 to 100</b> that estimates how actively and
+                            sustainably a project is maintained on GitHub, based on its activity over the
+                            last <b>12 weeks</b>. It combines four signals, each scored from 0 to 1:
+                        </p>
+
+                        <ul>
+                            <li>
+                                <b>Commit consistency (30%)</b> — how regular the commit activity is from week to week.
+                            </li>
+                            <li>
+                                <b>Issue responsiveness (25%)</b> — what share of issues get closed, and how quickly.
+                            </li>
+                            <li>
+                                <b>Pull request management (25%)</b> — what share of pull requests get merged, and how
+                                quickly.
+                            </li>
+                            <li>
+                                <b>Author diversity (20%)</b> — how many people contribute, and how evenly the work is
+                                spread across them (the &quot;bus factor&quot;).
+                            </li>
+                        </ul>
+
+                        <p>
+                            The signals are combined with a weighted sum:
+                            <br/>
+                            <code>OSS Health = 100 × (0.30·C + 0.25·I + 0.25·P + 0.20·A)</code>
+                        </p>
+
+                        <p>
+                            When a project doesn&apos;t have enough recent activity to compute one of the signals, the
+                            score is shown as &quot;—&quot; rather than a potentially misleading number. The methodology
+                            is inspired by academic work on <a href={REPOSITORY_STABILITY_PAPER_URL} target="_blank"
+                            className={"link-secondary"}>repository stability</a>.
+                        </p>
+                    </div>
 
                     <h4>Are there any licensing or usage considerations when using libraries listed on klibs.io?</h4>
                     <p>
