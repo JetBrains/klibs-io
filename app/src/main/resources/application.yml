@@ -90,9 +90,9 @@ klibs:
         prefix: ${KLIBS_GMAVEN_S3_PREFIX:gmaven}
   ai: true
   oss-health:
-    commit-cv-denominator: 1.0
+    commit-cv-denominator: 3.0
     issue-median-days-threshold: 21.0
-    pr-median-days-threshold: 5.0
+    pr-median-days-threshold: 10.0
     active-contributors-target: 5
 
 management:

@@ -15,10 +15,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class OssHealthProperties(
     /**
      * Denominator in C = max(0, 1 − CV / denominator).
-     * Observed CVs for real OSS repos sit around 0.5–1.3; 1.0 puts the "average"
-     * project near the middle of the score range.
+     * Calibrated against the live catalog CV distribution (≈520 repos): median CV ≈ 1.8,
+     * with a hard pileup at √11 ≈ 3.32 for repos active in only one of the last 12 weeks.
+     * 3.0 scores consistently-committing repos well (CV ≈ 0.5–1.1 → C ≈ 0.6–0.8) while
+     * still flooring the genuinely sporadic tail (CV ≥ 3) at 0.
      */
-    val commitCvDenominator: Double = 1.0,
+    val commitCvDenominator: Double = 3.0,
 
     /**
      * Median-days threshold for the issue-responsiveness median term.
@@ -28,9 +30,11 @@ data class OssHealthProperties(
 
     /**
      * Median-days threshold for the PR-management median term.
-     * Aligns with τ_p = 5 days from Destefanis et al. 2025.
+     * The paper's τ_p = 5 days proved too strict for thorough-review libraries (catalog
+     * PR-merge medians: p75 ≈ 2d, p90 ≈ 15d); 10 days credits careful-but-timely review
+     * without rewarding the genuinely-slow tail.
      */
-    val prMedianDaysThreshold: Double = 5.0,
+    val prMedianDaysThreshold: Double = 10.0,
 
     /**
      * Denominator for the "active contributors" term of author diversity.
