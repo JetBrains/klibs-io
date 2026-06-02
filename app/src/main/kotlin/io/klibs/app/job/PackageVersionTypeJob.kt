@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.TimeUnit
 
 @Component
+@ConditionalOnProperty(
+    value = ["klibs.scheduling.fill-version-type.enabled"],
+    havingValue = "true",
+)
 class PackageVersionTypeJob(private val packageService: PackageService) {
 
     private val logger = LoggerFactory.getLogger(PackageVersionTypeJob::class.java)
