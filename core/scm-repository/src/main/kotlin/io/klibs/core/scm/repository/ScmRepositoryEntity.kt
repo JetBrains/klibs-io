@@ -52,7 +52,17 @@ data class ScmRepositoryEntity(
     val openIssues: Int?,
 
     val lastActivityTs: Instant,
-    val updatedAtTs: Instant
+    val updatedAtTs: Instant,
 ) {
     val idNotNull: Int get() = requireNotNull(id)
 }
+
+/**
+ * Per-repo update backoff state, stored in `scm_repo_scheduling` (one row per repo, only while backed off).
+ * Absence of a row means the repo is eligible for update now.
+ */
+data class ScmRepositorySchedulingData(
+    val scmRepoId: Int,
+    val nextRetryAt: Instant? = null,
+    val retryAttempts: Int = 0
+)

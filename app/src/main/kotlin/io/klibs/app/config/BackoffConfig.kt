@@ -15,11 +15,6 @@ class BackoffConfig {
         BackoffProvider("SyncGitHubOwner", meterRegistry)
 
     @Bean
-    @Qualifier("repoBackoffProvider")
-    fun repoBackoffProvider(meterRegistry: MeterRegistry): BackoffProvider =
-        BackoffProvider("SyncGitHubRepository", meterRegistry)
-
-    @Bean
     @Qualifier("aiDescriptionBackoffProvider")
     fun aiDescriptionBackoffProvider(meterRegistry: MeterRegistry): BackoffProvider =
         BackoffProvider("AiProjectDescription", meterRegistry)

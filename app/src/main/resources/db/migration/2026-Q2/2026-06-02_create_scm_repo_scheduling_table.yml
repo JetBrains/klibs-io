@@ -1,0 +1,37 @@
+databaseChangeLog:
+  - changeSet:
+      id: create scm_repo_scheduling table
+      author: nikita.vlaev@jetbrains.com
+      comment: "KTL-4519: per-repo update backoff state, moved out of scm_repo into its own table so failing repos don't occupy every update slot. Absence of a row = eligible now (row deleted on success, upserted on failure)."
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: scm_repo_scheduling
+      changes:
+        - createTable:
+            tableName: scm_repo_scheduling
+            columns:
+              - column:
+                  name: scm_repo_id
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+                    references: scm_repo(id)
+                    foreignKeyName: fk_scm_repo_scheduling_scm_repo_id
+                    deleteCascade: true
+              - column:
+                  name: next_retry_at
+                  type: TIMESTAMP
+                  remarks: "When this repo may next be selected for update. Set on update failure; the row is deleted on success."
+              - column:
+                  name: retry_attempts
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  remarks: "Consecutive failed update attempts. Used to determine backoff duration before retrying."
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: scm_repo_scheduling
+            columnNames: scm_repo_id
+            constraintName: pk_scm_repo_scheduling
