@@ -1,10 +1,10 @@
 package io.klibs.app.job
 
 import io.klibs.app.indexing.GitHubIndexingService
-import io.klibs.app.util.BackoffProvider
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
+import io.klibs.core.scm.repository.ScmRepositorySchedulingRepository
 import io.klibs.core.scm.repository.health.OssHealthIssueOrPrSyncService
 import io.klibs.core.scm.repository.health.OssHealthScoreService
 import org.junit.jupiter.api.Test
@@ -24,31 +24,31 @@ import java.time.Instant
 class GitHubRepositoryUpdatingServiceTest {
 
     private val scmRepositoryRepository: ScmRepositoryRepository = mock()
+    private val schedulingRepository: ScmRepositorySchedulingRepository = mock()
     private val githubIndexingService: GitHubIndexingService = mock()
     private val ossHealthIssueOrPrSyncService: OssHealthIssueOrPrSyncService = mock()
     private val ossHealthScoreService: OssHealthScoreService = mock()
-    private val backoff: BackoffProvider = mock()
 
     private val uut = GitHubRepositoryUpdatingService(
         scmRepositoryRepository = scmRepositoryRepository,
+        schedulingRepository = schedulingRepository,
         githubIndexingService = githubIndexingService,
         ossHealthIssueOrPrSyncService = ossHealthIssueOrPrSyncService,
         ossHealthScoreService = ossHealthScoreService,
         reposUpdatedPerCall = 3,
-        repoBackoffProvider = backoff,
     )
 
     @Test
     fun `skips both OSS sub-steps when neither is due`() {
         val repo = repo(id = 1)
         whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(repo))
-        whenever(backoff.isBackedOff(eq(repo.idNotNull), any())).thenReturn(false)
         whenever(ossHealthIssueOrPrSyncService.isDue(eq(repo), any())).thenReturn(false)
         whenever(ossHealthScoreService.isDue(eq(repo), any())).thenReturn(false)
 
         uut.syncRepositoryWithGitHub()
 
         verify(githubIndexingService).updateRepo(repo)
+        verify(schedulingRepository).clearSchedule(repo.idNotNull)
         verify(ossHealthIssueOrPrSyncService, never()).syncOne(any(), any())
         verify(ossHealthScoreService, never()).computeOne(any(), any())
     }
@@ -57,7 +57,6 @@ class GitHubRepositoryUpdatingServiceTest {
     fun `runs both OSS sub-steps when both are due`() {
         val repo = repo(id = 1)
         whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(repo))
-        whenever(backoff.isBackedOff(eq(repo.idNotNull), any())).thenReturn(false)
         whenever(ossHealthIssueOrPrSyncService.isDue(eq(repo), any())).thenReturn(true)
         whenever(ossHealthScoreService.isDue(eq(repo), any())).thenReturn(true)
 
@@ -69,15 +68,15 @@ class GitHubRepositoryUpdatingServiceTest {
     }
 
     @Test
-    fun `skips both OSS sub-steps when updateRepo throws`() {
+    fun `records failure and skips both OSS sub-steps when updateRepo throws`() {
         val repo = repo(id = 1)
         whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(repo))
-        whenever(backoff.isBackedOff(eq(repo.idNotNull), any())).thenReturn(false)
         whenever(githubIndexingService.updateRepo(repo)).thenThrow(RuntimeException("boom"))
 
         uut.syncRepositoryWithGitHub()
 
-        verify(backoff).onFailure(eq(repo.idNotNull), any())
+        verify(schedulingRepository).scheduleNextRetry(eq(repo.idNotNull), any(), any())
+        verify(schedulingRepository, never()).clearSchedule(any())
         verify(ossHealthIssueOrPrSyncService, never()).isDue(any(), any())
         verify(ossHealthScoreService, never()).isDue(any(), any())
     }
@@ -86,7 +85,6 @@ class GitHubRepositoryUpdatingServiceTest {
     fun `score sub-step still runs when issue-or-pr sync throws`() {
         val repo = repo(id = 1)
         whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(repo))
-        whenever(backoff.isBackedOff(eq(repo.idNotNull), any())).thenReturn(false)
         whenever(ossHealthIssueOrPrSyncService.isDue(eq(repo), any())).thenReturn(true)
         whenever(ossHealthScoreService.isDue(eq(repo), any())).thenReturn(true)
         whenever(ossHealthIssueOrPrSyncService.syncOne(eq(repo), any())).thenThrow(RuntimeException("sync boom"))
@@ -101,7 +99,6 @@ class GitHubRepositoryUpdatingServiceTest {
         val r1 = repo(id = 1)
         val r2 = repo(id = 2)
         whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(r1, r2))
-        whenever(backoff.isBackedOff(any(), any())).thenReturn(false)
         whenever(ossHealthScoreService.isDue(eq(r1), any())).thenReturn(true)
         whenever(ossHealthScoreService.isDue(eq(r2), any())).thenReturn(false)
         whenever(ossHealthIssueOrPrSyncService.isDue(any(), any())).thenReturn(false)
@@ -114,16 +111,14 @@ class GitHubRepositoryUpdatingServiceTest {
     }
 
     @Test
-    fun `OSS sub-steps are skipped when repo is in backoff`() {
-        val repo = repo(id = 1)
-        whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(repo))
-        whenever(backoff.isBackedOff(eq(repo.idNotNull), any())).thenReturn(true)
+    fun `does nothing when no repo is selected for update`() {
+        whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(emptyList())
 
         uut.syncRepositoryWithGitHub()
 
         verify(githubIndexingService, never()).updateRepo(any())
-        verify(ossHealthIssueOrPrSyncService, never()).isDue(any(), any())
-        verify(ossHealthScoreService, never()).isDue(any(), any())
+        verify(schedulingRepository, never()).clearSchedule(any())
+        verify(schedulingRepository, never()).scheduleNextRetry(any(), any(), any())
     }
 
     private fun repo(id: Int) = ScmRepositoryEntity(

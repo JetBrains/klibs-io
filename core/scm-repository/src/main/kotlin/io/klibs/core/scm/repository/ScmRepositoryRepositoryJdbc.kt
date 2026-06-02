@@ -297,9 +297,11 @@ class ScmRepositoryRepositoryJdbc(
                    repo.updated_at
             FROM scm_repo repo
                      JOIN scm_owner owner ON repo.owner_id = owner.id
+                     LEFT JOIN scm_repo_scheduling sched ON sched.scm_repo_id = repo.id
             WHERE repo.updated_at < (current_timestamp - interval '24 hours')
+              AND (sched.next_retry_at IS NULL OR sched.next_retry_at < current_timestamp)
             ORDER BY repo.stars DESC
-            LIMIT :limit FOR UPDATE
+            LIMIT :limit FOR UPDATE OF repo
                 SKIP LOCKED
         """.trimIndent()
 

@@ -167,4 +167,6 @@ databaseChangeLog:
       file: db/migration/2026-Q2/2026-04-24_oss_health_metric.yml
   - include:
       file: db/migration/2026-Q2/2026-04-30_recreate_project_index_with_health_score.yml
+  - include:
+      file: db/migration/2026-Q2/2026-06-02_create_scm_repo_scheduling_table.yml
 

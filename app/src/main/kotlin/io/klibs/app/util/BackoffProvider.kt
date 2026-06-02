@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.pow
 
 class BackoffProvider(
     private val jobName: String,
@@ -34,7 +35,7 @@ class BackoffProvider(
     fun onFailure(id: Int, now: Instant = Instant.now()) {
         val previous = backoffStates[id]
         val attempts = (previous?.attempts ?: 0) + 1
-        val delay = computeBackoffDelay(attempts)
+        val delay = computeBackoffDelay(attempts = attempts)
         val nextAllowedAt = now.plus(delay)
         backoffStates[id] = BackoffState(attempts, nextAllowedAt)
         logger.warn("Job $jobName: Backoff for id=$id attempts=$attempts nextAllowedAt=$nextAllowedAt delay=${delay.toSeconds()}s")
@@ -44,16 +45,14 @@ class BackoffProvider(
         backoffStates.remove(id)
     }
 
-    private fun computeBackoffDelay(attempts: Int): Duration {
-        // Base 60s, exponential factor 2, capped at 1 hour
-        val base = 60L
-        val exp = 1L shl (attempts - 1).coerceAtMost(10) // cap growth
-        val seconds = (base * exp).coerceAtMost(3600L)
-        return Duration.ofSeconds(seconds)
-    }
-
     companion object {
         private val logger = LoggerFactory.getLogger(BackoffProvider::class.java)
         const val METRIC_NAME = "klibs.backoff.states.size"
+
+        fun computeBackoffDelay(base: Long = 60L, exp: Long = 2L, attempts: Int): Duration {
+            val exp = exp.toDouble().pow(attempts - 1).toLong()
+            val seconds = (base * exp).coerceAtMost(60 * 60 * 24 * 30L) // 1 month
+            return Duration.ofSeconds(seconds)
+        }
     }
 }

@@ -4,9 +4,9 @@ import io.klibs.app.indexing.GitHubIndexingService
 import io.klibs.app.util.BackoffProvider
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
+import io.klibs.core.scm.repository.ScmRepositorySchedulingRepository
 import io.klibs.core.scm.repository.health.OssHealthIssueOrPrSyncService
 import io.klibs.core.scm.repository.health.OssHealthScoreService
-import org.springframework.beans.factory.annotation.Qualifier
 import net.javacrumbs.shedlock.core.LockAssert
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.springframework.beans.factory.annotation.Value
@@ -32,13 +32,12 @@ class GitHubRepositoryUpdatingJob(val gitHubRepositoryUpdatingService: GitHubRep
 @Service
 class GitHubRepositoryUpdatingService(
     private val scmRepositoryRepository: ScmRepositoryRepository,
+    private val schedulingRepository: ScmRepositorySchedulingRepository,
     private val githubIndexingService: GitHubIndexingService,
     private val ossHealthIssueOrPrSyncService: OssHealthIssueOrPrSyncService,
     private val ossHealthScoreService: OssHealthScoreService,
     @Value("\${klibs.integration.github.update-repos-per-iteration:3}")
-    private val reposUpdatedPerCall: Int,
-    @Qualifier("repoBackoffProvider")
-    private val repoBackoffProvider: BackoffProvider,
+    private val reposUpdatedPerCall: Int
 ) {
 
     fun syncRepositoryWithGitHub() {
@@ -48,15 +47,17 @@ class GitHubRepositoryUpdatingService(
         }
         reposToUpdate.forEach { repoToUpdate ->
             try {
-                if (repoBackoffProvider.isBackedOff(repoToUpdate.idNotNull)) {
-                    logger.debug("Selected repoId=${repoToUpdate.id} ${repoToUpdate.ownerLogin}/${repoToUpdate.name} is in backoff; skipping this run")
-                    return@forEach
-                }
                 githubIndexingService.updateRepo(repoToUpdate)
-                repoBackoffProvider.onSuccess(repoToUpdate.idNotNull)
+                schedulingRepository.clearSchedule(repoToUpdate.idNotNull)
             } catch (e: Exception) {
                 logger.error("Error while updating a repo", e)
-                repoBackoffProvider.onFailure(repoToUpdate.idNotNull)
+                val attempts = (schedulingRepository.find(repoToUpdate.idNotNull)?.retryAttempts ?: 0) + 1
+                val backoffDelay = BackoffProvider.computeBackoffDelay(
+                    base = 60L,
+                    exp = 3L,
+                    attempts = attempts
+                )
+                schedulingRepository.scheduleNextRetry(repoToUpdate.idNotNull, attempts, backoffDelay.seconds)
                 return@forEach
             }
 
