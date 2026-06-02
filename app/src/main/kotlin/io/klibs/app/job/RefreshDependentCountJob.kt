@@ -5,11 +5,13 @@ import io.micrometer.core.annotation.Timed
 import net.javacrumbs.shedlock.core.LockAssert
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.util.concurrent.TimeUnit
 
 @Component
+@ConditionalOnProperty("klibs.indexing", havingValue = "true")
 class RefreshDependentCountJob(
     private val projectRepository: ProjectRepository,
 ) {
