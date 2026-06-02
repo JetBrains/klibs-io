@@ -78,6 +78,8 @@ klibs:
   scheduling:
     process-indexing-queue:
       enabled: ${PROCESS_INDEXING_QUEUE_ENABLED:true}
+    fill-version-type:
+      enabled: ${FILL_VERSION_TYPE_ENABLED:true}
   indexing-configuration:
     executor:
       thread-count: 2

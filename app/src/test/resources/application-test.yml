@@ -4,6 +4,8 @@ klibs:
   scheduling:
     process-indexing-queue:
       enabled: false
+    fill-version-type:
+      enabled: false
 
 spring:
   sql:
