@@ -99,7 +99,8 @@ fun findGitRoot(): Path? {
         if (gitDir.isDirectory()) {
             return currentDir
         }
-        currentDir = currentDir.parent
+        val parent = currentDir.parent ?: return null
+        currentDir = parent
     }
 }
 
