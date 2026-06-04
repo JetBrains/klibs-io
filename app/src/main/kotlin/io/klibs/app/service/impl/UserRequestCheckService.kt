@@ -1,8 +1,13 @@
-package io.klibs.app.indexing
+package io.klibs.app.service.impl
 
+import io.klibs.app.dto.ProcessedUserRequestInfo
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubUserRequestIssue
+import io.klibs.integration.github.model.GitHubUserRequestIssuesBatch
+import io.klibs.integration.maven.dto.MavenArtifactDTO
+import io.klibs.integration.maven.dto.MavenCentralLogType
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
+import io.klibs.integration.maven.utils.MavenArtifactDTOUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -39,212 +44,62 @@ class UserRequestCheckService(
      * without server-side errors.
      */
     fun checkUserRequests() {
-        val since = mavenCentralLogRepository.retrieveUserRequestCheckTimestamp()
+        val since = mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK)
         val runStartedAt = Instant.now()
 
-        // Get batch of issues from GitHub
-        val issuesBatch = try {
-            gitHubIntegration.getKlibsIssuesByLabel(requestLabel, since)
-        } catch (e: Exception) {
-            logger.error("Failed to list index-request issues: ${e.message}", e)
-            return
-        }
+        val issuesBatch = fetchIssuesBatch(since) ?: return
 
-        val issuesToProcess = issuesBatch.issues.mapNotNull { issue ->
-            // Check if issue used correct template
-            val parsed = parseBody(issue.body)
-            if (parsed == null) {
-                publishIssueStatus(issue.number, UserRequestMessages.parseFailure())
-                logger.debug("Published parse failure comment to issue #${issue.number}")
-                return@mapNotNull null
-            }
+        val issuesToProcess = issuesBatch.issues
+            .associateWith { issue -> convertToValidMavenArtifact(issue) }
+            .filterValues { it != null }
+            .mapValues { (_, parsed) -> parsed!! }
 
-            // Check if data provided by user is valid
-            val validationError = validateRequest(parsed)
-            if (validationError != null) {
-                publishIssueStatus(
-                    issue.number,
-                    UserRequestMessages.failure(parsed.groupId, parsed.artifactId, parsed.version, validationError)
-                )
-                logger.debug("Published failure comment to issue #${issue.number}: $validationError")
-                return@mapNotNull null
-            }
+        val anyServerError = processIssues(issuesToProcess)
 
-            issue to parsed
-        }
-
-        var anyServerError = false // tracked for timestamp update
-        val processedRequests = mutableListOf<ProcessedRequestInfo>()  // tracked for duplicate check
-
-        // Process issues
-        for ((issue, parsed) in issuesToProcess) {
-            try {
-                if (!processValidRequest(issue, parsed, processedRequests)) anyServerError = true
-            } catch (e: Exception) {
-                logger.error("Unexpected error while processing issue #${issue.number}: ${e.message}", e)
-                anyServerError = true
-            }
-        }
-
-        // Update timestamp
-        if (!anyServerError) {
-            if (issuesBatch.hasMore == true) {
-                // If not all requests were processed, next time only issues newer than the last processed will be fetched
-                mavenCentralLogRepository.saveUserRequestCheckTimestamp(issuesBatch.issues.last().createdAt)
-                logger.debug(
-                    "Successfully processed all users' indexing requests fetched; updating user_request_check_timestamp to last issue's created_at: {}",
-                    issuesBatch.issues.last().createdAt
-                )
-            } else {
-                // If all requests were processed, next time only newly appeared issues will be fetched
-                mavenCentralLogRepository.saveUserRequestCheckTimestamp(runStartedAt)
-                if (issuesBatch.issues.isEmpty()) {
-                    logger.debug(
-                        "No users' indexing requests to be processed; updating user_request_check_timestamp to current date: {}",
-                        runStartedAt
-                    )
-                } else {
-                    logger.debug(
-                        "Successfully processed all users' indexing requests; updating user_request_check_timestamp to current date: {}",
-                        runStartedAt
-                    )
-                }
-            }
-        } else {
-            // If any issue could not be processed because of errors that were not user's fault,
-            // timestamp is not updated, so that failed issues can be reprocessed
-            logger.warn("Server errors occurred; not updating index_request_check_timestamp")
-        }
+        updateTimestamp(issuesBatch, runStartedAt, anyServerError)
     }
 
-    /**
-     * Processes a single user request.
-     *
-     * Returns true if the outcome is final (success or 4xx), false if server error occurred (5xx) — timestamp should not be updated
-     */
-    private fun processValidRequest(
-        issue: GitHubUserRequestIssue,
-        parsed: ParsedRequest,
-        processedRequests: MutableList<ProcessedRequestInfo>
-    ): Boolean {
-        val (groupId, artifactId, version) = parsed
-
-        // Duplicate check
-        val duplicateIssueNumber = findDuplicateIssueNumber(parsed, processedRequests)
-
-        if (duplicateIssueNumber != null) {
-            publishIssueStatus(
-                issue.number,
-                UserRequestMessages.duplicate(groupId, artifactId, version, duplicateIssueNumber)
-            )
-            logger.debug("Published comment to issue #${issue.number}: duplicate of #$duplicateIssueNumber")
-            return true
-        } else {
-            processedRequests.add(ProcessedRequestInfo(parsed, issue.number))
-        }
-
-        // Try saving the package index request
-        return try {
-            userRequestIndexingService.indexUserRequest(groupId, artifactId, version)
-            publishIssueStatus(
-                issue.number,
-                UserRequestMessages.success(groupId, artifactId, version)
-            )
-
-            logger.debug("Published success comment to issue #${issue.number}")
-            true
-        } catch (e: Exception) {
-            // User's error occurred
-            if (e is ResponseStatusException && e.statusCode.is4xxClientError) {
-                publishIssueStatus(
-                    issue.number,
-                    UserRequestMessages.failure(groupId, artifactId, version, e.reason ?: "Unknown error")
-                )
-
-                logger.debug("Published failure comment to issue #${issue.number}: ${e.reason ?: "Unknown error"}")
-                true
-            }
-            // Other error occurred
-            else {
-                logger.error("Server error on issue #${issue.number}: (${e.message})")
-                false
-            }
-        }
+    private fun fetchIssuesBatch(since: Instant) = try {
+        gitHubIntegration.getKlibsIssuesByLabel(requestLabel, since)
+    } catch (e: Exception) {
+        logger.error("Failed to list index-request issues: ${e.message}", e)
+        null
     }
 
-    internal data class ParsedRequest(
-        val groupId: String,
-        val artifactId: String,
-        val version: String?
-    )
+    private fun convertToValidMavenArtifact(issue: GitHubUserRequestIssue): MavenArtifactDTO? {
+        val parsed = parseBody(issue.body)
+        if (parsed == null) {
+            publishIssueStatus(issue.number, UserRequestMessages.parseFailure())
+            logger.debug("Published parse failure comment to issue #${issue.number}")
+            return null
+        }
 
-    internal data class ProcessedRequestInfo(
-        val request: ParsedRequest,
-        val issueNumber: Int
-    )
+        val validationError = MavenArtifactDTOUtils.validateMavenArtifactDTO(parsed)
+        if (validationError != null) {
+            publishIssueStatus(
+                issue.number,
+                UserRequestMessages.failure(parsed.groupId, parsed.artifactId, parsed.version, validationError)
+            )
+            logger.debug("Published failure comment to issue #${issue.number}: $validationError")
+            return null
+        }
+
+        return parsed
+    }
 
     /**
      * Extracts groupId, artifactId, and version from the Markdown issue body.
      *
      * Returns null if the expected values cannot be extracted from the issue body
      */
-    internal fun parseBody(body: String?): ParsedRequest? {
+    internal fun parseBody(body: String?): MavenArtifactDTO? {
         if (body.isNullOrBlank()) return null
 
         val groupId = extractField(body, "Group ID") ?: return null
         val artifactId = extractField(body, "Artifact ID") ?: return null
         val version = extractField(body, "Version")
 
-        return ParsedRequest(groupId, artifactId, version)
-    }
-
-    /**
-     * Checks if the submitted data is in valid format.
-     *
-     * Returns null if the request is valid, or an error message if it is not
-     */
-    internal fun validateRequest(parsed: ParsedRequest): String? {
-        // Regex for group id and artifact id: Alphanumeric characters, dots, underscores, and hyphens.
-        val regex = "^[A-Za-z0-9_.-]+$".toRegex()
-
-        // Regex for version: Forbidding control characters, and characters manipulating URL path
-        val versionRegex = "^[^\\p{Cntrl}/\\\\%?#&]+$".toRegex()
-
-        if (!parsed.groupId.matches(regex)) {
-            return "Invalid Group ID format. Only alphanumeric characters, dots, underscores, and hyphens are allowed."
-        }
-        if (!parsed.artifactId.matches(regex)) {
-            return "Invalid Artifact ID format. Only alphanumeric characters, dots, underscores, and hyphens are allowed."
-        }
-        if (parsed.version != null && !parsed.version.matches(versionRegex)) {
-            return "Invalid Version format. Newlines, other control characters, and the following characters are not allowed: /, \\, %, ?, #, &."
-        }
-
-        return null
-    }
-
-    /**
-     * Checks if the current request is a duplicate of an already processed request in the current batch.
-     *
-     * Returns the issue number of the duplicate, or null if it is not a duplicate.
-     */
-    internal fun findDuplicateIssueNumber(
-        currentRequest: ParsedRequest,
-        processedRequests: List<ProcessedRequestInfo>
-    ): Int? {
-        return processedRequests.firstOrNull { prev ->
-            val prevReq = prev.request
-
-            prevReq.groupId == currentRequest.groupId &&
-                    prevReq.artifactId == currentRequest.artifactId &&
-                    prevReq.version == currentRequest.version
-
-        }?.issueNumber
-    }
-
-    private fun publishIssueStatus(issueNumber: Int, comment: String) {
-        gitHubIntegration.addKlibsIssueComment(issueNumber, comment)
-        gitHubIntegration.addKlibsIssueLabel(issueNumber, processedLabel)
+        return MavenArtifactDTO(groupId, artifactId, version)
     }
 
     private fun extractField(body: String, label: String): String? {
@@ -267,6 +122,130 @@ class UserRequestCheckService(
         if (raw.isBlank() || raw.equals("_No response_", ignoreCase = true)) return null
         return raw
     }
+
+    private fun processIssues(issuesToProcess: Map<GitHubUserRequestIssue, MavenArtifactDTO>): Boolean {
+        // Tracked across the batch so we can detect duplicates within the same run.
+        val processedRequests = mutableListOf<ProcessedUserRequestInfo>()
+        var anyServerError = false
+
+        for ((issue, parsed) in issuesToProcess) {
+            try {
+                if (!processValidRequest(issue, parsed, processedRequests)) anyServerError = true
+            } catch (e: Exception) {
+                logger.error("Unexpected error while processing issue #${issue.number}: ${e.message}", e)
+                anyServerError = true
+            }
+        }
+        return anyServerError
+    }
+
+    /**
+     * Processes a single user request.
+     *
+     * Returns true if the outcome is final (success or 4xx), false if server error occurred (5xx) — timestamp should not be updated
+     */
+    private fun processValidRequest(
+        issue: GitHubUserRequestIssue,
+        parsed: MavenArtifactDTO,
+        processedRequests: MutableList<ProcessedUserRequestInfo>
+    ): Boolean {
+        val (groupId, artifactId, version) = parsed
+
+        val duplicateIssueNumber = findDuplicateIssueNumber(parsed, processedRequests)
+
+        if (duplicateIssueNumber != null) {
+            publishIssueStatus(
+                issue.number,
+                UserRequestMessages.duplicate(groupId, artifactId, version, duplicateIssueNumber)
+            )
+            logger.debug("Published comment to issue #${issue.number}: duplicate of #$duplicateIssueNumber")
+            return true
+        } else {
+            processedRequests.add(ProcessedUserRequestInfo(parsed, issue.number))
+        }
+
+        return try {
+            userRequestIndexingService.indexUserRequest(groupId, artifactId, version)
+            publishIssueStatus(
+                issue.number,
+                UserRequestMessages.success(groupId, artifactId, version)
+            )
+
+            logger.debug("Published success comment to issue #${issue.number}")
+            true
+        } catch (e: Exception) {
+            if (e is ResponseStatusException && e.statusCode.is4xxClientError) {
+                publishIssueStatus(
+                    issue.number,
+                    UserRequestMessages.failure(groupId, artifactId, version, e.reason ?: "Unknown error")
+                )
+
+                logger.debug("Published failure comment to issue #${issue.number}: ${e.reason ?: "Unknown error"}")
+                true
+            }
+            else {
+                logger.error("Server error on issue #${issue.number}: (${e.message})")
+                false
+            }
+        }
+    }
+
+    /**
+     * Checks if the current request is a duplicate of an already processed request in the current batch.
+     *
+     * Returns the issue number of the duplicate, or null if it is not a duplicate.
+     */
+    internal fun findDuplicateIssueNumber(
+        currentRequest: MavenArtifactDTO,
+        processedRequests: List<ProcessedUserRequestInfo>
+    ): Int? {
+        return processedRequests.firstOrNull { prev ->
+            val prevReq = prev.request
+
+            prevReq.groupId == currentRequest.groupId &&
+                    prevReq.artifactId == currentRequest.artifactId &&
+                    prevReq.version == currentRequest.version
+
+        }?.issueNumber
+    }
+
+    private fun publishIssueStatus(issueNumber: Int, comment: String) {
+        gitHubIntegration.addKlibsIssueComment(issueNumber, comment)
+        gitHubIntegration.addKlibsIssueLabel(issueNumber, processedLabel)
+    }
+
+    private fun updateTimestamp(
+        issuesBatch: GitHubUserRequestIssuesBatch,
+        runStartedAt: Instant,
+        anyServerError: Boolean,
+    ) {
+        if (anyServerError) {
+            // If any issue could not be processed because of errors that were not user's fault,
+            // timestamp is not updated, so that failed issues can be reprocessed
+            logger.warn("Server errors occurred; not updating index_request_check_timestamp")
+            return
+        }
+
+        if (issuesBatch.hasMore == true) {
+            // If not all requests were processed, next time only issues newer than the last processed will be fetched
+            val lastCreatedAt = issuesBatch.issues.last().createdAt
+            mavenCentralLogRepository.saveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK, lastCreatedAt)
+            logger.debug("Updated user_request_check_timestamp to last issue's created_at: {}", lastCreatedAt)
+            return
+        }
+
+        mavenCentralLogRepository.saveTimestamp(MavenCentralLogType.USER_REQUEST_CHECK, runStartedAt)
+        if (issuesBatch.issues.isEmpty()) {
+            logger.debug(
+                "No users' indexing requests to be processed; updating user_request_check_timestamp to current date: {}",
+                runStartedAt
+            )
+        } else {
+            logger.debug(
+                "Successfully processed all users' indexing requests; updating user_request_check_timestamp to current date: {}",
+                runStartedAt
+            )
+        }    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(UserRequestCheckService::class.java)
