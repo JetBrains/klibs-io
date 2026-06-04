@@ -16,7 +16,7 @@ import org.mapstruct.Named
 @Mapper(config = SpringMappingConfiguration::class)
 interface McpToolMapper {
 
-    fun mapPackageDetailsToPacakgeVersionResponse(
+    fun mapPackageDetailsToPackageVersionResponse(
         packageDetails: PackageDetails
     ): PackageLatestVersionResponse.PackageVersionResponse
 

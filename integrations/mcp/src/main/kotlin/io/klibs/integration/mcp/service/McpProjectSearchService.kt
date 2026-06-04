@@ -3,7 +3,7 @@ package io.klibs.integration.mcp.service
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.pckg.service.PackageService
-import io.klibs.core.readme.service.ReadmeService
+import io.klibs.core.project.ProjectService
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.service.SearchService
 import io.klibs.integration.mcp.dto.service.McpProjectSearchResultDto
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 class McpProjectSearchService(
     private val searchService: SearchService,
     private val packageService: PackageService,
-    private val readmeService: ReadmeService
+    private val projectService: ProjectService
 ) {
     private companion object {
         private const val SEARCH_RESULTS_LIMIT = 5
@@ -41,14 +41,7 @@ class McpProjectSearchService(
             val packages = packageService.getLatestPackagesByProjectId(project.id)
                 .take(MAX_PACKAGES_PER_PROJECT)
 
-            val readme = readmeService.readReadmeMd(
-                ReadmeService.ProjectInfo(
-                    id = project.id,
-                    scmRepositoryId = null,
-                    name = project.name,
-                    ownerLogin = project.ownerLogin
-                )
-            )
+            val readme = projectService.getMinimizedReadmeById(project.id)
 
             McpProjectSearchResultDto.ProjectInfoDto(
                 project = project,

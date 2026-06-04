@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration
 class McpServerConfiguration {
 
     @Bean
-    fun mcpPackageTools(
+    fun mcpToolCallbackProvider(
         mcpPackageTool: McpPackageTool,
         mcpProjectSearchTool: McpProjectSearchTool
     ): ToolCallbackProvider {
