@@ -8,5 +8,3 @@ apply:
 
 dependencies:
   - ../scm-owner
-  - ../storage
-  - $libs.markdown
