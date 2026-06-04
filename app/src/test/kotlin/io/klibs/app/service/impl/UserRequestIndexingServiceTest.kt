@@ -1,4 +1,4 @@
-package io.klibs.app.indexing
+package io.klibs.app.service.impl
 
 import BaseUnitWithDbLayerTest
 import io.klibs.core.pckg.repository.IndexingRequestRepository

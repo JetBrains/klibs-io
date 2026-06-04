@@ -1,5 +1,7 @@
-package io.klibs.app.indexing
+package io.klibs.app.service.impl
 
+import io.klibs.integration.maven.dto.MavenArtifactDTO
+import io.klibs.app.dto.ProcessedUserRequestInfo
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import kotlin.test.assertEquals
@@ -17,7 +19,7 @@ class UserRequestCheckServiceDuplicateCheckTest {
 
     @Test
     fun `should return null when processed requests list is empty`() {
-        val baseRequest = UserRequestCheckService.ParsedRequest(
+        val baseRequest = MavenArtifactDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
@@ -30,17 +32,17 @@ class UserRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return null when there are no matching processed requests`() {
         val processedRequests = listOf(
-            UserRequestCheckService.ProcessedRequestInfo(
-                UserRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0"),
+            ProcessedUserRequestInfo(
+                MavenArtifactDTO("other.group", "other-artifact", "1.0.0"),
                 10
             ),
-            UserRequestCheckService.ProcessedRequestInfo(
-                UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "different-artifact", "1.10.2"),
+            ProcessedUserRequestInfo(
+                MavenArtifactDTO("org.jetbrains.kotlinx", "different-artifact", "1.10.2"),
                 11
             )
         )
 
-        val baseRequest = UserRequestCheckService.ParsedRequest(
+        val baseRequest = MavenArtifactDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
@@ -54,17 +56,17 @@ class UserRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return null when previous request was for a specific version and current is for a different one`() {
         val processedRequests = listOf(
-            UserRequestCheckService.ProcessedRequestInfo(
-                UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.0.0"),
+            ProcessedUserRequestInfo(
+                MavenArtifactDTO("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.0.0"),
                 10
             ),
-            UserRequestCheckService.ProcessedRequestInfo(
-                UserRequestCheckService.ParsedRequest("other.group", "other-artifact", "1.0.0"),
+            ProcessedUserRequestInfo(
+                MavenArtifactDTO("other.group", "other-artifact", "1.0.0"),
                 11
             )
         )
 
-        val baseRequest = UserRequestCheckService.ParsedRequest(
+        val baseRequest = MavenArtifactDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
@@ -78,13 +80,13 @@ class UserRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return issue number when exact duplicate is found and version is specified`() {
         val processedRequests = listOf(
-            UserRequestCheckService.ProcessedRequestInfo(
-                UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2"),
+            ProcessedUserRequestInfo(
+                MavenArtifactDTO("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2"),
                 10
             )
         )
 
-        val baseRequest = UserRequestCheckService.ParsedRequest(
+        val baseRequest = MavenArtifactDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
@@ -98,13 +100,13 @@ class UserRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return issue number when exact duplicate is found and version is null`() {
         val processedRequests = listOf(
-            UserRequestCheckService.ProcessedRequestInfo(
-                UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", null),
+            ProcessedUserRequestInfo(
+                MavenArtifactDTO("org.jetbrains.kotlinx", "kotlinx-coroutines-core", null),
                 10
             )
         )
 
-        val baseRequest = UserRequestCheckService.ParsedRequest(
+        val baseRequest = MavenArtifactDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = null
@@ -118,13 +120,13 @@ class UserRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return null when current request has version and processed request version is null`() {
         val processedRequests = listOf(
-            UserRequestCheckService.ProcessedRequestInfo(
-                UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", null),
+            ProcessedUserRequestInfo(
+                MavenArtifactDTO("org.jetbrains.kotlinx", "kotlinx-coroutines-core", null),
                 10
             )
         )
 
-        val baseRequest = UserRequestCheckService.ParsedRequest(
+        val baseRequest = MavenArtifactDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
@@ -138,13 +140,13 @@ class UserRequestCheckServiceDuplicateCheckTest {
     @Test
     fun `should return null when current request version is null and processed request has version`() {
         val processedRequests = listOf(
-            UserRequestCheckService.ProcessedRequestInfo(
-                UserRequestCheckService.ParsedRequest("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2"),
+            ProcessedUserRequestInfo(
+                MavenArtifactDTO("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.10.2"),
                 10
             )
         )
 
-        val baseRequest = UserRequestCheckService.ParsedRequest(
+        val baseRequest = MavenArtifactDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = null

@@ -1,6 +1,6 @@
 package io.klibs.app.job
 
-import io.klibs.app.indexing.UserRequestCheckService
+import io.klibs.app.service.impl.UserRequestCheckService
 import net.javacrumbs.shedlock.core.LockAssert
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.springframework.stereotype.Component

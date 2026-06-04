@@ -21,9 +21,8 @@ CREATE OR REPLACE FUNCTION truncate_all_tables()
         END IF;
 
         UPDATE maven_central_log SET
-            maven_index_timestamp = current_date - interval ''10 years'',
-            user_request_check_timestamp =  current_date - interval ''10 years''
-        WHERE id = 1;
+            last_run_at = current_date - interval ''10 years''
+        WHERE id = 1 OR id = 2;
     END;
 ' LANGUAGE plpgsql;
 
