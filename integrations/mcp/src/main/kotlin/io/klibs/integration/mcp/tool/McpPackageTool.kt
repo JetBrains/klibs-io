@@ -27,8 +27,8 @@ class McpPackageTool(
             - packageFound: Boolean flag indicating if latest or latest stable versions were found for the package"""
     )
     fun getLatestVersion(
-        @ToolParam(description = "The Kotlin Multiplatform groupId of the package") groupId: String,
-        @ToolParam(description = "The Kotlin Multiplatform artifactId of the package") artifactId: String
+        @ToolParam(description = "The groupId of the package") groupId: String,
+        @ToolParam(description = "The artifactId of the package") artifactId: String
     ): PackageLatestVersionResponse {
         logger.info("MCP: Getting latest version for groupId: $groupId, artifactId: $artifactId")
         val result = mcpPackageService.getLatestVersion(groupId, artifactId)
