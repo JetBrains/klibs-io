@@ -25,7 +25,7 @@ deploy:
           imagePullSecret: "{{.IMAGE_PULL_SECRET}}"
           applicationName: "{{.APPLICATION_NAME}}"
         valuesFiles:
-          - values.yaml
+          - values.features.yaml
 profiles:
   - name: features
     build:

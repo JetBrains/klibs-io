@@ -1,4 +1,3 @@
-minReplicaCount: 1
 autoscaling:
   enabled: false
 deployStrategy:
@@ -11,11 +10,6 @@ health:
     initialDelaySeconds: 300
 databaseSecrets:
   - db-secrets
-secrets:
-  - klibs-backend-credentials
-  - klibs-readme-user
-configMaps:
-  - klibs-features-config
 ingress:
   enabled: false
 podAnnotations:

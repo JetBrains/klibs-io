@@ -24,23 +24,33 @@ deploy:
           imagePullSecret: "{{.IMAGE_PULL_SECRET}}"
           applicationName: "{{.APPLICATION_NAME}}"
         valuesFiles:
-          - values.yaml
+          - values.base.yaml
+          - values.features.yaml
 profiles:
   - name: prod
     patches:
       - op: replace
         path: /build/artifacts/0/image
         value: registry.jetbrains.team/p/klibs-io/containers/klibs-prod
+      - op: replace
+        path: /deploy/helm/releases/0/valuesFiles/1
+        value: values.prod.yaml
   - name: stage
     patches:
       - op: replace
         path: /build/artifacts/0/image
-        value: registry.jetbrains.team/p/klibs-io/containers/klibs-stage
-  - name: test
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-test
+      - op: replace
+        path: /deploy/helm/releases/0/valuesFiles/1
+        value: values.stage.yaml
+  - name: feature
     patches:
       - op: replace
         path: /build/artifacts/0/image
-        value: registry.jetbrains.team/p/klibs-io/containers/klibs-test
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-features
+      - op: replace
+        path: /deploy/helm/releases/0/valuesFiles/1
+        value: values.features.yaml
   - name: kotlintoolchain
     patches:
       - op: replace
