@@ -4,6 +4,7 @@ import io.klibs.core.pckg.dto.projection.Package
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
+import io.klibs.integration.maven.dto.MavenCentralLogType
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.scraper.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
@@ -55,7 +56,7 @@ internal class CentralSonatypePackageDiscovererTest {
 
     @BeforeEach
     fun setUp() {
-        whenever(mavenCentralLogRepository.retrieveMavenIndexTimestamp()).thenReturn(initialTimestamp)
+        whenever(mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.MAVEN_INDEX)).thenReturn(initialTimestamp)
 
         discoverer = CentralSonatypePackageDiscoverer(
             mavenIndexDownloadingService,
@@ -147,7 +148,7 @@ internal class CentralSonatypePackageDiscovererTest {
         assertEquals(ScraperType.CENTRAL_SONATYPE, resultArtifact2?.scraperType)
         assertTrue(resultArtifact2?.releasedAt != null)
 
-        verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
+        verify(mavenCentralLogRepository, times(1)).saveTimestamp(any(), any())
     }
 
     @Test
@@ -187,7 +188,7 @@ internal class CentralSonatypePackageDiscovererTest {
         assertEquals("new-lib", artifacts[0].artifactId)
 
         // Verify the timestamp was updated with the latest artifact timestamp
-        verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
+        verify(mavenCentralLogRepository, times(1)).saveTimestamp(any(), any())
     }
 
     @Test
@@ -222,7 +223,7 @@ internal class CentralSonatypePackageDiscovererTest {
         val versions = artifacts.map { it.version }.sorted()
         assertEquals(listOf("1.0.0", "2.0.0"), versions)
 
-        verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
+        verify(mavenCentralLogRepository, times(1)).saveTimestamp(any(), any())
     }
 
     @Test
@@ -236,7 +237,7 @@ internal class CentralSonatypePackageDiscovererTest {
         val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
 
         assertEquals(0, artifacts.size)
-        verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
+        verify(mavenCentralLogRepository, times(1)).saveTimestamp(any(), any())
     }
 
 }

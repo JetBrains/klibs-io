@@ -5,6 +5,7 @@ import io.klibs.app.indexing.discoverer.collectAllKnownMavenCentralPackages
 import io.klibs.app.indexing.discoverer.createArtifactCoordinates
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.maven.MavenArtifact
+import io.klibs.integration.maven.dto.MavenCentralLogType
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.scraper.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
@@ -41,7 +42,7 @@ class CentralSonatypePackageDiscoverer(
         var newIndexTs: Instant? = null
         try {
             val localIndexTimestamp = withContext(Dispatchers.IO) {
-                mavenCentralLogRepository.retrieveMavenIndexTimestamp()
+                mavenCentralLogRepository.retrieveTimestamp(MavenCentralLogType.MAVEN_INDEX)
             }
 
             newIndexTs = mavenIndexDownloadingService.downloadIndexIfNewer(localIndexTimestamp)
@@ -69,7 +70,7 @@ class CentralSonatypePackageDiscoverer(
                 collectUnknownArtifacts(foundArtifactsBatch, existingPackages).asFlow()
             }
             .onCompletion {
-                mavenCentralLogRepository.saveMavenIndexTimestamp(newIndexTs)
+                mavenCentralLogRepository.saveTimestamp(MavenCentralLogType.MAVEN_INDEX, newIndexTs)
                 logger.info(
                     "--- Central sonatype packages discovering finished. Last Maven Central index timestamp changed to $newIndexTs. ---"
                 )
