@@ -61,7 +61,7 @@ internal class GitHubIntegrationKohsukeLibrary(
     private val repositoryCache = Caffeine.newBuilder()
         .maximumSize(200)
         .expireAfterWrite(10, TimeUnit.MINUTES)
-        .build<Long, GHRepository>()
+        .build<Long, GHRepository?>()
 
 
     override fun getRepository(nativeId: Long): GitHubRepository? {

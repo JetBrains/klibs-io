@@ -1,0 +1,6 @@
+minReplicaCount: 3
+secrets:
+  - test-credentials
+  - klibs-readme-user
+configMaps:
+  - test-config

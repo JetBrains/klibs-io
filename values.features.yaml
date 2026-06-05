@@ -1,0 +1,6 @@
+minReplicaCount: 1
+secrets:
+  - klibs-backend-credentials
+  - klibs-readme-user
+configMaps:
+  - klibs-features-config

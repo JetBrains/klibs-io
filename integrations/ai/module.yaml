@@ -1,0 +1,8 @@
+product: jvm/lib
+
+apply:
+  - ../../build-logic/templates/mock.module-template.yaml
+
+dependencies:
+  - bom: $libs.spring.ai.bom
+  - $libs.spring.ai.starter.model.openai: exported

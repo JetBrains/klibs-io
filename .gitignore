@@ -44,3 +44,6 @@ localstack-data
 
 .junie/memory
 /.output.txt
+
+### Cursor ###
+.cursor/plans/

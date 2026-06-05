@@ -1,0 +1,9 @@
+product: jvm/lib
+
+apply:
+  - ../../build-logic/templates/mock.module-template.yaml
+
+dependencies:
+  - $libs.kohsuke.githubApi
+  - $libs.okhttp
+  - $libs.caffeine
