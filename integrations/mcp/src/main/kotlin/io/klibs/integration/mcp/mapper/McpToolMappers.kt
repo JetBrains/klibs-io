@@ -36,6 +36,7 @@ interface McpToolMapper {
         readme: String?
     ): ProjectSearchResponse.ProjectSearchResult
 
+    @Mapping(source = "version", target = "latestVersion")
     fun mapPackageOverviewToProjectPackage(packageOverview: PackageOverview): ProjectSearchResponse.ProjectPackage
 
     fun mapToProjectSearchResponse(serviceResponse: McpProjectSearchResultDto): ProjectSearchResponse {

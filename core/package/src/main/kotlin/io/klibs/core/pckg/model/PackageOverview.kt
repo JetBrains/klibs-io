@@ -8,6 +8,7 @@ data class PackageOverview(
     val groupId: String,
     val artifactId: String,
     val version: String,
+    val latestStableVersion: String?,
     val releasedAt: Instant,
 
     val description: String?,

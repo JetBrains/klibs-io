@@ -26,6 +26,9 @@ class PackageIndexEntity(
     @Column(name = "latest_version")
     val latestVersion: String,
 
+    @Column(name = "latest_stable_version")
+    val latestStableVersion: String?,
+
     @Column(name = "latest_description")
     val latestDescription: String?,
 

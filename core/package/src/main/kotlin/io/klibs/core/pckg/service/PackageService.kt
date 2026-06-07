@@ -149,6 +149,7 @@ private fun PackageEntity.toOverview(): PackageOverview {
         groupId = this.groupId,
         artifactId = this.artifactId,
         version = this.version,
+        latestStableVersion = null,
         releasedAt = this.releaseTs,
         description = this.description,
         targets = this.targets.map { PackageTarget(it.platform, it.target) }
@@ -161,6 +162,7 @@ private fun PackageIndexEntity.toOverview(): PackageOverview {
         groupId = this.id.groupId,
         artifactId = this.id.artifactId,
         version = this.latestVersion,
+        latestStableVersion = this.latestStableVersion,
         releasedAt = this.releaseTs,
         description = this.latestDescription,
         targets = this.targets.flatMap { (platform, targets) ->
