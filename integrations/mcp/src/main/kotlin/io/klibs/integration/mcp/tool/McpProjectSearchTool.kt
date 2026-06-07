@@ -42,7 +42,7 @@ class McpProjectSearchTool(
             - kotlinVersion: Kotlin version used by the project (from latest package), or null if unavailable
             - platforms: List of supported platforms
             - targets: List of supported targets
-            - packages: Up to 200 packages (groupId, artifactId, description) belonging to the project
+            - packages: Up to 200 packages belonging to the project, each with groupId, artifactId, latestVersion, latestStableVersion (or null if the package has no stable release), and description
             - readme: Project README content in Markdown format, or null if unavailable"""
     )
     fun searchProjects(

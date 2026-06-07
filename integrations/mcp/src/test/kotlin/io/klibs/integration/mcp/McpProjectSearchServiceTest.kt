@@ -6,12 +6,11 @@ import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.service.PackageService
-import io.klibs.core.readme.service.ReadmeService
+import io.klibs.core.project.ProjectService
 import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.core.search.service.SearchService
 import io.klibs.integration.mcp.service.McpProjectSearchService
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -24,8 +23,8 @@ class McpProjectSearchServiceTest {
 
     private val searchService = mock<SearchService>()
     private val packageService = mock<PackageService>()
-    private val readmeService = mock<ReadmeService>()
-    private val uut = McpProjectSearchService(searchService, packageService, readmeService)
+    private val projectService = mock<ProjectService>()
+    private val uut = McpProjectSearchService(searchService, packageService, projectService)
 
     @Test
     fun `searchProjects returns projects with packages`() {
@@ -45,7 +44,8 @@ class McpProjectSearchServiceTest {
         val packageOverview = createPackageOverview(
             groupId = "io.github.kstatemachine",
             artifactId = "kstatemachine-core",
-            version = "0.31.1",
+            version = "0.32.0-alpha",
+            latestStableVersion = "0.31.1",
             description = "KStateMachine core module"
         )
         whenever(packageService.getLatestPackagesByProjectId(1))
@@ -60,7 +60,7 @@ class McpProjectSearchServiceTest {
                 )
             )
 
-        whenever(readmeService.readReadmeMd(any())).thenReturn("# KStateMachine\nA state machine library")
+        whenever(projectService.getMinimizedReadmeById(any())).thenReturn("# KStateMachine\nA state machine library")
 
         val result = uut.mcpProjectSearch(
             query = "state machine",
@@ -76,6 +76,8 @@ class McpProjectSearchServiceTest {
         assertEquals(1, project.packages.size)
         assertEquals("io.github.kstatemachine", project.packages[0].groupId)
         assertEquals("kstatemachine-core", project.packages[0].artifactId)
+        assertEquals("0.32.0-alpha", project.packages[0].version)
+        assertEquals("0.31.1", project.packages[0].latestStableVersion)
         assertEquals("KStateMachine core module", project.packages[0].description)
         assertEquals("# KStateMachine\nA state machine library", project.readme)
     }
@@ -115,7 +117,7 @@ class McpProjectSearchServiceTest {
         whenever(packageService.getLatestPackageDetails("group", "artifact-1"))
             .thenReturn(createPackageDetails("group", "artifact-1", "1.0.0"))
 
-        whenever(readmeService.readReadmeMd(any())).thenReturn(null)
+        whenever(projectService.getMinimizedReadmeById(any())).thenReturn(null)
 
         val result = uut.mcpProjectSearch(
             query = "big",
@@ -152,7 +154,7 @@ class McpProjectSearchServiceTest {
             |- Feature 1
             |- Feature 2
         """.trimMargin()
-        whenever(readmeService.readReadmeMd(any())).thenReturn(readmeContent)
+        whenever(projectService.getMinimizedReadmeById(any())).thenReturn(readmeContent)
 
         val result = uut.mcpProjectSearch(
             query = "documented",
@@ -190,12 +192,14 @@ class McpProjectSearchServiceTest {
         groupId: String,
         artifactId: String,
         version: String,
+        latestStableVersion: String? = version,
         description: String? = "Test package"
     ) = PackageOverview(
         id = 1L,
         groupId = groupId,
         artifactId = artifactId,
         version = version,
+        latestStableVersion = latestStableVersion,
         releasedAt = Instant.now(),
         description = description,
         targets = listOf(PackageTarget(PackagePlatform.COMMON, null))

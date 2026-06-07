@@ -15,6 +15,8 @@ data class ProjectSearchResponse(
     data class ProjectPackage(
         val groupId: String,
         val artifactId: String,
+        val latestVersion: String,
+        val latestStableVersion: String?,
         val description: String?,
     )
 }
