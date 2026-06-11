@@ -7,6 +7,7 @@ import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.timeout
 import org.springframework.beans.factory.annotation.Autowired
@@ -124,6 +125,9 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(value = ["classpath:sql/PackageDescriptionServiceTest/insert-packages-with-duplicate-descriptions.sql"])
     fun `should start generating unique descriptions asynchronously and return success message immediately`() {
+        // Stub the coroutine method
+        doNothing().`when`(packageDescriptionService).generateUniqueDescriptions()
+
         val result = mockMvc.post("/package-description/generate-unique")
             .andExpect {
                 status { isOk() }
