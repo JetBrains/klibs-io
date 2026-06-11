@@ -3,9 +3,8 @@ package io.klibs.core.pckg.controller
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
@@ -20,7 +19,8 @@ import java.util.concurrent.TimeUnit
 @RequestMapping("/package-description")
 @Tag(name = "Package Descriptions", description = "Operations related to package descriptions")
 class PackageDescriptionController(
-    private val packageDescriptionService: PackageDescriptionService
+    private val packageDescriptionService: PackageDescriptionService,
+    private val applicationScope: CoroutineScope,
 ) {
     private val logger = LoggerFactory.getLogger(PackageDescriptionController::class.java)
     @Operation(
@@ -36,7 +36,6 @@ class PackageDescriptionController(
         return packageDescriptionService.generateDescription(groupId, artifactId, version)
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     @Operation(
         summary = "Generate unique descriptions for packages with duplicate descriptions and update them in the database",
         description = "Finds all packages with duplicate descriptions, generates new unique descriptions for them using AI, and updates the descriptions in the database"
@@ -45,7 +44,7 @@ class PackageDescriptionController(
     fun generateUniqueDescriptions(): String {
         logger.info("Starting unique descriptions generation in a separate thread with 24-hour timeout")
 
-        GlobalScope.launch(Dispatchers.IO) {
+        applicationScope.launch(Dispatchers.IO) {
             try {
                 logger.info("Executing unique descriptions generation")
                 val timeoutMillis = TimeUnit.HOURS.toMillis(24) // 24 hours in milliseconds
