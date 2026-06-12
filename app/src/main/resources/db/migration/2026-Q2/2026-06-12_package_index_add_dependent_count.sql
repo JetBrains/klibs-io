@@ -1,0 +1,76 @@
+DROP MATERIALIZED VIEW IF EXISTS package_index;
+
+CREATE MATERIALIZED VIEW package_index AS
+WITH LatestVersions AS (SELECT DISTINCT ON (p.group_id, p.artifact_id) p.group_id,
+                                                                       p.artifact_id,
+                                                                       p.version                                                    as latest_version,
+                                                                       p.description                                                as latest_description,
+                                                                       p.release_ts,
+                                                                       p.licenses                                                   as latest_licenses,
+                                                                       (SELECT jsonb_array_elements(p.licenses) ->> 'name' LIMIT 1) AS latest_license_name,
+                                                                       p.project_id,
+                                                                       p.id                                                         as latest_package_id,
+                                                                       p.maven_artifact_id,
+                                                                       p.kotlin_version
+                        FROM package p
+                        ORDER BY p.group_id, p.artifact_id, p.release_ts DESC),
+     LatestStableVersions AS (SELECT DISTINCT ON (p.group_id, p.artifact_id) p.group_id,
+                                                                             p.artifact_id,
+                                                                             p.version as latest_stable_version
+                              FROM package p
+                              WHERE p.version_type = 'STABLE'
+                              ORDER BY p.group_id, p.artifact_id, p.release_ts DESC),
+     DependentCounts AS (SELECT producer.maven_artifact_id,
+                                COUNT(DISTINCT consumer.project_id) AS dependent_count
+                         FROM package_dependency pd
+                                  JOIN package producer ON pd.dep_maven_artifact_id = producer.maven_artifact_id
+                                  JOIN package consumer ON consumer.id = pd.package_id
+                         WHERE consumer.project_id IS DISTINCT FROM producer.project_id
+                         GROUP BY producer.maven_artifact_id)
+SELECT p.group_id,
+       p.artifact_id,
+       p.project_id,
+       p.latest_package_id,
+       p.latest_version,
+       lsv.latest_stable_version,
+       p.latest_description,
+       p.release_ts,
+       p.kotlin_version,
+       COALESCE(dc.dependent_count, 0)                                   as dependent_count,
+       scm_owner.type                                                     as owner_type,
+       scm_owner.login                                                    as owner_login,
+       p.latest_license_name,
+       tgt.platforms,
+       tgt.platforms_vector,
+       tgt.targets,
+       tgt.targets_vector,
+       (setweight(format('%s:1', p.group_id)::tsvector, 'A') ||
+        setweight(format('%s:1', p.artifact_id)::tsvector, 'A') ||
+        setweight(to_tsvector(replace(p.group_id, '.', ' ')), 'A') ||
+        setweight(to_tsvector(replace(p.artifact_id, '.', ' ')), 'A') ||
+        setweight(to_tsvector(coalesce(scm_owner.login, '')), 'A') ||
+        setweight(to_tsvector(coalesce(p.latest_description, '')), 'B') ||
+        setweight(to_tsvector(coalesce(array_to_string(tgt.platforms, ' '), '')), 'C') ||
+        setweight(to_tsvector(coalesce(p.latest_license_name, '')), 'C')) AS fts
+FROM LatestVersions p
+         JOIN project ON p.project_id = project.id
+         JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+         JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+         LEFT JOIN LatestStableVersions lsv
+                   ON lsv.group_id = p.group_id AND lsv.artifact_id = p.artifact_id
+         LEFT JOIN DependentCounts dc ON dc.maven_artifact_id = p.maven_artifact_id
+         LEFT JOIN LATERAL (
+    SELECT array_agg(DISTINCT pt.platform)                    as platforms,
+           array_to_tsvector(array_agg(DISTINCT pt.platform)) as platforms_vector,
+           array_to_tsvector(array_remove(array_agg(DISTINCT COALESCE(pt.platform || '_' || pt.target, pt.platform)),
+                                          NULL))              as targets_vector,
+           (SELECT jsonb_object_agg(s.platform, s.platform_targets)
+            FROM (SELECT platform,
+                         to_jsonb(array_remove(array_agg(DISTINCT target), NULL)) as platform_targets
+                  FROM package_target
+                  WHERE package_id = p.latest_package_id
+                  GROUP BY platform) s)                       as targets
+    FROM package_target pt
+    WHERE pt.package_id = p.latest_package_id
+    ) tgt ON true
+WITH DATA;

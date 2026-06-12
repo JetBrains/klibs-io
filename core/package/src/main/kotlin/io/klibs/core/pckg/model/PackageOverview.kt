@@ -13,5 +13,7 @@ data class PackageOverview(
 
     val description: String?,
 
+    val dependentCount: Int = 0,
+
     val targets: List<PackageTarget>
 )
