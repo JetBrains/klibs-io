@@ -1,0 +1,6 @@
+# generated at runtime
+.work/
+cc-runner/reports/
+cc-runner/.venv/
+**/__pycache__/
+*.pyc
