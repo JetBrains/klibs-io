@@ -1,12 +1,10 @@
 package io.klibs.integration.mcp
 
 import io.klibs.core.owner.ScmOwnerType
-import io.klibs.core.pckg.model.PackageDetails
 import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.service.PackageService
-import io.klibs.core.project.ProjectService
 import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.core.search.service.SearchService
 import io.klibs.integration.mcp.service.McpProjectSearchService
@@ -23,8 +21,7 @@ class McpProjectSearchServiceTest {
 
     private val searchService = mock<SearchService>()
     private val packageService = mock<PackageService>()
-    private val projectService = mock<ProjectService>()
-    private val uut = McpProjectSearchService(searchService, packageService, projectService)
+    private val uut = McpProjectSearchService(searchService, packageService)
 
     @Test
     fun `searchProjects returns projects with packages`() {
@@ -51,17 +48,6 @@ class McpProjectSearchServiceTest {
         whenever(packageService.getLatestPackagesByProjectId(1))
             .thenReturn(listOf(packageOverview))
 
-        whenever(packageService.getLatestPackageDetails("io.github.kstatemachine", "kstatemachine-core"))
-            .thenReturn(
-                createPackageDetails(
-                    groupId = "io.github.kstatemachine",
-                    artifactId = "kstatemachine-core",
-                    version = "0.31.1"
-                )
-            )
-
-        whenever(projectService.getMinimizedReadmeById(any())).thenReturn("# KStateMachine\nA state machine library")
-
         val result = uut.mcpProjectSearch(
             query = "state machine",
             platforms = emptyList(),
@@ -74,12 +60,12 @@ class McpProjectSearchServiceTest {
         assertEquals("KStateMachine", project.project.ownerLogin)
         assertEquals(listOf(PackagePlatform.JVM, PackagePlatform.NATIVE), project.project.platforms)
         assertEquals(1, project.packages.size)
+        assertEquals(1, project.totalPackages)
         assertEquals("io.github.kstatemachine", project.packages[0].groupId)
         assertEquals("kstatemachine-core", project.packages[0].artifactId)
         assertEquals("0.32.0-alpha", project.packages[0].version)
         assertEquals("0.31.1", project.packages[0].latestStableVersion)
         assertEquals("KStateMachine core module", project.packages[0].description)
-        assertEquals("# KStateMachine\nA state machine library", project.readme)
     }
 
     @Test
@@ -100,7 +86,7 @@ class McpProjectSearchServiceTest {
     }
 
     @Test
-    fun `searchProjects limits packages to 200 per project`() {
+    fun `searchProjects caps packages at the default limit and reports totalPackages`() {
         val projectResult = createSearchProjectResult(id = 1, name = "big-project", ownerLogin = "owner")
 
         whenever(
@@ -109,15 +95,10 @@ class McpProjectSearchServiceTest {
             )
         ).thenReturn(listOf(projectResult))
 
-        val packages = (1..201).map { i ->
+        val packages = (1..25).map { i ->
             createPackageOverview("group", "artifact-$i", "1.0.0")
         }
         whenever(packageService.getLatestPackagesByProjectId(1)).thenReturn(packages)
-
-        whenever(packageService.getLatestPackageDetails("group", "artifact-1"))
-            .thenReturn(createPackageDetails("group", "artifact-1", "1.0.0"))
-
-        whenever(projectService.getMinimizedReadmeById(any())).thenReturn(null)
 
         val result = uut.mcpProjectSearch(
             query = "big",
@@ -126,16 +107,13 @@ class McpProjectSearchServiceTest {
         )
 
         assertEquals(1, result.projects.size)
-        assertEquals(200, result.projects[0].packages.size)
+        assertEquals(10, result.projects[0].packages.size)
+        assertEquals(25, result.projects[0].totalPackages)
     }
 
     @Test
-    fun `searchProjects returns readme content when available`() {
-        val projectResult = createSearchProjectResult(
-            id = 1,
-            name = "documented-project",
-            ownerLogin = "author"
-        )
+    fun `searchProjects honours an explicit maxPackagesPerProject`() {
+        val projectResult = createSearchProjectResult(id = 1, name = "big-project", ownerLogin = "owner")
 
         whenever(
             searchService.search(
@@ -143,27 +121,43 @@ class McpProjectSearchServiceTest {
             )
         ).thenReturn(listOf(projectResult))
 
-        whenever(packageService.getLatestPackagesByProjectId(1)).thenReturn(emptyList())
-
-        val readmeContent = """
-            |# Documented Project
-            |
-            |This is a well-documented project with a detailed README.
-            |
-            |## Features
-            |- Feature 1
-            |- Feature 2
-        """.trimMargin()
-        whenever(projectService.getMinimizedReadmeById(any())).thenReturn(readmeContent)
+        val packages = (1..25).map { i ->
+            createPackageOverview("group", "artifact-$i", "1.0.0")
+        }
+        whenever(packageService.getLatestPackagesByProjectId(1)).thenReturn(packages)
 
         val result = uut.mcpProjectSearch(
-            query = "documented",
+            query = "big",
+            platforms = emptyList(),
+            targetFilters = emptyMap(),
+            maxPackagesPerProject = 3,
+        )
+
+        assertEquals(3, result.projects[0].packages.size)
+        assertEquals(25, result.projects[0].totalPackages)
+    }
+
+    @Test
+    fun `searchProjects orders packages newest first`() {
+        val projectResult = createSearchProjectResult(id = 1, name = "proj", ownerLogin = "owner")
+
+        whenever(
+            searchService.search(
+                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+            )
+        ).thenReturn(listOf(projectResult))
+
+        val older = createPackageOverview("group", "older", "1.0.0", releasedAt = Instant.parse("2020-01-01T00:00:00Z"))
+        val newer = createPackageOverview("group", "newer", "2.0.0", releasedAt = Instant.parse("2024-01-01T00:00:00Z"))
+        whenever(packageService.getLatestPackagesByProjectId(1)).thenReturn(listOf(older, newer))
+
+        val result = uut.mcpProjectSearch(
+            query = "proj",
             platforms = emptyList(),
             targetFilters = emptyMap(),
         )
 
-        assertEquals(1, result.projects.size)
-        assertEquals(readmeContent, result.projects[0].readme)
+        assertEquals(listOf("newer", "older"), result.projects[0].packages.map { it.artifactId })
     }
 
     private fun createSearchProjectResult(
@@ -193,37 +187,16 @@ class McpProjectSearchServiceTest {
         artifactId: String,
         version: String,
         latestStableVersion: String? = version,
-        description: String? = "Test package"
+        description: String? = "Test package",
+        releasedAt: Instant = Instant.now()
     ) = PackageOverview(
         id = 1L,
         groupId = groupId,
         artifactId = artifactId,
         version = version,
         latestStableVersion = latestStableVersion,
-        releasedAt = Instant.now(),
+        releasedAt = releasedAt,
         description = description,
         targets = listOf(PackageTarget(PackagePlatform.COMMON, null))
-    )
-
-    private fun createPackageDetails(
-        groupId: String,
-        artifactId: String,
-        version: String,
-    ) = PackageDetails(
-        id = 1L,
-        projectId = 1,
-        groupId = groupId,
-        artifactId = artifactId,
-        version = version,
-        releasedAt = Instant.now(),
-        description = "Test package",
-        targets = emptyList(),
-        licenses = emptyList(),
-        developers = emptyList(),
-        buildTool = "Gradle",
-        buildToolVersion = "8.0",
-        kotlinVersion = "2.0.0",
-        url = null,
-        scmUrl = null
     )
 }
