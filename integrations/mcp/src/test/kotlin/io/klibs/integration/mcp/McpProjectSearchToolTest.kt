@@ -69,7 +69,7 @@ class McpProjectSearchToolTest {
                 McpProjectSearchResultDto.ProjectInfoDto(
                     project = searchProjectResult(),
                     packages = listOf(packageOverview),
-                    readme = null
+                    totalPackages = 1
                 )
             )
         )

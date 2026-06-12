@@ -10,6 +10,6 @@ data class McpProjectSearchResultDto(
     data class ProjectInfoDto(
         val project: SearchProjectResult,
         val packages: List<PackageOverview>,
-        val readme: String?
+        val totalPackages: Int
     )
 }

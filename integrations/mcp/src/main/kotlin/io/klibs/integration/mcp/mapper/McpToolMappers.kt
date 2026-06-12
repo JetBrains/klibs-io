@@ -26,14 +26,15 @@ interface McpToolMapper {
 
     @Mapping(source = "project.name", target = "projectName")
     @Mapping(source = "project.ownerLogin", target = "projectAuthor")
+    @Mapping(source = "project.description", target = "description")
     @Mapping(source = "project.targets", target = "targets")
     @Mapping(source = "packages", target = "packages")
-    @Mapping(source = "readme", target = "readme")
+    @Mapping(source = "totalPackages", target = "totalPackages")
     @Mapping(target = "platforms", qualifiedByName = ["mapPlatforms"])
     fun mapToProjectSearchResult(
         project: SearchProjectResult,
         packages: List<ProjectSearchResponse.ProjectPackage>,
-        readme: String?
+        totalPackages: Int
     ): ProjectSearchResponse.ProjectSearchResult
 
     @Mapping(source = "version", target = "latestVersion")
@@ -45,7 +46,7 @@ interface McpToolMapper {
             mapToProjectSearchResult(
                 serviceResult.project,
                 mappedPackages,
-                serviceResult.readme
+                serviceResult.totalPackages
             )
         }
         return ProjectSearchResponse(projects = projectResults)

@@ -39,11 +39,11 @@ class McpProjectSearchTool(
             Response fields per project:
             - projectName: Name of the project
             - projectAuthor: Owner/author login
-            - kotlinVersion: Kotlin version used by the project (from latest package), or null if unavailable
+            - description: Short summary of what the project does, or null if unavailable
             - platforms: List of supported platforms
             - targets: List of supported targets
-            - packages: Up to 200 packages belonging to the project, each with groupId, artifactId, latestVersion, latestStableVersion (or null if the package has no stable release), and description
-            - readme: Project README content in Markdown format, or null if unavailable"""
+            - packages: The project's packages (newest first), capped at maxPackagesPerProject, each with groupId, artifactId, latestVersion, latestStableVersion (or null if the package has no stable release), and description
+            - totalPackages: Total number of packages the project publishes (may exceed the returned count; raise maxPackagesPerProject to retrieve more)"""
     )
     fun searchProjects(
         @ToolParam(description = "Free text search keywords (e.g. 'serialization', 'state machine', 'compose ui').")
@@ -61,12 +61,21 @@ class McpProjectSearchTool(
             required = false
         )
         targetFilters: Map<TargetGroup, Set<String>>? = emptyMap(),
+        @ToolParam(
+            description = "Maximum number of packages to return per project (newest first). Defaults to 10. " +
+                    "Increase only when a project's totalPackages exceeds the returned count and you need more artifacts.",
+            required = false
+        )
+        maxPackagesPerProject: Int? = null,
     ): ProjectSearchResponse {
         logger.info("MCP: Searching for projects with query: $query, platforms: $platforms, targetFilters: $targetFilters")
         val parsedPlatforms =
             platforms?.map { PackagePlatform.findBySerializableName(it) }.orEmpty()
-        val result =
+        val result = if (maxPackagesPerProject != null) {
+            mcpProjectSearchService.mcpProjectSearch(query, parsedPlatforms, targetFilters.orEmpty(), maxPackagesPerProject)
+        } else {
             mcpProjectSearchService.mcpProjectSearch(query, parsedPlatforms, targetFilters.orEmpty())
+        }
         return mcpToolMapper.mapToProjectSearchResponse(result)
     }
 }
