@@ -44,3 +44,6 @@ localstack-data
 
 .junie/memory
 /.output.txt
+/.agents/skills/
+/.claude/skills/
+/.junie/skills/
