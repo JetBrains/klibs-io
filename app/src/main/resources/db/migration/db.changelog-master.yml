@@ -171,4 +171,6 @@ databaseChangeLog:
       file: db/migration/2026-Q2/2026-06-02_create_scm_repo_scheduling_table.yml
   - include:
       file: db/migration/2026-Q2/2026-06-05_package_index_add_latest_stable_version.yml
+  - include:
+      file: db/migration/2026-Q2/2026-06-12_package_index_add_dependent_count.yml
 

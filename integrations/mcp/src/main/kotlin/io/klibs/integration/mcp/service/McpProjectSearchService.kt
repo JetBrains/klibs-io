@@ -1,5 +1,6 @@
 package io.klibs.integration.mcp.service
 
+import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.pckg.service.PackageService
@@ -39,7 +40,7 @@ class McpProjectSearchService(
         val projectResults = searchResults.map { project ->
             val allPackages = packageService.getLatestPackagesByProjectId(project.id)
             val packages = allPackages
-                .sortedByDescending { it.releasedAt }
+                .sortedWith(compareByDescending<PackageOverview> { it.dependentCount }.thenByDescending { it.releasedAt })
                 .take(maxPackagesPerProject)
 
             McpProjectSearchResultDto.ProjectInfoDto(

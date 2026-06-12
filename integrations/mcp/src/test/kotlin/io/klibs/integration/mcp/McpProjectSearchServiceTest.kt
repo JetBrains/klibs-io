@@ -138,7 +138,7 @@ class McpProjectSearchServiceTest {
     }
 
     @Test
-    fun `searchProjects orders packages newest first`() {
+    fun `searchProjects orders packages by dependent count then newest first`() {
         val projectResult = createSearchProjectResult(id = 1, name = "proj", ownerLogin = "owner")
 
         whenever(
@@ -147,9 +147,11 @@ class McpProjectSearchServiceTest {
             )
         ).thenReturn(listOf(projectResult))
 
-        val older = createPackageOverview("group", "older", "1.0.0", releasedAt = Instant.parse("2020-01-01T00:00:00Z"))
-        val newer = createPackageOverview("group", "newer", "2.0.0", releasedAt = Instant.parse("2024-01-01T00:00:00Z"))
-        whenever(packageService.getLatestPackagesByProjectId(1)).thenReturn(listOf(older, newer))
+        // popular is older but most-depended; newerNiche is newest but unused; oldNiche ties on 0 dependents
+        val popular = createPackageOverview("group", "popular", "1.0.0", dependentCount = 42, releasedAt = Instant.parse("2020-01-01T00:00:00Z"))
+        val newerNiche = createPackageOverview("group", "newer-niche", "2.0.0", dependentCount = 0, releasedAt = Instant.parse("2024-01-01T00:00:00Z"))
+        val oldNiche = createPackageOverview("group", "old-niche", "1.0.0", dependentCount = 0, releasedAt = Instant.parse("2019-01-01T00:00:00Z"))
+        whenever(packageService.getLatestPackagesByProjectId(1)).thenReturn(listOf(oldNiche, newerNiche, popular))
 
         val result = uut.mcpProjectSearch(
             query = "proj",
@@ -157,7 +159,8 @@ class McpProjectSearchServiceTest {
             targetFilters = emptyMap(),
         )
 
-        assertEquals(listOf("newer", "older"), result.projects[0].packages.map { it.artifactId })
+        // most dependents first; ties broken by newest release
+        assertEquals(listOf("popular", "newer-niche", "old-niche"), result.projects[0].packages.map { it.artifactId })
     }
 
     private fun createSearchProjectResult(
@@ -188,6 +191,7 @@ class McpProjectSearchServiceTest {
         version: String,
         latestStableVersion: String? = version,
         description: String? = "Test package",
+        dependentCount: Int = 0,
         releasedAt: Instant = Instant.now()
     ) = PackageOverview(
         id = 1L,
@@ -197,6 +201,7 @@ class McpProjectSearchServiceTest {
         latestStableVersion = latestStableVersion,
         releasedAt = releasedAt,
         description = description,
+        dependentCount = dependentCount,
         targets = listOf(PackageTarget(PackagePlatform.COMMON, null))
     )
 }

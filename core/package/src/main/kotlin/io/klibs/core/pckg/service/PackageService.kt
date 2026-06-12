@@ -165,6 +165,7 @@ private fun PackageIndexEntity.toOverview(): PackageOverview {
         latestStableVersion = this.latestStableVersion,
         releasedAt = this.releaseTs,
         description = this.latestDescription,
+        dependentCount = this.dependentCount,
         targets = this.targets.flatMap { (platform, targets) ->
             if (targets.isEmpty()) {
                 listOf(PackageTarget(platform, null))
