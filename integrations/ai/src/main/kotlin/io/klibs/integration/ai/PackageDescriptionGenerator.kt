@@ -26,7 +26,7 @@ class PackageDescriptionGenerator(
         val systemMessage = SystemPromptTemplate(packageDescriptionPrompt)
             .createMessage(
                 mapOf(
-                    "packageName" to artifactId,
+                    "packageName" to (artifactId ?: ""),
                     "minWords" to minDescriptionWordCount,
                     "maxWords" to maxDescriptionWordCount
                 )

@@ -1,6 +1,7 @@
 package io.klibs.core.pckg.repository
 
 import io.klibs.core.pckg.entity.PackageEntity
+import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.dto.projection.PackageVersionsView
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.dto.projection.SitemapPackageView
@@ -58,6 +59,12 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
     fun findByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId: String, artifactId: String): List<PackageEntity>
 
     fun findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(groupId: String, artifactId: String): PackageEntity?
+
+    fun findFirstByGroupIdAndArtifactIdAndVersionTypeOrderByReleaseTsDesc(
+        groupId: String,
+        artifactId: String,
+        versionType: VersionType
+    ): PackageEntity?
 
     @Query(value = """
             WITH latest_package_ids AS (SELECT DISTINCT ON (group_id, artifact_id) id

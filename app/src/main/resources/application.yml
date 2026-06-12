@@ -16,6 +16,11 @@ spring:
       chat:
         options:
           model: gpt-4o
+    mcp:
+      server:
+        name: klibs-mcp-server
+        version: 1.0.0
+        protocol: stateless
     retry:
       max-attempts: 1
   liquibase:

@@ -3,16 +3,16 @@
 kotlin = "2.3.20"
 
 # Spring
-spring-boot = "3.5.9"
+spring-boot = "4.0.5"
 spring-dependencyManagement = "1.1.7"
-spring-doc = "2.8.15"
-spring-ai = "1.1.2"
-spring-cloud-aws = "3.4.2"
+spring-doc = "3.0.3"
+spring-ai = "2.0.0-M4"
+spring-cloud-aws = "4.0.0"
 
 # Job / scheduling
 shedlock = "6.6.0"
 
-kohsuke-githubApi = "1.321"
+kohsuke-githubApi = "1.330"
 
 kotlinx-coroutines = "1.10.1"
 kotlinx-serialization = "1.6.3"
@@ -28,6 +28,7 @@ gorylenko-gitProperties = "2.5.4"
 
 jib = "3.4.3"
 
+mapstruct = "1.7.0.Beta1"
 mockito = "5.1.0"
 testcontainers = "1.21.4"
 
@@ -65,12 +66,14 @@ shedlock-jdbc = { module = "net.javacrumbs.shedlock:shedlock-provider-jdbc-templ
 springdoc-openapi-starter = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "spring-doc" }
 spring-ai-bom = { group = "org.springframework.ai", name = "spring-ai-bom", version.ref = "spring-ai" }
 spring-ai-starter-model-openai = { group = "org.springframework.ai", name = "spring-ai-starter-model-openai" }
+spring-ai-starter-mcp-server-webmvc = { group = "org.springframework.ai", name = "spring-ai-starter-mcp-server-webmvc" }
 spring-cloud-aws-starter-s3 = { group = "io.awspring.cloud", name = "spring-cloud-aws-starter-s3", version.ref= "spring-cloud-aws" }
 spring-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-starter-logging = { module = "org.springframework.boot:spring-boot-starter-logging" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
 spring-boot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
@@ -89,10 +92,12 @@ maven-indexer-search-api = {module="org.apache.maven.indexer:search-api", versio
 maven-indexer-search-backend-smo = {module="org.apache.maven.indexer:search-backend-smo", version.ref = "maven-indexer"}
 maven-indexer-indexer-core = {module="org.apache.maven.indexer:indexer-core", version.ref = "maven-indexer"}
 maven-indexer-search-backend-indexer = {module="org.apache.maven.indexer:search-backend-indexer", version.ref = "maven-indexer"}
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
 
-liquibase-core = { module = "org.liquibase:liquibase-core" }
+spring-boot-starter-liquibase = { module = "org.springframework.boot:spring-boot-starter-liquibase" }
 postgresql = { module = "org.postgresql:postgresql" }
 
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }

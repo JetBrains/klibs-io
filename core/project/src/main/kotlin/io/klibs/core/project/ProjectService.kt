@@ -104,6 +104,10 @@ class ProjectService(
     }
 
     @Transactional(readOnly = true)
+    fun getMinimizedReadmeById(projectId: Int): String? =
+        projectRepository.findById(projectId)?.minimizedReadme
+
+    @Transactional(readOnly = true)
     fun findAllForSitemap(): List<SitemapProjectEntry> = projectRepository.findAllForSitemap()
 
     @Transactional
