@@ -38,6 +38,9 @@ class PackageIndexEntity(
     @Column(name = "kotlin_version")
     val kotlinVersion: String,
 
+    @Column(name = "dependent_count")
+    val dependentCount: Int,
+
     @Column(name = "owner_type")
     val ownerType: String,
 
