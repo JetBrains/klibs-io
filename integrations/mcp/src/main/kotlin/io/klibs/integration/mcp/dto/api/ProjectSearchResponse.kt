@@ -6,10 +6,11 @@ data class ProjectSearchResponse(
     data class ProjectSearchResult(
         val projectName: String,
         val projectAuthor: String,
+        val description: String?,
         val platforms: List<String>,
         val targets: List<String>,
         val packages: List<ProjectPackage>,
-        val readme: String?,
+        val totalPackages: Int,
     )
 
     data class ProjectPackage(

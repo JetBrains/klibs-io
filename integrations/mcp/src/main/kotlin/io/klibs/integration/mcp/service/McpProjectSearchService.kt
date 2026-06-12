@@ -3,7 +3,6 @@ package io.klibs.integration.mcp.service
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.pckg.service.PackageService
-import io.klibs.core.project.ProjectService
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.service.SearchService
 import io.klibs.integration.mcp.dto.service.McpProjectSearchResultDto
@@ -13,17 +12,17 @@ import org.springframework.stereotype.Service
 class McpProjectSearchService(
     private val searchService: SearchService,
     private val packageService: PackageService,
-    private val projectService: ProjectService
 ) {
     private companion object {
         private const val SEARCH_RESULTS_LIMIT = 5
-        private const val MAX_PACKAGES_PER_PROJECT = 200
+        private const val DEFAULT_MAX_PACKAGES_PER_PROJECT = 10
     }
 
     fun mcpProjectSearch(
         query: String?,
         platforms: List<PackagePlatform>,
         targetFilters: Map<TargetGroup, Set<String>>,
+        maxPackagesPerProject: Int = DEFAULT_MAX_PACKAGES_PER_PROJECT,
     ): McpProjectSearchResultDto {
         val searchResults = searchService.search(
             query = query,
@@ -38,15 +37,15 @@ class McpProjectSearchService(
         )
 
         val projectResults = searchResults.map { project ->
-            val packages = packageService.getLatestPackagesByProjectId(project.id)
-                .take(MAX_PACKAGES_PER_PROJECT)
-
-            val readme = projectService.getMinimizedReadmeById(project.id)
+            val allPackages = packageService.getLatestPackagesByProjectId(project.id)
+            val packages = allPackages
+                .sortedByDescending { it.releasedAt }
+                .take(maxPackagesPerProject)
 
             McpProjectSearchResultDto.ProjectInfoDto(
                 project = project,
                 packages = packages,
-                readme = readme
+                totalPackages = allPackages.size
             )
         }
 
