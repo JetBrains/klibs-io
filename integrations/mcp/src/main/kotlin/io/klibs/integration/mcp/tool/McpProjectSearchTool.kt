@@ -4,6 +4,7 @@ import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.integration.mcp.dto.api.ProjectSearchResponse
 import io.klibs.integration.mcp.mapper.McpToolMapper
+import io.klibs.integration.mcp.service.DEFAULT_MAX_PACKAGES_PER_PROJECT
 import io.klibs.integration.mcp.service.McpProjectSearchService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -66,16 +67,14 @@ class McpProjectSearchTool(
                     "Increase only when a project's totalPackages exceeds the returned count and you need more artifacts.",
             required = false
         )
-        maxPackagesPerProject: Int? = null,
+        maxPackagesPerProject: Int = DEFAULT_MAX_PACKAGES_PER_PROJECT,
     ): ProjectSearchResponse {
         logger.info("MCP: Searching for projects with query: $query, platforms: $platforms, targetFilters: $targetFilters")
+
         val parsedPlatforms =
             platforms?.map { PackagePlatform.findBySerializableName(it) }.orEmpty()
-        val result = if (maxPackagesPerProject != null) {
-            mcpProjectSearchService.mcpProjectSearch(query, parsedPlatforms, targetFilters.orEmpty(), maxPackagesPerProject)
-        } else {
-            mcpProjectSearchService.mcpProjectSearch(query, parsedPlatforms, targetFilters.orEmpty())
-        }
-        return mcpToolMapper.mapToProjectSearchResponse(result)
+
+        return mcpProjectSearchService.mcpProjectSearch(query, parsedPlatforms, targetFilters.orEmpty(), maxPackagesPerProject)
+            .let { mcpToolMapper.mapToProjectSearchResponse(it) }
     }
 }

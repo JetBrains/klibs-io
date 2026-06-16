@@ -9,6 +9,8 @@ import io.klibs.core.search.service.SearchService
 import io.klibs.integration.mcp.dto.service.McpProjectSearchResultDto
 import org.springframework.stereotype.Service
 
+internal const val DEFAULT_MAX_PACKAGES_PER_PROJECT = 10
+
 @Service
 class McpProjectSearchService(
     private val searchService: SearchService,
@@ -16,7 +18,6 @@ class McpProjectSearchService(
 ) {
     private companion object {
         private const val SEARCH_RESULTS_LIMIT = 5
-        private const val DEFAULT_MAX_PACKAGES_PER_PROJECT = 10
     }
 
     fun mcpProjectSearch(

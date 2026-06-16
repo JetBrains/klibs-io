@@ -10,6 +10,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.timeout
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
@@ -126,7 +127,7 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
     @Sql(value = ["classpath:sql/PackageDescriptionServiceTest/insert-packages-with-duplicate-descriptions.sql"])
     fun `should start generating unique descriptions asynchronously and return success message immediately`() {
         // Stub the coroutine method
-        doNothing().`when`(packageDescriptionService).generateUniqueDescriptions()
+        doNothing().whenever(packageDescriptionService).generateUniqueDescriptions()
 
         val result = mockMvc.post("/package-description/generate-unique")
             .andExpect {
