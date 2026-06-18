@@ -7,6 +7,8 @@ on:
 jobs:
   create-youtrack-issue:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     env:
       YT_BASE_URL: https://youtrack.jetbrains.com
       YT_PROJECT: ${{ secrets.YT_PROJECT }}
@@ -74,3 +76,8 @@ jobs:
           fi
 
           rm -f "$tmp_payload" "$tmp_resp"
+
+      - name: Add "triaged" label to GitHub issue
+        run: gh issue edit ${{ github.event.issue.number }} --add-label "triaged"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
