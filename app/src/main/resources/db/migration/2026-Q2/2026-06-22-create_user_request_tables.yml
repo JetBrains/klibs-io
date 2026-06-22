@@ -1,0 +1,178 @@
+databaseChangeLog:
+  - changeSet:
+      id: create user_request_issue table
+      author: zofia.zuzanna.wiora@jetbrains.com
+      comment: "KTL-4174: Stores data about GitHub issue for user's indexing requesting"
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: user_request_issue
+      changes:
+        - createTable:
+            tableName: user_request_issue
+            columns:
+              - column:
+                  name: id
+                  type: SERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: github_issue_number
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: group_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: artifact_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: TEXT
+              - column:
+                  name: processing_status
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status_details
+                  type: TEXT
+              - column:
+                  name: failed_attempts
+                  type: INT
+                  constraints:
+                    nullable: false
+                  defaultValue: 0
+              - column:
+                  name: failed_ts
+                  type: TIMESTAMP
+              - column:
+                  name: last_error_message
+                  type: TEXT
+
+  - changeSet:
+      id: add user_request_issue_failed_attempts_idx to user_request_issue
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: user_request_issue
+              indexName: user_request_issue_failed_attempts_idx
+      changes:
+        - createIndex:
+            indexName: user_request_issue_failed_attempts_idx
+            tableName: user_request_issue
+            columns:
+              - column:
+                  name: failed_attempts
+
+  - changeSet:
+      id: add user_request_issue_id to package_index_request
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: package_index_request
+        - tableExists:
+            tableName: user_request_issue
+        - not:
+            columnExists:
+              tableName: package_index_request
+              columnName: user_request_issue_id
+      changes:
+        - addColumn:
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: user_request_issue_id
+                  type: INT
+                  constraints:
+                    referencedTableName: user_request_issue
+                    referencedColumnNames: id
+                    foreignKeyName: fk_package_index_request_user_request_issue_id
+
+  - changeSet:
+      id: create user_request_report table
+      author: zofia.zuzanna.wiora@jetbrains.com
+      comment: "KTL-4175: Stores data for the job that reports processed packages status back to GitHub issues"
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: user_request_report
+      changes:
+        - createTable:
+            tableName: user_request_report
+            columns:
+              - column:
+                  name: id
+                  type: SERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_request_issue_id
+                  type: INT
+                  constraints:
+                    referencedTableName: user_request_issue
+                    referencedColumnNames: id
+                    foreignKeyName: fk_user_request_report_user_request_issue_id
+                    nullable: false
+              - column:
+                  name: group_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: artifact_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: TEXT
+              - column:
+                  name: indexing_status
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status_details
+                  type: TEXT
+              - column:
+                  name: failed_attempts
+                  type: INT
+                  constraints:
+                    nullable: false
+                  defaultValue: 0
+              - column:
+                  name: failed_ts
+                  type: TIMESTAMP
+              - column:
+                  name: last_error_message
+                  type: TEXT
+
+  - changeSet:
+      id: add user_request_report_failed_attempts_idx to user_request_report
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: user_request_report
+              indexName: user_request_report_failed_attempts_idx
+      changes:
+        - createIndex:
+            indexName: user_request_report_failed_attempts_idx
+            tableName: user_request_report
+            columns:
+              - column:
+                  name: failed_attempts
