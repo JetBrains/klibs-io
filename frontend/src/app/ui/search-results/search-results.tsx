@@ -16,12 +16,14 @@ import SearchTopBar from "../search-top-bar/search-top-bar";
 
 interface SearchResultsProps {
     filters: SearchParams;
+    setFilters: (params: SearchParams) => void;
+    updateURLFromState: (state: SearchParams) => void;
     isPackageSearch: boolean;
 }
 
 const SEARCH_LIMIT = 18;
 
-export function SearchResults({ filters, isPackageSearch }: SearchResultsProps) {
+export function SearchResults({ filters, setFilters, updateURLFromState, isPackageSearch }: SearchResultsProps) {
     const [projects, setProjects] = useState<ProjectSearchResults[] | null>(null);
     const [packages, setPackages] = useState<PackageSearchResults[] | null>(null);
     const [loading, setLoading] = useState(true);
@@ -132,7 +134,11 @@ export function SearchResults({ filters, isPackageSearch }: SearchResultsProps) 
         return (
             <>
                 {!isPackageSearch &&
-                    <SearchTopBar />
+                    <SearchTopBar
+                        filters={filters}
+                        setFilters={setFilters}
+                        updateURLFromState={updateURLFromState}
+                    />
                 }
                 <Container mode="wrapper" cardGrid>
                     {/*Search results cards*/}

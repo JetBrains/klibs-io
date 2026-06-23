@@ -67,6 +67,22 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
 
     const showCategoriesView = !hasActiveFilters(filters) && !categorySlug;
 
+    const updateURLFromState = (state: SearchParams) => {
+        const newSearchParams = new URLSearchParams();
+        if (state.mode === 'packages') newSearchParams.set('mode', state.mode);
+        if (state.query) newSearchParams.set('query', state.query);
+        if (state.platforms && state.platforms.length > 0) {
+            state.platforms.forEach((platform) => newSearchParams.append('platforms', platform));
+        }
+        if (state.sort) newSearchParams.set('sort', state.sort);
+        if (state.page && state.page > 1) newSearchParams.set('page', state.page.toString());
+        if (state.limit) newSearchParams.set('limit', state.limit.toString());
+        if (state.tags && state.tags.length > 0) {
+            state.tags.forEach((tag) => newSearchParams.append('tags', tag));
+        }
+        router.push(`/?${newSearchParams.toString()}`);
+    };
+
     const updateCategoryURL = (query: string) => {
         const newSearchParams = new URLSearchParams();
         newSearchParams.set('category', categorySlug!);
@@ -96,6 +112,7 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
             <SearchContainer
                 filters={filters}
                 setFilters={setFilters}
+                updateURLFromState={updateURLFromState}
                 hideTagsFilter={!!selectedCategory}
                 selectedCategory={selectedCategory?.name}
                 onCategoryReset={handleCategoryReset}
@@ -111,7 +128,12 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
                 ) : showCategoriesView ? (
                     <CategoriesView categoryWithProjects={categoryWithProjects} />
                 ) : (
-                    <SearchResults filters={filters} isPackageSearch={filters.mode === 'packages'}/>
+                    <SearchResults
+                        filters={filters}
+                        setFilters={setFilters}
+                        updateURLFromState={updateURLFromState}
+                        isPackageSearch={filters.mode === 'packages'}
+                    />
                 )}
             </Container>
         </>
