@@ -1,0 +1,20 @@
+.wrapper {
+    display: flex;
+    text-align: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.sort {
+    display: flex;
+}
+
+.trigger {
+    color: #0067FF;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.current {
+    background: red !important;
+}

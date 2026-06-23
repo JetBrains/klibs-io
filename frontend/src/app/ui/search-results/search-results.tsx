@@ -12,6 +12,7 @@ import Container from "@/app/ui/container";
 import KodeeNotFound from '@/app/img/kodee/kodee-404.svg'
 
 import { textCn } from '@rescui/typography'
+import SearchTopBar from "../search-top-bar/search-top-bar";
 
 interface SearchResultsProps {
     filters: SearchParams;
@@ -129,19 +130,24 @@ export function SearchResults({ filters, isPackageSearch }: SearchResultsProps) 
         );
     } else if (packages?.length || projects?.length) {
         return (
-            <Container mode="wrapper" cardGrid>
-                {/*Search results cards*/}
-                {isPackageSearch
-                    ? packages?.map((item) => (
-                        <PackageCard search={filters?.query} featuredPackage={item} key={item.id} />
-                    ))
-                    : projects?.map((item) => (
-                        <ProjectCard search={filters?.query} featuredProject={item} key={item.id} />
-                    ))
+            <>
+                {!isPackageSearch &&
+                    <SearchTopBar />
                 }
+                <Container mode="wrapper" cardGrid>
+                    {/*Search results cards*/}
+                    {isPackageSearch
+                        ? packages?.map((item) => (
+                            <PackageCard search={filters?.query} featuredPackage={item} key={item.id} />
+                        ))
+                        : projects?.map((item) => (
+                            <ProjectCard search={filters?.query} featuredProject={item} key={item.id} />
+                        ))
+                    }
 
-                <div ref={loadMoreRef}></div>
-            </Container>
+                    <div ref={loadMoreRef}></div>
+                </Container>
+            </>
         );
     } else {
         return (
