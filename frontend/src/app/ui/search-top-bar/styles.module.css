@@ -7,6 +7,7 @@
 
 .sort {
     display: flex;
+    margin-left: auto;
 }
 
 .trigger {
@@ -17,4 +18,9 @@
 
 .current {
     background: red !important;
+}
+
+.ossHealthTooltip {
+    display: block;
+    width: 180px;
 }
