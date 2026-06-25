@@ -36,6 +36,8 @@ export enum GAEvent {
   PROJECT_CARD_CLICK = "project-card-click",
 
   SEARCH_KEYBOARD_TRIGGER = "search-keyboard-trigger",
+
+  SEARCH_SORT_CHANGE = "search-sort-change",
 }
 
 type NoParams = Record<string, never>;
@@ -78,6 +80,8 @@ export type GAEventParams = {
   [GAEvent.PROJECT_CARD_CLICK]: { eventCategory: string };
 
   [GAEvent.SEARCH_KEYBOARD_TRIGGER]: NoParams;
+
+  [GAEvent.SEARCH_SORT_CHANGE]: { eventCategory: string };
 };
 
 export function trackEvent<E extends GAEvent>(event: E, params: GAEventParams[E]) {

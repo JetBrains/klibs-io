@@ -8,6 +8,7 @@ import { Tooltip } from '@rescui/tooltip';
 
 import { textCn } from '@rescui/typography'
 import { SearchParams, SearchSort } from '@/app/types';
+import { trackEvent, GAEvent } from '@/app/analytics';
 
 interface SearchTopBarProps {
     filters: SearchParams;
@@ -47,6 +48,9 @@ export default function SearchTopBar({ filters, setFilters, updateURLFromState }
         if (sort === activeSort) {
             return;
         }
+        trackEvent(GAEvent.SEARCH_SORT_CHANGE, {
+            eventCategory: sort,
+        });
         const newState = { ...filters, page: 1, sort };
         setFilters(newState);
         updateURLFromState(newState);
