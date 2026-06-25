@@ -16,11 +16,14 @@
     cursor: pointer;
 }
 
-.current {
-    background: red !important;
-}
-
 .ossHealthTooltip {
     display: block;
     width: 180px;
+}
+
+.active {
+    background: #0067FF;
+    & span {
+        color: #ffffff !important;
+    }
 }

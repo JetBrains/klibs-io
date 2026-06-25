@@ -54,12 +54,12 @@ export default function SearchTopBar({ filters, setFilters, updateURLFromState }
 
     return (
         <div className={styles.wrapper}>
-            {/*<div className={textCn('rs-h4')}>Found: N results</div>*/}
             <div className={cn(textCn('rs-text-2', { hardness: 'hard' }), styles.sort)}>
                 <div>Sort by&nbsp;</div>
 
                 <DropdownMenu
                     isOpen={isOpen}
+                    placement={'bottom-end'}
                     onRequestClose={() => setIsOpen(false)}
                     trigger={
                         <div
@@ -84,7 +84,7 @@ export default function SearchTopBar({ filters, setFilters, updateURLFromState }
                         const menuItem = (
                             <MenuItem
                                 key={sort}
-                                disabled={sort === activeSort}
+                                className={cn({[styles.active] : sort === activeSort})}
                                 onClick={() => handleSortChange(sort as SearchSort)}
                             >
                                 {label}
