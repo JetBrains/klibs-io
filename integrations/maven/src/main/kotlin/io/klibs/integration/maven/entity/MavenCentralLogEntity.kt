@@ -1,17 +1,14 @@
 package io.klibs.integration.maven.entity
 
-import io.klibs.integration.maven.dto.MavenCentralLogType
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.Table
 import java.time.Instant
 
 /**
- * Stores timestamps for periodic indexing jobs.
- *
- * For the Maven Central indexing job:
- *      Timestamp indicating the latest processed .index from Maven Central.
- * For the GitHub index-request issues polling job:
- *      Timestamp of the last successful poll of GitHub index-request issues,
- *      updated only when a polling run completes without any server errors.
+ * Stores information about the updates from the Maven Central.
+ * It has only one log entry and represents the state of the last processed index and package.
  */
 @Entity
 @Table(name = "maven_central_log")
@@ -20,10 +17,9 @@ class MavenCentralLogEntity(
     @Column(name = "id")
     val id: Int = 1,
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "log_type", nullable = false, unique = true)
-    val logType: MavenCentralLogType,
-
-    @Column(name = "last_run_at", nullable = false)
-    val timestamp: Instant,
+    /**
+     * Timestamp indicating the latest processed .index
+     */
+    @Column(name = "maven_index_timestamp")
+    var mavenIndexTimestamp: Instant
 )
