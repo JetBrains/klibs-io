@@ -2,7 +2,6 @@ package io.klibs.integration.github
 
 import io.klibs.integration.github.health.GitHubRateLimitInfo
 import io.klibs.integration.github.model.GitHubIssue
-import io.klibs.integration.github.model.GitHubUserRequestIssuesBatch
 import io.klibs.integration.github.model.GitHubLicense
 import io.klibs.integration.github.model.GitHubPullRequest
 import io.klibs.integration.github.model.GitHubRepository
@@ -83,8 +82,6 @@ interface GitHubIntegration {
      * Returns an empty map when the repo has no default branch.
      */
     fun getCommitAuthorCounts(owner: String, name: String, since: Instant): Map<String, Int>
-
-    fun getKlibsIssuesByLabel(label: String, since: Instant): GitHubUserRequestIssuesBatch
 
     fun addKlibsIssueLabel(number: Int, label: String)
 

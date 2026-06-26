@@ -1,7 +1,7 @@
 plugins {
     id("klibs.spring")
     id("klibs.mock")
-    kotlin("kapt")
+    id("klibs.mapping")
 }
 
 dependencies {
@@ -13,13 +13,4 @@ dependencies {
     implementation(projects.core.project)
     implementation(projects.core.scmOwner)
     implementation(projects.core.readme)
-
-    implementation(libs.mapstruct)
-    kapt(libs.mapstruct.processor)
-}
-
-kapt {
-    arguments {
-        arg("mapstruct.defaultComponentModel", "spring")
-    }
 }

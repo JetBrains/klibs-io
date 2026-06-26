@@ -1,20 +1,14 @@
 package io.klibs.app.service.impl
 
+import io.klibs.core.pckg.utils.UserIndexingRequestParser
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class UserRequestCheckServiceParseBodyTest {
 
-    private fun uut() = UserRequestCheckService(
-        gitHubIntegration = mock(),
-        userRequestIndexingService = mock(),
-        mavenCentralLogRepository = mock(),
-        requestLabel = "index-request",
-        processedLabel = "triaged",
-    )
+    private fun uut() = UserIndexingRequestParser()
 
     private fun body(g: String?, a: String?, v: String?) = buildString {
         if (g != null) append("### Group ID\n\n$g\n\n")
@@ -69,5 +63,4 @@ class UserRequestCheckServiceParseBodyTest {
         assertNull( uut().parseBody(""))
         assertNull( uut().parseBody(null))
     }
-
 }
