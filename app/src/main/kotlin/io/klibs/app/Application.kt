@@ -1,20 +1,27 @@
 package io.klibs.app
 
-import io.klibs.app.configuration.properties.GoogleMavenCacheConfigurationProperties
 import io.klibs.app.configuration.properties.ApiDocsProperties
 import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.GoogleMavenCacheConfigurationProperties
 import io.klibs.core.scm.repository.health.OssHealthProperties
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
 fun main() {
     SpringApplication.run(Application::class.java)
 }
 
-@EnableConfigurationProperties(value = [AuthProperties::class, ApiDocsProperties::class, GoogleMavenCacheConfigurationProperties::class, OssHealthProperties::class])
+@EnableConfigurationProperties(
+    value = [
+        AuthProperties::class,
+        ApiDocsProperties::class,
+        GoogleMavenCacheConfigurationProperties::class,
+        OssHealthProperties::class,
+    ]
+)
 @SpringBootApplication(scanBasePackages = ["io.klibs"])
 @EntityScan(basePackages = ["io.klibs.**.entity"])
 @EnableJpaRepositories(basePackages = ["io.klibs.**.repository"])

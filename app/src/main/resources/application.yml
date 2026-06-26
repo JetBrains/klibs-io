@@ -81,10 +81,12 @@ klibs:
         request-cache-size-mb: ${KLIBS_CACHE_DIR_REQUEST_SIZE_MB:10}
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
       index-requests:
-        repository: JetBrains/klibs-io
-        batch-size: 100
+        repository: ${KLIBS_GITHUB_REPOSITORY:}
         request-label: index-request
         processed-label: triaged
+        developer-handle: ${KLIBS_GITHUB_DEVELOPER_HERO:}
+      webhook:
+        secret: ${KLIBS_GITHUB_WEBHOOK_SECRET:}
   indexing: ${KLIBS_ENABLE_INDEXING:false}
   scheduling:
     process-indexing-queue:

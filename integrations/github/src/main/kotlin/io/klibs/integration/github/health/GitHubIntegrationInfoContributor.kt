@@ -1,7 +1,7 @@
 package io.klibs.integration.github.health
 
 import io.klibs.integration.github.GitHubIntegration
-import io.klibs.integration.github.GitHubIntegrationProperties
+import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import org.springframework.boot.actuate.info.Info
 import org.springframework.boot.actuate.info.InfoContributor
 import org.springframework.stereotype.Component

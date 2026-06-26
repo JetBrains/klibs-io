@@ -1,7 +1,6 @@
 package io.klibs.integration.maven.utils
 
-import io.klibs.integration.maven.dto.MavenArtifactDTO
-import kotlin.text.matches
+import io.klibs.integration.maven.dto.GavCoordinatesDTO
 
 class MavenArtifactDTOUtils {
     companion object {
@@ -10,7 +9,7 @@ class MavenArtifactDTOUtils {
          *
          * Returns null if the request is valid, or an error message if it is not
          */
-        fun validateMavenArtifactDTO(parsed: MavenArtifactDTO): String? {
+        fun validateGAVField(parsed: GavCoordinatesDTO): String? {
             // Regex for group id and artifact id: Alphanumeric characters, dots, underscores, and hyphens.
             val regex = "^[A-Za-z0-9_.-]+$".toRegex()
 
