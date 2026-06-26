@@ -14,7 +14,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: id
-                  type: SERIAL
+                  type: UUID
                   constraints:
                     primaryKey: true
                     nullable: false
@@ -93,7 +93,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: user_request_issue_id
-                  type: INT
+                  type: UUID
                   constraints:
                     referencedTableName: user_request_issue
                     referencedColumnNames: id
@@ -120,7 +120,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: user_request_issue_id
-                  type: INT
+                  type: UUID
                   constraints:
                     referencedTableName: user_request_issue
                     referencedColumnNames: id

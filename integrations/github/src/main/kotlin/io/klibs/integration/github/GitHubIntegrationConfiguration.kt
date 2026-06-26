@@ -1,5 +1,6 @@
 package io.klibs.integration.github
 
+import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import io.micrometer.core.instrument.MeterRegistry
 import okhttp3.Cache
 import okhttp3.OkHttpClient

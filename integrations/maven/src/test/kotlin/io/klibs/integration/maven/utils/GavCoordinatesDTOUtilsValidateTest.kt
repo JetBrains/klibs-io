@@ -1,33 +1,33 @@
 package io.klibs.integration.maven.utils
 
-import io.klibs.integration.maven.dto.MavenArtifactDTO
+import io.klibs.integration.maven.dto.GavCoordinatesDTO
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class MavenArtifactDTOUtilsValidateTest {
+class GavCoordinatesDTOUtilsValidateTest {
 
     @Test
     fun `should return null for correct input`() {
-        val parsed = MavenArtifactDTO(
+        val parsed = GavCoordinatesDTO(
             groupId = "org.jetbrains.kotlinx_test",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
         )
-        val error = MavenArtifactDTOUtils.validateMavenArtifactDTO(parsed)
+        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
 
         assertNull(error)
     }
 
     @Test
     fun `should return error when group id contains invalid characters`() {
-        val parsed = MavenArtifactDTO(
+        val parsed = GavCoordinatesDTO(
             groupId = "org.jetbrains/kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
         )
-        val error = MavenArtifactDTOUtils.validateMavenArtifactDTO(parsed)
+        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
 
         assertNotNull(error)
         assertEquals(
@@ -38,12 +38,12 @@ class MavenArtifactDTOUtilsValidateTest {
 
     @Test
     fun `should return error when artifact id contains spaces`() {
-        val parsed = MavenArtifactDTO(
+        val parsed = GavCoordinatesDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx coroutines core",
             version = "1.10.2"
         )
-        val error = MavenArtifactDTOUtils.validateMavenArtifactDTO(parsed)
+        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
 
         assertNotNull(error)
         assertEquals(
@@ -54,24 +54,24 @@ class MavenArtifactDTOUtilsValidateTest {
 
     @Test
     fun `should allow special characters in version`() {
-        val parsed = MavenArtifactDTO(
+        val parsed = GavCoordinatesDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2-revision._$~=+:"
         )
-        val error = MavenArtifactDTOUtils.validateMavenArtifactDTO(parsed)
+        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
 
         assertNull(error)
     }
 
     @Test
     fun `should allow null version for indexing all versions`() {
-        val parsed = MavenArtifactDTO(
+        val parsed = GavCoordinatesDTO(
             groupId = "org.jetbrains.kotlinx",
             artifactId = "kotlinx-coroutines-core",
             version = null
         )
-        val error = MavenArtifactDTOUtils.validateMavenArtifactDTO(parsed)
+        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
 
         assertNull(error)
     }

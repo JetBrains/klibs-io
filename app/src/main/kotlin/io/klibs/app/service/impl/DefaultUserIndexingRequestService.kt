@@ -1,8 +1,11 @@
 package io.klibs.app.service.impl
 
+import io.klibs.app.exceptions.UserRequestProcessingException
+import io.klibs.app.service.UserIndexingRequestService
 import io.klibs.app.util.toIndexRequest
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.search.ArtifactData
@@ -14,23 +17,26 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.server.ResponseStatusException
+import java.util.UUID
+import kotlin.jvm.optionals.getOrNull
 
 @Service
-class UserRequestIndexingService(
+internal class DefaultUserIndexingRequestService(
     private val centralSonatypeSearchClient: CentralSonatypeSearchClient,
     private val indexingRequestRepository: IndexingRequestRepository,
     private val packageRepository: PackageRepository,
-) {
-    /**
-     * Discovers and saves packages for indexing after a user's request
-     *
-     * @param groupId Maven group ID (required)
-     * @param artifactId Maven artifact ID (optional - if null, all artifacts in the group are indexed)
-     * @param version Maven version (optional - if null, all versions of the artifact(s) are indexed)
-     */
+    private val userRequestIssueRepository: UserRequestIssueRepository
+) : UserIndexingRequestService {
+
     @Transactional
-    fun indexUserRequest(groupId: String, artifactId: String?, version: String?) {
+    override fun fulfillRequest(userRequestId: UUID) {
+        val userRequestIssue = userRequestIssueRepository.findById(userRequestId).getOrNull()
+            ?: throw UserRequestProcessingException("User request not found")
+
+        fulfillRequest(userRequestIssue.groupId, userRequestIssue.artifactId, userRequestIssue.version)
+    }
+
+    internal fun fulfillRequest(groupId: String, artifactId: String?, version: String?) {
         val artifacts = discoverArtifacts(groupId, artifactId, version)
         saveUserRequests(artifacts)
     }
@@ -52,7 +58,7 @@ class UserRequestIndexingService(
         val searchResult = paginateSearch(query)
 
         if (searchResult.isEmpty()) {
-            throw badRequest(
+            throw UserRequestProcessingException(
                 "No Kotlin Multiplatform artifacts found for $groupId${
                     artifactId?.let { ":$it" }.orEmpty()
                 }"
@@ -63,17 +69,17 @@ class UserRequestIndexingService(
             .map { it.toMavenArtifact() }
             .filterNot { isAlreadyIndexedOrQueued(it) }
 
-        if (artifactsToSave.isEmpty()) throw badRequest("All artifacts from this request are already indexed or queued")
+        if (artifactsToSave.isEmpty()) throw UserRequestProcessingException("All artifacts from this request are already indexed or queued")
 
         return artifactsToSave
     }
 
     private fun resolveSpecificVersion(groupId: String, artifactId: String, version: String): MavenArtifact {
         val artifact = MavenArtifact(groupId, artifactId, version, ScraperType.USER_REQUEST)
-        if (isAlreadyIndexedOrQueued(artifact)) throw badRequest("Artifact $groupId:$artifactId:$version is already indexed or queued")
+        if (isAlreadyIndexedOrQueued(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is already indexed or queued")
 
         centralSonatypeSearchClient.getKotlinToolingMetadata(artifact)
-            ?: throw badRequest(
+            ?: throw UserRequestProcessingException(
                 "Artifact $groupId:$artifactId:$version is not a valid Kotlin Multiplatform library " +
                         "(kotlin-tooling-metadata.json not found)"
             )
@@ -89,7 +95,11 @@ class UserRequestIndexingService(
                     true
                 }
 
-                indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version) != null -> {
+                indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion(
+                    groupId,
+                    artifactId,
+                    version
+                ) != null -> {
                     logger.debug("Already queued: $groupId:$artifactId:$version, skipping")
                     true
                 }
@@ -114,10 +124,7 @@ class UserRequestIndexingService(
             centralSonatypeSearchClient.paginateSearch(query).toList()
         } catch (e: Exception) {
             logger.error("Central Sonatype search failed: ${e.message}", e)
-            throw ResponseStatusException(
-                HttpStatus.SERVICE_UNAVAILABLE,
-                "Central Sonatype search failed"
-            )
+            throw UserRequestProcessingException("Maven Central is temporary unavailable.")
         }
 
     private fun saveUserRequests(mavenArtifacts: List<MavenArtifact>) {
@@ -128,10 +135,8 @@ class UserRequestIndexingService(
             logger.info("Saved ${requests.size} user requests")
         } catch (e: Exception) {
             logger.error("Failed to save user requests: ${e.message}")
-
-            throw ResponseStatusException(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Failed to save user requests"
+            throw UserRequestProcessingException(
+                "Failed to save user requests: ${HttpStatus.INTERNAL_SERVER_ERROR}"
             )
         }
     }
@@ -144,10 +149,7 @@ class UserRequestIndexingService(
         releasedAt = releasedAt,
     )
 
-    private fun badRequest(message: String): ResponseStatusException =
-        ResponseStatusException(HttpStatus.BAD_REQUEST, message)
-
     companion object {
-        private val logger = LoggerFactory.getLogger(UserRequestIndexingService::class.java)
+        private val logger = LoggerFactory.getLogger(DefaultUserIndexingRequestService::class.java)
     }
 }

@@ -59,6 +59,9 @@ class SecurityConfiguration(
                 authorize(HttpMethod.POST, "/compare/**", permitAll)
                 authorize(HttpMethod.OPTIONS, "/compare/**", permitAll)
 
+                // GitHub webhook endpoint authenticates incoming requests via X-Hub-Signature-256.
+                authorize(HttpMethod.POST, "/webhooks/github/**", permitAll)
+
                 // NOTE:
                 //  - /actuator/metrics and /actuator/prometheus are intentionally OPEN at the application level
                 //  - They are CLOSED at the nginx level
