@@ -174,8 +174,4 @@ databaseChangeLog:
   - include:
       file: db/migration/2026-Q2/2026-06-12_package_index_add_dependent_count.yml
   - include:
-      file: db/migration/2026-Q2/2026-04-29_add_user_request_check_timestamp_to_maven_central_log.yml
-  - include:
-      file: db/migration/2026-Q2/2026-04-29_allow_multiple_log_types_in_maven_central_log.yml
-  - include:
       file: db/migration/2026-Q2/2026-06-22-create_user_request_tables.yml

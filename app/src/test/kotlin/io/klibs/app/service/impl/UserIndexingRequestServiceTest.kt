@@ -17,14 +17,14 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
-import org.springframework.web.server.ResponseStatusException
+import io.klibs.app.exceptions.UserRequestProcessingException
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
+class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
-    private lateinit var uut: UserRequestIndexingService
+    private lateinit var uut: DefaultUserIndexingRequestService
 
     @Autowired
     private lateinit var indexingRequestRepository: IndexingRequestRepository
@@ -41,48 +41,45 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
     fun `should throw 400 when artifact is not a KMP library`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(null)
 
-        val exception = assertThrows<ResponseStatusException> {
-            uut.indexUserRequest("com.example", "lib", "1.0.0")
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.fulfillRequest("com.example", "lib", "1.0.0")
         }
 
-        assertEquals(400, exception.statusCode.value())
         assertEquals(
             "Artifact com.example:lib:1.0.0 is not a valid Kotlin Multiplatform library (kotlin-tooling-metadata.json not found)",
-            exception.reason!!
+            exception.reason
         )
     }
 
     @Test
-    @Sql(value = ["classpath:sql/UserRequestIndexingServiceTest/insert-into-package.sql"])
+    @Sql(value = ["classpath:sql/UserIndexingRequestServiceTest/insert-into-package.sql"])
     fun `should throw 400 when a specific artifact is already indexed`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
-        val exception = assertThrows<ResponseStatusException> {
-            uut.indexUserRequest("com.example", "lib", "1.0.0")
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.fulfillRequest("com.example", "lib", "1.0.0")
         }
 
-        assertEquals(400, exception.statusCode.value())
-        assertEquals("Artifact com.example:lib:1.0.0 is already indexed or queued", exception.reason!!)
+        assertEquals("Artifact com.example:lib:1.0.0 is already indexed or queued", exception.reason)
     }
 
     @Test
-    @Sql(value = ["classpath:sql/UserRequestIndexingServiceTest/insert-into-package-index-request.sql"])
+    @Sql(value = ["classpath:sql/UserIndexingRequestServiceTest/insert-into-package-index-request.sql"])
     fun `should throw 400 when a specific artifact is already in package_index_request`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
-        val exception = assertThrows<ResponseStatusException> {
-            uut.indexUserRequest("com.example", "lib", "1.0.0")
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.fulfillRequest("com.example", "lib", "1.0.0")
         }
 
-        assertEquals(400, exception.statusCode.value())
-        assertEquals("Artifact com.example:lib:1.0.0 is already indexed or queued", exception.reason!!)
+        assertEquals("Artifact com.example:lib:1.0.0 is already indexed or queued", exception.reason)
     }
 
     @Test
     fun `should save index request for valid specific version`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
-        uut.indexUserRequest("com.example", "lib", "1.0.0")
+        uut.fulfillRequest("com.example", "lib", "1.0.0")
 
         val saved = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "lib", "1.0.0")
         assertTrue(saved != null, "Index request should be saved")
@@ -99,12 +96,11 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(centralSonatypeSearchClient.searchWithThrottle(eq(0), any(), any()))
             .thenThrow(RuntimeException("Connection timeout"))
 
-        val exception = assertThrows<ResponseStatusException> {
-            uut.indexUserRequest("com.example", null, null)
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.fulfillRequest("com.example", null, null)
         }
 
-        assertEquals(503, exception.statusCode.value())
-        assertEquals("Central Sonatype search failed", exception.reason!!)
+        assertEquals("Maven Central is temporary unavailable.", exception.reason)
     }
 
     @Test
@@ -112,12 +108,11 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(centralSonatypeSearchClient.searchWithThrottle(eq(0), any(), any()))
             .thenReturn(MavenSearchResponse(totalHits = 0, currentHits = 0, page = emptyList()))
 
-        val exception = assertThrows<ResponseStatusException> {
-            uut.indexUserRequest("com.example", null, null)
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.fulfillRequest("com.example", null, null)
         }
 
-        assertEquals(400, exception.statusCode.value())
-        assertEquals("No Kotlin Multiplatform artifacts found for com.example", exception.reason!!)
+        assertEquals("No Kotlin Multiplatform artifacts found for com.example", exception.reason)
     }
 
     @Test
@@ -125,12 +120,11 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(centralSonatypeSearchClient.searchWithThrottle(eq(0), any(), any()))
             .thenReturn(MavenSearchResponse(totalHits = 0, currentHits = 0, page = emptyList()))
 
-        val exception = assertThrows<ResponseStatusException> {
-            uut.indexUserRequest("com.example", "lib", null)
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.fulfillRequest("com.example", "lib", null)
         }
 
-        assertEquals(400, exception.statusCode.value())
-        assertEquals("No Kotlin Multiplatform artifacts found for com.example:lib", exception.reason!!)
+        assertEquals("No Kotlin Multiplatform artifacts found for com.example:lib", exception.reason)
     }
 
     @Test
@@ -145,7 +139,7 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(centralSonatypeSearchClient.searchWithThrottle(eq(1), any(), any()))
             .thenReturn(MavenSearchResponse(totalHits = 3, currentHits = 0, page = emptyList()))
 
-        uut.indexUserRequest("com.example", null, null)
+        uut.fulfillRequest("com.example", null, null)
 
         val saved1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "1.0.0")
         val saved2 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "2.0.0")
@@ -159,7 +153,7 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    @Sql(value = ["classpath:sql/UserRequestIndexingServiceTest/insert-into-package.sql"])
+    @Sql(value = ["classpath:sql/UserIndexingRequestServiceTest/insert-into-package.sql"])
     fun `should save index request for multiple artifacts that aren't indexed yet`() {
         val artifacts = listOf(
             ArtifactData("com.example", "libA", "1.0.0"),
@@ -174,7 +168,7 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
             .thenReturn(MavenSearchResponse(totalHits = 5, currentHits = 0, page = emptyList()))
 
 
-        uut.indexUserRequest("com.example", null, null)
+        uut.fulfillRequest("com.example", null, null)
 
         val old1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "1.0.0")
         val old2 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "2.0.0")
@@ -191,7 +185,7 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    @Sql(value = ["classpath:sql/UserRequestIndexingServiceTest/insert-into-package.sql"])
+    @Sql(value = ["classpath:sql/UserIndexingRequestServiceTest/insert-into-package.sql"])
     fun `should throw 400 when all artifacts are already indexed`() {
         val artifacts = listOf(
             ArtifactData("com.example", "libA", "1.0.0"),
@@ -204,12 +198,11 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
             .thenReturn(MavenSearchResponse(totalHits = 3, currentHits = 0, page = emptyList()))
 
 
-        val exception = assertThrows<ResponseStatusException> {
-            uut.indexUserRequest("com.example", null, null)
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.fulfillRequest("com.example", null, null)
         }
 
-        assertEquals(400, exception.statusCode.value())
-        assertEquals("All artifacts from this request are already indexed or queued", exception.reason!!)
+        assertEquals("All artifacts from this request are already indexed or queued", exception.reason)
     }
 
     @Test
@@ -224,7 +217,7 @@ class UserRequestIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(centralSonatypeSearchClient.searchWithThrottle(eq(1), any(), any()))
             .thenReturn(MavenSearchResponse(totalHits = 3, currentHits = 0, page = emptyList()))
 
-        uut.indexUserRequest("com.example", null, "1.0.0")
+        uut.fulfillRequest("com.example", null, "1.0.0")
 
         val saved1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "1.0.0")
         val saved2 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "libA", "2.0.0")

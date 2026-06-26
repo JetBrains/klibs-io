@@ -4,6 +4,13 @@ plugins {
     id("klibs.mock")
     id("klibs.spring-scheduling")
     id("klibs.spring-cloud")
+    id("klibs.mapping")
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.internal.KaptTask>().configureEach {
+    if (name.contains("Test")) {
+        enabled = false
+    }
 }
 
 tasks.bootJar {
