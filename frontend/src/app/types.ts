@@ -264,7 +264,7 @@ export interface OwnerOrganization extends Owner{
 	"type": "organization";
 }
 
-export type SearchSort = 'most-stars' | 'most-healthy' | 'relevance';
+export type SearchSort = 'most-stars' | 'most-healthy' | 'relevance'| 'most-dependents';
 
 export type SearchMode = 'projects' | 'packages';
 
