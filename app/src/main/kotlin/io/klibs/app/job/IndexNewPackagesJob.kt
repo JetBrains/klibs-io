@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 @Component
-@ConditionalOnProperty(value = ["klibs.indexing", "klibs.ai"], havingValue = "true")
+@ConditionalOnProperty(value = ["klibs.indexing"], havingValue = "true")
 class IndexNewPackagesJob(val packageIndexingService: PackageIndexingService) {
 
     @Scheduled(cron = "0 0 2 * * *") // Every day at 2AM
