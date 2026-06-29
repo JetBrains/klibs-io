@@ -53,6 +53,7 @@ spring:
         checksum-validation-enabled: false
 
 klibs:
+  ai: ${KLIBS_AI_GENERATION_ENABLED:false}
   api-docs:
     title: "klibs.io"
     description: "API endpoints"
@@ -95,7 +96,6 @@ klibs:
       s3:
         bucket-name: ${BUCKET_NAME}
         prefix: ${KLIBS_GMAVEN_S3_PREFIX:gmaven}
-  ai: true
   oss-health:
     commit-cv-denominator: 3.0
     issue-median-days-threshold: 21.0
