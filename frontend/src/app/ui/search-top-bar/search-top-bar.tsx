@@ -32,7 +32,7 @@ const SORT_LABELS: Record<SearchSort, string> = {
     'relevance': 'Relevance',
     'most-stars': 'Github stars',
     'most-healthy': 'OSS Health',
-    // 'dependents': 'Dependents',
+    'most-dependents': 'Dependents',
 };
 
 export default function SearchTopBar({ filters, setFilters, updateURLFromState }: SearchTopBarProps) {

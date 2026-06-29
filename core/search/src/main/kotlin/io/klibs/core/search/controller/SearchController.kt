@@ -64,7 +64,7 @@ class SearchController(
         @RequestParam("sort", required = false, defaultValue = "relevance")
         @Parameter(
             description = "Sorting order",
-            schema = Schema(allowableValues = ["most-stars", "most-healthy", "relevance"], defaultValue = "relevance")
+            schema = Schema(allowableValues = ["most-dependents", "most-stars", "most-healthy", "relevance"], defaultValue = "relevance")
         )
         sortBy: String,
 
