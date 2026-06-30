@@ -21,7 +21,7 @@ data class GitHubIntegrationProperties(
 
     data class IndexRequests(
         val repository: String? = null,
-        val requestLabel: String? = null,
+        val requestLabel: String = "index-request",
         val processedLabel: String = "",
         val developerHandle: String? = null
     )

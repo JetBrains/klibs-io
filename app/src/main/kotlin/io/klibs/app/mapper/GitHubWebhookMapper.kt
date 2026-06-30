@@ -3,15 +3,13 @@ package io.klibs.app.mapper
 import io.klibs.app.api.GitHubWebhookUserIndexingRequest
 import io.klibs.core.pckg.dto.UserIndexingRequestDto
 import io.klibs.core.pckg.utils.UserIndexingRequestParser
-import org.mapstruct.Mapper
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 import java.time.Instant
 
-@Mapper(componentModel = "spring")
-abstract class GitHubWebhookMapper {
-
-    @Autowired
-    protected lateinit var userIndexingRequestParser: UserIndexingRequestParser
+@Component
+class GitHubWebhookMapper(
+    private val userIndexingRequestParser: UserIndexingRequestParser
+) {
 
     /**
      * Maps GitHub issue DTO to service DTO, parsing the body for Maven coordinates.

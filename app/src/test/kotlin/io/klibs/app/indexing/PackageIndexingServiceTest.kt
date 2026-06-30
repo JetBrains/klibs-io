@@ -1,9 +1,15 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
+import io.klibs.core.pckg.entity.IndexingRequestEntity
+import io.klibs.core.pckg.entity.UserRequestIssueEntity
+import io.klibs.core.pckg.enums.UserRequestIndexingStatus
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.pckg.repository.UserRequestIssueRepository
+import io.klibs.core.pckg.repository.UserRequestReportRepository
+import io.klibs.app.configuration.IndexingRetryConfiguration
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.integration.ai.PackageDescriptionGenerator
@@ -13,6 +19,7 @@ import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenPom
 import io.klibs.integration.maven.PomWithReleaseDate
+import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.Variant
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
@@ -58,6 +65,15 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var packageDescriptionService: PackageDescriptionService
+
+    @Autowired
+    private lateinit var userRequestIssueRepository: UserRequestIssueRepository
+
+    @Autowired
+    private lateinit var userRequestReportRepository: UserRequestReportRepository
+
+    @Autowired
+    private lateinit var indexingRetryConfiguration: IndexingRetryConfiguration
 
     @MockitoBean
     private lateinit var mavenStaticDataProvider: CentralSonatypeSearchClient
@@ -366,5 +382,99 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         assertEquals(1, failedAttempts, "Failed attempts should be incremented")
         assertContains(output.out, "Mocked buildFromMarkdown exception")
+    }
+
+    @Test
+    fun `should save SUCCESS report when indexing a user-originated request`() {
+        val issue = saveUserOriginatedRequest(failedAttempts = 0)
+
+        val pom = mock<MavenPom>()
+        whenever(pom.groupId).thenReturn("com.example")
+        whenever(pom.artifactId).thenReturn("test-artifact")
+        whenever(pom.version).thenReturn("1.0.0")
+        val kotlinToolingMetadata = mock<GradleMetadata>()
+        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
+            .thenReturn(PomWithReleaseDate(pom, Instant.now()))
+        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any()))
+            .thenReturn(kotlinToolingMetadataDelegate)
+
+        uut.processPackageQueue()
+
+        val reports = userRequestReportRepository.findAll().toList()
+        assertEquals(1, reports.size, "Exactly one report expected")
+        val report = reports.first()
+        assertEquals(UserRequestIndexingStatus.SUCCESS, report.indexingStatus)
+        assertEquals("com.example", report.groupId)
+        assertEquals("test-artifact", report.artifactId)
+        assertEquals("1.0.0", report.version)
+
+        val linkedIssueId = jdbcTemplate.queryForObject(
+            "SELECT user_request_issue_id::text FROM user_request_report",
+            String::class.java
+        )
+        assertEquals(issue.id.toString(), linkedIssueId, "Report should link to the originating issue")
+    }
+
+    @Test
+    fun `should save FAILURE report when a user-originated request fails terminally`() {
+        val issue = saveUserOriginatedRequest(failedAttempts = indexingRetryConfiguration.maxAttempts - 1)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
+            .thenThrow(RuntimeException("Mocked getPom exception"))
+
+        uut.processPackageQueue()
+
+        val reports = userRequestReportRepository.findAll().toList()
+        assertEquals(1, reports.size, "Exactly one report expected")
+        val report = reports.first()
+        assertEquals(UserRequestIndexingStatus.FAILURE, report.indexingStatus)
+        assertEquals("com.example", report.groupId)
+        assertEquals("test-artifact", report.artifactId)
+        assertEquals("1.0.0", report.version)
+        assertEquals("Mocked getPom exception", report.statusDetails)
+
+        val linkedIssueId = jdbcTemplate.queryForObject(
+            "SELECT user_request_issue_id::text FROM user_request_report",
+            String::class.java
+        )
+        assertEquals(issue.id.toString(), linkedIssueId, "Report should link to the originating issue")
+    }
+
+    @Test
+    fun `should not save report when a user-originated request fails but can be retried`() {
+        saveUserOriginatedRequest(failedAttempts = 0)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
+            .thenThrow(RuntimeException("Mocked getPom exception"))
+
+        uut.processPackageQueue()
+
+        assertTrue(
+            userRequestReportRepository.findAll().toList().isEmpty(),
+            "No report should be saved until retries are exhausted"
+        )
+    }
+
+    private fun saveUserOriginatedRequest(failedAttempts: Int): UserRequestIssueEntity {
+        val issue = userRequestIssueRepository.save(
+            UserRequestIssueEntity(
+                githubIssueNumber = 7,
+                groupId = "com.example",
+                artifactId = "test-artifact",
+                version = "1.0.0",
+            )
+        )
+        indexingRequestRepository.save(
+            IndexingRequestEntity(
+                groupId = "com.example",
+                artifactId = "test-artifact",
+                version = "1.0.0",
+                releasedAt = Instant.now(),
+                repo = ScraperType.CENTRAL_SONATYPE,
+                failedAttempts = failedAttempts,
+                userRequestIssue = issue,
+            )
+        )
+        return issue
     }
 }

@@ -18,14 +18,13 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
         WHERE id = :id and status != :#{#newStatus.name()}
         RETURNING *
     """, nativeQuery = true)
-    
     fun updateStatus(id: Long, newStatus: IndexingRequestStatus): IndexingRequestEntity?
 
     @Query(value = """
         SELECT req.*
         FROM package_index_request req
         WHERE req.status = 'PENDING'
-          AND req.failed_attempts < 2
+          AND req.failed_attempts < :#{@indexingRetryConfiguration.maxAttempts}
           AND NOT EXISTS (
               SELECT 1
               FROM banned_packages bp
