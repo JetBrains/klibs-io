@@ -97,9 +97,11 @@ class ProjectRepositoryJdbc(
     }
 
     override fun updateMinimizedReadme(id: Int, minimizedReadme: String?) {
+        // README changed, so the existing embedding is stale: drop it so the backfill job recomputes it.
         val sql = """
             UPDATE project
-            SET minimized_readme = :minimizedReadme
+            SET minimized_readme = :minimizedReadme,
+                readme_embedding = NULL
             WHERE id = :id
         """.trimIndent()
 
@@ -110,6 +112,25 @@ class ProjectRepositoryJdbc(
 
         require(updated == 1) {
             "Did not update the project minimized readme of id: $id"
+        }
+    }
+
+    override fun updateReadmeEmbedding(id: Int, embedding: FloatArray) {
+        val sql = """
+            UPDATE project
+            SET readme_embedding = CAST(:embedding AS vector)
+            WHERE id = :id
+        """.trimIndent()
+
+        val vectorLiteral = embedding.joinToString(separator = ",", prefix = "[", postfix = "]")
+
+        val updated = jdbcClient.sql(sql)
+            .param("id", id)
+            .param("embedding", vectorLiteral)
+            .update()
+
+        require(updated == 1) {
+            "Did not update the project readme embedding of id: $id"
         }
     }
 
@@ -188,6 +209,30 @@ class ProjectRepositoryJdbc(
             FROM project
             WHERE project.minimized_readme IS NOT NULL
               AND project.description IS NULL
+            ORDER BY random()
+            LIMIT 1
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .query(PROJECT_ENTITY_ROW_MAPPER)
+            .optional()
+            .getOrNull()
+    }
+
+    override fun findWithoutEmbedding(): ProjectEntity? {
+        val sql = """
+            SELECT project.id,
+                   project.scm_repo_id,
+                   project.owner_id,
+                   project.name,
+                   project.description,
+                   project.minimized_readme,
+                   project.latest_version,
+                   project.latest_version_ts,
+                   project.dependent_count
+            FROM project
+            WHERE project.minimized_readme IS NOT NULL
+              AND project.readme_embedding IS NULL
             ORDER BY random()
             LIMIT 1
         """.trimIndent()

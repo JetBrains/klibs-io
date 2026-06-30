@@ -16,6 +16,8 @@ interface ProjectRepository {
 
     fun updateMinimizedReadme(id: Int, minimizedReadme: String?)
 
+    fun updateReadmeEmbedding(id: Int, embedding: FloatArray)
+
     fun updateOwnerId(projectId: Int, newOwnerId: Int)
 
     fun findById(id: Int): ProjectEntity?
@@ -29,6 +31,12 @@ interface ProjectRepository {
     fun findManyByProjectNameAndOwnerLogin(pairs: List<Pair<String, String>>): List<ProjectEntity>
 
     fun findWithoutDescription(): ProjectEntity?
+
+    /**
+     * Returns one project that has a README but no embedding yet, or null if none remain.
+     * Used by the scheduled embedding backfill job.
+     */
+    fun findWithoutEmbedding(): ProjectEntity?
 
     fun findWithoutTags(): ProjectEntity?
 

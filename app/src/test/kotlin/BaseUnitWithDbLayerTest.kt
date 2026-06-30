@@ -14,6 +14,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase
 import org.springframework.test.context.jdbc.SqlMergeMode
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.utility.DockerImageName
 
 @ActiveProfiles("test")
 @SpringBootTest(classes = [Application::class])
@@ -39,7 +40,9 @@ abstract class BaseUnitWithDbLayerTest {
 
     companion object {
         val postgresContainer: PostgreSQLContainer<Nothing> by lazy {
-            PostgreSQLContainer<Nothing>("postgres:17.0").apply {
+            PostgreSQLContainer<Nothing>(
+                DockerImageName.parse("pgvector/pgvector:pg17").asCompatibleSubstituteFor("postgres")
+            ).apply {
                 withDatabaseName("testdb")
                 withUsername("testuser")
                 withPassword("testpass")

@@ -11,8 +11,12 @@ interface AiService {
         model: String,
     ): String
 
+    fun embed(text: String): FloatArray
+
     companion object {
         const val DEFAULT_GPT = "gpt-5-mini"
         const val WEBSEARCH_GPT = "gpt-4o-search-preview"
+        const val EMBEDDING_MODEL = "text-embedding-3-small"
+        const val EMBEDDING_DIMENSIONS = 1536
     }
 }

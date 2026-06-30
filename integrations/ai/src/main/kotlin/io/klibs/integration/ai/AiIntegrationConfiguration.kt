@@ -1,7 +1,10 @@
 package io.klibs.integration.ai
 
+import org.springframework.ai.document.MetadataMode
 import org.springframework.ai.openai.OpenAiChatModel
 import org.springframework.ai.openai.OpenAiChatOptions
+import org.springframework.ai.openai.OpenAiEmbeddingModel
+import org.springframework.ai.openai.OpenAiEmbeddingOptions
 import org.springframework.ai.openai.api.OpenAiApi
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -34,5 +37,24 @@ class AiIntegrationConfiguration {
                     .build()
             )
             .build()
+    }
+
+    @Bean
+    @ConditionalOnProperty("klibs.ai", havingValue = "true")
+    fun embeddingModel(
+        @Value("\${spring.ai.openai.api-key}") apiKey: String,
+        restClient: RestClient.Builder
+    ): OpenAiEmbeddingModel {
+        return OpenAiEmbeddingModel(
+            OpenAiApi.builder()
+                .apiKey(apiKey)
+                .restClientBuilder(restClient)
+                .build(),
+            MetadataMode.EMBED,
+            OpenAiEmbeddingOptions.builder()
+                .model(AiService.EMBEDDING_MODEL)
+                .dimensions(AiService.EMBEDDING_DIMENSIONS)
+                .build()
+        )
     }
 }

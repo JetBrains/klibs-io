@@ -25,7 +25,7 @@ spring:
 
 klibs:
   ai: false
-  indexing: false
+  indexing: true
   readme:
     s3:
       bucket-name: local-bucket

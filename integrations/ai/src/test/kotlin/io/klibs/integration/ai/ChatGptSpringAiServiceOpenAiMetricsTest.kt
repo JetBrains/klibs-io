@@ -14,6 +14,7 @@ import org.springframework.ai.chat.model.ChatResponse
 import org.springframework.ai.chat.prompt.Prompt
 import org.springframework.ai.openai.OpenAiChatModel
 import org.springframework.ai.openai.OpenAiChatOptions
+import org.springframework.ai.openai.OpenAiEmbeddingModel
 import org.springframework.ai.openai.metadata.OpenAiRateLimit
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -28,6 +29,7 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
 
     private lateinit var meterRegistry: SimpleMeterRegistry
     private lateinit var chatModel: OpenAiChatModel
+    private lateinit var embeddingModel: OpenAiEmbeddingModel
     private lateinit var chatGptSpringAiService: ChatGptSpringAiService
 
     @BeforeEach
@@ -37,11 +39,13 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
 
         // Mock the OpenAI chat model
         chatModel = mock()
+        embeddingModel = mock()
 
         // Create the service with mocked dependencies
         chatGptSpringAiService = ChatGptSpringAiService(
             meterRegistry = meterRegistry,
-            chatModel = chatModel
+            chatModel = chatModel,
+            embeddingModel = embeddingModel
         )
     }
 

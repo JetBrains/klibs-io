@@ -23,4 +23,9 @@ class BackoffConfig {
     @Qualifier("aiTagsBackoffProvider")
     fun aiTagsBackoffProvider(meterRegistry: MeterRegistry): BackoffProvider =
         BackoffProvider("AiProjectTags", meterRegistry)
+
+    @Bean
+    @Qualifier("aiEmbeddingBackoffProvider")
+    fun aiEmbeddingBackoffProvider(meterRegistry: MeterRegistry): BackoffProvider =
+        BackoffProvider("AiProjectReadmeEmbedding", meterRegistry)
 }

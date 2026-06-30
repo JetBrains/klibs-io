@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
 
 @Service
-@ConditionalOnProperty("klibs.ai", havingValue = "false")
+@ConditionalOnProperty("klibs.ai", havingValue = "true")
 class DumbAiService() : AiService {
     override fun executeOpenAiRequest(
         prompt: Prompt,
@@ -15,4 +15,7 @@ class DumbAiService() : AiService {
         return ""
     }
 
+    override fun embed(text: String): FloatArray {
+        return FloatArray(0)
+    }
 }

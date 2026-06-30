@@ -1,5 +1,6 @@
 package io.klibs.app.job
 
+import io.klibs.app.indexing.ProjectEmbeddingService
 import io.klibs.app.indexing.ProjectIndexingService
 import net.javacrumbs.shedlock.core.LockAssert
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
@@ -11,7 +12,10 @@ import java.util.concurrent.TimeUnit
 
 @Component
 @ConditionalOnProperty(value = ["klibs.indexing", "klibs.ai"], havingValue = "true")
-class AddAiMetadataForProjectJob(val projectIndexingService: ProjectIndexingService) {
+class AddAiMetadataForProjectJob(
+    val projectIndexingService: ProjectIndexingService,
+    val projectEmbeddingService: ProjectEmbeddingService,
+) {
 
     @Scheduled(initialDelay = 2, fixedRate = 1, timeUnit = TimeUnit.MINUTES)
     @SchedulerLock(name = "addAiDescriptionLock", lockAtMostFor = "23h")
@@ -27,5 +31,12 @@ class AddAiMetadataForProjectJob(val projectIndexingService: ProjectIndexingServ
     fun addAiTags() {
         LockAssert.assertLocked()
         projectIndexingService.addAiTags()
+    }
+
+    @Scheduled(initialDelay = 0)
+    @SchedulerLock(name = "addReadmeEmbedding", lockAtMostFor = "23h")
+    fun addReadmeEmbedding() {
+        LockAssert.assertLocked()
+        while (projectEmbeddingService.addReadmeEmbedding()) {}
     }
 }
