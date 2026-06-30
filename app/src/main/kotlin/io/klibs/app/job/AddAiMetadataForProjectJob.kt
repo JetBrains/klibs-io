@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 
 
 @Component
-@ConditionalOnProperty("klibs.indexing", havingValue = "true")
+@ConditionalOnProperty(value = ["klibs.indexing", "klibs.ai"], havingValue = "true")
 class AddAiMetadataForProjectJob(val projectIndexingService: ProjectIndexingService) {
 
     @Scheduled(initialDelay = 2, fixedRate = 1, timeUnit = TimeUnit.MINUTES)
