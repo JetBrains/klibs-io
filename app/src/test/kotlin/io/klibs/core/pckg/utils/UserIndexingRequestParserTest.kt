@@ -1,12 +1,11 @@
-package io.klibs.app.service.impl
+package io.klibs.core.pckg.utils
 
-import io.klibs.core.pckg.utils.UserIndexingRequestParser
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class UserRequestCheckServiceParseBodyTest {
+class UserIndexingRequestParserTest {
 
     private fun uut() = UserIndexingRequestParser()
 

@@ -23,26 +23,45 @@ class UserGitHubIssueNotifierTest {
 
     @Test
     fun `notifies success`() {
-        uut.notifySuccess(123)
+        uut.notifyAccepted(123)
 
         verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat { contains("accepted") })
         verify(gitHubIntegration).addKlibsIssueLabel(123, "processed")
     }
 
     @Test
-    fun `notifies failure with reason`() {
+    fun `notifies failure with reason and pings developer`() {
+        whenever(indexRequests.developerHandle).thenReturn("dev")
+
         uut.notifyFailure(123, "some reason")
 
-        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat { contains("some reason") })
+        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat {
+            contains("some reason") && contains("cc @dev")
+        })
         verify(gitHubIntegration).addKlibsIssueLabel(123, "processed")
     }
 
     @Test
-    fun `notifies parse failure`() {
-        uut.notifyParseFailure(123)
+    fun `notifies parse failure and pings developer`() {
+        whenever(indexRequests.developerHandle).thenReturn("dev")
 
-        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat { contains("Could not read") })
+        uut.notifyFailure(123, null)
+
+        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat {
+            contains("Indexing request could not be processed") && contains("cc @dev")
+        })
         verify(gitHubIntegration).addKlibsIssueLabel(123, "processed")
+    }
+
+    @Test
+    fun `notifies indexing success and pings developer`() {
+        whenever(indexRequests.developerHandle).thenReturn("dev")
+
+        uut.notifyIndexingSuccess(123)
+
+        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat {
+            contains("Indexing completed") && contains("cc @dev")
+        })
     }
 
     @Test

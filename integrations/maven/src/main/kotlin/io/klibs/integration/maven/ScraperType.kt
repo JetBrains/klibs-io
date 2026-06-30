@@ -3,6 +3,5 @@ package io.klibs.integration.maven
 enum class ScraperType {
     SEARCH_MAVEN, // search.maven.org
     GOOGLE_MAVEN, // maven.google.com
-    CENTRAL_SONATYPE, // central.sonatype.com
-    USER_REQUEST // run on request using CentralSonatypeSeachClient
+    CENTRAL_SONATYPE // central.sonatype.com; also used for on-demand user requests
 }

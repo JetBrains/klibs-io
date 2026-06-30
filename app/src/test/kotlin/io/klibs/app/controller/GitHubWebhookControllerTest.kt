@@ -156,7 +156,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
         }
 
         verify(userRequestService, never()).processRequest(any())
-        verify(userIssueNotifier).notifyParseFailure(99)
+        verify(userIssueNotifier).notifyFailure(99, null)
     }
 
     private fun openedPayload(number: Int, labels: List<String>, body: String): ByteArray {

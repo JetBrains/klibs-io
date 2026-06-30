@@ -2,9 +2,11 @@ package io.klibs.app.service.impl
 
 import BaseUnitWithDbLayerTest
 import io.klibs.app.exceptions.UserRequestProcessingException
+import io.klibs.app.service.UserIndexingRequestService
 import io.klibs.app.service.UserIssueNotifier
 import io.klibs.core.pckg.dto.UserIndexingRequestDto
 import io.klibs.core.pckg.entity.UserRequestIssueEntity
+import io.klibs.core.pckg.enums.UserRequestProcessingStatus
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -33,7 +35,7 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
     private lateinit var userIssueNotifier: UserIssueNotifier
 
     @MockitoBean
-    private lateinit var userIndexingRequestService: DefaultUserIndexingRequestService
+    private lateinit var userIndexingRequestService: UserIndexingRequestService
 
     @BeforeEach
     fun setUp() {
@@ -48,10 +50,14 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
         uut.processRequest(createMockDto(123, "g", "a", null))
 
         verify(userIndexingRequestService, timeout(1000)).fulfillRequest(any<UUID>())
-        verify(userIssueNotifier, timeout(1000)).notifySuccess(123)
+        verify(userIssueNotifier, timeout(1000)).notifyAccepted(123)
 
         verify(userRequestIssueRepository).save(argThat {
-            githubIssueNumber == 123 && groupId == "g" && artifactId == "a"
+            githubIssueNumber == 123 && groupId == "g" && artifactId == "a" &&
+                processingStatus == UserRequestProcessingStatus.NEW
+        })
+        verify(userRequestIssueRepository, timeout(1000)).save(argThat {
+            processingStatus == UserRequestProcessingStatus.ACCEPTED
         })
     }
 
@@ -71,6 +77,9 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
             123,
             "No Kotlin Multiplatform artifacts found for g.a: 400 BAD_REQUEST"
         )
+        verify(userRequestIssueRepository, timeout(1000)).save(argThat {
+            processingStatus == UserRequestProcessingStatus.REJECTED
+        })
     }
 
     @Test
@@ -78,7 +87,6 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
         uut.processRequest(createMockDto(123, "group with spaces", "a", "1.0.0"))
 
         verify(userIndexingRequestService, never()).fulfillRequest(any<UUID>())
-        verify(userIndexingRequestService, never()).fulfillRequest(any(), any(), any())
         verify(userIssueNotifier).notifyFailure(eq(123), argThat { contains("Invalid Group ID format") })
     }
 
@@ -91,6 +99,9 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
 
         verify(userIndexingRequestService, timeout(1000)).fulfillRequest(any<UUID>())
         verify(userIssueNotifier, timeout(1000)).notifyServerErrorFailure(eq(123))
+        verify(userRequestIssueRepository, timeout(1000)).save(argThat {
+            processingStatus == UserRequestProcessingStatus.FAILED
+        })
     }
 
     @Test

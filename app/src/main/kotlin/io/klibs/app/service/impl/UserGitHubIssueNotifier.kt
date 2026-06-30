@@ -15,19 +15,17 @@ internal class UserGitHubIssueNotifier(
     private val gitHubIntegrationProperties: GitHubIntegrationProperties
 ) : UserIssueNotifier {
 
-    override fun notifySuccess(issueNumber: Int) {
-        publishIssueStatus(issueNumber, GitHubUserRequestMessages.success())
+    override fun notifyAccepted(issueNumber: Int) {
+        publishIssueStatus(issueNumber, GitHubUserRequestMessages.accepted())
         logger.debug("Published success comment to issue #$issueNumber")
     }
 
     override fun notifyFailure(issueNumber: Int, reason: String?) {
-        publishIssueStatus(issueNumber, GitHubUserRequestMessages.failure(reason))
+        publishIssueStatus(
+            issueNumber,
+            GitHubUserRequestMessages.failure(reason, gitHubIntegrationProperties.indexRequests.developerHandle)
+        )
         logger.debug("Published failure comment to issue #$issueNumber: ${reason ?: "Unknown error"}")
-    }
-
-    override fun notifyParseFailure(issueNumber: Int) {
-        publishIssueStatus(issueNumber, GitHubUserRequestMessages.parseFailure())
-        logger.debug("Published parse failure comment to issue #$issueNumber")
     }
 
     override fun notifyServerErrorFailure(issueNumber: Int) {
@@ -36,6 +34,28 @@ internal class UserGitHubIssueNotifier(
             GitHubUserRequestMessages.serverErrorNotification(gitHubIntegrationProperties.indexRequests.developerHandle)
         )
         logger.debug("Published server error failure comment to issue #$issueNumber")
+    }
+
+    override fun notifyIndexingSuccess(issueNumber: Int) {
+        gitHubIntegration.addKlibsIssueComment(
+            issueNumber,
+            GitHubUserRequestMessages.indexingSucceeded(gitHubIntegrationProperties.indexRequests.developerHandle)
+        )
+        logger.debug("Published indexing-succeeded comment to issue #$issueNumber")
+    }
+
+    override fun notifyIndexingFailure(
+        issueNumber: Int,
+        reason: String?
+    ) {
+        gitHubIntegration.addKlibsIssueComment(
+            issueNumber,
+            GitHubUserRequestMessages.indexingFailed(
+                reason,
+                gitHubIntegrationProperties.indexRequests.developerHandle
+            )
+        )
+        logger.debug("Published indexing-failed comment to issue #$issueNumber")
     }
 
     private fun publishIssueStatus(issueNumber: Int, comment: String) {
@@ -53,28 +73,20 @@ internal class UserGitHubIssueNotifier(
  */
 private object GitHubUserRequestMessages {
 
-    fun success() = """
-        ✅ Indexing request accepted
+    fun accepted() = """
+        ⏳Indexing request accepted
 
-        The library will appear on https://klibs.io once indexing completes. A comment will be posted here with the final status once the processing is finished.
+        The package will appear on https://klibs.io once indexing completes. A comment will be posted here with the final status once the processing is finished.
     """.trimIndent()
 
-    fun failure(reason: String?) = """
+    fun failure(reason: String?, developer: String?) = """
         ❌ Indexing request could not be processed
         
-        ${reason?.let { "**Reason:** $it" }}
+        ${reason?.let { "**Reason:** $it" } ?: ""}
 
-        Please make sure the library meets the [indexing requirements](https://klibs.io/faq#how-do-i-add-a-project), then open a new issue with corrected details.
+        Please make sure the package meets the [indexing requirements](https://klibs.io/faq#how-do-i-add-a-project), then open a new issue with corrected details.
 
-        Once you have reviewed this comment and are ready to open a new request, please close this issue.
-    """.trimIndent()
-
-    fun parseFailure() = """
-        ❌ Could not read the indexing request
-
-        We couldn't parse the input fields from this issue. Please open a new issue using the *"Request indexing of a library"* template and fill in all required fields.
-
-        Once you have reviewed this comment and are ready to open a new request, please close this issue.
+        ${developer?.let { "cc @$it" } ?: ""}
     """.trimIndent()
 
     fun serverErrorNotification(developer: String?) = """
@@ -84,7 +96,27 @@ private object GitHubUserRequestMessages {
         
         Developers have been notified about this internal error.
         
-        ${developer.let { "cc @$it" }}
+        ${developer?.let { "cc @$it" } ?: ""}
         
+    """.trimIndent()
+
+    fun indexingSucceeded(developer: String?) = """
+        ✅ Indexing completed
+
+        The requested package has been indexed and should now be available on https://klibs.io.
+
+        You can now close this issue.
+
+        ${developer?.let { "cc @$it" } ?: ""}
+    """.trimIndent()
+
+    fun indexingFailed(reason: String?, developer: String?) = """
+        ❌ Indexing failed
+
+        We accepted your request, but the package could not be indexed.
+
+        ${reason?.let { "**Reason:** $it" } ?: ""}
+
+        ${developer?.let { "cc @$it" } ?: ""}
     """.trimIndent()
 }

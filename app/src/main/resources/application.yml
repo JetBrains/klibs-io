@@ -82,8 +82,8 @@ klibs:
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
       index-requests:
         repository: ${KLIBS_GITHUB_REPOSITORY:}
-        request-label: index-request
-        processed-label: triaged
+        request-label: ${KLIBS_GITHUB_REQUEST_LABEL:index-request}
+        processed-label: ${KLIBS_GITHUB_PROCESSED_LABEL:triaged}
         developer-handle: ${KLIBS_GITHUB_DEVELOPER_HERO:}
       webhook:
         secret: ${KLIBS_GITHUB_WEBHOOK_SECRET:}
@@ -96,6 +96,10 @@ klibs:
   indexing-configuration:
     executor:
       thread-count: 2
+    retry:
+      max-attempts: ${KLIBS_INDEXING_MAX_ATTEMPTS:2}
+    reporting:
+      index-defer: ${KLIBS_REPORTING_INDEX_DEFER:10m}
     central-sonatype:
       enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE:false}
     gmaven:

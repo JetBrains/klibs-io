@@ -6,6 +6,7 @@ import io.klibs.app.service.UserIssueNotifier
 import io.klibs.app.service.UserRequestService
 import io.klibs.core.pckg.dto.UserIndexingRequestDto
 import io.klibs.core.pckg.entity.UserRequestIssueEntity
+import io.klibs.core.pckg.enums.UserRequestProcessingStatus
 import io.klibs.core.pckg.mapper.UserRequestMapper
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.integration.maven.dto.GavCoordinatesDTO
@@ -16,16 +17,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 /**
- * Service responsible for processing a single GitHub user-submitted package
- * indexing request, typically delivered via a GitHub webhook.
- *
- * Validates the extracted Maven coordinates, runs the indexing flow and posts
- * a result comment together with the "processed" label back to the issue.
- *
- * @property userIssueNotifier Service to notify users about the status of their request.
- * @property userIndexingRequestService Service to execute the actual package indexing.
- * @property userRequestMapper Mapper to convert between DTOs and entities.
- * @property userRequestIssueRepository Repository to persist user request issues.
+ * Processes a single GitHub user-submitted package indexing request delivered via
+ * webhook: validates the Maven coordinates, runs indexing and reports the outcome
+ * back to the issue.
  */
 @Service
 internal class DefaultUserRequestService(
@@ -44,7 +38,7 @@ internal class DefaultUserRequestService(
      */
     override fun processRequest(userIndexingRequestDto: UserIndexingRequestDto) {
         try {
-            if (validateUserIndexingRequest(userIndexingRequestDto)) return
+            if (!isUserIndexingRequestValid(userIndexingRequestDto)) return
 
             val savedRequest = userRequestIssueRepository.save(userRequestMapper.toEntity(userIndexingRequestDto))
 
@@ -59,7 +53,7 @@ internal class DefaultUserRequestService(
         }
     }
 
-    private fun validateUserIndexingRequest(userIndexingRequestDto: UserIndexingRequestDto): Boolean {
+    private fun isUserIndexingRequestValid(userIndexingRequestDto: UserIndexingRequestDto): Boolean {
         val requestValidationError = MavenArtifactDTOUtils.validateGAVField(
             GavCoordinatesDTO(
                 userIndexingRequestDto.groupId,
@@ -70,11 +64,10 @@ internal class DefaultUserRequestService(
 
         if (requestValidationError != null) {
             userIssueNotifier.notifyFailure(userIndexingRequestDto.githubIssueNumber, requestValidationError)
-            return true
+            return false
         }
-        return false
+        return true
     }
-
 
     /**
      * Runs the indexing call for an already-validated request and posts the outcome
@@ -84,15 +77,21 @@ internal class DefaultUserRequestService(
         val issueNumber = savedIssueRequest.githubIssueNumber
         try {
             userIndexingRequestService.fulfillRequest(requireNotNull(savedIssueRequest.id))
-            userIssueNotifier.notifySuccess(issueNumber)
+            updateProcessingStatus(savedIssueRequest, UserRequestProcessingStatus.ACCEPTED)
+            userIssueNotifier.notifyAccepted(issueNumber)
         } catch (e: UserRequestProcessingException) {
+            updateProcessingStatus(savedIssueRequest, UserRequestProcessingStatus.REJECTED)
             userIssueNotifier.notifyFailure(issueNumber, e.reason)
         } catch (e: Exception) {
             logger.error("Background processing failed for issue #${issueNumber}", e)
+            updateProcessingStatus(savedIssueRequest, UserRequestProcessingStatus.FAILED)
             userIssueNotifier.notifyServerErrorFailure(issueNumber)
         }
     }
 
+    private fun updateProcessingStatus(issue: UserRequestIssueEntity, status: UserRequestProcessingStatus) {
+        userRequestIssueRepository.save(issue.copy(processingStatus = status))
+    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(DefaultUserRequestService::class.java)
