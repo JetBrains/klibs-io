@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import java.time.Instant
 
@@ -18,9 +19,14 @@ import java.time.Instant
 @Table(name = "user_request_report")
 data class UserRequestReportEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_request_report_id_seq")
+    @SequenceGenerator(
+        name = "user_request_report_id_seq",
+        sequenceName = "user_request_report_id_seq",
+        allocationSize = 50,
+    )
     @Column(name = "id")
-    val id: Int? = null,
+    val id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_request_issue_id", nullable = false)
@@ -32,8 +38,8 @@ data class UserRequestReportEntity(
     @Column(name = "artifact_id", nullable = false)
     val artifactId: String,
 
-    @Column(name = "version")
-    val version: String?,
+    @Column(name = "version", nullable = false)
+    val version: String,
 
     /**
      * The final result of the indexing process.
@@ -43,7 +49,7 @@ data class UserRequestReportEntity(
     val indexingStatus: UserRequestIndexingStatus,
 
     /**
-     * Additional information regarding the indexing result, such as error messages.
+     * Why indexing ended this way (e.g. the failure reason), surfaced to the user in the GitHub issue.
      */
     @Column(name = "status_details")
     val statusDetails: String? = null,
@@ -54,6 +60,15 @@ data class UserRequestReportEntity(
     @Column(name = "failed_ts")
     val failedTs: Instant? = null,
 
+    /**
+     * Not visible for reporting until this moment; used to defer a report whose package is not indexed yet.
+     */
+    @Column(name = "next_attempt_ts")
+    val nextAttemptTs: Instant? = null,
+
+    /**
+     * Why the last attempt to publish this report back to GitHub failed; unrelated to the indexing outcome.
+     */
     @Column(name = "last_error_message")
     val lastErrorMessage: String? = null,
 )

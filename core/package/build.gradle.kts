@@ -2,7 +2,6 @@ plugins {
     id("klibs.spring-web")
     id("klibs.persistence")
     id("klibs.mock")
-    id("klibs.mapping")
 }
 
 dependencies {

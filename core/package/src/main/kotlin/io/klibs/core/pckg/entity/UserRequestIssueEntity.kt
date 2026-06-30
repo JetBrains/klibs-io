@@ -9,7 +9,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -37,14 +36,5 @@ data class UserRequestIssueEntity(
     val processingStatus: UserRequestProcessingStatus = UserRequestProcessingStatus.NEW,
 
     @Column(name = "status_details")
-    val statusDetails: String? = null,
-
-    @Column(name = "failed_attempts", nullable = false)
-    val failedAttempts: Int = 0,
-
-    @Column(name = "failed_ts")
-    val failedTs: Instant? = null,
-
-    @Column(name = "last_error_message")
-    val lastErrorMessage: String? = null
+    val statusDetails: String? = null
 )

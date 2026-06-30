@@ -58,7 +58,7 @@ data class IndexingRequestEntity(
     val lastErrorMessage: String? = null,
 
     /**
-     * Status of indexing request processig.
+     * Status of indexing request processing.
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

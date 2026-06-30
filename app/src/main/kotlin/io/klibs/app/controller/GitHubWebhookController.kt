@@ -13,16 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * Receives GitHub `issues` webhook deliveries for the klibs.io repository and
- * dispatches them for asynchronous processing.
- *
- * Verifies the `X-Hub-Signature-256` header on every request and only acts on
- * `issues.opened` events whose issue carries the configured request label.
- * The HTTP response is returned immediately (202 Accepted), the actual indexing
- * work happens asynchronously within the service layer. Server-side errors during
- * processing are not exposed back to
- * GitHub — they're logged, and GitHub's built-in redelivery is not used; the
- * webhook is fire-and-forget once accepted.
+ * Receives GitHub `issues` webhook deliveries and processes them.
  */
 @RestController
 @RequestMapping("/webhooks/github")
@@ -37,11 +28,12 @@ class GitHubWebhookController(
         @RequestHeader(name = "X-GitHub-Event", required = false) event: String?,
         @RequestHeader(name = "X-GitHub-Delivery", required = false) delivery: String?,
     ): ResponseEntity<Void> {
-        val requestValidationResult = gitHubWebhookRequestsValidator.validateUserIndexingRequest(payload, event, delivery)
-        if (!requestValidationResult.isValidRequest()) return (requestValidationResult as UserIndexingRequestValidationResult.NotApplicable).response
-
-        userRequestService.processRequest((requestValidationResult as UserIndexingRequestValidationResult.Valid).request)
-
-        return ResponseEntity.accepted().build()
+        return when (val result = gitHubWebhookRequestsValidator.validateUserIndexingRequest(payload, event, delivery)) {
+            is UserIndexingRequestValidationResult.NotApplicable -> result.response
+            is UserIndexingRequestValidationResult.Valid -> {
+                userRequestService.processRequest(result.request)
+                ResponseEntity.accepted().build()
+            }
+        }
     }
 }

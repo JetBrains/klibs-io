@@ -58,7 +58,7 @@ class GitHubWebhookRequestsValidator(
         val issueDto = gitHubWebhookMapper.toUserRequestIssueDto(issuePayload) ?: run {
             logger.warn("Could not map `issue` object from webhook delivery $delivery")
             if (issueNumber != null) {
-                userIssueNotifier.notifyParseFailure(issueNumber)
+                userIssueNotifier.notifyFailure(issueNumber, null)
             }
             return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.badRequest().build())
         }

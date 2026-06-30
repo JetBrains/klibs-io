@@ -1,6 +1,7 @@
 package io.klibs.app.indexing
 
 import io.klibs.app.indexing.discoverer.PackageDiscoverer
+import io.klibs.app.service.UserRequestReportWriter
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
@@ -37,6 +38,7 @@ class PackageIndexingServiceTestOld {
     private val kotlinToolingMetadataIndexingService: KotlinToolingMetadataIndexingService = mock()
     private val packageDescriptionGenerator: PackageDescriptionGenerator = mock()
     private val indexingRequestRepository: IndexingRequestRepository = mock()
+    private val userRequestReportWriter: UserRequestReportWriter = mock()
     private val packageService: PackageService = mock()
     private val packageRepository: PackageRepository = mock()
     private val mavenArtifactService: MavenArtifactService = mock()
@@ -58,6 +60,7 @@ class PackageIndexingServiceTestOld {
             kotlinToolingMetadataIndexingService,
             packageDescriptionGenerator,
             indexingRequestRepository,
+            userRequestReportWriter,
             packageService,
             packageRepository,
             mavenArtifactService,
