@@ -1,0 +1,36 @@
+.pageContainer {
+    margin: 72px 0;
+}
+
+.section:not(:last-child) {
+    margin-bottom: 64px;
+}
+
+.sectionHeading {
+    padding: 0;
+    margin: 0 0 24px;
+}
+
+
+.codeWrapper {
+    position: relative;
+}
+
+.codeBlock {
+    width: 100%;
+    padding: 24px;
+    border-radius: 8px;
+    margin-top: 32px;
+    box-sizing: border-box;
+    overflow: auto;
+    background-color: #F4F4F4;
+    & pre {
+        background-color: #F4F4F4 !important;
+    }
+}
+
+.codeCopyButton {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+}

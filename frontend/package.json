@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-"prepare": "husky",
+    "prepare": "husky",
     "pw:check": "playwright --version",
     "pw:install": "playwright install --with-deps",
     "test:e2e": "playwright test",
@@ -46,7 +46,8 @@
     "react-bootstrap": "^2.10.4",
     "react-dom": "^18",
     "react-remove-scroll-bar": "^2.3.8",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "shiki": "^4.3.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
