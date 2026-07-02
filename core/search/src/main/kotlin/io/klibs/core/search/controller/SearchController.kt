@@ -6,6 +6,7 @@ import io.klibs.core.search.dto.api.SearchPackageResultDTOTargetList
 import io.klibs.core.search.dto.api.SearchPackagesRequest
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
 import io.klibs.core.search.dto.api.SearchProjectsRequest
+import io.klibs.core.search.dto.api.SearchSimilarProjectsRequest
 import io.klibs.core.search.dto.api.toDTO
 import io.klibs.core.search.dto.repository.SearchPackageResult
 import io.klibs.core.search.service.SearchService
@@ -153,6 +154,41 @@ class SearchController(
             )
             return res.map { it.toDTO() }
         }
+    }
+
+    @Operation(
+        summary = "Search similar projects",
+        description = "Embeds the query with the same model used for README embeddings and returns the most similar projects."
+    )
+    @PostMapping("/projects/similar")
+    fun searchSimilarProjects(
+        @RequestParam("page", required = false, defaultValue = "1")
+        @Parameter(
+            description = "Page index beginning with 1 (1..N)",
+            schema = Schema(type = "integer", minimum = "1", defaultValue = "1")
+        )
+        @Min(value = 0, message = "Page must be >= 0")
+        page: Int,
+
+        @RequestParam("limit", required = false, defaultValue = "20")
+        @Parameter(
+            description = "The size of the page to be returned",
+            schema = Schema(type = "integer", minimum = "1", maximum = "100", defaultValue = "20")
+        )
+        @Min(value = 1, message = "Limit must be >= 1")
+        @Max(value = 100, message = "Limit must be <= 100")
+        limit: Int,
+
+        @RequestBody
+        @Parameter(description = "JSON body containing the search query")
+        @Valid
+        searchRequest: SearchSimilarProjectsRequest
+    ): List<SearchProjectResultDTO> {
+        return searchService.searchSimilarProjects(
+            query = searchRequest.query,
+            page = page,
+            limit = limit
+        ).map { it.toDTO() }
     }
 
     @Operation(summary = "Search packages")

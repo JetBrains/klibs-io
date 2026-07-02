@@ -33,6 +33,12 @@ interface ProjectSearchRepository {
         limit: Int
     ): List<SearchProjectResult>
 
+    /**
+     * Returns projects ordered by cosine similarity of their README embedding to [embedding].
+     * Projects without a stored embedding are skipped.
+     */
+    fun findByEmbedding(embedding: FloatArray, page: Int, limit: Int): List<SearchProjectResult>
+
     fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>>
 
     fun refreshIndex()

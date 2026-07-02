@@ -7,4 +7,5 @@ plugins {
 dependencies {
     implementation(projects.core.scmOwner)
     implementation(projects.core.`package`)
+    implementation(projects.integrations.ai)
 }

@@ -8,11 +8,13 @@ import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchPackageResult
 import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.core.search.dto.service.CategoryWithProjects
+import io.klibs.integration.ai.AiService
 import io.micrometer.core.annotation.Timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.concurrent.TimeUnit
@@ -22,6 +24,8 @@ import kotlin.system.measureNanoTime
 class SearchService(
     private val projectSearchRepository: ProjectSearchRepository,
     private val packageSearchRepository: PackageSearchRepository,
+    @Lazy
+    private val aiService: AiService,
     private val applicationScope: CoroutineScope
 ) {
     /**
@@ -66,6 +70,25 @@ class SearchService(
             sortBy = sort,
             markers = markers,
             tags = tags,
+            page = page,
+            limit = limit
+        )
+    }
+
+    /**
+     * Semantic project search: embeds the [query] with the same model used for README embeddings,
+     * then returns projects ordered by similarity to that embedding.
+     */
+    @Transactional(readOnly = true)
+    @Timed(value = "klibs.project.similar.search.time", description = "Klibs: Time taken to search similar projects")
+    fun searchSimilarProjects(
+        query: String,
+        page: Int,
+        limit: Int
+    ): List<SearchProjectResult> {
+        val embedding = aiService.embed(query)
+        return projectSearchRepository.findByEmbedding(
+            embedding = embedding,
             page = page,
             limit = limit
         )

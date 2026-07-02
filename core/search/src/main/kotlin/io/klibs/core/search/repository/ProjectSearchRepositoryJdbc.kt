@@ -271,6 +271,44 @@ class ProjectSearchRepositoryJdbc(
 
     private fun String.addWildcardPostfix(): String = "$this:*"
 
+    override fun findByEmbedding(embedding: FloatArray, page: Int, limit: Int): List<SearchProjectResult> {
+        if (embedding.isEmpty()) return emptyList()
+        val offset = limit * (page - 1)
+        val vectorLiteral = embedding.joinToString(separator = ",", prefix = "[", postfix = "]")
+
+        val sql = """
+            SELECT pi.project_id,
+                   pi.owner_type,
+                   pi.owner_login,
+                   pi.repo_name,
+                   pi.name,
+                   pi.stars,
+                   pi.license_name,
+                   pi.latest_version,
+                   pi.latest_version_ts,
+                   array_to_string(pi.platforms, ',') AS platforms,
+                   pi.plain_description,
+                   pi.tags,
+                   pi.markers,
+                   pi.targets_vector,
+                   pi.dependent_count,
+                   pi.health_score
+            FROM project_index pi
+                     JOIN project p ON p.id = pi.project_id
+            WHERE p.readme_embedding IS NOT NULL
+            ORDER BY p.readme_embedding <=> CAST(:embedding AS vector)
+            LIMIT :limit
+            OFFSET :offset
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("embedding", vectorLiteral)
+            .param("limit", limit)
+            .param("offset", offset)
+            .query(PROJECT_OVERVIEW_ROW_MAPPER)
+            .list()
+    }
+
     override fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
         val sql = """
             SELECT c.id AS category_id, c.name AS category_name, c.markers AS category_markers,
