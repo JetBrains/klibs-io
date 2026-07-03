@@ -18,4 +18,8 @@ class DumbAiService() : AiService {
     override fun embed(text: String): FloatArray {
         return FloatArray(0)
     }
+
+    override fun embed(text: String, model: String, dimensions: Int?): FloatArray {
+        return FloatArray(0)
+    }
 }

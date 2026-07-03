@@ -97,11 +97,14 @@ class ProjectRepositoryJdbc(
     }
 
     override fun updateMinimizedReadme(id: Int, minimizedReadme: String?) {
-        // README changed, so the existing embedding is stale: drop it so the backfill job recomputes it.
+        // README changed, so all existing embeddings are stale: drop them so the backfill job recomputes them.
         val sql = """
             UPDATE project
             SET minimized_readme = :minimizedReadme,
-                readme_embedding = NULL
+                readme_embedding = NULL,
+                readme_embedding_local = NULL,
+                readme_embedding_openai_large = NULL,
+                readme_embedding_openai_ada = NULL
             WHERE id = :id
         """.trimIndent()
 
@@ -116,9 +119,14 @@ class ProjectRepositoryJdbc(
     }
 
     override fun updateReadmeEmbedding(id: Int, embedding: FloatArray) {
+        updateReadmeEmbedding(id, "readme_embedding", embedding)
+    }
+
+    override fun updateReadmeEmbedding(id: Int, columnName: String, embedding: FloatArray) {
+        val column = requireEmbeddingColumn(columnName)
         val sql = """
             UPDATE project
-            SET readme_embedding = CAST(:embedding AS vector)
+            SET $column = CAST(:embedding AS vector)
             WHERE id = :id
         """.trimIndent()
 
@@ -130,7 +138,7 @@ class ProjectRepositoryJdbc(
             .update()
 
         require(updated == 1) {
-            "Did not update the project readme embedding of id: $id"
+            "Did not update the project $column of id: $id"
         }
     }
 
@@ -233,6 +241,36 @@ class ProjectRepositoryJdbc(
             FROM project
             WHERE project.minimized_readme IS NOT NULL
               AND project.readme_embedding IS NULL
+            ORDER BY random()
+            LIMIT 1
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .query(PROJECT_ENTITY_ROW_MAPPER)
+            .optional()
+            .getOrNull()
+    }
+
+    override fun findWithoutEmbedding(columnNames: List<String>): ProjectEntity? {
+        if (columnNames.isEmpty()) return findWithoutEmbedding()
+
+        val missingAny = columnNames
+            .map { requireEmbeddingColumn(it) }
+            .joinToString(separator = " OR ") { "project.$it IS NULL" }
+
+        val sql = """
+            SELECT project.id,
+                   project.scm_repo_id,
+                   project.owner_id,
+                   project.name,
+                   project.description,
+                   project.minimized_readme,
+                   project.latest_version,
+                   project.latest_version_ts,
+                   project.dependent_count
+            FROM project
+            WHERE project.minimized_readme IS NOT NULL
+              AND ($missingAny)
             ORDER BY random()
             LIMIT 1
         """.trimIndent()
@@ -432,7 +470,20 @@ class ProjectRepositoryJdbc(
             .list()
     }
 
+    /**
+     * Guards against SQL injection when a column name is interpolated into a statement.
+     * Only `readme_embedding[_suffix]` columns are allowed.
+     */
+    private fun requireEmbeddingColumn(columnName: String): String {
+        require(EMBEDDING_COLUMN_REGEX.matches(columnName)) {
+            "Unsupported embedding column: $columnName"
+        }
+        return columnName
+    }
+
     private companion object {
+        private val EMBEDDING_COLUMN_REGEX = Regex("^readme_embedding(_[a-z0-9_]+)?$")
+
         private val PROJECT_ENTITY_ROW_MAPPER = RowMapper<ProjectEntity> { rs, _ ->
             ProjectEntity(
                 id = rs.getInt("id"),

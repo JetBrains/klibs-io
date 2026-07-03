@@ -271,8 +271,9 @@ class ProjectSearchRepositoryJdbc(
 
     private fun String.addWildcardPostfix(): String = "$this:*"
 
-    override fun findByEmbedding(embedding: FloatArray, page: Int, limit: Int): List<SearchProjectResult> {
+    override fun findByEmbedding(columnName: String, embedding: FloatArray, page: Int, limit: Int): List<SearchProjectResult> {
         if (embedding.isEmpty()) return emptyList()
+        val column = requireEmbeddingColumn(columnName)
         val offset = limit * (page - 1)
         val vectorLiteral = embedding.joinToString(separator = ",", prefix = "[", postfix = "]")
 
@@ -295,8 +296,8 @@ class ProjectSearchRepositoryJdbc(
                    pi.health_score
             FROM project_index pi
                      JOIN project p ON p.id = pi.project_id
-            WHERE p.readme_embedding IS NOT NULL
-            ORDER BY p.readme_embedding <=> CAST(:embedding AS vector)
+            WHERE p.$column IS NOT NULL
+            ORDER BY p.$column <=> CAST(:embedding AS vector)
             LIMIT :limit
             OFFSET :offset
         """.trimIndent()
@@ -354,7 +355,20 @@ class ProjectSearchRepositoryJdbc(
             .update()
     }
 
+    /**
+     * Guards against SQL injection when a column name is interpolated into a statement.
+     * Only `readme_embedding[_suffix]` columns are allowed.
+     */
+    private fun requireEmbeddingColumn(columnName: String): String {
+        require(EMBEDDING_COLUMN_REGEX.matches(columnName)) {
+            "Unsupported embedding column: $columnName"
+        }
+        return columnName
+    }
+
     private companion object {
+        private val EMBEDDING_COLUMN_REGEX = Regex("^readme_embedding(_[a-z0-9_]+)?$")
+
         private val PROJECT_OVERVIEW_ROW_MAPPER = RowMapper<SearchProjectResult> { rs, _ ->
             SearchProjectResult(
                 id = rs.getInt("project_id"),

@@ -4,8 +4,10 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import org.springframework.ai.chat.model.ChatResponse
 import org.springframework.ai.chat.prompt.Prompt
+import org.springframework.ai.embedding.EmbeddingRequest
 import org.springframework.ai.openai.OpenAiChatModel
 import org.springframework.ai.openai.OpenAiEmbeddingModel
+import org.springframework.ai.openai.OpenAiEmbeddingOptions
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
@@ -74,6 +76,21 @@ class ChatGptSpringAiService(
             sample.stop(meterRegistry.timer("klibs.openai.request.time",
                 "method", "embed",
                 "model", AiService.EMBEDDING_MODEL))
+        }
+    }
+
+    override fun embed(text: String, model: String, dimensions: Int?): FloatArray {
+        val optionsBuilder = OpenAiEmbeddingOptions.builder().model(model)
+        dimensions?.let { optionsBuilder.dimensions(it) }
+
+        val sample = Timer.start(meterRegistry)
+        return try {
+            embeddingModel.call(EmbeddingRequest(listOf(text), optionsBuilder.build()))
+                .results.first().output
+        } finally {
+            sample.stop(meterRegistry.timer("klibs.openai.request.time",
+                "method", "embed",
+                "model", model))
         }
     }
 

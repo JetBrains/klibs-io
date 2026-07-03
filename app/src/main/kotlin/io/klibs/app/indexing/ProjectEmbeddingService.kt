@@ -4,7 +4,7 @@ import io.klibs.app.util.BackoffProvider
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.readme.service.ReadmeService
-import io.klibs.integration.ai.ProjectReadmeEmbeddingGenerator
+import io.klibs.integration.ai.EmbedderRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
@@ -14,7 +14,7 @@ class ProjectEmbeddingService(
     private val projectRepository: ProjectRepository,
     private val readmeService: ReadmeService,
     private val scmOwnerRepository: ScmOwnerRepository,
-    private val projectReadmeEmbeddingGenerator: ProjectReadmeEmbeddingGenerator,
+    private val embedderRegistry: EmbedderRegistry,
     @Qualifier("aiEmbeddingBackoffProvider")
     private val embeddingBackoffProvider: BackoffProvider,
 ) {
@@ -22,17 +22,21 @@ class ProjectEmbeddingService(
     fun addReadmeEmbedding(): Boolean {
         var selectedProjectId: Int? = null
         try {
-            val project = projectRepository.findWithoutEmbedding() ?: return false
+            val embedders = embedderRegistry.all
+            val project = projectRepository.findWithoutEmbedding(embedders.map { it.columnName }) ?: return false
             if (embeddingBackoffProvider.isBackedOff(project.idNotNull)) {
                 logger.debug("Selected projectId=${project.id} is in backoff for the embedding update; skipping this run")
                 return true
             }
             selectedProjectId = project.idNotNull
-            logger.trace("Generating a README embedding for projectId=${project.id}: ${project.name}")
+            logger.trace("Generating README embeddings for projectId=${project.id}: ${project.name}")
 
-            val embedding = projectReadmeEmbeddingGenerator.generateReadmeEmbedding(project.minimizedReadme!!)
-            projectRepository.updateReadmeEmbedding(project.idNotNull, embedding)
-            logger.debug("Updated README embedding for projectId=${project.id}: ${project.name}")
+            val readme = project.minimizedReadme!!
+            embedders.forEach { embedder ->
+                val embedding = embedder.embed(readme)
+                projectRepository.updateReadmeEmbedding(project.idNotNull, embedder.columnName, embedding)
+            }
+            logger.debug("Updated README embeddings for projectId=${project.id}: ${project.name}")
 
             embeddingBackoffProvider.onSuccess(project.idNotNull)
         } catch (e: Exception) {

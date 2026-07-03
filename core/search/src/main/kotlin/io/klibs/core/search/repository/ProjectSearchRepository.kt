@@ -34,10 +34,11 @@ interface ProjectSearchRepository {
     ): List<SearchProjectResult>
 
     /**
-     * Returns projects ordered by cosine similarity of their README embedding to [embedding].
-     * Projects without a stored embedding are skipped.
+     * Returns projects ordered by cosine similarity of the embedding stored in [columnName]
+     * to [embedding]. Projects without a stored embedding in that column are skipped.
+     * [columnName] must be a known embedding column.
      */
-    fun findByEmbedding(embedding: FloatArray, page: Int, limit: Int): List<SearchProjectResult>
+    fun findByEmbedding(columnName: String, embedding: FloatArray, page: Int, limit: Int): List<SearchProjectResult>
 
     fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>>
 

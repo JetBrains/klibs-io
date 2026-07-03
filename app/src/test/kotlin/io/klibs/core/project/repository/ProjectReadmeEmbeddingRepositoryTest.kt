@@ -47,4 +47,40 @@ class ProjectReadmeEmbeddingRepositoryTest : BaseUnitWithDbLayerTest() {
         )
         assertEquals(9301, pending.id)
     }
+
+    @Test
+    @Sql("/sql/ProjectReadmeEmbeddingRepositoryTest/setup.sql")
+    fun `findWithoutEmbedding by columns keeps returning the project until every listed column is filled`() {
+        val columns = listOf("readme_embedding", "readme_embedding_local")
+
+        assertNotNull(
+            projectRepository.findWithoutEmbedding(columns),
+            "precondition: project is missing both embeddings"
+        )
+
+        projectRepository.updateReadmeEmbedding(9301, "readme_embedding", FloatArray(1536) { 0.01f })
+        assertNotNull(
+            projectRepository.findWithoutEmbedding(columns),
+            "still pending while one embedding column remains empty"
+        )
+
+        projectRepository.updateReadmeEmbedding(9301, "readme_embedding_local", FloatArray(256) { 0.02f })
+        assertNull(
+            projectRepository.findWithoutEmbedding(columns),
+            "no project should remain once all listed embedding columns are filled"
+        )
+    }
+
+    @Test
+    @Sql("/sql/ProjectReadmeEmbeddingRepositoryTest/setup.sql")
+    fun `updateMinimizedReadme invalidates every embedding column`() {
+        projectRepository.updateReadmeEmbedding(9301, "readme_embedding_local", FloatArray(256) { 0.02f })
+
+        projectRepository.updateMinimizedReadme(9301, "# Updated README content")
+
+        assertNotNull(
+            projectRepository.findWithoutEmbedding(listOf("readme_embedding_local")),
+            "changing the readme must drop the local embedding too"
+        )
+    }
 }

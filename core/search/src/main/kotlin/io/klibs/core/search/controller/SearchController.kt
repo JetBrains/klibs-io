@@ -186,6 +186,7 @@ class SearchController(
     ): List<SearchProjectResultDTO> {
         return searchService.searchSimilarProjects(
             query = searchRequest.query,
+            embedderName = searchRequest.embedder,
             page = page,
             limit = limit
         ).map { it.toDTO() }

@@ -18,6 +18,12 @@ interface ProjectRepository {
 
     fun updateReadmeEmbedding(id: Int, embedding: FloatArray)
 
+    /**
+     * Stores [embedding] into the given pgvector [columnName] of the `project` table.
+     * [columnName] must be a known embedding column (validated to prevent SQL injection).
+     */
+    fun updateReadmeEmbedding(id: Int, columnName: String, embedding: FloatArray)
+
     fun updateOwnerId(projectId: Int, newOwnerId: Int)
 
     fun findById(id: Int): ProjectEntity?
@@ -37,6 +43,13 @@ interface ProjectRepository {
      * Used by the scheduled embedding backfill job.
      */
     fun findWithoutEmbedding(): ProjectEntity?
+
+    /**
+     * Returns one project that has a README but is missing at least one of the given embedding
+     * [columnNames], or null if none remain. Each name must be a known embedding column.
+     * Used by the scheduled backfill job to fill every embedding column.
+     */
+    fun findWithoutEmbedding(columnNames: List<String>): ProjectEntity?
 
     fun findWithoutTags(): ProjectEntity?
 

@@ -21,12 +21,12 @@ import java.util.concurrent.TimeUnit
 @ConditionalOnProperty("klibs.indexing", havingValue = "true")
 class GitHubRepositoryUpdatingJob(val gitHubRepositoryUpdatingService: GitHubRepositoryUpdatingService) {
 
-    @Scheduled(initialDelay = 30, fixedRate = 30, timeUnit = TimeUnit.SECONDS)
-    @SchedulerLock(name = "updateGitHubRepositoryLock", lockAtMostFor = "10m")
-    fun updateGitHubRepository() {
-        LockAssert.assertLocked()
-        gitHubRepositoryUpdatingService.syncRepositoryWithGitHub()
-    }
+//    @Scheduled(initialDelay = 30, fixedRate = 30, timeUnit = TimeUnit.SECONDS)
+//    @SchedulerLock(name = "updateGitHubRepositoryLock", lockAtMostFor = "10m")
+//    fun updateGitHubRepository() {
+//        LockAssert.assertLocked()
+//        gitHubRepositoryUpdatingService.syncRepositoryWithGitHub()
+//    }
 }
 
 @Service

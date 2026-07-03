@@ -8,7 +8,7 @@ import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchPackageResult
 import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.core.search.dto.service.CategoryWithProjects
-import io.klibs.integration.ai.AiService
+import io.klibs.integration.ai.EmbedderRegistry
 import io.micrometer.core.annotation.Timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +25,7 @@ class SearchService(
     private val projectSearchRepository: ProjectSearchRepository,
     private val packageSearchRepository: PackageSearchRepository,
     @Lazy
-    private val aiService: AiService,
+    private val embedderRegistry: EmbedderRegistry,
     private val applicationScope: CoroutineScope
 ) {
     /**
@@ -76,18 +76,22 @@ class SearchService(
     }
 
     /**
-     * Semantic project search: embeds the [query] with the same model used for README embeddings,
-     * then returns projects ordered by similarity to that embedding.
+     * Semantic project search: embeds the [query] with the embedder selected by [embedderName]
+     * (the default embedder when null/blank), then returns projects ordered by similarity to that
+     * embedding, using the embedder's own README embedding column.
      */
     @Transactional(readOnly = true)
     @Timed(value = "klibs.project.similar.search.time", description = "Klibs: Time taken to search similar projects")
     fun searchSimilarProjects(
         query: String,
+        embedderName: String? = null,
         page: Int,
         limit: Int
     ): List<SearchProjectResult> {
-        val embedding = aiService.embed(query)
+        val embedder = embedderRegistry.resolve(embedderName)
+        val embedding = embedder.embed(query)
         return projectSearchRepository.findByEmbedding(
+            columnName = embedder.columnName,
             embedding = embedding,
             page = page,
             limit = limit
