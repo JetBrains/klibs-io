@@ -1,9 +1,18 @@
 .pageContainer {
-    margin: 72px 0;
+    margin: 72px 0 144px 0;
 }
 
 .section:not(:last-child) {
     margin-bottom: 64px;
+}
+
+.section {
+}
+
+@media only screen and (max-width: 1200px) {
+    .sidebar {
+        display: none;
+    }
 }
 
 .sectionHeading {

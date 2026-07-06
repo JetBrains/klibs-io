@@ -4,6 +4,7 @@ import React from "react";
 import cn from "classnames";
 
 import Container from "@/app/ui/container";
+import TocNav from "@/app/ui/toc-nav";
 import {Button} from '@rescui/button';
 
 import {CopyIcon} from '@rescui/icons'
@@ -29,6 +30,13 @@ Use it to verify dependency metadata:
 - comparable alternatives
 - etc.`
 
+const NAV_ITEMS = [
+    {id: "overview", label: "AI development with klibs.io"},
+    {id: "mcp", label: "MCP"},
+    {id: "skill", label: "Skill"},
+    {id: "agents", label: "AGENTS.md recommendation"},
+];
+
 export default function Organization() {
 
     const handleCopy = () => {
@@ -41,8 +49,10 @@ export default function Organization() {
 
                 <Container mode={"wrapper"} cardColumn>
 
-                    <section className={styles.section} id={"header"}>
+                    <section className={styles.section} id={"overview"}>
                         <h1 className={textCn('rs-h1')}>AI development with klibs.io</h1>
+
+                        <br />
 
                         <p className={textCn('rs-subtitle-2')}>
                             Use AI tools and agents to discover, integrate, and maintain
@@ -60,8 +70,10 @@ export default function Organization() {
                             way.
                         </p>
 
+                        <br />
+
                         <p className={textCn('rs-text-1', {hardness: 'hard'})}>
-                            <a className={textCn('rs-link', {mode: 'classic'})}>Add klibs.io MCP to your agent</a>
+                            <a href="https://github.com/JetBrains/klibs-io/tree/master/integrations/mcp#endpoint" className={textCn('rs-link', {mode: 'classic'})}>Add klibs.io MCP to your agent</a>
                         </p>
 
                     </section>
@@ -90,8 +102,10 @@ export default function Organization() {
                             </li>
                         </ul>
 
+                        <br />
+
                         <p className={textCn('rs-text-1', {hardness: 'hard'})}>
-                            <a className={textCn('rs-link', {mode: 'classic'})}>Instruction how to use klibs.io
+                            <a href="https://github.com/JetBrains/klibs-io/blob/master/skills/README.md#quick-install-recommended" className={textCn('rs-link', {mode: 'classic'})}>Instruction how to use klibs.io
                                 skill</a>
                         </p>
 
@@ -118,6 +132,8 @@ export default function Organization() {
                             </Button>
                         </div>
 
+                        <br />
+
 
                         <p className={textCn('rs-text-1', {hardness: 'hard'})}>
                             This helps the agent consistently use verified KMP library data instead of relying solely on
@@ -127,8 +143,8 @@ export default function Organization() {
                     </section>
                 </Container>
 
-                <Container mode={"wrapper"} smallColumn>
-                    sidebar
+                <Container mode={"wrapper"} smallColumn className={styles.sidebar}>
+                    <TocNav items={NAV_ITEMS}/>
                 </Container>
             </Container>
         </Container>

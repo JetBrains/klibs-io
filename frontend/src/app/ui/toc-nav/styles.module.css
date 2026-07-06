@@ -1,0 +1,33 @@
+.anchorNav {
+    position: sticky;
+    top: 144px;
+    margin-left: auto;
+}
+
+.anchorNavList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.anchorNavLink {
+    display: block;
+    padding: 6px 16px;
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+
+    text-decoration: none;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.anchorNavLink:hover {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+.anchorNavLinkActive {
+    color: #0067FF;
+    border-left-color: #0067FF;
+}

@@ -1,6 +1,7 @@
 export enum GAEvent {
   REPORT_AN_ISSUE_CLICK = "report-an-issue-click",
   FAQ_CLICK = "faq-click",
+  AI_CLICK = "ai-click",
   LOGO_CLICK = "logo-click",
   SLACK_CLICK = "slack-click",
 

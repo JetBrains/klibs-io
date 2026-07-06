@@ -167,6 +167,14 @@ export default function Navbar() {
                             </Link>
 
                             <Link
+                                href="/ai"
+                                className={cn(textCn('rs-link', {mode: 'clear'}), styles.navItem, "hide-on-small")}
+                                onClick={() => trackEvent(GAEvent.AI_CLICK, {})}
+                            >
+                                AI
+                            </Link>
+
+                            <Link
                                 href="/faq#slack-guide"
                                 data-testid="slack-link"
                                 className={cn(textCn('rs-link', {mode: 'clear'}), styles.navItem, styles.navIcon, "hide-on-small")}
@@ -229,6 +237,13 @@ export default function Navbar() {
                                         onClick={() => trackEvent(GAEvent.FAQ_CLICK, {})}
                                     >
                                         FAQ
+                                    </MenuItem>
+
+                                    <MenuItem
+                                        href="/ai"
+                                        onClick={() => trackEvent(GAEvent.AI_CLICK, {})}
+                                    >
+                                        AI
                                     </MenuItem>
 
                                     <MenuItem
