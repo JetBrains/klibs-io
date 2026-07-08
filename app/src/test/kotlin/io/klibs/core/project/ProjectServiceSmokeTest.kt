@@ -157,7 +157,7 @@ class ProjectServiceSmokeTest {
         )
 
         val projectMarkers = listOf(
-            Marker(projectId = projectId, type = MarkerType.FEATURED),
+            Marker(projectId = projectId, type = MarkerType.FEATURED_DEPRECATED),
             Marker(projectId = projectId, type = MarkerType.GRANT_WINNER_2023)
         )
 
@@ -175,7 +175,7 @@ class ProjectServiceSmokeTest {
         assertNotNull(foundProject)
         assertEquals(projectId, foundProject.id, "Project ID should match")
         assertEquals(2, foundProject.markers.size, "Project should have 2 markers")
-        assertEquals(listOf(MarkerType.FEATURED, MarkerType.GRANT_WINNER_2023), foundProject.markers)
+        assertEquals(listOf(MarkerType.FEATURED_DEPRECATED, MarkerType.GRANT_WINNER_2023), foundProject.markers)
     }
 
     @Test
@@ -222,7 +222,7 @@ class ProjectServiceSmokeTest {
         )
 
         val projectMarkers = listOf(
-            Marker(projectId = projectId, type = MarkerType.FEATURED),
+            Marker(projectId = projectId, type = MarkerType.FEATURED_DEPRECATED),
             Marker(projectId = projectId, type = MarkerType.GRANT_WINNER_2023)
         )
 
@@ -240,6 +240,6 @@ class ProjectServiceSmokeTest {
         assertNotNull(result)
         assertEquals(projectId, result.id, "Project ID should match")
         assertEquals(2, result.markers.size, "Project should have 2 markers")
-        assertEquals(listOf(MarkerType.FEATURED, MarkerType.GRANT_WINNER_2023), result.markers)
+        assertEquals(listOf(MarkerType.FEATURED_DEPRECATED, MarkerType.GRANT_WINNER_2023), result.markers)
     }
 }

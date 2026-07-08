@@ -250,7 +250,7 @@ class SearchTest : SmokeTestBase() {
         )
 
         // Verify that the markers field is not null and is a list
-        assertEquals(listOf(MarkerType.FEATURED.name, MarkerType.GRANT_WINNER_2024.name), foundProjects.first().markers)
+        assertEquals(listOf(MarkerType.FEATURED_DEPRECATED.name, MarkerType.GRANT_WINNER_2024.name), foundProjects.first().markers)
     }
 
     @Test

@@ -78,7 +78,7 @@ class SearchController(
         @RequestParam("markers", required = false)
         @Parameter(
             description = "Filter by project markers",
-            schema = Schema(type = "array", example = "\"FEATURED\", \"GRANT_WINNER_2024\"")
+            schema = Schema(type = "array", example = "\"FEATURED_DEPRECATED\", \"GRANT_WINNER_2024\"")
         )
         markers: List<String> = emptyList(),
 
