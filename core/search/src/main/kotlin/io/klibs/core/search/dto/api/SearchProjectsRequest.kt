@@ -43,7 +43,7 @@ data class SearchProjectsRequest(
     @Schema(
         description = "Filter by markers",
         type = "array",
-        example = "\"FEATURED\", \"GRANT_WINNER_2024\""
+        example = "\"FEATURED_DEPRECATED\", \"GRANT_WINNER_2024\""
     )
     val markers: List<String> = emptyList()
 )

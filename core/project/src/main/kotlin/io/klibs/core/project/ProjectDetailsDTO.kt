@@ -139,7 +139,7 @@ data class ProjectDetailsDTO(
 
     @Schema(
         description = "Markers associated with the project",
-        example = "[FEATURED, GRANT_WINNER_2023, GRANT_WINNER_2024]"
+        example = "[FEATURED_DEPRECATED, GRANT_WINNER_2023, GRANT_WINNER_2024]"
     )
     val markers: List<MarkerType>,
 

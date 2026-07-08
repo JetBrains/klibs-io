@@ -173,4 +173,5 @@ databaseChangeLog:
       file: db/migration/2026-Q2/2026-06-05_package_index_add_latest_stable_version.yml
   - include:
       file: db/migration/2026-Q2/2026-06-12_package_index_add_dependent_count.yml
-
+  - include:
+      file: db/migration/2026-Q3/2026-07-08_remove-featured-category.yml

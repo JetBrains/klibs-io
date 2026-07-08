@@ -5705,7 +5705,7 @@ INSERT INTO public.package_target VALUES (1093, 'JS', NULL, 3154);
 INSERT INTO public.package_target VALUES (1093, 'COMMON', NULL, 3155);
 
 
-INSERT INTO public.project_marker(project_id, type) VALUES(18, 'FEATURED');
+INSERT INTO public.project_marker(project_id, type) VALUES(18, 'FEATURED_DEPRECATED');
 INSERT INTO public.project_marker(project_id, type)  VALUES(18, 'GRANT_WINNER_2024');
 
 SELECT pg_catalog.setval('public.package_id_seq', 1093, true);

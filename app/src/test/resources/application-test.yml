@@ -19,5 +19,3 @@ spring:
         access-key: test
         secret-key: test
       endpoint: http://localhost:4566
-#  profiles:
-#    active: test

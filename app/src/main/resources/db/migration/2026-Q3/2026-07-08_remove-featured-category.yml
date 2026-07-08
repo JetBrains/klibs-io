@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: remove featured category
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - delete:
+            tableName: category
+            where: name = 'Featured'
+  - changeSet:
+      id: make compose ui category first
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - update:
+            tableName: category
+            columns:
+              - column:
+                  name: id
+                  value: '1'
+            where: name = 'Compose UI'
+  - changeSet:
+      id: replace featured marker with deprecated one
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - update:
+            tableName: project_marker
+            columns:
+              - column:
+                  name: type
+                  value: 'FEATURED_DEPRECATED'
+            where: type = 'FEATURED'
