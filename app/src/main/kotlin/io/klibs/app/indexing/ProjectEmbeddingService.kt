@@ -31,7 +31,22 @@ class ProjectEmbeddingService(
             selectedProjectId = project.idNotNull
             logger.trace("Generating README embeddings for projectId=${project.id}: ${project.name}")
 
-            val readme = project.minimizedReadme!!
+            val ownerLogin = scmOwnerRepository.findById(project.ownerId)?.login
+                ?: error("Unable to find owner for projectId=${project.id}")
+
+            val fullReadme = readmeService.readReadmeMd(
+                ReadmeService.ProjectInfo(
+                    project.idNotNull,
+                    project.scmRepoId,
+                    project.name,
+                    ownerLogin,
+                ),
+            )?.takeIf { it.isNotBlank() }
+                ?: project.minimizedReadme
+                ?: error("Unable to generate embeddings due to missing README for projectId=${project.id}")
+
+            // there can be some very long readmes... see https://github.com/robstoll/atrium
+            val readme = if (fullReadme.length >= MAX_README_LENGTH) fullReadme.take(MAX_README_LENGTH) else fullReadme
             embedders.forEach { embedder ->
                 val embedding = embedder.embed(readme)
                 projectRepository.updateReadmeEmbedding(project.idNotNull, embedder.columnName, embedding)
@@ -48,5 +63,8 @@ class ProjectEmbeddingService(
 
     companion object {
         private val logger = LoggerFactory.getLogger(ProjectEmbeddingService::class.java)
+
+        // keep the embedding input within the OpenAI embedding token limit
+        private const val MAX_README_LENGTH = 25_000
     }
 }

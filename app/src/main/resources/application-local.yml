@@ -5,7 +5,7 @@ logging:
 spring:
   docker:
     compose:
-      lifecycle-management: start_and_stop
+      lifecycle-management: start_only
       enabled: true
   ai:
     openai:
@@ -21,11 +21,13 @@ spring:
       credentials:
         access-key: test
         secret-key: test
-      endpoint: http://s3.localhost.localstack.cloud:4566
+      endpoint: http://localhost:4566
+      s3:
+        path-style-access-enabled: true
 
 klibs:
   ai: true
-  indexing: true
+  indexing: false
   readme:
     s3:
       bucket-name: local-bucket
@@ -44,3 +46,15 @@ klibs:
     github:
       personal-access-token: ${PERSONAL_GITHUB_TOKEN}
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
+  embeddings:
+    local-hashing:
+      enabled: false
+    bge-large:
+      enabled: false
+    ai-small:
+      enabled: true
+    ai-large:
+      enabled: false
+    ai-ada:
+      enabled: false
+

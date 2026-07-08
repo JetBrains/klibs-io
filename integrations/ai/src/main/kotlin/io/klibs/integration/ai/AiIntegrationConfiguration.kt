@@ -51,9 +51,11 @@ class AiIntegrationConfiguration {
                 .restClientBuilder(restClient)
                 .build(),
             MetadataMode.EMBED,
+            // No default dimensions: Spring AI merges the default into every request and cannot
+            // clear it at runtime, so a default here would be sent to text-embedding-ada-002 (which
+            // rejects `dimensions`). text-embedding-3-small already returns 1536 dims natively.
             OpenAiEmbeddingOptions.builder()
                 .model(AiService.EMBEDDING_MODEL)
-                .dimensions(AiService.EMBEDDING_DIMENSIONS)
                 .build()
         )
     }

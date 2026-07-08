@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 
 @Component
-@ConditionalOnProperty(value = ["klibs.indexing", "klibs.ai"], havingValue = "true")
+@ConditionalOnProperty(value = ["klibs.ai"], havingValue = "true")
 class AddAiMetadataForProjectJob(
     val projectIndexingService: ProjectIndexingService,
     val projectEmbeddingService: ProjectEmbeddingService,
@@ -21,7 +21,7 @@ class AddAiMetadataForProjectJob(
     @SchedulerLock(name = "addAiDescriptionLock", lockAtMostFor = "23h")
     fun addAiDescription() {
         LockAssert.assertLocked()
-        projectIndexingService.addAiDescription()
+//        projectIndexingService.addAiDescription()
     }
 
     // Scheduled timing is like that so that intersection between jobs would be minimal.
@@ -30,7 +30,7 @@ class AddAiMetadataForProjectJob(
     @SchedulerLock(name = "addAiTags", lockAtMostFor = "23h")
     fun addAiTags() {
         LockAssert.assertLocked()
-        projectIndexingService.addAiTags()
+//        projectIndexingService.addAiTags()
     }
 
     @Scheduled(initialDelay = 0)

@@ -1,0 +1,490 @@
+# Concept search queries extracted from real klibs.io search logs.
+# Library / brand names (ktor, koin, coil, ...) and noise fragments were removed.
+# Format: <query><TAB><frequency in raw log>. Sorted by frequency, then alphabetically.
+navigation	6
+compose	4
+datastore	4
+dependency	4
+google	4
+pdf	4
+qr	4
+ui	4
+video	4
+viewmodel	4
+webview	4
+ai	3
+audio	3
+ble	3
+bluetooth	3
+country	3
+date	3
+di	3
+file	3
+html	3
+image	3
+material	3
+media	3
+network	3
+push	3
+sql	3
+time	3
+video player	3
+workmanager	3
+xml	3
+3d	2
+ads	2
+aes	2
+analytics	2
+animation	2
+auth	2
+background	2
+barcode	2
+bigdecimal	2
+billing	2
+bottom	2
+bottomsheet	2
+build	2
+buildconfig	2
+calendar	2
+camera	2
+chart	2
+charts	2
+compass	2
+compose ui	2
+constraintlayout	2
+crash	2
+crop	2
+crypto	2
+cryptography	2
+csv	2
+data	2
+database	2
+date picker	2
+dependency injection	2
+dialog	2
+file picker	2
+gallery	2
+gif	2
+google maps	2
+grpc	2
+http	2
+in app	2
+json	2
+kv	2
+local	2
+locale	2
+location	2
+log	2
+logger	2
+logging	2
+maps	2
+math	2
+mcp	2
+md5	2
+media player	2
+ml	2
+mock	2
+mvi	2
+net	2
+notification	2
+oauth	2
+orm	2
+pager	2
+paging	2
+palette	2
+permission	2
+permissions	2
+photo	2
+picker	2
+player	2
+preferences	2
+refresh	2
+room database	2
+screenshot	2
+scroll	2
+setting	2
+settings	2
+sha	2
+shared	2
+snackbar	2
+speech	2
+sqlite	2
+ssh	2
+storage	2
+store	2
+swift	2
+table	2
+textfield	2
+theme	2
+toast	2
+uuid	2
+validation	2
+web	2
+webrtc	2
+work	2
+youtube	2
+#log	1
+activity	1
+ad	1
+adaptive layout	1
+adb	1
+agent	1
+alarm	1
+album	1
+alert	1
+animate	1
+apng	1
+app	1
+app update	1
+apple pay	1
+archive	1
+assert	1
+atomic	1
+audio player	1
+audio record	1
+authentication	1
+autosize	1
+back	1
+back handler	1
+background task	1
+base64	1
+battery	1
+bcrypt	1
+big decimal	1
+bigint	1
+bio	1
+biometric	1
+biometrics	1
+bitmap	1
+blur	1
+bottom nav	1
+bridge	1
+browser	1
+build config	1
+cache	1
+canvas	1
+capture	1
+carousel	1
+chat	1
+cli	1
+clipboard	1
+clock	1
+code	1
+code editor	1
+color pick	1
+color picker	1
+compose icons	1
+compose navigation	1
+compress	1
+compression	1
+connect	1
+connection	1
+connectivity	1
+constraint	1
+contact	1
+contacts	1
+context menu	1
+copy	1
+coroutine	1
+coroutines	1
+country code	1
+country code picker	1
+country picker	1
+coverage	1
+crdt	1
+credential	1
+credential manager	1
+credentials	1
+cron	1
+cropper	1
+cryptog	1
+currency	1
+dark	1
+data store	1
+data table	1
+dataframe	1
+date format	1
+date time	1
+date time picker	1
+date-time	1
+datetime	1
+datetime picker	1
+db	1
+debug	1
+deeplink	1
+dependency in	1
+design	1
+design system	1
+device	1
+device info	1
+digest	1
+dns	1
+docker	1
+document	1
+download	1
+draw	1
+drive	1
+dropdown	1
+ed25519	1
+email	1
+emoji	1
+encode	1
+encrypt	1
+encryption	1
+env	1
+error	1
+excel	1
+exception	1
+exif	1
+export	1
+face	1
+fcm	1
+fft	1
+files	1
+filesystem	1
+fingerprint	1
+firebase auth	1
+foreground	1
+form	1
+format	1
+formatter	1
+foundation	1
+ftp	1
+game	1
+generative	1
+geo	1
+geolocation	1
+gesture	1
+git	1
+google ads	1
+google auth	1
+google drive	1
+google login	1
+google map	1
+google sign	1
+gps	1
+graphql	1
+gzip	1
+haptic	1
+hash	1
+health	1
+html parse	1
+html parser	1
+i18n	1
+iap	1
+ical	1
+image cache	1
+image compress	1
+image loader	1
+image loading	1
+image pick	1
+image picker	1
+image viewer	1
+images	1
+in app purchase	1
+in-app	1
+inject	1
+injection	1
+input	1
+inspector	1
+intent	1
+interceptor	1
+internet	1
+json web	1
+jwt	1
+key value	1
+key-value	1
+keyboard	1
+keychain	1
+keystore	1
+keyvalue	1
+kml	1
+lang	1
+language	1
+latex	1
+launcher	1
+layout	1
+lazy	1
+leak	1
+lifecycle	1
+lint	1
+llm	1
+loading	1
+localization	1
+login	1
+m3u8	1
+mail	1
+mapper	1
+markdown	1
+material icon	1
+material icons	1
+material3	1
+menu	1
+message	1
+microphone	1
+midi	1
+money	1
+monitor	1
+mp3	1
+mp4	1
+mqtt	1
+music	1
+mvvm	1
+navigate	1
+negotiation	1
+network monitor	1
+network status	1
+nfc	1
+nosql	1
+notifications	1
+notifier	1
+notify	1
+number format	1
+number picker	1
+oauth2	1
+ocr	1
+oidc	1
+openapi	1
+opengl	1
+openid	1
+orientation	1
+otp	1
+p2p	1
+pagination	1
+passkey	1
+password	1
+pay	1
+payment	1
+pdf reader	1
+pdf view	1
+phone	1
+photo picker	1
+picture	1
+pin	1
+plugin	1
+png	1
+popup	1
+preference	1
+preview	1
+print	1
+printer	1
+progress	1
+proto	1
+protobuf	1
+pull	1
+purchase	1
+push notification	1
+qr code	1
+qr scan	1
+qr scanner	1
+random	1
+rating	1
+record	1
+redux	1
+regex	1
+remote config	1
+reorder	1
+resize	1
+resource	1
+resources	1
+rest	1
+revenue	1
+rich	1
+rich text	1
+room data	1
+room db	1
+route	1
+router	1
+rpc	1
+rrule	1
+rsa	1
+rss	1
+rtmp	1
+s3	1
+scanner	1
+schedule	1
+schema	1
+scrollbar	1
+secret	1
+secure	1
+secure storage	1
+security	1
+sensor	1
+serial	1
+serialization	1
+sha256	1
+share file	1
+sharedpreferences	1
+sharing	1
+shimmer	1
+sign	1
+sign in	1
+sip	1
+skeleton	1
+smtp	1
+snow	1
+socket	1
+sound	1
+splash	1
+splashscreen	1
+split	1
+ssl	1
+status	1
+status bar	1
+stream	1
+string format	1
+string resource	1
+svg	1
+swipe	1
+task	1
+tcp	1
+terminal	1
+test	1
+testing	1
+time picker	1
+timeline	1
+timer	1
+tls	1
+toml	1
+tooltip	1
+torch	1
+transition	1
+translate	1
+translation	1
+tray	1
+tts	1
+udp	1
+unzip	1
+upload	1
+uri	1
+url	1
+usb	1
+vault	1
+vibrate	1
+video play	1
+vision	1
+voice	1
+wav	1
+waveform	1
+weather	1
+web socket	1
+web view	1
+webdav	1
+webgpu	1
+webp	1
+websocket	1
+wheel	1
+wheel picker	1
+wifi	1
+word	1
+work manager	1
+worker	1
+xls	1
+xlsx	1
+yaml	1
+yml	1
+zip	1
+zlib	1
+zoom	1
+zoomable	1
+hilt 1

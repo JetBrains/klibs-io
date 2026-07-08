@@ -1,5 +1,6 @@
 package io.klibs.integration.ai
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import kotlin.math.sqrt
 
@@ -9,6 +10,7 @@ import kotlin.math.sqrt
  * [DIMENSIONS] buckets, so cosine distance reflects lexical overlap.
  */
 @Component
+@ConditionalOnProperty("klibs.embeddings.local-hashing.enabled", havingValue = "true")
 class LocalHashingEmbedder : Embedder {
     override val embedderName = "local"
     override val dimensions = DIMENSIONS

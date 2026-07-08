@@ -38,6 +38,8 @@ xml-util = "0.90.0"
 
 kotlin-semver = "3.0.0"
 
+djl = "0.36.0"
+
 [plugins]
 
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
@@ -112,6 +114,12 @@ markdown = { module = "org.jetbrains:markdown", version.ref = "markdown" }
 xml-util = { module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xml-util" }
 
 kotlin-semver = { module = "io.github.z4kn4fein:semver", version.ref = "kotlin-semver" }
+
+# DJL: run a local sentence-embedding model fully offline (search embeddings research)
+djl-bom = { module = "ai.djl:bom", version.ref = "djl" }
+djl-api = { module = "ai.djl:api" }
+djl-huggingface-tokenizers = { module = "ai.djl.huggingface:tokenizers" }
+djl-pytorch-engine = { module = "ai.djl.pytorch:pytorch-engine" }
 
 [bundles]
 maven-indexer = [

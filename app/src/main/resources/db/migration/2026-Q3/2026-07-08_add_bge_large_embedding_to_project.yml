@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: add readme_embedding_bge_large column to project
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: project
+              columnName: readme_embedding_bge_large
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE project ADD COLUMN readme_embedding_bge_large vector(1024);
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE project DROP COLUMN readme_embedding_bge_large;

@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 @Service
 @Primary
-@ConditionalOnProperty("klibs.ai", havingValue = "false")
+@ConditionalOnProperty("klibs.ai", havingValue = "true")
 class ChatGptSpringAiService(
     private val meterRegistry: MeterRegistry,
     private val chatModel: OpenAiChatModel,

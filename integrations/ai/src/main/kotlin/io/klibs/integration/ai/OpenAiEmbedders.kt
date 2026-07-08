@@ -1,5 +1,6 @@
 package io.klibs.integration.ai
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 /**
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Component
  * original `readme_embedding` column. Delegates to [AiService.embed] to reuse its metrics.
  */
 @Component
+@ConditionalOnProperty("klibs.embeddings.ai-small.enabled", havingValue = "true")
 class OpenAiSmallEmbedder(
     private val aiService: AiService,
 ) : Embedder {
@@ -21,6 +23,7 @@ class OpenAiSmallEmbedder(
  * Embedder backed by OpenAI `text-embedding-3-large` (3072 dims).
  */
 @Component
+@ConditionalOnProperty("klibs.embeddings.ai-large.enabled", havingValue = "true")
 class OpenAiLargeEmbedder(
     private val aiService: AiService,
 ) : Embedder {
@@ -37,6 +40,7 @@ class OpenAiLargeEmbedder(
  * not support a custom dimension count, so none is requested.
  */
 @Component
+@ConditionalOnProperty("klibs.embeddings.ai-ada.enabled", havingValue = "true")
 class OpenAiAdaEmbedder(
     private val aiService: AiService,
 ) : Embedder {

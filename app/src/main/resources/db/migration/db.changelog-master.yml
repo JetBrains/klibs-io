@@ -177,4 +177,6 @@ databaseChangeLog:
       file: db/migration/2026-Q2/2026-06-29_add_readme_embedding_to_project.yml
   - include:
       file: db/migration/2026-Q3/2026-07-02_add_more_readme_embeddings_to_project.yml
+  - include:
+      file: db/migration/2026-Q3/2026-07-08_add_bge_large_embedding_to_project.yml
 
