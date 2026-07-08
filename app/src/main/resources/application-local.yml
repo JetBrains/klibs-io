@@ -54,7 +54,7 @@ klibs:
     ai-small:
       enabled: true
     ai-large:
-      enabled: false
+      enabled: true
     ai-ada:
-      enabled: false
+      enabled: true
 
