@@ -50,7 +50,7 @@ klibs:
     local-hashing:
       enabled: false
     bge-large:
-      enabled: false
+      enabled: true
     ai-small:
       enabled: true
     ai-large:

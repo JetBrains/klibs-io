@@ -1,5 +1,8 @@
 package io.klibs.integration.ai
 
+import com.knuddels.jtokkit.Encodings
+import com.knuddels.jtokkit.api.Encoding
+import com.knuddels.jtokkit.api.EncodingType
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import org.springframework.ai.chat.model.ChatResponse
@@ -22,6 +25,11 @@ class ChatGptSpringAiService(
     private val embeddingModel: OpenAiEmbeddingModel
 ) : AiService {
 
+    companion object {
+        // OpenAI embedding models accept up to 8192 tokens; leave a small safety margin
+        private const val MAX_EMBEDDING_INPUT_TOKENS = 8_000
+    }
+
     // Metrics for token usage
     private val promptTokensCounter = meterRegistry.counter("klibs.openai.tokens.prompt")
     private val completionTokensCounter = meterRegistry.counter("klibs.openai.tokens.completion")
@@ -30,6 +38,10 @@ class ChatGptSpringAiService(
     // Metric for rate limit
     private val rateLimitRequestsRemaining = AtomicLong(0)
     private val rateLimitTokensRemaining = AtomicLong(0)
+
+    // OpenAI embedding models use the cl100k_base encoding; used to keep input within the token limit
+    private val embeddingEncoding: Encoding =
+        Encodings.newLazyEncodingRegistry().getEncoding(EncodingType.CL100K_BASE)
 
     init {
         meterRegistry.gauge("klibs.openai.rate.limit.remaining.requests", rateLimitRequestsRemaining) { it.get().toDouble() }
@@ -71,7 +83,7 @@ class ChatGptSpringAiService(
     override fun embed(text: String): FloatArray {
         val sample = Timer.start(meterRegistry)
         return try {
-            embeddingModel.embed(text)
+            embeddingModel.embed(truncateToTokenLimit(text))
         } finally {
             sample.stop(meterRegistry.timer("klibs.openai.request.time",
                 "method", "embed",
@@ -85,13 +97,23 @@ class ChatGptSpringAiService(
 
         val sample = Timer.start(meterRegistry)
         return try {
-            embeddingModel.call(EmbeddingRequest(listOf(text), optionsBuilder.build()))
+            embeddingModel.call(EmbeddingRequest(listOf(truncateToTokenLimit(text)), optionsBuilder.build()))
                 .results.first().output
         } finally {
             sample.stop(meterRegistry.timer("klibs.openai.request.time",
                 "method", "embed",
                 "model", model))
         }
+    }
+
+    /**
+     * Truncates [text] to at most [MAX_EMBEDDING_INPUT_TOKENS] tokens so the request stays within
+     * the OpenAI embedding models' 8192-token input limit. A character cap alone is unsafe because
+     * code/markdown READMEs can tokenize to far more tokens than the character/token ratio suggests.
+     */
+    private fun truncateToTokenLimit(text: String): String {
+        val result = embeddingEncoding.encode(text, MAX_EMBEDDING_INPUT_TOKENS)
+        return if (result.isTruncated) embeddingEncoding.decode(result.tokens) else text
     }
 
     private fun recordMetrics(response: ChatResponse) {

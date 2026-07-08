@@ -1,10 +1,13 @@
 package io.klibs.integration.ai
 
+import com.knuddels.jtokkit.Encodings
+import com.knuddels.jtokkit.api.EncodingType
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.springframework.ai.chat.messages.SystemMessage
 import org.springframework.ai.chat.messages.UserMessage
@@ -18,6 +21,7 @@ import org.springframework.ai.openai.OpenAiEmbeddingModel
 import org.springframework.ai.openai.metadata.OpenAiRateLimit
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
@@ -46,6 +50,26 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
             meterRegistry = meterRegistry,
             chatModel = chatModel,
             embeddingModel = embeddingModel
+        )
+    }
+
+    @Test
+    fun `embed truncates input that exceeds the OpenAI embedding token limit`() {
+        `when`(embeddingModel.embed(any<String>())).thenReturn(floatArrayOf(0.1f, 0.2f))
+
+        // A README far longer than 8192 tokens
+        val hugeReadme = "kotlin coroutines multiplatform library ".repeat(20_000)
+
+        chatGptSpringAiService.embed(hugeReadme)
+
+        val captor = argumentCaptor<String>()
+        org.mockito.Mockito.verify(embeddingModel).embed(captor.capture())
+
+        val encoding = Encodings.newLazyEncodingRegistry().getEncoding(EncodingType.CL100K_BASE)
+        val sentTokens = encoding.countTokens(captor.firstValue)
+        assertTrue(
+            sentTokens <= 8192,
+            "Input sent to OpenAI must stay within the 8192-token limit, was $sentTokens",
         )
     }
 
