@@ -6,6 +6,7 @@ import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
 class PackageDescriptionBatchService(
@@ -39,6 +40,7 @@ class PackageDescriptionBatchService(
                 latestPackage.artifactId,
                 latestPackage.version
             )
+            val generatedAt = Instant.now()
 
             batchDescriptions[latestPackage.idNotNull] = newDescription
 
@@ -52,7 +54,8 @@ class PackageDescriptionBatchService(
             for (pkg in allVersions) {
                 val updatedPackage = pkg.deepCopy(
                     description = newDescription,
-                    generatedDescription = true
+                    generatedDescription = true,
+                    descriptionGeneratedAt = generatedAt
                 )
                 packagesToSave.add(updatedPackage)
                 batchDescriptions[pkg.idNotNull] = newDescription

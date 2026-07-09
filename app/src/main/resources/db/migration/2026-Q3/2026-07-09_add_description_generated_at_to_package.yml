@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: add description_generated_at column to package
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: package
+              columnName: description_generated_at
+      changes:
+        - addColumn:
+            tableName: package
+            columns:
+              - column:
+                  name: description_generated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true

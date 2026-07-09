@@ -244,6 +244,7 @@ class PackageIndexingService(
             licenses = pomIndexingService.extractLicenses(pom),
             configuration = kotlinToolingMetadataIndexingService.toPackageConfiguration(toolingMetadata),
             generatedDescription = resolvedDescription.wasGenerated,
+            descriptionGeneratedAt = resolvedDescription.generatedAt,
             versionType = VersionType.from(pom.version),
             targets = kotlinToolingMetadataIndexingService.extractTargets(toolingMetadata)
         )

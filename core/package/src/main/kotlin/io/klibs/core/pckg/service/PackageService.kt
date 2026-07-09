@@ -42,7 +42,8 @@ class PackageService(
             .deepCopy(
                 id = existingPackage.id,
                 description = existingPackage.description,
-                generatedDescription = existingPackage.generatedDescription
+                generatedDescription = existingPackage.generatedDescription,
+                descriptionGeneratedAt = existingPackage.descriptionGeneratedAt
             )
 
         val existingTargetsByKey = existingPackage.targets.associateBy { it.platform to it.target }

@@ -295,6 +295,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val newPackage = packages.first { it.version == version2 }
         assertEquals(generatedDescription, newPackage.description, "New package should have the generated description")
         assertTrue(newPackage.generatedDescription, "New package should have generatedDescription set to true")
+        assertNotNull(newPackage.descriptionGeneratedAt, "Generated description must record description_generated_at")
 
         // Verify that the log contains a message about generating a new description
         assertContains(
@@ -314,6 +315,11 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(request)
         assertTrue(request.reindex, "Seeded request must be a reindex request")
 
+        val before = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
+        assertNotNull(before)
+        val generatedAtBefore = before.descriptionGeneratedAt
+        assertNotNull(generatedAtBefore, "Precondition: seeded package has a generated timestamp")
+
         // If the AI generator were ever invoked its result would be this sentinel; it must never reach the DB.
         whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
             .thenReturn("AI SENTINEL - must not be persisted on reindex")
@@ -329,6 +335,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             "Reindex must keep the existing description, not the POM nor a freshly generated one"
         )
         assertTrue(updated.generatedDescription, "Reindex must preserve the generated flag")
+        assertEquals(generatedAtBefore, updated.descriptionGeneratedAt, "Reindex must preserve description_generated_at")
     }
 
     @Test
@@ -353,6 +360,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             "A non-latest version must take the POM description, never a generated one"
         )
         assertFalse(newPackage.generatedDescription, "Older version must not be marked as generated")
+        assertNull(newPackage.descriptionGeneratedAt, "Non-generated description must not record a timestamp")
     }
 
     /**
