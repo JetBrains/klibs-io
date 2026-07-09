@@ -10,7 +10,6 @@ import {Tooltip, TooltipPlacement} from "@rescui/tooltip";
 import {InfoOutlineIcon} from "@rescui/icons";
 
 const DEPENDENTS_HINT = "The number of other libraries in the klibs.io catalog that depend on this project.";
-const OSS_HEALTH_HINT = "A 0–100 score of how actively the project is maintained on GitHub.";
 
 function MetricLabel(
     {label, hint, learnMoreHref, placement = "top"}:
@@ -69,14 +68,6 @@ export function ProjectInfo({projectOverview}: {projectOverview: ProjectDetails}
                 <div>
                     <MetricLabel label="Dependents" hint={DEPENDENTS_HINT}/>
                     <span className={styles.dataValue}>{projectOverview && projectOverview.dependentCount}</span>
-                </div>
-
-                {/*OSS Health*/}
-                <div>
-                    <MetricLabel label="OSS Health" hint={OSS_HEALTH_HINT} learnMoreHref="/faq#oss-health" placement="bottom"/>
-                    <span className={styles.dataValue}>
-                        {projectOverview && projectOverview.ossHealthScore !== null ? projectOverview.ossHealthScore : '—'}
-                    </span>
                 </div>
 
                 {/*License*/}

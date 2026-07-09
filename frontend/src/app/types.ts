@@ -21,7 +21,6 @@ export interface ProjectDetails extends ProjectSearchResults {
 	openIssues: null | number;
 	linkIssues: null | string;
 	dependentCount: number;
-	ossHealthScore: null | number;
 	lastActivityAtMillis: number;
 	linkHomepage: string;
 	linkScm: string;
@@ -264,7 +263,7 @@ export interface OwnerOrganization extends Owner{
 	"type": "organization";
 }
 
-export type SearchSort = 'most-stars' | 'most-healthy' | 'relevance'| 'most-dependents';
+export type SearchSort = 'most-stars' | 'relevance'| 'most-dependents';
 
 export type SearchMode = 'projects' | 'packages';
 
