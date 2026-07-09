@@ -29,4 +29,6 @@ data class SearchProjectResult(
     val dependentCount: Int = 0,
 
     val ossHealthScore: Int? = null,
+
+    val similarity: Double = 0.0
 )

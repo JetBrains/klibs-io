@@ -293,7 +293,8 @@ class ProjectSearchRepositoryJdbc(
                    pi.markers,
                    pi.targets_vector,
                    pi.dependent_count,
-                   pi.health_score
+                   pi.health_score,
+                   p.$column <=> CAST(:embedding AS vector) as similarity
             FROM project_index pi
                      JOIN project p ON p.id = pi.project_id
             WHERE p.$column IS NOT NULL
@@ -390,6 +391,7 @@ class ProjectSearchRepositoryJdbc(
                 tags = rs.getArray("tags")?.array?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList(),
                 dependentCount = rs.getInt("dependent_count"),
                 ossHealthScore = rs.getObject("health_score") as Int?,
+                similarity = rs.getDouble("similarity")
             )
         }
     }

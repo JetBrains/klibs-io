@@ -99,6 +99,8 @@ data class SearchProjectResultDTO(
         nullable = true
     )
     val ossHealthScore: Int?,
+
+    val similarity: Double
 )
 
 fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
@@ -118,5 +120,6 @@ fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
         markers = markers,
         dependentCount = this.dependentCount,
         ossHealthScore = this.ossHealthScore,
+        similarity = this.similarity
     )
 }

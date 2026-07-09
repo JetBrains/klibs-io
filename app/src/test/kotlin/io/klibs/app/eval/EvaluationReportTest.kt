@@ -19,6 +19,8 @@ class EvaluationReportTest {
         assertEquals(0.75, report.mrr, 1e-9)
         assertEquals(0.5, report.meanRecall10, 1e-9)
         assertEquals(0.75, report.meanRecall20, 1e-9)
+        assertEquals(20.0, report.avgLatencyMillis, 1e-9)
+        assertEquals(30L, report.maxLatencyMillis)
     }
 
     @Test

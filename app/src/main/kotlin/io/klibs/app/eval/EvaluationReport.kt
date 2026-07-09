@@ -21,13 +21,15 @@ data class EngineReport(
     val meanRecall20: Double,
     val p50LatencyMillis: Long,
     val p95LatencyMillis: Long,
+    val avgLatencyMillis: Double,
+    val maxLatencyMillis: Long,
 )
 
 /** Pure aggregation of per-query metrics into per-engine reports and a Markdown table. */
 object EvaluationReport {
 
     fun aggregate(engineName: String, perQuery: List<QueryMetrics>): EngineReport {
-        if (perQuery.isEmpty()) return EngineReport(engineName, 0, 0.0, 0.0, 0.0, 0.0, 0, 0)
+        if (perQuery.isEmpty()) return EngineReport(engineName, 0, 0.0, 0.0, 0.0, 0.0, 0, 0, 0.0, 0)
         val latencies = perQuery.map { it.latencyMillis }
         return EngineReport(
             engineName = engineName,
@@ -38,6 +40,8 @@ object EvaluationReport {
             meanRecall20 = perQuery.map { it.recall20 }.average(),
             p50LatencyMillis = percentile(latencies, 50.0),
             p95LatencyMillis = percentile(latencies, 95.0),
+            avgLatencyMillis = latencies.average(),
+            maxLatencyMillis = latencies.max(),
         )
     }
 
@@ -50,12 +54,13 @@ object EvaluationReport {
     }
 
     fun renderMarkdown(reports: List<EngineReport>, notes: String): String = buildString {
-        appendLine("| engine | queries | nDCG@10 | MRR | Recall@10 | Recall@20 | p50 ms | p95 ms |")
-        appendLine("|---|---:|---:|---:|---:|---:|---:|---:|")
+        appendLine("| engine | queries | nDCG@10 | MRR | Recall@10 | Recall@20 | avg ms | max ms | p50 ms | p95 ms |")
+        appendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
         reports.forEach { r ->
             appendLine(
                 "| ${r.engineName} | ${r.queries} | ${r.meanNdcg10.f()} | ${r.mrr.f()} | " +
-                    "${r.meanRecall10.f()} | ${r.meanRecall20.f()} | ${r.p50LatencyMillis} | ${r.p95LatencyMillis} |"
+                    "${r.meanRecall10.f()} | ${r.meanRecall20.f()} | ${"%.1f".format(r.avgLatencyMillis)} | " +
+                    "${r.maxLatencyMillis} | ${r.p50LatencyMillis} | ${r.p95LatencyMillis} |"
             )
         }
         if (notes.isNotBlank()) {
