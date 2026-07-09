@@ -67,14 +67,16 @@ class McpProjectSearchTool(
                     "Increase only when a project's totalPackages exceeds the returned count and you need more artifacts.",
             required = false
         )
-        maxPackagesPerProject: Int = DEFAULT_MAX_PACKAGES_PER_PROJECT,
+        maxPackagesPerProject: Int? = null,
     ): ProjectSearchResponse {
         logger.info("MCP: Searching for projects with query: $query, platforms: $platforms, targetFilters: $targetFilters")
 
         val parsedPlatforms =
             platforms?.map { PackagePlatform.findBySerializableName(it) }.orEmpty()
 
-        return mcpProjectSearchService.mcpProjectSearch(query, parsedPlatforms, targetFilters.orEmpty(), maxPackagesPerProject)
+        val maxPackages = maxPackagesPerProject ?: DEFAULT_MAX_PACKAGES_PER_PROJECT
+
+        return mcpProjectSearchService.mcpProjectSearch(query, parsedPlatforms, targetFilters.orEmpty(), maxPackages)
             .let { mcpToolMapper.mapToProjectSearchResponse(it) }
     }
 }
