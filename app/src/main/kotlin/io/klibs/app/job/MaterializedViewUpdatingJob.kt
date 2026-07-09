@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.TimeUnit
 
 @Component
-@ConditionalOnProperty("klibs.indexing", havingValue = "true")
 class MaterializedViewUpdatingJob(val searchService: SearchService) {
 
     @Scheduled(initialDelay = 0, fixedRate = 10, timeUnit = TimeUnit.MINUTES)
