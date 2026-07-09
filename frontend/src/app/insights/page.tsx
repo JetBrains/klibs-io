@@ -15,7 +15,7 @@ import styles from "./styles.module.css";
 
 const PAGE_SIZE = 50;
 
-type InsightsSort = "most-dependents" | "most-healthy" | "most-stars";
+type InsightsSort = "most-dependents" | "most-stars";
 
 interface InsightsProject {
     id: number;
@@ -23,12 +23,10 @@ interface InsightsProject {
     ownerLogin: string;
     scmStars: number;
     dependentCount: number;
-    ossHealthScore: number | null;
 }
 
 const SORT_OPTIONS: { value: InsightsSort; label: string }[] = [
     { value: "most-dependents", label: "Most dependents" },
-    { value: "most-healthy", label: "Most healthy" },
     { value: "most-stars", label: "Most stars" },
 ];
 
@@ -184,9 +182,6 @@ function ProjectsTable({ projects, highlight }: ProjectsTableProps) {
                         <th className={styles.numericCol}>
                             {highlight === "most-dependents" ? "Dependents ↓" : "Dependents"}
                         </th>
-                        <th className={styles.numericCol}>
-                            {highlight === "most-healthy" ? "Health ↓" : "Health"}
-                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -203,9 +198,6 @@ function ProjectsTable({ projects, highlight }: ProjectsTableProps) {
                             </td>
                             <td className={styles.numericCol}>{project.scmStars}</td>
                             <td className={styles.numericCol}>{project.dependentCount}</td>
-                            <td className={styles.numericCol}>
-                                {project.ossHealthScore ?? "—"}
-                            </td>
                         </tr>
                     ))}
                 </tbody>
