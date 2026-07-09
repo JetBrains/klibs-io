@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
 class PackageIndexingService(
@@ -177,7 +178,7 @@ class PackageIndexingService(
             ?: error("Unable to find tooling metadata for $mavenArtifact")
 
         logger.trace("Persisting the package for {}", indexRequest)
-        val packageDto = constructPackage(mavenArtifact, pom, toolingMetadata, project)
+        val packageDto = constructPackage(mavenArtifact, pom, toolingMetadata, project, indexRequest.reindex)
         val savedPackageId = if (indexRequest.reindex) {
             val updated = packageService.updateByCoordinates(packageDto)
                 ?: error("Unable to update a non-existing artifact: $mavenArtifact")
@@ -217,9 +218,14 @@ class PackageIndexingService(
         mavenArtifact: MavenArtifact,
         pom: MavenPom,
         toolingMetadata: KotlinToolingMetadataDelegate,
-        projectEntity: ProjectEntity?
+        projectEntity: ProjectEntity?,
+        reindex: Boolean
     ): PackageDTO {
-        val (description, descriptionWasGenerated) = resolvePackageDescription(pom)
+        // should be backfilled before if null
+        val releasedAt = requireNotNull(mavenArtifact.releasedAt) {
+            "releasedAt is null for $mavenArtifact"
+        }
+        val resolvedDescription = resolvePackageDescription(pom, reindex, releasedAt)
 
         return PackageDTO(
             projectId = projectEntity?.idNotNull,
@@ -227,10 +233,8 @@ class PackageIndexingService(
             groupId = pom.groupId,
             artifactId = pom.artifactId,
             version = pom.version,
-            releaseTs = requireNotNull(mavenArtifact.releasedAt) {
-                "releasedAt is null for $mavenArtifact"
-            },
-            description = description,
+            releaseTs = releasedAt,
+            description = resolvedDescription.description,
             url = pom.url?.let { normalizeGitHubLink(it) },
             scmUrl = pom.scm?.url?.let { normalizeGitHubLink(it) },
             buildTool = toolingMetadata.buildSystem,
@@ -239,37 +243,53 @@ class PackageIndexingService(
             developers = pomIndexingService.extractDevelopers(pom),
             licenses = pomIndexingService.extractLicenses(pom),
             configuration = kotlinToolingMetadataIndexingService.toPackageConfiguration(toolingMetadata),
-            generatedDescription = descriptionWasGenerated,
+            generatedDescription = resolvedDescription.wasGenerated,
             versionType = VersionType.from(pom.version),
             targets = kotlinToolingMetadataIndexingService.extractTargets(toolingMetadata)
         )
     }
 
-    private fun resolvePackageDescription(pom: MavenPom): Pair<String?, Boolean> {
+    private fun resolvePackageDescription(
+        pom: MavenPom,
+        reindex: Boolean,
+        releasedAt: Instant
+    ): ResolvedDescription {
+        val coordinates = "${pom.groupId}:${pom.artifactId}:${pom.version}"
         val previousVersion = packageRepository.findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(
             pom.groupId, pom.artifactId
         )
 
-        // If a previous version exists and had a generated description, generate a new description
-        var description = pom.description
-        var descriptionWasGenerated = false
-
-        if (previousVersion != null && previousVersion.generatedDescription) {
-            try {
-                description = packageDescriptionGenerator.generatePackageDescription(
-                    pom.groupId,
-                    pom.artifactId,
-                    pom.version
-                )
-                descriptionWasGenerated = true
-                logger.info("Generated new description for ${pom.groupId}:${pom.artifactId}:${pom.version} because previous version had a generated description")
-            } catch (e: Exception) {
-                logger.error("Failed to generate description for ${pom.groupId}:${pom.artifactId}:${pom.version}", e)
-                // Fall back to the original description
-            }
+        // Regenerate only for a genuinely new latest version whose predecessor had a generated
+        // description. A reindex (deps/targets backfill) or an older/equal version must never
+        // trigger web-search regeneration (KTL-4673).
+        if (reindex ||
+            previousVersion == null ||
+            !releasedAt.isAfter(previousVersion.releaseTs) ||
+            !previousVersion.generatedDescription
+        ) {
+            return ResolvedDescription(pom.description, wasGenerated = false, generatedAt = null)
         }
-        return Pair(description, descriptionWasGenerated)
+
+        return try {
+            val generated = packageDescriptionGenerator.generatePackageDescription(
+                pom.groupId,
+                pom.artifactId,
+                pom.version
+            )
+            logger.info("Generated new description for $coordinates because previous version had a generated description")
+            ResolvedDescription(generated, wasGenerated = true, generatedAt = Instant.now())
+        } catch (e: Exception) {
+            logger.error("Failed to generate description for $coordinates", e)
+            // Fall back to the original description
+            ResolvedDescription(pom.description, wasGenerated = false, generatedAt = null)
+        }
     }
+
+    private data class ResolvedDescription(
+        val description: String?,
+        val wasGenerated: Boolean,
+        val generatedAt: Instant?
+    )
 
     private companion object {
         private val logger = LoggerFactory.getLogger(PackageIndexingService::class.java)

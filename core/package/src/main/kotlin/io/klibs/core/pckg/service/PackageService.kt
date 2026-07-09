@@ -39,7 +39,11 @@ class PackageService(
         ) ?: return null
 
         val updatedPackage = packageDTO.toEntity(MavenArtifactDTO.fromEntity(existingPackage.mavenArtifact))
-            .deepCopy(id = existingPackage.id)
+            .deepCopy(
+                id = existingPackage.id,
+                description = existingPackage.description,
+                generatedDescription = existingPackage.generatedDescription
+            )
 
         val existingTargetsByKey = existingPackage.targets.associateBy { it.platform to it.target }
 

@@ -304,6 +304,77 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-reindex-request-with-generated-description.sql"])
+    fun `reindex preserves the existing generated description instead of overwriting it`() {
+        val groupId = "com.example"
+        val artifactId = "test-library-reindex"
+        val version = "1.0.0"
+
+        val request = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(request)
+        assertTrue(request.reindex, "Seeded request must be a reindex request")
+
+        // If the AI generator were ever invoked its result would be this sentinel; it must never reach the DB.
+        whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
+            .thenReturn("AI SENTINEL - must not be persisted on reindex")
+
+        stubMavenFetch(groupId, artifactId, version, pomDescription = "Fresh POM description")
+
+        assertTrue(uut.processPackageQueue(), "Should process the reindex request")
+
+        val updated = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
+        assertNotNull(updated)
+        assertEquals(
+            "This is a generated description for version 1.0.0", updated.description,
+            "Reindex must keep the existing description, not the POM nor a freshly generated one"
+        )
+        assertTrue(updated.generatedDescription, "Reindex must preserve the generated flag")
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-older-version-request-with-generated-latest.sql"])
+    fun `indexing an older non-latest version keeps the POM description and does not generate`() {
+        val groupId = "com.example"
+        val artifactId = "test-library-older"
+        val olderVersion = "1.0.0"
+
+        // Sentinel that would only appear if a regeneration wrongly fired for this non-latest version.
+        whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
+            .thenReturn("AI SENTINEL - must not be persisted for a non-latest version")
+
+        stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description")
+
+        assertTrue(uut.processPackageQueue(), "Should process the indexing request")
+
+        val newPackage = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, olderVersion)
+        assertNotNull(newPackage)
+        assertEquals(
+            "Original POM description", newPackage.description,
+            "A non-latest version must take the POM description, never a generated one"
+        )
+        assertFalse(newPackage.generatedDescription, "Older version must not be marked as generated")
+    }
+
+    /**
+     * Stubs the Maven static-data boundary (POM + release date + tooling metadata) so a queued
+     * request can be processed end-to-end against the real database without network access.
+     */
+    private fun stubMavenFetch(groupId: String, artifactId: String, version: String, pomDescription: String?) {
+        val pom = mock<MavenPom>()
+        whenever(pom.groupId).thenReturn(groupId)
+        whenever(pom.artifactId).thenReturn(artifactId)
+        whenever(pom.version).thenReturn(version)
+        whenever(pom.description).thenReturn(pomDescription)
+        val kotlinToolingMetadata = mock<GradleMetadata>()
+        whenever(kotlinToolingMetadata.variants)
+            .thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
+            .thenReturn(PomWithReleaseDate(pom, Instant.now()))
+        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+    }
+
+    @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should markAsFailed when ReadmeContentBuilder buildFromMarkdown throws exception`(output: CapturedOutput) {
         val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
