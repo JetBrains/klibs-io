@@ -5,7 +5,7 @@ A reproducible harness that measures whether **semantic (embedding) search** bea
 
 - **E0** — an evaluation set + metrics (this is the credibility anchor).
 - **E1** — an embedding-model comparison across the embedding columns in the schema
-  (`openai-3-small`, `openai-3-large`, `openai-ada-002`, `local`, and the strong offline
+  (`openai-3-small`, `openai-3-large`, `openai-ada-002`, and the strong offline
   `bge-large-local`) plus the FTS baseline.
 
 ## What already exists in the repo (the baseline)
@@ -65,8 +65,8 @@ The script prints how many rows were kept as concepts vs dropped as library name
 
 Prerequisites:
 - A **populated database** (use `scripts/copy_prod_db_to_local.sh` for a prod-like local DB).
-- The embedding columns you want to compare must be **populated** (the `local` and
-  `bge-large-local` columns work offline; the OpenAI columns are filled by the README-embedding
+- The embedding columns you want to compare must be **populated** (the `bge-large-local`
+  column works offline; the OpenAI columns are filled by the README-embedding
   job and need an OpenAI key).
 - An **OpenAI key** configured (used to embed the query for OpenAI engines and to run the LLM judge).
 - To include the strong local model, enable it with `klibs.embeddings.bge-large.enabled=true` (this
@@ -112,7 +112,6 @@ The runner writes `eval-output/embedding-eval-report.md` and caches judgments in
 | engine | nDCG@10 | MRR | Recall@10 | Recall@20 | p95 ms | cost |
 |---|---:|---:|---:|---:|---:|---|
 | fts (baseline) | | | | | | free |
-| local | | | | | | free |
 | bge-large-local | | | | | | free (offline) |
 | openai-ada-002 | | | | | | $ |
 | openai-3-small | | | | | | $ |
@@ -123,7 +122,6 @@ Interpretation to write up:
 - Is `3-large` worth ~6.5× the price of `3-small`?
 - **Does the free, offline `bge-large-local` match the OpenAI columns — i.e. do we actually need
   OpenAI, or is a strong local model enough?**
-- Where does `local` (lexical hashing floor) land — how much do real semantics buy?
 
 ## Known limitations / natural next experiments
 

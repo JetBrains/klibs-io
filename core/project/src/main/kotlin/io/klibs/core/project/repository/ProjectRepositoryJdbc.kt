@@ -102,7 +102,6 @@ class ProjectRepositoryJdbc(
             UPDATE project
             SET minimized_readme = :minimizedReadme,
                 readme_embedding = NULL,
-                readme_embedding_local = NULL,
                 readme_embedding_openai_large = NULL,
                 readme_embedding_openai_ada = NULL
             WHERE id = :id

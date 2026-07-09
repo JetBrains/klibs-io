@@ -47,8 +47,6 @@ klibs:
       personal-access-token: ${PERSONAL_GITHUB_TOKEN}
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
   embeddings:
-    local-hashing:
-      enabled: false
     bge-large:
       enabled: true
     ai-small:

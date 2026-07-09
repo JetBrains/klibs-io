@@ -18,7 +18,7 @@ data class SearchSimilarProjectsRequest(
     @Schema(
         description = "Name of the embedder to use. When omitted, the default embedder is used.",
         example = "openai-3-small",
-        allowableValues = ["openai-3-small", "openai-3-large", "openai-ada-002", "local"],
+        allowableValues = ["openai-3-small", "openai-3-large", "openai-ada-002", "bge-large-local"],
         nullable = true
     )
     val embedder: String? = null,

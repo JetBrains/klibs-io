@@ -57,15 +57,19 @@ class SimilarProjectsSearchDbTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql("/sql/SimilarProjectsSearchDbTest/seed.sql")
     fun `searchSimilarProjects uses the embedder selected by name and its own embedding column`() {
-        val local = embedderRegistry.resolve("local")
-        // Store local embeddings computed from distinct texts.
-        projectRepository.updateReadmeEmbedding(60001, local.columnName, local.embed("kotlin coroutines flow channels"))
-        projectRepository.updateReadmeEmbedding(60002, local.columnName, local.embed("android jetpack compose ui"))
-        projectRepository.updateReadmeEmbedding(60003, local.columnName, local.embed("postgres database sql migration"))
+        val embedder = embedderRegistry.resolve("openai-3-small")
+        // Distinct texts map to distinct embeddings; the query text matches project 60001.
+        whenever(aiService.embed("kotlin coroutines flow channels")).thenReturn(unitVector(0))
+        whenever(aiService.embed("android jetpack compose ui")).thenReturn(unitVector(1))
+        whenever(aiService.embed("postgres database sql migration")).thenReturn(unitVector(2))
+
+        projectRepository.updateReadmeEmbedding(60001, embedder.columnName, embedder.embed("kotlin coroutines flow channels"))
+        projectRepository.updateReadmeEmbedding(60002, embedder.columnName, embedder.embed("android jetpack compose ui"))
+        projectRepository.updateReadmeEmbedding(60003, embedder.columnName, embedder.embed("postgres database sql migration"))
 
         val results = searchService.searchSimilarProjects(
             query = "kotlin coroutines flow channels",
-            embedderName = "local",
+            embedderName = "openai-3-small",
             page = 1,
             limit = 20
         )

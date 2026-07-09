@@ -1,23 +1,5 @@
 databaseChangeLog:
   - changeSet:
-      id: add readme_embedding_local column to project
-      author: dmitrii.krasnov@jetbrains.com
-      preConditions:
-        - onFail: MARK_RAN
-        - not:
-            columnExists:
-              tableName: project
-              columnName: readme_embedding_local
-      changes:
-        - sql:
-            sql: |
-              ALTER TABLE project ADD COLUMN readme_embedding_local vector(256);
-      rollback:
-        - sql:
-            sql: |
-              ALTER TABLE project DROP COLUMN readme_embedding_local;
-
-  - changeSet:
       id: add readme_embedding_openai_large column to project
       author: dmitrii.krasnov@jetbrains.com
       preConditions:

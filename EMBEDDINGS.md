@@ -24,7 +24,6 @@ and lay the groundwork (a reusable harness) for the follow-up experiments (hybri
   - `openai-3-small` → `readme_embedding vector(1536)` (default)
   - `openai-3-large` → `readme_embedding_openai_large vector(3072)`
   - `openai-ada-002` → `readme_embedding_openai_ada vector(1536)`
-  - `local` → `readme_embedding_local vector(256)` (dependency-free hashing bag-of-words, offline)
 - **Semantic endpoint**: `POST /search/projects/similar` → `SearchService.searchSimilarProjects`
   → `ORDER BY <column> <=> query_vector` (exact cosine distance, no ANN index yet).
 - **Indexing job**: `ProjectEmbeddingService` filled every embedding column from the project README.
@@ -66,9 +65,8 @@ Tests (`app/src/test/kotlin/io/klibs/app/eval/`): `RankingMetricsTest`, `Evaluat
 
 `integrations/ai/src/main/kotlin/io/klibs/integration/ai/BgeLargeLocalEmbedder.kt`
 
-The original `local` embedder is a lexical hashing bag-of-words — a deliberately weak floor, not a
-fair rival to OpenAI. To answer *"do we actually need OpenAI, or is a local model enough?"* a real
-neural local embedder was added:
+To answer *"do we actually need OpenAI, or is a local model enough?"* a genuinely strong, fully
+offline neural local embedder is provided:
 
 - Runs a local sentence-transformers model (default `BAAI/bge-large-en-v1.5`, **1024 dims**) via
   [DJL](https://djl.ai/); after a one-time model download (~0.8 GB, cached) it needs **no API key,
@@ -121,8 +119,8 @@ python3 scripts/eval/extract_concept_queries.py \
 
 Prerequisites:
 - A **populated database** (prod-like local DB).
-- The embedding columns you want to compare must be **populated** — the `local` and `bge-large-local`
-  columns work offline; the OpenAI columns are filled by the README-embedding job (section 3.1) and
+- The embedding columns you want to compare must be **populated** — the `bge-large-local`
+  column works offline; the OpenAI columns are filled by the README-embedding job (section 3.1) and
   need an OpenAI key.
 - An **OpenAI key** configured (used to embed queries for the OpenAI engines and to run the LLM judge).
 - To include the strong local model, add `--klibs.embeddings.bge-large.enabled=true` (fills
@@ -167,7 +165,6 @@ The runner writes `eval-output/embedding-eval-report.md` and caches judgments in
 | engine | nDCG@10 | MRR | Recall@10 | Recall@20 | p95 ms | cost |
 |---|---:|---:|---:|---:|---:|---|
 | fts (baseline) | | | | | | free |
-| local | | | | | | free |
 | bge-large-local | | | | | | free (offline) |
 | openai-ada-002 | | | | | | $ |
 | openai-3-small | | | | | | $ |
@@ -178,7 +175,6 @@ Questions to answer in the writeup:
 - Is `3-large` worth ~6.5× the price of `3-small`?
 - **Does the free, offline `bge-large-local` match the OpenAI columns — do we actually need OpenAI,
   or is a strong local model enough?**
-- Where does `local` (lexical hashing floor) land — how much do real semantics buy?
 
 ## 8. Verification done
 
