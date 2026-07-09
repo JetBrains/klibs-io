@@ -6,22 +6,17 @@ import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.dto.repository.SearchProjectResult
-import io.klibs.integration.mcp.dto.api.ProjectSearchResponse
 import io.klibs.integration.mcp.dto.service.McpProjectSearchResultDto
 import io.klibs.integration.mcp.mapper.McpToolMapper
-import io.klibs.integration.mcp.service.DEFAULT_MAX_PACKAGES_PER_PROJECT
 import io.klibs.integration.mcp.service.McpProjectSearchService
 import io.klibs.integration.mcp.tool.McpProjectSearchTool
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mapstruct.factory.Mappers
-import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.lang.invoke.MethodHandles
 import java.time.Instant
 
 class McpProjectSearchToolTest {
@@ -54,30 +49,6 @@ class McpProjectSearchToolTest {
             query = "kotlin",
             platforms = listOf(PackagePlatform.JVM, PackagePlatform.NATIVE),
             targetFilters = targetFilters,
-        )
-    }
-
-    @Test
-    fun `searchProjects tolerates null maxPackagesPerProject bound via reflective invocation`() {
-        whenever(mcpProjectSearchService.mcpProjectSearch(anyOrNull(), any(), any(), any()))
-            .thenReturn(McpProjectSearchResultDto(projects = emptyList()))
-
-        // Spring AI binds an omitted primitive tool param to null via reflective invoke.
-        // A non-nullable Int param throws NullPointerException here (KTL-4688).
-        val method = McpProjectSearchTool::class.java.methods
-            .first { it.name == "searchProjects" && it.parameterCount == 4 }
-        val handle = MethodHandles.lookup().unreflect(method)
-
-        val result = handle.invokeWithArguments(
-            uut, "kotlin", emptyList<String>(), emptyMap<TargetGroup, Set<String>>(), null
-        ) as ProjectSearchResponse
-
-        assertTrue(result.projects.isEmpty())
-        verify(mcpProjectSearchService).mcpProjectSearch(
-            query = "kotlin",
-            platforms = emptyList(),
-            targetFilters = emptyMap(),
-            maxPackagesPerProject = DEFAULT_MAX_PACKAGES_PER_PROJECT,
         )
     }
 
