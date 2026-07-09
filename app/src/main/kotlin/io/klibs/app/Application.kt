@@ -3,6 +3,7 @@ package io.klibs.app
 import io.klibs.app.configuration.properties.ApiDocsProperties
 import io.klibs.app.configuration.properties.AuthProperties
 import io.klibs.app.configuration.properties.GoogleMavenCacheConfigurationProperties
+import io.klibs.app.configuration.properties.PackageDescriptionProperties
 import io.klibs.core.scm.repository.health.OssHealthProperties
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -20,6 +21,7 @@ fun main() {
         ApiDocsProperties::class,
         GoogleMavenCacheConfigurationProperties::class,
         OssHealthProperties::class,
+        PackageDescriptionProperties::class,
     ]
 )
 @SpringBootApplication(scanBasePackages = ["io.klibs"])

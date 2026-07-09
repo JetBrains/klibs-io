@@ -1,5 +1,6 @@
 package io.klibs.app.indexing
 
+import io.klibs.app.configuration.properties.PackageDescriptionProperties
 import io.klibs.app.indexing.discoverer.PackageDiscoverer
 import io.klibs.app.service.UserRequestReportWriter
 import io.klibs.app.util.normalizeGitHubLink
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Duration
 import java.time.Instant
 
 @Service
@@ -51,6 +53,7 @@ class PackageIndexingService(
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
     private val mavenArtifactService: MavenArtifactService,
+    private val packageDescriptionProperties: PackageDescriptionProperties,
     private val selfProvider: ObjectProvider<PackageIndexingService>
 ) {
 
@@ -269,6 +272,16 @@ class PackageIndexingService(
             !previousVersion.generatedDescription
         ) {
             return ResolvedDescription(pom.description, wasGenerated = false, generatedAt = null)
+        }
+
+        // Regen TTL guardrail: if the previous description was generated recently, carry it forward
+        // instead of paying for another web-search regeneration.
+        val previousGeneratedAt = previousVersion.descriptionGeneratedAt
+        if (previousGeneratedAt != null &&
+            Duration.between(previousGeneratedAt, Instant.now()) < packageDescriptionProperties.regenTtl
+        ) {
+            logger.info("Skipping regeneration for $coordinates; previous description generated within TTL")
+            return ResolvedDescription(previousVersion.description, wasGenerated = true, generatedAt = previousGeneratedAt)
         }
 
         return try {

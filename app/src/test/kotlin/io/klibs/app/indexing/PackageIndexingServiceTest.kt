@@ -38,6 +38,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -254,6 +255,13 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(packageBeforeIndexing, "Package should exist")
         assertTrue(packageBeforeIndexing.generatedDescription, "Package should have generatedDescription set to true")
 
+        // Backdate the previous generation beyond the regen TTL so a genuinely new version still regenerates.
+        jdbcTemplate.update(
+            "UPDATE package SET description_generated_at = ? WHERE group_id = ? AND artifact_id = ? AND version = ?",
+            java.sql.Timestamp.from(Instant.now().minus(120, ChronoUnit.DAYS)),
+            groupId, artifactId, version1
+        )
+
         // Set up mocks for processing the indexing request
         val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequest, "Indexing request should exist")
@@ -361,6 +369,34 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         assertFalse(newPackage.generatedDescription, "Older version must not be marked as generated")
         assertNull(newPackage.descriptionGeneratedAt, "Non-generated description must not record a timestamp")
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-recent-generated-latest.sql"])
+    fun `new version does not regenerate when the previous description is within the regen TTL`() {
+        val groupId = "com.example"
+        val artifactId = "test-library-ttl"
+        val newVersion = "2.0.0"
+
+        val previousLatest = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, "1.0.0")
+        assertNotNull(previousLatest)
+        val previousGeneratedAt = previousLatest.descriptionGeneratedAt
+        assertNotNull(previousGeneratedAt, "Precondition: previous latest was generated recently (within TTL)")
+
+        // Sentinel that must not be persisted: a regen within the TTL window is disallowed.
+        whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
+            .thenReturn("AI SENTINEL - must not be persisted within TTL")
+
+        stubMavenFetch(groupId, artifactId, newVersion, pomDescription = "Fresh POM description")
+
+        assertTrue(uut.processPackageQueue(), "Should process the indexing request")
+
+        // Within TTL the previous generated description is carried forward instead of regenerated.
+        val indexed = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, newVersion)
+        assertNotNull(indexed)
+        assertEquals("Recent AI description", indexed.description, "Description must be carried forward, not regenerated")
+        assertTrue(indexed.generatedDescription, "Carried-forward description keeps the generated flag")
+        assertEquals(previousGeneratedAt, indexed.descriptionGeneratedAt, "TTL carry-forward must keep the original timestamp")
     }
 
     /**

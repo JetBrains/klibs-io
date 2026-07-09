@@ -100,6 +100,8 @@ klibs:
       max-attempts: ${KLIBS_INDEXING_MAX_ATTEMPTS:2}
     reporting:
       index-defer: ${KLIBS_REPORTING_INDEX_DEFER:10m}
+    description:
+      regen-ttl: ${KLIBS_DESCRIPTION_REGEN_TTL:90d}
     central-sonatype:
       enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE:false}
     gmaven:
