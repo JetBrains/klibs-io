@@ -38,13 +38,13 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
             tags = emptyList(),
-            markers = listOf("FEATURED"),
+            markers = listOf("FEATURED_DEPRECATED"),
             page = 1,
             limit = 50
         )
 
-        assertTrue(results.isNotEmpty(), "Expected non-empty results for FEATURED marker")
-        assertTrue(results.all { it.markers.contains("FEATURED") }, "All results must contain FEATURED marker")
+        assertTrue(results.isNotEmpty(), "Expected non-empty results for FEATURED_DEPRECATED marker")
+        assertTrue(results.all { it.markers.contains("FEATURED_DEPRECATED") }, "All results must contain FEATURED_DEPRECATED marker")
     }
 
     @Test
@@ -58,18 +58,18 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
             tags = emptyList(),
-            markers = listOf("FEATURED", "GRANT_WINNER_2024"),
+            markers = listOf("FEATURED_DEPRECATED", "GRANT_WINNER_2024"),
             page = 1,
             limit = 50
         )
 
         // OR semantics: any project having at least one of the markers should be returned
         assertEquals(3, results.size, "All three projects should match at least one of the markers")
-        assertTrue(results.all { it.markers.any { m -> m == "FEATURED" || m == "GRANT_WINNER_2024" } })
+        assertTrue(results.all { it.markers.any { m -> m == "FEATURED_DEPRECATED" || m == "GRANT_WINNER_2024" } })
 
         // Also ensure that the project that has both markers is included ("all of" still matches OR)
         assertTrue(
-            results.any { it.markers.containsAll(listOf("FEATURED", "GRANT_WINNER_2024")) },
+            results.any { it.markers.containsAll(listOf("FEATURED_DEPRECATED", "GRANT_WINNER_2024")) },
             "Expected a project that has both markers to be present in OR results"
         )
     }
@@ -104,13 +104,13 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
             tags = emptyList(),
-            markers = listOf("FEATURED", "NON_EXISTENT_MARKER"),
+            markers = listOf("FEATURED_DEPRECATED", "NON_EXISTENT_MARKER"),
             page = 1,
             limit = 50
         )
 
-        // In seed, FEATURED is on Project A and Project C => expect exactly 2
-        assertEquals(2, results.size, "Expected only FEATURED projects to be returned when mixed with unknown marker")
-        assertTrue(results.all { it.markers.contains("FEATURED") }, "All returned projects must contain FEATURED marker")
+        // In seed, FEATURED_DEPRECATED is on Project A and Project C => expect exactly 2
+        assertEquals(2, results.size, "Expected only FEATURED_DEPRECATED projects to be returned when mixed with unknown marker")
+        assertTrue(results.all { it.markers.contains("FEATURED_DEPRECATED") }, "All returned projects must contain FEATURED_DEPRECATED marker")
     }
 }
