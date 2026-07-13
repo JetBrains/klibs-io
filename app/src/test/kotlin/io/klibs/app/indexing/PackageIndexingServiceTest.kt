@@ -334,7 +334,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         stubMavenFetch(groupId, artifactId, version, pomDescription = "Fresh POM description")
 
-        assertTrue(uut.processPackageQueue(), "Should process the reindex request")
+        uut.processRequest(request.idNotNull)
 
         val updated = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
         assertNotNull(updated)
@@ -359,7 +359,9 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description")
 
-        assertTrue(uut.processPackageQueue(), "Should process the indexing request")
+        val request = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(request)
+        uut.processRequest(request.idNotNull)
 
         val newPackage = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, olderVersion)
         assertNotNull(newPackage)
@@ -389,7 +391,9 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         stubMavenFetch(groupId, artifactId, newVersion, pomDescription = "Fresh POM description")
 
-        assertTrue(uut.processPackageQueue(), "Should process the indexing request")
+        val request = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(request)
+        uut.processRequest(request.idNotNull)
 
         // Within TTL the previous generated description is carried forward instead of regenerated.
         val indexed = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, newVersion)

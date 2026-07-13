@@ -136,7 +136,7 @@ class PackageIndexingService(
     }
 
     @Transactional
-    protected fun processRequest(idToProcess: Long) {
+    internal fun processRequest(idToProcess: Long) {
         val indexRequest =
             indexingRequestRepository.updateStatus(idToProcess, IndexingRequestStatus.IN_PROCESS) ?: return
 
@@ -224,7 +224,6 @@ class PackageIndexingService(
         projectEntity: ProjectEntity?,
         reindex: Boolean
     ): PackageDTO {
-        // should be backfilled before if null
         val releasedAt = requireNotNull(mavenArtifact.releasedAt) {
             "releasedAt is null for $mavenArtifact"
         }
@@ -259,7 +258,7 @@ class PackageIndexingService(
         releasedAt: Instant
     ): ResolvedDescription {
         val coordinates = "${pom.groupId}:${pom.artifactId}:${pom.version}"
-        val previousVersion = packageRepository.findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(
+        val latestSavedVersion = packageRepository.findFirstByGroupIdAndArtifactIdOrderByReleaseTsDesc(
             pom.groupId, pom.artifactId
         )
 
@@ -267,21 +266,22 @@ class PackageIndexingService(
         // description. A reindex (deps/targets backfill) or an older/equal version must never
         // trigger web-search regeneration (KTL-4673).
         if (reindex ||
-            previousVersion == null ||
-            !releasedAt.isAfter(previousVersion.releaseTs) ||
-            !previousVersion.generatedDescription
+            latestSavedVersion == null ||
+            // A fresh version can be older, for instance, if we deleted the "bugged" versions from index_request and they got discovered again
+            !releasedAt.isAfter(latestSavedVersion.releaseTs) ||
+            !latestSavedVersion.generatedDescription
         ) {
             return ResolvedDescription(pom.description, wasGenerated = false, generatedAt = null)
         }
 
         // Regen TTL guardrail: if the previous description was generated recently, carry it forward
         // instead of paying for another web-search regeneration.
-        val previousGeneratedAt = previousVersion.descriptionGeneratedAt
+        val previousGeneratedAt = latestSavedVersion.descriptionGeneratedAt
         if (previousGeneratedAt != null &&
             Duration.between(previousGeneratedAt, Instant.now()) < packageDescriptionProperties.regenTtl
         ) {
             logger.info("Skipping regeneration for $coordinates; previous description generated within TTL")
-            return ResolvedDescription(previousVersion.description, wasGenerated = true, generatedAt = previousGeneratedAt)
+            return ResolvedDescription(latestSavedVersion.description, wasGenerated = true, generatedAt = previousGeneratedAt)
         }
 
         return try {
