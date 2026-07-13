@@ -26,6 +26,8 @@ export interface ProjectDetails extends ProjectSearchResults {
 	linkScm: string;
 	linkGitHubPages: string;
 	linkWiki?: string;
+	archived: boolean;
+	archivedAtMillis: null | number;
 	updatedAtMillis: number;
 }
 
