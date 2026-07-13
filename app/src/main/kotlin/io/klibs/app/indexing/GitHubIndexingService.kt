@@ -107,6 +107,8 @@ class GitHubIndexingService(
             hasGhPages = ghRepo.hasGhPages,
             hasIssues = ghRepo.hasIssues,
             hasWiki = ghRepo.hasWiki,
+            archived = ghRepo.archived,
+            archivedAt = ghRepo.archivedAt,
             hasReadme = hasReadme,
             licenseKey = license?.key,
             licenseName = license?.name,
@@ -310,6 +312,8 @@ class GitHubIndexingService(
                 hasGhPages = repo.hasGhPages,
                 hasIssues = repo.hasIssues,
                 hasWiki = repo.hasWiki,
+                archived = repo.archived,
+                archivedAt = repo.archivedAt,
                 hasReadme = false, // to be set later
                 licenseKey = license?.key,
                 licenseName = license?.name,

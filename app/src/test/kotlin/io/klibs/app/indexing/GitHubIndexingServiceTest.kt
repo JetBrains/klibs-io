@@ -174,6 +174,7 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
             hasGhPages = true,
             hasIssues = true,
             hasWiki = true,
+            archived = false,
             stars = 100,
             openIssues = 5,
             lastActivity = fixedTime
@@ -228,6 +229,7 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
             hasGhPages = ghRepo.hasGhPages,
             hasIssues = ghRepo.hasIssues,
             hasWiki = ghRepo.hasWiki,
+            archived = ghRepo.archived,
             stars = ghRepo.stars,
             updatedAtTs = repositoryAfterTest.updatedAtTs,
             lastActivityTs = repositoryAfterTest.lastActivityTs,
