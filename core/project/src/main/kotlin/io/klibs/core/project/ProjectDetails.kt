@@ -25,6 +25,8 @@ data class ProjectDetails(
     val hasGhPages: Boolean,
     val hasIssues: Boolean,
     val hasWiki: Boolean,
+    val archived: Boolean,
+    val archivedAt: Instant? = null,
     val hasReadme: Boolean,
 
     val stars: Int,

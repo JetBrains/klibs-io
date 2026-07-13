@@ -9,6 +9,7 @@ import io.klibs.integration.github.model.GitHubPullRequest
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.GqlCommitAuthorsResponse
+import io.klibs.integration.github.model.GqlRepositoryArchiveInfoResponse
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
@@ -74,8 +75,9 @@ internal class GitHubIntegrationKohsukeLibrary(
 
 
     override fun getRepository(nativeId: Long): GitHubRepository? {
-        val repo = getRepositoryById(nativeId)
-        return repo?.toModel()
+        val ghRepository = getRepositoryById(nativeId) ?: return null
+
+        return toGitHubRepository(ghRepository)
     }
 
     override fun getRepository(owner: String, name: String): GitHubRepository? {
@@ -85,7 +87,7 @@ internal class GitHubIntegrationKohsukeLibrary(
 
         repositoryCache.put(ghRepository.id, ghRepository)
 
-        return ghRepository.toModel()
+        return toGitHubRepository(ghRepository)
     }
 
     override fun getUser(login: String): GitHubUser? {
@@ -110,7 +112,13 @@ internal class GitHubIntegrationKohsukeLibrary(
         )
     }
 
-    private fun GHRepository.toModel(): GitHubRepository {
+    private fun toGitHubRepository(ghRepository: GHRepository): GitHubRepository {
+        val archiveInfo = getRepositoryArchiveInfo(ghRepository.owner.login, ghRepository.name)
+
+        return ghRepository.toModel(archiveInfo)
+    }
+
+    private fun GHRepository.toModel(archiveInfo: RepositoryArchiveInfo): GitHubRepository {
         return GitHubRepository(
             nativeId = this.id,
             name = this.name,
@@ -124,9 +132,31 @@ internal class GitHubIntegrationKohsukeLibrary(
             hasGhPages = this.hasPages(),
             hasIssues = this.hasIssues(),
             hasWiki = this.hasWiki(),
+            archived = archiveInfo.archived,
+            archivedAt = archiveInfo.archivedAt,
             stars = this.stargazersCount,
             openIssues = this.openIssueCount,
             lastActivity = this.pushedAt.toInstant(),
+        )
+    }
+
+    private fun getRepositoryArchiveInfo(owner: String, name: String): RepositoryArchiveInfo {
+        val responseBody = postGraphQl(
+            REPOSITORY_ARCHIVE_INFO_QUERY,
+            mapOf("owner" to owner, "name" to name)
+        ) ?: error("GitHub GraphQL archive info request failed for $owner/$name")
+
+        val response = jsonMapper.readValue(responseBody, GqlRepositoryArchiveInfoResponse::class.java)
+        if (!response.errors.isNullOrEmpty()) {
+            error("GraphQL archive info errors for $owner/$name: ${response.errors.toString().take(300)}")
+        }
+
+        val repository = response.data?.repository
+            ?: error("GraphQL archive info response does not contain repository for $owner/$name")
+
+        return RepositoryArchiveInfo(
+            archived = repository.isArchived,
+            archivedAt = repository.archivedAt?.let(Instant::parse)
         )
     }
 
@@ -411,5 +441,19 @@ internal class GitHubIntegrationKohsukeLibrary(
               }
             }
         """.trimIndent()
+
+        private val REPOSITORY_ARCHIVE_INFO_QUERY = """
+            query RepositoryArchiveInfo(${'$'}owner: String!, ${'$'}name: String!) {
+              repository(owner: ${'$'}owner, name: ${'$'}name) {
+                isArchived
+                archivedAt
+              }
+            }
+        """.trimIndent()
     }
+
+    private data class RepositoryArchiveInfo(
+        val archived: Boolean,
+        val archivedAt: Instant?
+    )
 }

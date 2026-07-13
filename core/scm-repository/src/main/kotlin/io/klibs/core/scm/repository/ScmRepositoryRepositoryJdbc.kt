@@ -25,6 +25,8 @@ class ScmRepositoryRepositoryJdbc(
                                   has_gh_pages,
                                   has_issues,
                                   has_wiki,
+                                  archived,
+                                  archived_at,
                                   has_readme,
                                   license_key,
                                   license_name,
@@ -42,6 +44,8 @@ class ScmRepositoryRepositoryJdbc(
                     :hasGhPages,
                     :hasIssues,
                     :hasWiki,
+                    :archived,
+                    :archivedAt,
                     :hasReadme,
                     :licenseKey,
                     :licenseName,
@@ -57,6 +61,8 @@ class ScmRepositoryRepositoryJdbc(
                                                   has_gh_pages     = :hasGhPages,
                                                   has_issues       = :hasIssues,
                                                   has_wiki         = :hasWiki,
+                                                  archived          = :archived,
+                                                  archived_at       = :archivedAt,
                                                   has_readme       = :hasReadme,
                                                   license_key      = :licenseKey,
                                                   license_name     = :licenseName,
@@ -78,6 +84,8 @@ class ScmRepositoryRepositoryJdbc(
             .param("hasGhPages", entity.hasGhPages)
             .param("hasIssues", entity.hasIssues)
             .param("hasWiki", entity.hasWiki)
+            .param("archived", entity.archived)
+            .param("archivedAt", entity.archivedAt?.let(Timestamp::from))
             .param("hasReadme", entity.hasReadme)
             .param("licenseKey", entity.licenseKey)
             .param("licenseName", entity.licenseName)
@@ -103,6 +111,8 @@ class ScmRepositoryRepositoryJdbc(
                 has_gh_pages     = :hasGhPages,
                 has_issues       = :hasIssues,
                 has_wiki         = :hasWiki,
+                archived          = :archived,
+                archived_at       = :archivedAt,
                 has_readme       = :hasReadme,
                 license_key      = :licenseKey,
                 license_name     = :licenseName,
@@ -125,6 +135,8 @@ class ScmRepositoryRepositoryJdbc(
             .param("hasGhPages", entity.hasGhPages)
             .param("hasIssues", entity.hasIssues)
             .param("hasWiki", entity.hasWiki)
+            .param("archived", entity.archived)
+            .param("archivedAt", entity.archivedAt?.let(Timestamp::from))
             .param("hasReadme", entity.hasReadme)
             .param("licenseKey", entity.licenseKey)
             .param("licenseName", entity.licenseName)
@@ -167,6 +179,8 @@ class ScmRepositoryRepositoryJdbc(
                    repo.has_gh_pages,
                    repo.has_issues,
                    repo.has_wiki,
+                   repo.archived,
+                   repo.archived_at,
                    repo.has_readme,
                    repo.license_key,
                    repo.license_name,
@@ -201,6 +215,8 @@ class ScmRepositoryRepositoryJdbc(
                    repo.has_gh_pages,
                    repo.has_issues,
                    repo.has_wiki,
+                   repo.archived,
+                   repo.archived_at,
                    repo.has_readme,
                    repo.license_key,
                    repo.license_name,
@@ -235,6 +251,8 @@ class ScmRepositoryRepositoryJdbc(
                    repo.has_gh_pages,
                    repo.has_issues,
                    repo.has_wiki,
+                   repo.archived,
+                   repo.archived_at,
                    repo.has_readme,
                    repo.license_key,
                    repo.license_name,
@@ -288,6 +306,8 @@ class ScmRepositoryRepositoryJdbc(
                    repo.has_gh_pages,
                    repo.has_issues,
                    repo.has_wiki,
+                   repo.archived,
+                   repo.archived_at,
                    repo.has_readme,
                    repo.license_key,
                    repo.license_name,
@@ -327,6 +347,8 @@ class ScmRepositoryRepositoryJdbc(
                 hasGhPages = rs.getBoolean("has_gh_pages"),
                 hasIssues = rs.getBoolean("has_issues"),
                 hasWiki = rs.getBoolean("has_wiki"),
+                archived = rs.getBoolean("archived"),
+                archivedAt = rs.getTimestamp("archived_at")?.toInstant(),
                 hasReadme = rs.getBoolean("has_readme"),
                 licenseKey = rs.getString("license_key"),
                 licenseName = rs.getString("license_name"),

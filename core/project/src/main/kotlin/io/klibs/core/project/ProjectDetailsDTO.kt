@@ -89,6 +89,18 @@ data class ProjectDetailsDTO(
     val linkWiki: String?,
 
     @Schema(
+        description = "Whether the project's GitHub repository is archived",
+        example = "false"
+    )
+    val archived: Boolean,
+
+    @Schema(
+        description = "Epoch millis of when the project's GitHub repository was archived, if available",
+        example = "1697172700000"
+    )
+    val archivedAtMillis: Long?,
+
+    @Schema(
         description = "SCM stars or any other similar metric.",
         example = "351"
     )

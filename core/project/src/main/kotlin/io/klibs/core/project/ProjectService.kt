@@ -191,6 +191,8 @@ private fun ProjectEntity.toDetails(
         hasGhPages = scmRepositoryEntity.hasGhPages,
         hasIssues = scmRepositoryEntity.hasIssues,
         hasWiki = scmRepositoryEntity.hasWiki,
+        archived = scmRepositoryEntity.archived,
+        archivedAt = scmRepositoryEntity.archivedAt,
         hasReadme = projectEntity.minimizedReadme != null,
         stars = scmRepositoryEntity.stars,
         createdAt = scmRepositoryEntity.createdTs,

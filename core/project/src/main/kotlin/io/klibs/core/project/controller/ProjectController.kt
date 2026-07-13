@@ -139,6 +139,8 @@ private fun ProjectDetails.toDTO(): ProjectDetailsDTO {
         linkGitHubPages = this.getGitHubPagesLink(),
         linkIssues = this.getIssuesLink(),
         linkWiki = this.getWikiLink(),
+        archived = this.archived,
+        archivedAtMillis = this.archivedAt?.toEpochMilli(),
         scmStars = this.stars,
         dependentCount = this.dependentCount,
         createdAtMillis = this.createdAt.toEpochMilli(),

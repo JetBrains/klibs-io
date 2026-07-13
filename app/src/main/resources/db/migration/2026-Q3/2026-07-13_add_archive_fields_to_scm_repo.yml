@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: add archive fields to scm repo
+      author: daniel.volostnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: scm_repo
+              columnName: archived
+      changes:
+        - addColumn:
+            tableName: scm_repo
+            columns:
+              - column:
+                  name: archived
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: archived_at
+                  type: TIMESTAMP
