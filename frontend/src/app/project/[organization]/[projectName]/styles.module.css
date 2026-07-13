@@ -7,6 +7,17 @@
     margin: 0;
 }
 
+.archivedNotice {
+    width: 100%;
+    padding: 8px 16px;
+    border-bottom: 1px solid #d4a72c66;
+    background-color: #fff8c5;
+    color: #1f2328;
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 600;
+    text-align: center;
+}
 .bodyWrapper {
     gap: 32px;
 }
