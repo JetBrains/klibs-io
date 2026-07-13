@@ -253,6 +253,7 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
         hasGhPages = false,
         hasIssues = true,
         hasWiki = false,
+        archived = false,
         hasReadme = false,
         licenseKey = null,
         licenseName = null,

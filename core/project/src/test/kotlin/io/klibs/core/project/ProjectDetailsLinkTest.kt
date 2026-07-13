@@ -31,6 +31,7 @@ class ProjectDetailsLinkTest {
             hasGhPages = hasGhPages,
             hasIssues = false,
             hasWiki = false,
+            archived = false,
             hasReadme = hasReadme,
             stars = 0,
             createdAt = now,

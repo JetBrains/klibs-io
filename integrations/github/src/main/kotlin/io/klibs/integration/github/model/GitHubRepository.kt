@@ -17,6 +17,8 @@ data class GitHubRepository(
     val hasGhPages: Boolean,
     val hasIssues: Boolean,
     val hasWiki: Boolean,
+    val archived: Boolean,
+    val archivedAt: Instant? = null,
 
     val stars: Int,
     val openIssues: Int? = null,

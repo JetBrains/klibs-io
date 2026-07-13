@@ -327,6 +327,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             hasGhPages = false,
             hasIssues = true,
             hasWiki = false,
+            archived = false,
             stars = 10,
             lastActivity = Instant.now(),
         )
