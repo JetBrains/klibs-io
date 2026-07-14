@@ -15,6 +15,8 @@ interface GitHubIntegration {
 
     fun getRepository(owner: String, name: String): GitHubRepository?
 
+    fun getArchivedAt(owner: String, name: String): Instant?
+
     fun getUser(login: String): GitHubUser?
 
     fun getLicense(repositoryId: Long): GitHubLicense?
@@ -83,4 +85,3 @@ interface GitHubIntegration {
      */
     fun getCommitAuthorCounts(owner: String, name: String, since: Instant): Map<String, Int>
 }
-

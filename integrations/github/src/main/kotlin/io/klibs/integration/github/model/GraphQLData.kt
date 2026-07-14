@@ -21,13 +21,10 @@ internal data class GqlAuthor(val user: GqlUser?, val email: String?)
 internal data class GqlUser(val login: String?)
 internal data class GqlPageInfo(val hasNextPage: Boolean, val endCursor: String?)
 
-internal data class GqlRepositoryArchiveInfoResponse(
-    val data: GqlRepositoryArchiveInfoData? = null,
+internal data class GqlRepositoryArchivedAtResponse(
+    val data: GqlRepositoryArchivedAtData? = null,
     val errors: List<JsonNode>? = null,
 )
 
-internal data class GqlRepositoryArchiveInfoData(val repository: GqlRepositoryArchiveInfo?)
-internal data class GqlRepositoryArchiveInfo(
-    val isArchived: Boolean,
-    val archivedAt: String?
-)
+internal data class GqlRepositoryArchivedAtData(val repository: GqlRepositoryArchivedAt?)
+internal data class GqlRepositoryArchivedAt(val archivedAt: String?)
