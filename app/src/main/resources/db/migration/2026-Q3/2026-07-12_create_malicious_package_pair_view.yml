@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: create malicious_package_pair view (KTL-4617)
+      author: daniel.emeka-ilozor@jetbrains.com
+      changes:
+        - sqlFile:
+            path: 2026-07-12_create_malicious_package_pair_view.sql
+            relativeToChangelogFile: true
+      rollback:
+        - sql:
+            sql: DROP VIEW IF EXISTS malicious_package_pair;

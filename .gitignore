@@ -43,4 +43,11 @@ cache
 localstack-data
 
 .junie/memory
+
+### DB dumps
+*.dump
+*.sql.gz
+*.dump.gz
+tmp_db_sync/
+db-dumps/
 /.output.txt
