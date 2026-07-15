@@ -1,12 +1,12 @@
 package io.klibs.integration.mcp.configuration
 
-import org.mapstruct.InjectionStrategy
-import org.mapstruct.MapperConfig
-import org.mapstruct.ReportingPolicy
+import io.klibs.integration.mcp.mapper.McpToolMapper
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 
-@MapperConfig(
-    componentModel = "spring",
-    injectionStrategy = InjectionStrategy.CONSTRUCTOR,
-    unmappedTargetPolicy = ReportingPolicy.ERROR
-)
-interface SpringMappingConfiguration
+@Configuration
+class MappingConfiguration {
+
+    @Bean
+    fun mcpToolMapper(): McpToolMapper = McpToolMapper()
+}

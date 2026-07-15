@@ -23,4 +23,4 @@ test-dependencies:
 settings:
   springBoot:
     enabled: true # also sets -Xjsr305=strict, no-arg (with JPA preset), and all-open (with Spring preset)
-    version: 3.5.9
+    version: 4.0.5

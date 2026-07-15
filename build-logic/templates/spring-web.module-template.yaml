@@ -7,3 +7,6 @@ dependencies:
   - $libs.spring.boot.starter.validation
   - $libs.kotlinx.coroutines.reactor
   - $libs.springdoc.openapi.starter
+
+test-dependencies:
+  - $libs.spring.boot.starter.webmvc.test

@@ -13,7 +13,6 @@ import io.klibs.integration.mcp.tool.McpProjectSearchTool
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.mapstruct.factory.Mappers
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -22,7 +21,7 @@ import java.time.Instant
 class McpProjectSearchToolTest {
 
     private val mcpProjectSearchService = mock<McpProjectSearchService>()
-    private val mcpToolMapper = Mappers.getMapper(McpToolMapper::class.java)
+    private val mcpToolMapper = McpToolMapper()
     private val uut = McpProjectSearchTool(mcpProjectSearchService, mcpToolMapper)
 
     @Test
@@ -79,9 +78,20 @@ class McpProjectSearchToolTest {
 
         val result = uut.searchProjects(query = "state machine", platforms = emptyList(), targetFilters = emptyMap())
 
-        val mappedPackage = result.projects.single().packages.single()
+        val mappedProject = result.projects.single()
+        assertEquals("kstatemachine", mappedProject.projectName)
+        assertEquals("KStateMachine", mappedProject.projectAuthor)
+        assertEquals("Test project", mappedProject.description)
+        assertEquals(listOf("common"), mappedProject.platforms)
+        assertEquals(emptyList<String>(), mappedProject.targets)
+        assertEquals(1, mappedProject.totalPackages)
+
+        val mappedPackage = mappedProject.packages.single()
+        assertEquals("io.github.kstatemachine", mappedPackage.groupId)
+        assertEquals("kstatemachine-core", mappedPackage.artifactId)
         assertEquals("0.32.0-alpha", mappedPackage.latestVersion)
         assertEquals("0.31.1", mappedPackage.latestStableVersion)
+        assertEquals("KStateMachine core module", mappedPackage.description)
     }
 
     private fun searchProjectResult() = SearchProjectResult(

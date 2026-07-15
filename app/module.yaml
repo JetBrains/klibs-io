@@ -18,6 +18,7 @@ dependencies:
   - ../integrations/ai
   - ../integrations/maven
   - ../integrations/github
+  - ../integrations/mcp
 
 test-dependencies:
   - $libs.okhttp

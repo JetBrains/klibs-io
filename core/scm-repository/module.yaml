@@ -8,3 +8,4 @@ apply:
 
 dependencies:
   - ../scm-owner
+  - ../../integrations/github

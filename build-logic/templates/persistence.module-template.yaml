@@ -6,7 +6,7 @@ apply:
 dependencies:
   - $libs.spring.boot.starter.jdbc
   - $libs.spring.boot.starter.data.jpa
-  - $libs.liquibase.core
+  - $libs.spring.boot.starter.liquibase
   - $libs.postgresql
 
 # from libs.bundles.testcontainers

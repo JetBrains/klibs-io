@@ -12,6 +12,7 @@ modules:
   - integrations/ai
   - integrations/github
   - integrations/maven
+  - integrations/mcp
 
 plugins:
   - ./build-logic/plugins/git-properties
