@@ -1,3 +1,5 @@
+# TODO(KTC-740): Migrate to a native Kotlin Toolchain project catalog when supported.
+
 [versions]
 
 kotlin = "2.3.20"
