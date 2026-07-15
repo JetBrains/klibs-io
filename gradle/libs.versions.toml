@@ -13,6 +13,7 @@ spring-cloud-aws = "4.0.0"
 shedlock = "6.6.0"
 
 kohsuke-githubApi = "1.330"
+jjwt = "0.12.6"
 
 kotlinx-coroutines = "1.10.1"
 kotlinx-serialization = "1.6.3"
@@ -84,6 +85,9 @@ jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml" }
 
 kohsuke-githubApi = { module = "org.kohsuke:github-api", version.ref = "kohsuke-githubApi" }
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 maven-model = { module = "org.apache.maven:maven-model", version.ref = "maven-model" }
 bucket4j = { module = "com.bucket4j:bucket4j-core", version.ref = "bucket4j" }
@@ -119,6 +123,12 @@ maven-indexer = [
     "maven-indexer-search-backend-smo",
     "maven-indexer-indexer-core",
     "maven-indexer-search-backend-indexer"
+]
+
+jjwt = [
+    "jjwt-api",
+    "jjwt-impl",
+    "jjwt-jackson"
 ]
 
 testcontainers = [

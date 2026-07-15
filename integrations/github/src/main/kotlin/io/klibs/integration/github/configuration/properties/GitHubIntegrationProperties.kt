@@ -8,7 +8,8 @@ data class GitHubIntegrationProperties(
     val personalAccessToken: String? = null,
     val cache: Cache,
     val webhook: Webhook,
-    val indexRequests: IndexRequests
+    val indexRequests: IndexRequests,
+    val app: App? = null,
 ) {
     data class Cache(
         val requestCachePath: File? = null,
@@ -25,4 +26,11 @@ data class GitHubIntegrationProperties(
         val processedLabel: String = "",
         val developerHandle: String? = null
     )
+
+    data class App(
+        val clientId: String? = null,
+        val installationId: Long? = null,
+        val privateKey: String? = null,
+    )
+
 }

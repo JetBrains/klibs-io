@@ -8,6 +8,10 @@ import org.kohsuke.github.GHRateLimit
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.GitHubBuilder
 import org.kohsuke.github.RateLimitChecker
+import org.kohsuke.github.authorization.AppInstallationAuthorizationProvider
+import org.kohsuke.github.authorization.AuthorizationProvider
+import org.kohsuke.github.authorization.ImmutableAuthorizationProvider
+import org.kohsuke.github.extras.authorization.JWTTokenProvider
 import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -33,13 +37,36 @@ class GitHubIntegrationConfiguration {
     }
 
     @Bean
-    fun githubApi(okHttpClient: OkHttpClient, gitHubIntegrationProperties: GitHubIntegrationProperties): GitHub {
+    fun gitHubAuthorizationProvider(
+        gitHubIntegrationProperties: GitHubIntegrationProperties,
+    ): AuthorizationProvider {
+        gitHubIntegrationProperties.personalAccessToken?.takeIf { it.isNotBlank() }?.let {
+            return ImmutableAuthorizationProvider.fromOauthToken(it)
+        }
+
+        val app = requireNotNull(gitHubIntegrationProperties.app) {
+            "GitHub authentication requires either a personal access token or GitHub App configuration"
+        }
+        val clientId = requireNotNull(app.clientId?.takeIf { it.isNotBlank() }) {
+            "GitHub App client ID must not be blank"
+        }
+        val installationId = requireNotNull(app.installationId?.takeIf { it > 0 }) {
+            "GitHub App installation ID must be positive"
+        }
+        val privateKey = requireNotNull(app.privateKey?.takeIf { it.isNotBlank() }) {
+            "GitHub App private key must not be blank"
+        }
+
+        return AppInstallationAuthorizationProvider(
+            { githubApp -> githubApp.getInstallationById(installationId) },
+            JWTTokenProvider(clientId, privateKey),
+        )
+    }
+
+    @Bean
+    fun githubApi(okHttpClient: OkHttpClient, gitHubAuthorizationProvider: AuthorizationProvider): GitHub {
         return GitHubBuilder()
-            .also {
-                if (gitHubIntegrationProperties.personalAccessToken != null) {
-                    it.withOAuthToken(gitHubIntegrationProperties.personalAccessToken)
-                }
-            }
+            .withAuthorizationProvider(gitHubAuthorizationProvider)
             .withConnector(OkHttpGitHubConnector(okHttpClient))
             // Proactively throw once CORE usage crosses RATE_LIMIT_FAIL_AT_USED — before
             // GitHub responds with a primary-rate-limit 403 that would otherwise trigger
@@ -89,8 +116,8 @@ class GitHubIntegrationConfiguration {
     }
 
     private companion object {
-        private const val RATE_LIMIT_WARN_AT_USED = 3000
-        private const val RATE_LIMIT_FAIL_AT_USED = 4500
+        private const val RATE_LIMIT_WARN_AT_USED = 4500
+        private const val RATE_LIMIT_FAIL_AT_USED = 4990
         private val logger = LoggerFactory.getLogger(GitHubIntegrationConfiguration::class.java)
     }
 }
