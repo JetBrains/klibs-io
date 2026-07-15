@@ -77,7 +77,7 @@ internal class GitHubIntegrationKohsukeLibrary(
     override fun getRepository(nativeId: Long): GitHubRepository? {
         val ghRepository = getRepositoryById(nativeId) ?: return null
 
-        return toGitHubRepository(ghRepository)
+        return ghRepository.toModel()
     }
 
     override fun getRepository(owner: String, name: String): GitHubRepository? {
@@ -87,7 +87,7 @@ internal class GitHubIntegrationKohsukeLibrary(
 
         repositoryCache.put(ghRepository.id, ghRepository)
 
-        return toGitHubRepository(ghRepository)
+        return ghRepository.toModel()
     }
 
     override fun getUser(login: String): GitHubUser? {
@@ -110,10 +110,6 @@ internal class GitHubIntegrationKohsukeLibrary(
             twitterUsername = ghUser.twitterUsername?.takeIf { it.isNotBlank() },
             followers = ghUser.followersCount
         )
-    }
-
-    private fun toGitHubRepository(ghRepository: GHRepository): GitHubRepository {
-        return ghRepository.toModel()
     }
 
     private fun GHRepository.toModel(): GitHubRepository {
