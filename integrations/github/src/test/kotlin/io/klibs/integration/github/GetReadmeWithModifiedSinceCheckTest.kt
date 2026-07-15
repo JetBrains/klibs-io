@@ -1,7 +1,6 @@
 package io.klibs.integration.github
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.kohsuke.github.GitHub
+import org.kohsuke.github.authorization.AuthorizationProvider
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import java.time.Instant
@@ -31,26 +31,22 @@ class GetReadmeWithModifiedSinceCheckTest {
     @Mock
     private lateinit var githubApi: GitHub
 
-    private lateinit var props: GitHubIntegrationProperties
     private val klibsRepoName = "JetBrains/klibs-io"
 
     @BeforeEach
     fun setUp() {
         meterRegistry = SimpleMeterRegistry()
-        props = GitHubIntegrationProperties(
-            personalAccessToken = "",
-            cache = GitHubIntegrationProperties.Cache(),
-            webhook = GitHubIntegrationProperties.Webhook(),
-            indexRequests = GitHubIntegrationProperties.IndexRequests(),
-        )
     }
 
-    private fun newIntegration(client: OkHttpClient): GitHubIntegration =
+    private fun newIntegration(
+        client: OkHttpClient,
+        authorizationProvider: AuthorizationProvider = AuthorizationProvider { AUTHORIZATION },
+    ): GitHubIntegration =
         GitHubIntegrationKohsukeLibrary(
             meterRegistry,
             githubApi,
             client,
-            props,
+            authorizationProvider,
             jacksonObjectMapper(),
             klibsRepoName,
         )
@@ -81,6 +77,7 @@ class GetReadmeWithModifiedSinceCheckTest {
 
         val sentRequest = requireNotNull(capturedRequest)
 
+        assertEquals(AUTHORIZATION, sentRequest.header("Authorization"))
         val expectedIfModifiedSince = ZonedDateTime.ofInstant(modifiedSince, ZoneOffset.UTC)
             .format(DateTimeFormatter.RFC_1123_DATE_TIME)
         assertEquals(expectedIfModifiedSince, sentRequest.header("If-Modified-Since"))
@@ -126,5 +123,9 @@ class GetReadmeWithModifiedSinceCheckTest {
 
         val result = integration.getReadmeWithModifiedSinceCheck(repositoryId, modifiedSince)
         assert(result is ReadmeFetchResult.NotFound)
+    }
+
+    private companion object {
+        const val AUTHORIZATION = "Bearer installation-token"
     }
 }

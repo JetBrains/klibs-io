@@ -1,13 +1,13 @@
 package io.klibs.integration.github
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.kohsuke.github.GitHub
+import org.kohsuke.github.authorization.AuthorizationProvider
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import java.util.concurrent.TimeUnit
@@ -42,12 +42,7 @@ class GitHubMetricsTest {
             meterRegistry,
             githubApi,
             OkHttpClient(),
-            GitHubIntegrationProperties(
-                cache = GitHubIntegrationProperties.Cache(),
-                personalAccessToken = "test_token",
-                webhook = GitHubIntegrationProperties.Webhook(),
-                indexRequests = GitHubIntegrationProperties.IndexRequests(),
-            ),
+            AuthorizationProvider { "token test_token" },
             jacksonObjectMapper(),
             klibsRepoName,
         )

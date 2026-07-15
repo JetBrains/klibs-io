@@ -67,6 +67,7 @@ abstract class SmokeTestBase {
             registry.add("spring.datasource.password") { postgresContainer.password }
             registry.add("klibs.readme.s3.bucket-name") { "test-bucket" }
             registry.add("klibs.readme.s3.prefix") { "readme" }
+            registry.add("klibs.integration.github.personal-access-token") { "test" }
             registry.add("klibs.integration.github.cache.request-cache-path") { "build/tmp/gh-req-cache" }
         }
     }

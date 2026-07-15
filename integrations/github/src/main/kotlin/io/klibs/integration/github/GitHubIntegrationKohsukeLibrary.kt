@@ -2,7 +2,6 @@ package io.klibs.integration.github
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import io.klibs.integration.github.health.GitHubRateLimitInfo
 import io.klibs.integration.github.model.GitHubIssue
 import io.klibs.integration.github.model.GitHubLicense
@@ -23,6 +22,7 @@ import org.kohsuke.github.GHPullRequestQueryBuilder
 import org.kohsuke.github.GHRepository
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.MarkdownMode
+import org.kohsuke.github.authorization.AuthorizationProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -45,7 +45,7 @@ internal class GitHubIntegrationKohsukeLibrary(
     @Autowired
     private val okHttpClient: okhttp3.OkHttpClient,
     @Autowired
-    private val gitHubIntegrationProperties: GitHubIntegrationProperties,
+    private val gitHubAuthorizationProvider: AuthorizationProvider,
     @Autowired
     private val jsonMapper: ObjectMapper,
     @Value("\${klibs.integration.github.index-requests.repository:JetBrains/klibs-io}")
@@ -154,10 +154,7 @@ internal class GitHubIntegrationKohsukeLibrary(
                 .get()
                 .addHeader("Accept", "application/vnd.github.raw")
                 .addHeader("If-Modified-Since", ifModifiedSince)
-
-            gitHubIntegrationProperties.personalAccessToken?.takeIf { it.isNotBlank() }?.let { token ->
-                requestBuilder.addHeader("Authorization", "Bearer $token")
-            }
+                .addHeader("Authorization", gitHubAuthorizationProvider.encodedAuthorization)
 
             okHttpClient.newCall(requestBuilder.build()).execute().use { response ->
                 return when (response.code) {
@@ -358,9 +355,7 @@ internal class GitHubIntegrationKohsukeLibrary(
                 .url("$GITHUB_API_URL/graphql")
                 .post(payload.toRequestBody("application/json".toMediaType()))
                 .addHeader("Accept", "application/vnd.github+json")
-            gitHubIntegrationProperties.personalAccessToken?.takeIf { it.isNotBlank() }?.let { token ->
-                builder.addHeader("Authorization", "Bearer $token")
-            }
+                .addHeader("Authorization", gitHubAuthorizationProvider.encodedAuthorization)
             okHttpClient.newCall(builder.build()).execute().use { response ->
                 return when (response.code) {
                     200 -> response.body?.string()
