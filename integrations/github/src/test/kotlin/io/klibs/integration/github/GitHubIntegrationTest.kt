@@ -2,11 +2,11 @@ package io.klibs.integration.github
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import okhttp3.OkHttpClient
 import org.kohsuke.github.GitHubBuilder
+import org.kohsuke.github.authorization.AuthorizationProvider
 import java.time.Instant
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -30,12 +30,7 @@ class GitHubIntegrationTest {
         meterRegistry,
         githubApi,
         OkHttpClient(),
-        GitHubIntegrationProperties(
-            cache = GitHubIntegrationProperties.Cache(),
-            personalAccessToken = "test",
-            webhook = GitHubIntegrationProperties.Webhook(),
-            indexRequests = GitHubIntegrationProperties.IndexRequests(),
-        ),
+        AuthorizationProvider { "token test" },
         jsonMapper,
         klibsRepoName,
     )

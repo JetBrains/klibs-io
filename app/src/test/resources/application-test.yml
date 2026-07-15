@@ -1,6 +1,9 @@
 klibs:
   indexing: false
   ai: false
+  integration:
+    github:
+      personal-access-token: test
   scheduling:
     process-indexing-queue:
       enabled: false

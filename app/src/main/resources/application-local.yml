@@ -42,5 +42,5 @@ klibs:
         prefix: gmaven
   integration:
     github:
-      personal-access-token: ${PERSONAL_GITHUB_TOKEN}
+      personal-access-token: ${PERSONAL_GITHUB_TOKEN:}
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
