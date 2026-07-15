@@ -6,15 +6,16 @@ import java.nio.file.Path
 @Configurable
 interface GitCommitIdSettings {
 
-    // TODO ability to specify the worktree directory
-    // currently it is not possible because usually the worktree is a direct parent of the `gitDirectory`,
-    // and the plugin system does not allow intersecting Inputs.
-
     /**
      * The path to the git repository, i.e. to the `.git` directory itself.
-     * By default, `<PROJECT_ROOT>/.git` is used.
+     * By default, the repository is discovered from the consumer module root. This also supports linked worktrees.
      */
     val gitDirectory: Path?
+
+    /**
+     * The build version written to `git.build.version`.
+     */
+    val buildVersion: String get() = "unspecified"
 
     /**
      * The name of the generated properties file.
