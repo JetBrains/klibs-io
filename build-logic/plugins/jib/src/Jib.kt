@@ -8,51 +8,90 @@ import java.nio.file.Path
 @TaskAction
 fun buildAndPush(
     @Input runtimeClasspath: Classpath,
+    projectRootDir: String,
     container: ContainerSettings,
     baseImage: BaseImageSettings,
     targetImage: TargetImageSettings,
 ) {
-    jibContainerBuilder(runtimeClasspath, container, baseImage)
-        .containerize(Containerizer.to(targetImage.toRegistryImages()))
+    val containerizer = Containerizer.to(targetImage.toRegistryImages())
+        .withAdditionalTags(targetImage.tags)
+    jibContainerBuilder(runtimeClasspath, projectRootDir, container, baseImage)
+        .containerize(containerizer)
 }
 
 @TaskAction
 fun buildTar(
     @Input runtimeClasspath: Classpath,
+    projectRootDir: String,
     container: ContainerSettings,
     baseImage: BaseImageSettings,
     targetImage: TargetImageSettings,
     @Output outputTar: Path,
 ) {
-    jibContainerBuilder(runtimeClasspath, container, baseImage)
-        .containerize(Containerizer.to(TarImage.at(outputTar).named(targetImage.resolvedName)))
+    val containerizer = Containerizer.to(
+        TarImage.at(outputTar).named(targetImage.resolvedName),
+    ).withAdditionalTags(targetImage.tags)
+    jibContainerBuilder(runtimeClasspath, projectRootDir, container, baseImage)
+        .containerize(containerizer)
 }
 
 @TaskAction
 fun buildToDockerDaemon(
     @Input runtimeClasspath: Classpath,
+    projectRootDir: String,
     container: ContainerSettings,
     baseImage: BaseImageSettings,
     targetImage: TargetImageSettings,
 ) {
-    jibContainerBuilder(runtimeClasspath, container, baseImage)
-        .containerize(Containerizer.to(DockerDaemonImage.named(ImageReference.parse(targetImage.resolvedName))))
+    val dockerImage = DockerDaemonImage.named(ImageReference.parse(targetImage.resolvedName))
+    val containerizer = Containerizer.to(dockerImage)
+        .withAdditionalTags(targetImage.tags)
+    jibContainerBuilder(runtimeClasspath, projectRootDir, container, baseImage)
+        .containerize(containerizer)
 }
 
 private fun jibContainerBuilder(
     runtimeClasspath: Classpath,
+    projectRootDir: String,
     container: ContainerSettings,
     baseImage: BaseImageSettings,
-): JibContainerBuilder = JavaContainerBuilder.from(baseImage.toRegistryImage())
-    .addDependencies(runtimeClasspath.resolvedFiles)
-    .addJvmFlags(container.jvmArgs)
-    .setMainClass(container.mainClass)
-    .toContainerBuilder()
-    .apply {
-        if (container.entryPoint != null) {
-            setEntrypoint(container.entryPoint)
+): JibContainerBuilder {
+    val classpath = partitionRuntimeClasspath(runtimeClasspath.resolvedFiles, Path.of(projectRootDir))
+    return JavaContainerBuilder.from(baseImage.toRegistryImage())
+        .addDependencies(classpath.externalDependencies)
+        .addProjectDependencies(classpath.projectDependencies)
+        .addJvmFlags(container.jvmArgs)
+        .setMainClass(container.mainClass)
+        .toContainerBuilder()
+        .apply {
+            if (container.entryPoint != null) {
+                setEntrypoint(container.entryPoint)
+            }
         }
+}
+
+internal data class PartitionedRuntimeClasspath(
+    val externalDependencies: List<Path>,
+    val projectDependencies: List<Path>,
+)
+
+internal fun partitionRuntimeClasspath(
+    resolvedFiles: List<Path>,
+    projectRootDir: Path,
+): PartitionedRuntimeClasspath {
+    val normalizedProjectRoot = projectRootDir.toAbsolutePath().normalize()
+    val (projectDependencies, externalDependencies) = resolvedFiles.partition { file ->
+        file.toAbsolutePath().normalize().startsWith(normalizedProjectRoot)
     }
+    return PartitionedRuntimeClasspath(
+        externalDependencies = externalDependencies,
+        projectDependencies = projectDependencies,
+    )
+}
+
+internal fun Containerizer.withAdditionalTags(tags: List<String>): Containerizer = apply {
+    tags.forEach { withAdditionalTag(it) }
+}
 
 private fun BaseImageSettings.toRegistryImage(): RegistryImage {
     val imageReference = ImageReference.parse(fullName)
@@ -71,7 +110,10 @@ private fun TargetImageSettings.toRegistryImages(): RegistryImage {
 private val TargetImageSettings.resolvedName: String
     get() = name
         ?: System.getenv("IMAGE")
-        ?: error("Target image name is not set: configure `plugins.jib.targetImage.name` or pass it via the IMAGE environment variable")
+        ?: error(
+            "Target image name is not set: configure `plugins.jib.targetImage.name` " +
+                "or pass it via the IMAGE environment variable",
+        )
 
 private fun RegistryImage.configureCredentials(
     imageReference: ImageReference,
