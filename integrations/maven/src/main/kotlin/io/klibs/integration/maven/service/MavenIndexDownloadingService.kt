@@ -51,7 +51,6 @@ class MavenIndexDownloadingService(
                 val updateRequest = IndexUpdateRequest(context, resourceFetcher)
                 updateRequest.isForceFullUpdate = true
                 updateRequest.indexTempDir = indexingContextManager.getIndexTmpDir()
-                updateRequest.localIndexCacheDir = indexingContextManager.getLocalIndexCacheDir()
 
                 val result = indexUpdater.fetchAndUpdateIndex(updateRequest)
 

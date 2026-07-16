@@ -34,8 +34,6 @@ class MavenIndexingContextManager(
 
     fun getIndexTmpDir(): File = File("${properties.central.indexDir}/tmp")
 
-    fun getLocalIndexCacheDir(): File = File("${properties.central.indexDir}/local-index-cache")
-
     private fun createCentralContext(contextId: String): IndexingContext {
         if (!indexDir.exists()) {
             indexDir.mkdirs()
