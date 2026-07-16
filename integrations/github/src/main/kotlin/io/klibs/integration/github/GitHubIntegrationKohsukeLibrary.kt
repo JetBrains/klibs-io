@@ -137,17 +137,28 @@ internal class GitHubIntegrationKohsukeLibrary(
         val responseBody = postGraphQl(
             REPOSITORY_ARCHIVED_AT_QUERY,
             mapOf("owner" to owner, "name" to name)
-        ) ?: error("GitHub GraphQL archivedAt request failed for $owner/$name")
+        ) ?: run {
+            logger.warn("GitHub GraphQL archivedAt request failed for $owner/$name")
+            return null
+        }
 
         val response = jsonMapper.readValue(responseBody, GqlRepositoryArchivedAtResponse::class.java)
         if (!response.errors.isNullOrEmpty()) {
-            error("GraphQL archivedAt errors for $owner/$name: ${response.errors.toString().take(300)}")
+            logger.warn("GraphQL archivedAt errors for $owner/$name: ${response.errors.toString().take(300)}")
+            return null
         }
 
         val repository = response.data?.repository
-            ?: error("GraphQL archivedAt response does not contain repository for $owner/$name")
+            ?: run {
+                logger.warn("GraphQL archivedAt response does not contain repository for $owner/$name")
+                return null
+            }
 
-        return repository.archivedAt?.let(Instant::parse)
+        return repository.archivedAt?.let {
+            runCatching { Instant.parse(it) }
+                .onFailure { error -> logger.warn("Unable to parse GitHub archivedAt for $owner/$name: $it", error) }
+                .getOrNull()
+        }
     }
 
     override fun getLicense(repositoryId: Long): GitHubLicense? {
