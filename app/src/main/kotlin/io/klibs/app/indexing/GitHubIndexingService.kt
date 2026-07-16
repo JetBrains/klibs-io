@@ -96,7 +96,11 @@ class GitHubIndexingService(
 
         val hasReadme = updateReadme(projectEntity, repoToUpdate, ghRepo, repoToUpdate.updatedAtTs)
         val license = gitHubIntegration.getLicense(ghRepo.nativeId)
-        val archivedAt = if (ghRepo.archived) gitHubIntegration.getArchivedAt(ghRepo.owner, ghRepo.name) else null
+        val archivedAt = if (ghRepo.archived) {
+            gitHubIntegration.getArchivedAt(ghRepo.owner, ghRepo.name) ?: repoToUpdate.archivedAt
+        } else {
+            null
+        }
 
         val scmRepositoryEntity = repoToUpdate.copy(
             nativeId = ghRepo.nativeId,
