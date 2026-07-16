@@ -1,11 +1,12 @@
 "use client"
 
-import React from "react";
+import React, {useState} from "react";
 import cn from "classnames";
 
 import Container from "@/app/ui/container";
 import TocNav from "@/app/ui/toc-nav";
 import {Button} from '@rescui/button';
+import {Tooltip} from '@rescui/tooltip';
 
 import {CopyIcon} from '@rescui/icons'
 
@@ -30,6 +31,8 @@ Use it to verify dependency metadata:
 - comparable alternatives
 - etc.`
 
+const COPIED_HINT_TIMEOUT = 1200;
+
 const NAV_ITEMS = [
     {id: "overview", label: "AI development with klibs.io"},
     {id: "mcp", label: "MCP"},
@@ -39,8 +42,15 @@ const NAV_ITEMS = [
 
 export default function Organization() {
 
+    const [copied, setCopied] = useState(false);
+    const [timeoutId, setTimeoutId] = useState(0);
+
     const handleCopy = () => {
-        navigator.clipboard.writeText(AGENTS_CODE_SAMPLE);
+        clearTimeout(timeoutId);
+        navigator.clipboard.writeText(AGENTS_CODE_SAMPLE).then(() => {
+            setCopied(true);
+            setTimeoutId(window.setTimeout(() => setCopied(false), COPIED_HINT_TIMEOUT));
+        });
     };
 
     return (
@@ -122,14 +132,21 @@ export default function Organization() {
 
                         <div className={styles.codeWrapper}>
                             <CodeHighlight className={styles.codeBlock} code={AGENTS_CODE_SAMPLE} language="markdown"/>
-                            <Button
-                                icon={<CopyIcon/>}
-                                mode={'outline'}
-                                onClick={handleCopy}
-                                className={styles.codeCopyButton}
-                            >
-                                Copy
-                            </Button>
+                            <Tooltip
+                                sparse={false}
+                                isVisible={copied}
+                                placement="left"
+                                content="Copied">
+                                <div className={styles.codeCopyButton}>
+                                    <Button
+                                        icon={<CopyIcon/>}
+                                        mode={'outline'}
+                                        onClick={handleCopy}
+                                    >
+                                        Copy
+                                    </Button>
+                                </div>
+                            </Tooltip>
                         </div>
 
                         <br />
