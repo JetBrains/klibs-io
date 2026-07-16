@@ -38,6 +38,12 @@
     }
 }
 
+@media (max-width: 768px) {
+    .codeBlock {
+        padding-bottom: 72px;
+    }
+}
+
 .codeCopyButton {
     position: absolute;
     bottom: 24px;
