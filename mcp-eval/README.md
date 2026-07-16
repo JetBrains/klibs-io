@@ -66,7 +66,7 @@ Pass = required tool was called **AND** judge score ≥ `min_score`. The tool ga
    ./scripts/copy_prod_db_to_local.sh -K klibs-prod -C klibs-postgres -L klibs -D klibs
    export PERSONAL_GITHUB_TOKEN=ghp_dummy_local_eval PERSONAL_AI_TOKEN=FAKE \
           SPRING_DOCKER_COMPOSE_ENABLED=false
-   ./gradlew :app:bootRun
+   ./kotlin run -m app
    ```
    Confirm: `POST http://localhost:8080/mcp` with `initialize` → 200.
 2. **Claude Code CLI** installed and authenticated (the SDK drives it; no raw API key).
