@@ -43,7 +43,8 @@ bin/
 
 cache
 
-localstack-data
+# Docker Compose volumes
+docker-compose-volumes
 
 .junie/memory
 /.output.txt
