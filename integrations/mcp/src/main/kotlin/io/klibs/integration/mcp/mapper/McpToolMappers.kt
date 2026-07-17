@@ -8,7 +8,9 @@ import io.klibs.integration.mcp.dto.api.PackageLatestVersionResponse
 import io.klibs.integration.mcp.dto.api.ProjectSearchResponse
 import io.klibs.integration.mcp.dto.service.McpPackageLatestVersionResultDto
 import io.klibs.integration.mcp.dto.service.McpProjectSearchResultDto
+import org.springframework.stereotype.Component
 
+@Component
 class McpToolMapper {
 
     fun mapPackageDetailsToPackageVersionResponse(
