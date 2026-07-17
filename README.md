@@ -10,7 +10,7 @@ The repository contains both the backend (this README) and the web frontend (see
 ### Prerequisites
 
 - JDK 21+
-- Docker (for local PostgreSQL via docker-compose and LocalStack for S3)
+- Docker (for the local PostgreSQL, LocalStack, and OpenSearch services managed via Docker Compose)
 
 ### Build & test
 
@@ -38,12 +38,17 @@ From CLI:
 
 Or run the `main` function from `Application` in IntelliJ — both use the `local` profile.
 
+Spring Boot automatically starts and stops 
+- PostgreSQL
+- LocalStack
+- OpenSearch (data is persisted between runs)
+
 ### Configuration
 
 Spring [profiles](https://docs.spring.io/spring-boot/reference/features/profiles.html) are used to run the app
 in different environments. Profile-specific files are in [app/src/main/resources](app/src/main/resources).
 
-- `local` — local development (docker-compose for DB)
+- `local` — local development (Docker Compose for PostgreSQL, LocalStack, and OpenSearch)
 - `prod` — production (restricts debug utilities).
   [application-prod.yml](app/src/main/resources/application-prod.yml) is a template; adapt it or use
   [externalized configuration](https://docs.spring.io/spring-boot/reference/features/external-config.html).
