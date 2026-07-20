@@ -32,6 +32,7 @@ data class PackageDTO(
     val licenses: List<PackageLicense>,
     val configuration: Configuration?,
     val generatedDescription: Boolean = false,
+    val descriptionGeneratedAt: Instant? = null,
     val versionType: VersionType? = null,
     val targets: List<PackageTarget> = emptyList()
 ) {
@@ -59,6 +60,7 @@ data class PackageDTO(
             licenses = licenses,
             configuration = configuration,
             generatedDescription = generatedDescription,
+            descriptionGeneratedAt = descriptionGeneratedAt,
             versionType = versionType,
             mavenArtifact = mavenArtifact.toEntityRef(),
         )
@@ -100,6 +102,7 @@ data class PackageDTO(
                 licenses = entity.licenses,
                 configuration = entity.configuration,
                 generatedDescription = entity.generatedDescription,
+                descriptionGeneratedAt = entity.descriptionGeneratedAt,
                 versionType = entity.versionType,
                 targets = entity.targets.map { PackageTarget(it.platform, it.target) }
             )
