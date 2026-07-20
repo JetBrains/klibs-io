@@ -7,6 +7,7 @@ import io.klibs.integration.ai.PackageDescriptionGenerator
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
 class PackageDescriptionService(
@@ -148,7 +149,8 @@ class PackageDescriptionService(
 
         val updatedPackage = packageEntity.deepCopy(
             description = description,
-            generatedDescription = true
+            generatedDescription = true,
+            descriptionGeneratedAt = Instant.now()
         )
 
         packageRepository.save(updatedPackage)
@@ -178,7 +180,8 @@ class PackageDescriptionService(
         // Update the package description in the database and mark it as not generated (user-provided)
         val updatedPackage = packageEntity.deepCopy(
             description = description,
-            generatedDescription = false
+            generatedDescription = false,
+            descriptionGeneratedAt = null
         )
         packageRepository.save(updatedPackage)
 

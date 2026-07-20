@@ -38,6 +38,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -254,6 +255,13 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(packageBeforeIndexing, "Package should exist")
         assertTrue(packageBeforeIndexing.generatedDescription, "Package should have generatedDescription set to true")
 
+        // Backdate the previous generation beyond the regen TTL so a genuinely new version still regenerates.
+        jdbcTemplate.update(
+            "UPDATE package SET description_generated_at = ? WHERE group_id = ? AND artifact_id = ? AND version = ?",
+            java.sql.Timestamp.from(Instant.now().minus(120, ChronoUnit.DAYS)),
+            groupId, artifactId, version1
+        )
+
         // Set up mocks for processing the indexing request
         val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequest, "Indexing request should exist")
@@ -295,12 +303,123 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val newPackage = packages.first { it.version == version2 }
         assertEquals(generatedDescription, newPackage.description, "New package should have the generated description")
         assertTrue(newPackage.generatedDescription, "New package should have generatedDescription set to true")
+        assertNotNull(newPackage.descriptionGeneratedAt, "Generated description must record description_generated_at")
 
         // Verify that the log contains a message about generating a new description
         assertContains(
             output.out,
             "Generated new description for $groupId:$artifactId:$version2 because previous version had a generated description"
         )
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-reindex-request-with-generated-description.sql"])
+    fun `reindex preserves the existing generated description instead of overwriting it`() {
+        val groupId = "com.example"
+        val artifactId = "test-library-reindex"
+        val version = "1.0.0"
+
+        val request = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(request)
+        assertTrue(request.reindex, "Seeded request must be a reindex request")
+
+        val before = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
+        assertNotNull(before)
+        val generatedAtBefore = before.descriptionGeneratedAt
+        assertNotNull(generatedAtBefore, "Precondition: seeded package has a generated timestamp")
+
+        // If the AI generator were ever invoked its result would be this sentinel; it must never reach the DB.
+        whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
+            .thenReturn("AI SENTINEL - must not be persisted on reindex")
+
+        stubMavenFetch(groupId, artifactId, version, pomDescription = "Fresh POM description")
+
+        uut.processRequest(request.idNotNull)
+
+        val updated = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
+        assertNotNull(updated)
+        assertEquals(
+            "This is a generated description for version 1.0.0", updated.description,
+            "Reindex must keep the existing description, not the POM nor a freshly generated one"
+        )
+        assertTrue(updated.generatedDescription, "Reindex must preserve the generated flag")
+        assertEquals(generatedAtBefore, updated.descriptionGeneratedAt, "Reindex must preserve description_generated_at")
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-older-version-request-with-generated-latest.sql"])
+    fun `indexing an older non-latest version keeps the POM description and does not generate`() {
+        val groupId = "com.example"
+        val artifactId = "test-library-older"
+        val olderVersion = "1.0.0"
+
+        // Sentinel that would only appear if a regeneration wrongly fired for this non-latest version.
+        whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
+            .thenReturn("AI SENTINEL - must not be persisted for a non-latest version")
+
+        stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description")
+
+        val request = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(request)
+        uut.processRequest(request.idNotNull)
+
+        val newPackage = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, olderVersion)
+        assertNotNull(newPackage)
+        assertEquals(
+            "Original POM description", newPackage.description,
+            "A non-latest version must take the POM description, never a generated one"
+        )
+        assertFalse(newPackage.generatedDescription, "Older version must not be marked as generated")
+        assertNull(newPackage.descriptionGeneratedAt, "Non-generated description must not record a timestamp")
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-recent-generated-latest.sql"])
+    fun `new version does not regenerate when the previous description is within the regen TTL`() {
+        val groupId = "com.example"
+        val artifactId = "test-library-ttl"
+        val newVersion = "2.0.0"
+
+        val previousLatest = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, "1.0.0")
+        assertNotNull(previousLatest)
+        val previousGeneratedAt = previousLatest.descriptionGeneratedAt
+        assertNotNull(previousGeneratedAt, "Precondition: previous latest was generated recently (within TTL)")
+
+        // Sentinel that must not be persisted: a regen within the TTL window is disallowed.
+        whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
+            .thenReturn("AI SENTINEL - must not be persisted within TTL")
+
+        stubMavenFetch(groupId, artifactId, newVersion, pomDescription = "Fresh POM description")
+
+        val request = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(request)
+        uut.processRequest(request.idNotNull)
+
+        // Within TTL the previous generated description is carried forward instead of regenerated.
+        val indexed = packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, newVersion)
+        assertNotNull(indexed)
+        assertEquals("Recent AI description", indexed.description, "Description must be carried forward, not regenerated")
+        assertTrue(indexed.generatedDescription, "Carried-forward description keeps the generated flag")
+        assertEquals(previousGeneratedAt, indexed.descriptionGeneratedAt, "TTL carry-forward must keep the original timestamp")
+    }
+
+    /**
+     * Stubs the Maven static-data boundary (POM + release date + tooling metadata) so a queued
+     * request can be processed end-to-end against the real database without network access.
+     */
+    private fun stubMavenFetch(groupId: String, artifactId: String, version: String, pomDescription: String?) {
+        val pom = mock<MavenPom>()
+        whenever(pom.groupId).thenReturn(groupId)
+        whenever(pom.artifactId).thenReturn(artifactId)
+        whenever(pom.version).thenReturn(version)
+        whenever(pom.description).thenReturn(pomDescription)
+        val kotlinToolingMetadata = mock<GradleMetadata>()
+        whenever(kotlinToolingMetadata.variants)
+            .thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
+            .thenReturn(PomWithReleaseDate(pom, Instant.now()))
+        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
     }
 
     @Test
