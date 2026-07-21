@@ -34,7 +34,7 @@ function buildArchivedNoticeText(projectOverview: ProjectDetails): string {
         ? ` on ${format(new Date(projectOverview.archivedAtMillis), 'MMM d, yyyy')}`
         : '';
 
-    return `This repository was archived by the owner${archivedAt}. It is now read-only.`;
+    return `The project's repository was archived${archivedAt}. The project will not receive updates.`;
 }
 
 function buildSuggestEditUrl(projectOverview: ProjectDetails): string {
