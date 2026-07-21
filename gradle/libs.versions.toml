@@ -3,6 +3,7 @@
 [versions]
 
 kotlin = "2.3.20"
+mappie = "2.3.20-2.4.1"
 
 # Spring
 spring-doc = "3.0.3"
@@ -40,6 +41,8 @@ kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 kotlinx-coroutines-test-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm", version.ref = "kotlinx-coroutines" }
 
 kotlin-toolingMetadata = { module = "org.jetbrains.kotlin:kotlin-tooling-metadata", version.ref = "kotlin" }
+mappie-api = { module = "tech.mappie:mappie-api", version.ref = "mappie" }
+mappie-compiler-plugin = { module = "tech.mappie:mappie-compiler-plugin", version.ref = "mappie" }
 
 shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring", version.ref = "shedlock" }
 shedlock-jdbc = { module = "net.javacrumbs.shedlock:shedlock-provider-jdbc-template", version.ref = "shedlock" }

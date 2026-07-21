@@ -3,76 +3,66 @@ package io.klibs.integration.mcp.mapper
 import io.klibs.core.pckg.model.PackageDetails
 import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackagePlatform
-import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.integration.mcp.dto.api.PackageLatestVersionResponse
 import io.klibs.integration.mcp.dto.api.ProjectSearchResponse
 import io.klibs.integration.mcp.dto.service.McpPackageLatestVersionResultDto
 import io.klibs.integration.mcp.dto.service.McpProjectSearchResultDto
 import org.springframework.stereotype.Component
+import tech.mappie.api.ObjectMappie
+import tech.mappie.api.builtin.collections.IterableToListMapper
 
 @Component
 class McpToolMapper {
 
-    fun mapPackageDetailsToPackageVersionResponse(
-        packageDetails: PackageDetails
-    ): PackageLatestVersionResponse.PackageVersionResponse {
-        return PackageLatestVersionResponse.PackageVersionResponse(
-            version = packageDetails.version,
-            buildTool = packageDetails.buildTool,
-            buildToolVersion = packageDetails.buildToolVersion,
-            kotlinVersion = packageDetails.kotlinVersion
-        )
-    }
+    fun mapToLatestVersionResponse(result: McpPackageLatestVersionResultDto): PackageLatestVersionResponse =
+        PackageLatestVersionMapper.map(result)
 
-    fun mapToLatestVersionResponse(result: McpPackageLatestVersionResultDto): PackageLatestVersionResponse {
-        return PackageLatestVersionResponse(
-            groupId = result.groupId,
-            artifactId = result.artifactId,
-            latestVersion = result.latestVersion?.let(::mapPackageDetailsToPackageVersionResponse),
-            latestStableVersion = result.latestStableVersion?.let(::mapPackageDetailsToPackageVersionResponse),
-            packageFound = result.packageFound
-        )
-    }
+    fun mapToProjectSearchResponse(serviceResponse: McpProjectSearchResultDto): ProjectSearchResponse =
+        ProjectSearchResponseMapper.map(serviceResponse)
 
-    fun mapToProjectSearchResult(
-        project: SearchProjectResult,
-        packages: List<ProjectSearchResponse.ProjectPackage>,
-        totalPackages: Int
-    ): ProjectSearchResponse.ProjectSearchResult {
-        return ProjectSearchResponse.ProjectSearchResult(
-            projectName = project.name,
-            projectAuthor = project.ownerLogin,
-            description = project.description,
-            platforms = mapPlatforms(project.platforms),
-            targets = project.targets,
-            packages = packages,
-            totalPackages = totalPackages
-        )
-    }
+}
 
-    fun mapPackageOverviewToProjectPackage(packageOverview: PackageOverview): ProjectSearchResponse.ProjectPackage {
-        return ProjectSearchResponse.ProjectPackage(
-            groupId = packageOverview.groupId,
-            artifactId = packageOverview.artifactId,
-            latestVersion = packageOverview.version,
-            latestStableVersion = packageOverview.latestStableVersion,
-            description = packageOverview.description
-        )
-    }
+private object PackageVersionMapper :
+    ObjectMappie<PackageDetails, PackageLatestVersionResponse.PackageVersionResponse>()
 
-    fun mapToProjectSearchResponse(serviceResponse: McpProjectSearchResultDto): ProjectSearchResponse {
-        val projectResults = serviceResponse.projects.map { serviceResult ->
-            val mappedPackages = serviceResult.packages.map(::mapPackageOverviewToProjectPackage)
-            mapToProjectSearchResult(
-                serviceResult.project,
-                mappedPackages,
-                serviceResult.totalPackages
-            )
-        }
-        return ProjectSearchResponse(projects = projectResults)
-    }
+private object PackageLatestVersionMapper :
+    ObjectMappie<McpPackageLatestVersionResultDto, PackageLatestVersionResponse>() {
 
-    fun mapPlatforms(platforms: List<PackagePlatform>): List<String> {
-        return platforms.map { it.serializableName }
+    override fun map(from: McpPackageLatestVersionResultDto): PackageLatestVersionResponse = mapping {
+        to::latestVersion fromProperty from::latestVersion via PackageVersionMapper
+        to::latestStableVersion fromProperty from::latestStableVersion via PackageVersionMapper
     }
+}
+
+private object ProjectPackageMapper : ObjectMappie<PackageOverview, ProjectSearchResponse.ProjectPackage>() {
+
+    override fun map(from: PackageOverview): ProjectSearchResponse.ProjectPackage = mapping {
+        to::latestVersion fromProperty from::version
+    }
+}
+
+private object ProjectInfoMapper :
+    ObjectMappie<McpProjectSearchResultDto.ProjectInfoDto, ProjectSearchResponse.ProjectSearchResult>() {
+
+    override fun map(from: McpProjectSearchResultDto.ProjectInfoDto): ProjectSearchResponse.ProjectSearchResult = mapping {
+        to::projectName fromProperty from.project::name
+        to::projectAuthor fromProperty from.project::ownerLogin
+        to::description fromProperty from.project::description
+        to::platforms fromProperty from.project::platforms via IterableToListMapper(PackagePlatformMapper)
+        to::targets fromProperty from.project::targets
+        to::packages fromProperty from::packages via IterableToListMapper(ProjectPackageMapper)
+        to::totalPackages fromProperty from::totalPackages
+    }
+}
+
+private object ProjectSearchResponseMapper : ObjectMappie<McpProjectSearchResultDto, ProjectSearchResponse>() {
+
+    override fun map(from: McpProjectSearchResultDto): ProjectSearchResponse = mapping {
+        to::projects fromProperty from::projects via IterableToListMapper(ProjectInfoMapper)
+    }
+}
+
+private object PackagePlatformMapper : ObjectMappie<PackagePlatform, String>() {
+
+    override fun map(from: PackagePlatform): String = from.serializableName
 }
