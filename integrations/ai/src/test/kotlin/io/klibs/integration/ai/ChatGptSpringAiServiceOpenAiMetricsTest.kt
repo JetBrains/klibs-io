@@ -41,7 +41,8 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
         // Create the service with mocked dependencies
         chatGptSpringAiService = ChatGptSpringAiService(
             meterRegistry = meterRegistry,
-            chatModel = chatModel
+            chatModel = chatModel,
+            openAiClient = mock()
         )
     }
 
@@ -59,11 +60,11 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
             .usage(testUsage)
             .rateLimit(
                 OpenAiRateLimit(
-                    1,
-                    2,
+                    1L,
+                    2L,
                     3.seconds.toJavaDuration(),
-                    4,
-                    5,
+                    4L,
+                    5L,
                     6.seconds.toJavaDuration()
                 )
             )

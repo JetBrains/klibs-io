@@ -7,7 +7,7 @@ mappie = "2.3.20-2.4.1"
 
 # Spring
 spring-doc = "3.0.3"
-spring-ai = "2.0.0-M4"
+spring-ai = "2.0.0"
 spring-cloud-aws = "4.0.0"
 
 # Job / scheduling

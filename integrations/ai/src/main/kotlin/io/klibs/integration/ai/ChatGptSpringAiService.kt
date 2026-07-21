@@ -1,5 +1,11 @@
 package io.klibs.integration.ai
 
+import com.openai.client.OpenAIClient
+import com.openai.models.Reasoning
+import com.openai.models.ReasoningEffort
+import com.openai.models.responses.ResponseCreateParams
+import com.openai.models.responses.ResponseOutputItem
+import com.openai.models.responses.WebSearchTool
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import org.springframework.ai.chat.model.ChatResponse
@@ -15,7 +21,8 @@ import java.util.concurrent.atomic.AtomicLong
 @ConditionalOnProperty("klibs.ai", havingValue = "true")
 class ChatGptSpringAiService(
     private val meterRegistry: MeterRegistry,
-    private val chatModel: OpenAiChatModel
+    private val chatModel: OpenAiChatModel,
+    private val openAiClient: OpenAIClient
 ) : AiService {
 
     // Metrics for token usage
@@ -64,6 +71,45 @@ class ChatGptSpringAiService(
         return response.result?.output?.text ?: ""
     }
 
+    override fun executeWebSearchRequest(
+        model: String,
+        instructions: String,
+        userContent: String,
+        reasoningEffort: String,
+        methodName: String,
+    ): String {
+        val params = ResponseCreateParams.builder()
+            .model(model)
+            .instructions(instructions)
+            .input(userContent)
+            .addTool(WebSearchTool.builder().type(WebSearchTool.Type.WEB_SEARCH).build())
+            .reasoning(Reasoning.builder().effort(ReasoningEffort.of(reasoningEffort)).build())
+            .build()
+
+        val sample = Timer.start(meterRegistry)
+        val httpResponse = try {
+            openAiClient.responses().withRawResponse().create(params)
+        } finally {
+            sample.stop(meterRegistry.timer("klibs.openai.request.time", "method", methodName, "model", model))
+        }
+
+        val response = httpResponse.parse()
+
+        response.usage().ifPresent {
+            promptTokensCounter.increment(it.inputTokens().toDouble())
+            completionTokensCounter.increment(it.outputTokens().toDouble())
+            totalTokensCounter.increment(it.totalTokens().toDouble())
+        }
+
+        val headers = httpResponse.headers()
+        headers.values("x-ratelimit-remaining-requests").firstOrNull()?.toLongOrNull()
+            ?.let { rateLimitRequestsRemaining.set(it) }
+        headers.values("x-ratelimit-remaining-tokens").firstOrNull()?.toLongOrNull()
+            ?.let { rateLimitTokensRemaining.set(it) }
+
+        return extractResponseText(response.output())
+    }
+
     private fun recordMetrics(response: ChatResponse) {
         response.metadata.apply {
             usage?.apply {
@@ -78,3 +124,9 @@ class ChatGptSpringAiService(
         }
     }
 }
+
+internal fun extractResponseText(output: List<ResponseOutputItem>): String =
+    output.filter { it.isMessage() }
+        .flatMap { it.asMessage().content() }
+        .filter { it.isOutputText() }
+        .joinToString("") { it.asOutputText().text() }

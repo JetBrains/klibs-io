@@ -1,9 +1,6 @@
 package io.klibs.integration.ai
 
-import org.springframework.ai.chat.messages.UserMessage
-import org.springframework.ai.chat.prompt.Prompt
 import org.springframework.ai.chat.prompt.SystemPromptTemplate
-import org.springframework.ai.openai.OpenAiChatOptions
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Primary
 import org.springframework.core.io.Resource
@@ -23,7 +20,7 @@ class PackageDescriptionGenerator(
         minDescriptionWordCount: Int = 10,
         maxDescriptionWordCount: Int = 20
     ): String {
-        val systemMessage = SystemPromptTemplate(packageDescriptionPrompt)
+        val instructions = SystemPromptTemplate(packageDescriptionPrompt)
             .createMessage(
                 mapOf(
                     "packageName" to (artifactId ?: ""),
@@ -31,6 +28,7 @@ class PackageDescriptionGenerator(
                     "maxWords" to maxDescriptionWordCount
                 )
             )
+            .text.orEmpty()
 
         val userContent = buildString {
             append("Group ID: ${groupId}\n")
@@ -42,19 +40,13 @@ class PackageDescriptionGenerator(
             }
         }
 
-        val userMessage = UserMessage(userContent)
-
-        val options = OpenAiChatOptions.builder()
-            .model(AiService.WEBSEARCH_GPT)
-            .build()
-
-        val prompt = Prompt(listOf(systemMessage, userMessage), options)
-
         return cleanResponse(
-            aiService.executeOpenAiRequest(
-                prompt,
-                "generatePackageDescription",
-                AiService.WEBSEARCH_GPT
+            aiService.executeWebSearchRequest(
+                model = AiService.WEBSEARCH_GPT,
+                instructions = instructions,
+                userContent = userContent,
+                reasoningEffort = AiService.WEBSEARCH_EFFORT,
+                methodName = "generatePackageDescription"
             )
         )
     }

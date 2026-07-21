@@ -15,4 +15,14 @@ class DumbAiService() : AiService {
         return ""
     }
 
+    override fun executeWebSearchRequest(
+        model: String,
+        instructions: String,
+        userContent: String,
+        reasoningEffort: String,
+        methodName: String,
+    ): String {
+        return ""
+    }
+
 }
