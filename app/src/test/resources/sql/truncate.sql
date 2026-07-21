@@ -19,6 +19,10 @@ CREATE OR REPLACE FUNCTION truncate_all_tables()
             EXECUTE ''SET LOCAL lock_timeout = ''''5s'''''';
             EXECUTE ''TRUNCATE TABLE '' || tables || '' CASCADE'';
         END IF;
+
+        UPDATE maven_central_log SET
+            maven_index_timestamp = current_date - interval ''10 years''
+        WHERE id = 1;
     END;
 ' LANGUAGE plpgsql;
 

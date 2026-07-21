@@ -1,6 +1,7 @@
 package io.klibs.integration.github
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -31,12 +32,16 @@ class GetReadmeWithModifiedSinceCheckTest {
     private lateinit var githubApi: GitHub
 
     private lateinit var props: GitHubIntegrationProperties
+    private val klibsRepoName = "JetBrains/klibs-io"
 
     @BeforeEach
     fun setUp() {
         meterRegistry = SimpleMeterRegistry()
         props = GitHubIntegrationProperties(
-            cache = GitHubIntegrationProperties.Cache()
+            personalAccessToken = "",
+            cache = GitHubIntegrationProperties.Cache(),
+            webhook = GitHubIntegrationProperties.Webhook(),
+            indexRequests = GitHubIntegrationProperties.IndexRequests(),
         )
     }
 
@@ -47,6 +52,7 @@ class GetReadmeWithModifiedSinceCheckTest {
             client,
             props,
             jacksonObjectMapper(),
+            klibsRepoName,
         )
 
     @Test

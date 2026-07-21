@@ -6,9 +6,12 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import java.time.Instant
@@ -55,11 +58,15 @@ data class IndexingRequestEntity(
     val lastErrorMessage: String? = null,
 
     /**
-     * Status of indexing request processig.
+     * Status of indexing request processing.
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     val status: IndexingRequestStatus = IndexingRequestStatus.PENDING,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_request_issue_id")
+    val userRequestIssue: UserRequestIssueEntity? = null,
 ) {
     val idNotNull: Long get() = requireNotNull(id)
 }

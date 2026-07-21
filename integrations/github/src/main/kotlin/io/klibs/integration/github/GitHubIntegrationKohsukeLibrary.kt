@@ -2,6 +2,7 @@ package io.klibs.integration.github
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.benmanes.caffeine.cache.Caffeine
+import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import io.klibs.integration.github.health.GitHubRateLimitInfo
 import io.klibs.integration.github.model.GitHubIssue
 import io.klibs.integration.github.model.GitHubLicense
@@ -24,6 +25,7 @@ import org.kohsuke.github.GHRepository
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.MarkdownMode
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.io.FileNotFoundException
 import java.time.Instant
@@ -47,9 +49,16 @@ internal class GitHubIntegrationKohsukeLibrary(
     private val gitHubIntegrationProperties: GitHubIntegrationProperties,
     @Autowired
     private val jsonMapper: ObjectMapper,
+    @Value("\${klibs.integration.github.index-requests.repository:JetBrains/klibs-io}")
+    private val klibsRepoName: String,
 ) : GitHubIntegration {
 
     private val lastSuccessfulRequestTime = AtomicReference(Instant.now())
+
+    private val klibsRepo: GHRepository by lazy {
+        executeNullable { githubApi.getRepository(klibsRepoName) }
+            ?: throw IllegalStateException("Could not fetch target repository: $klibsRepoName")
+    }
 
     init {
         Gauge.builder("klibs.github.lastSuccessfulRequestTime") {
@@ -234,7 +243,7 @@ internal class GitHubIntegrationKohsukeLibrary(
     private fun <T> executeNullable(block: () -> T): T? {
         // Start timing the request
         val sample = Timer.start(meterRegistry)
-        
+
         return try {
             block()
         } catch (e: FileNotFoundException) {
@@ -395,6 +404,18 @@ internal class GitHubIntegrationKohsukeLibrary(
         } finally {
             sample.stop(meterRegistry.timer("klibs.github.request.time"))
             lastSuccessfulRequestTime.set(Instant.now())
+        }
+    }
+
+    override fun addKlibsIssueLabel(number: Int, label: String) {
+        executeNullable {
+            klibsRepo.getIssue(number).addLabels(label)
+        }
+    }
+
+    override fun addKlibsIssueComment(number: Int, body: String) {
+        executeNullable {
+            klibsRepo.getIssue(number).comment(body)
         }
     }
 

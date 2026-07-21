@@ -23,6 +23,7 @@ import org.slf4j.Logger
 import java.io.IOException
 import java.io.StringReader
 import java.net.HttpURLConnection
+import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -209,7 +210,7 @@ abstract class BaseMavenSearchClient(
         return metadata
     }
 
-    private fun getRemoteFileUrl(
+    internal fun getRemoteFileUrl(
         groupId: String,
         artifactId: String,
         version: String,
@@ -218,8 +219,18 @@ abstract class BaseMavenSearchClient(
         require(fileName.startsWith("-") || fileName.startsWith(".")) {
             "fileName must begin with - or ."
         }
-        val fileDir = groupId.replace(".", "/") + "/$artifactId/$version"
-        val fullFileName = "$artifactId-$version$fileName"
+
+        // Use URLEncoder to mitigate potential malicious special characters
+        fun String.urlEncode() = URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
+
+        val encodedGroupId = groupId.split(".").joinToString("/") { it.urlEncode() }
+        val encodedArtifactId = artifactId.urlEncode()
+        val encodedVersion = version.urlEncode()
+        val encodedFileName = fileName.urlEncode()
+
+        val fileDir = "$encodedGroupId/$encodedArtifactId/$encodedVersion"
+        val fullFileName = "$encodedArtifactId-$encodedVersion$encodedFileName"
+
         return "${getContentUrlPrefix()}$fileDir/$fullFileName"
     }
 

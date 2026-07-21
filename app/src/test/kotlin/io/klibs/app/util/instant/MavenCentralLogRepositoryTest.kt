@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import org.springframework.transaction.annotation.Transactional
 
 class MavenCentralLogRepositoryTest : BaseUnitWithDbLayerTest() {
 
@@ -20,7 +20,7 @@ class MavenCentralLogRepositoryTest : BaseUnitWithDbLayerTest() {
     fun `should save and retrieve maven index timestamp`() {
         val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
         repository.saveMavenIndexTimestamp(now)
-        
+
         val retrieved = repository.retrieveMavenIndexTimestamp()
         assertNotNull(retrieved)
         assertEquals(now, retrieved)

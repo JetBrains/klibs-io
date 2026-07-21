@@ -80,6 +80,13 @@ klibs:
         request-cache-path: ${KLIBS_CACHE_DIR_REQUESTS:${user.dir}/cache/request-cache}
         request-cache-size-mb: ${KLIBS_CACHE_DIR_REQUEST_SIZE_MB:10}
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
+      index-requests:
+        repository: ${KLIBS_GITHUB_REPOSITORY:}
+        request-label: ${KLIBS_GITHUB_REQUEST_LABEL:index-request}
+        processed-label: ${KLIBS_GITHUB_PROCESSED_LABEL:triaged}
+        developer-handle: ${KLIBS_GITHUB_DEVELOPER_HERO:}
+      webhook:
+        secret: ${KLIBS_GITHUB_WEBHOOK_SECRET:}
   indexing: ${KLIBS_ENABLE_INDEXING:false}
   scheduling:
     process-indexing-queue:
@@ -89,6 +96,12 @@ klibs:
   indexing-configuration:
     executor:
       thread-count: 2
+    retry:
+      max-attempts: ${KLIBS_INDEXING_MAX_ATTEMPTS:2}
+    reporting:
+      index-defer: ${KLIBS_REPORTING_INDEX_DEFER:10m}
+    description:
+      regen-ttl: ${KLIBS_DESCRIPTION_REGEN_TTL:90d}
     central-sonatype:
       enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE:false}
     gmaven:

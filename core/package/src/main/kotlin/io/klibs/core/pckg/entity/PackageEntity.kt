@@ -87,6 +87,9 @@ data class PackageEntity(
     @Column(name = "generated_description", nullable = false)
     val generatedDescription: Boolean = false,
 
+    @Column(name = "description_generated_at")
+    val descriptionGeneratedAt: Instant? = null,
+
     @Enumerated(EnumType.STRING)
     @Column(name = "version_type")
     val versionType: VersionType? = null,
@@ -134,6 +137,7 @@ data class PackageEntity(
      * @param licenses The licenses of the new entity, defaults to the current entity's licenses
      * @param configuration The configuration of the new entity, defaults to the current entity's configuration
      * @param generatedDescription Whether the description was generated, defaults to the current entity's value
+     * @param descriptionGeneratedAt When the description was last generated, defaults to the current entity's value
      * @param versionType The version type of the new entity, defaults to the current entity's version type
      * @param mavenArtifact The normalized `maven_artifact` row this package points at, defaults to the current entity's reference
      * @return A new PackageEntity instance with specified properties changed and targets reattached
@@ -156,6 +160,7 @@ data class PackageEntity(
         licenses: List<PackageLicense> = this.licenses,
         configuration: Configuration? = this.configuration,
         generatedDescription: Boolean = this.generatedDescription,
+        descriptionGeneratedAt: Instant? = this.descriptionGeneratedAt,
         versionType: VersionType? = this.versionType,
         mavenArtifact: MavenArtifactEntity = this.mavenArtifact
     ): PackageEntity {
@@ -178,6 +183,7 @@ data class PackageEntity(
             licenses = licenses,
             configuration = configuration,
             generatedDescription = generatedDescription,
+            descriptionGeneratedAt = descriptionGeneratedAt,
             versionType = versionType,
             mavenArtifact = mavenArtifact,
         )

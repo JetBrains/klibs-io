@@ -107,6 +107,9 @@ class MavenIndexDownloadingServiceTest {
             whenever(responseSpec.hint(any<String>(), any())).thenReturn(responseSpec)
             whenever(responseSpec.body<String>()).thenReturn(props)
 
+            val localIndexCacheDir = File(tempDir, "local-index-cache")
+            whenever(indexingContextManager.getLocalIndexCacheDir()).thenReturn(localIndexCacheDir)
+
             whenever(indexUpdateResult.isFullUpdate).thenReturn(true)
             whenever(indexUpdater.fetchAndUpdateIndex(any())).thenReturn(indexUpdateResult)
 
@@ -115,6 +118,7 @@ class MavenIndexDownloadingServiceTest {
             verify(indexUpdater).fetchAndUpdateIndex(check {
                 assertTrue(it.isForceFullUpdate, "Should have forceFullUpdate flag set to true")
                 assertEquals(indexingContext.indexDirectoryFile, it.indexTempDir, "Should use context index directory as temp dir")
+                assertEquals(localIndexCacheDir, it.localIndexCacheDir, "Should use local index cache dir to decouple download from extraction")
             })
         }
     }

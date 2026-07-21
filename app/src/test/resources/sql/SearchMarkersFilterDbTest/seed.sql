@@ -42,11 +42,11 @@ INSERT INTO public.package_target (package_id, platform, target) VALUES
 
 
 
-INSERT INTO public.project_marker (project_id, type) VALUES (30001, 'FEATURED');
+INSERT INTO public.project_marker (project_id, type) VALUES (30001, 'FEATURED_DEPRECATED');
 
 
 INSERT INTO public.project_marker (project_id, type) VALUES (30002, 'GRANT_WINNER_2024');
 
 
-INSERT INTO public.project_marker (project_id, type) VALUES (30003, 'FEATURED');
+INSERT INTO public.project_marker (project_id, type) VALUES (30003, 'FEATURED_DEPRECATED');
 INSERT INTO public.project_marker (project_id, type) VALUES (30003, 'GRANT_WINNER_2024');

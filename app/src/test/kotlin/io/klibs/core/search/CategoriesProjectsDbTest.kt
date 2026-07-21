@@ -28,9 +28,9 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
     fun `each category returns projects sorted by stars`() {
         val results = searchService.searchByCategories(limit = 10)
 
-        val featured = results.first { it.categoryName == "Grant winners" }
-        assertEquals(3, featured.projects.size, "Grant winners has 3 projects (50003, 50004, 50007)")
-        assertEquals(listOf(60, 50, 45), featured.projects.map { it.vcsStars }, "Projects sorted by stars DESC")
+        val grantWinnersCategory = results.first { it.categoryName == "Grant winners" }
+        assertEquals(3, grantWinnersCategory.projects.size, "Grant winners has 3 projects (50003, 50004, 50007)")
+        assertEquals(listOf(60, 50, 45), grantWinnersCategory.projects.map { it.vcsStars }, "Projects sorted by stars DESC")
 
         val compose = results.first { it.categoryName == "Compose UI" }
         assertEquals(2, compose.projects.size, "COMPOSE_UI has 2 projects (50005, 50006)")
@@ -54,9 +54,9 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
     fun `limit is respected per category`() {
         val results = searchService.searchByCategories(limit = 2)
 
-        val featured = results.first { it.categoryName == "Grant winners" }
-        assertEquals(2, featured.projects.size, "Grant winners capped at limit=2")
-        assertEquals(listOf(60, 50), featured.projects.map { it.vcsStars }, "Top-2 by stars")
+        val grantWinnersCategory = results.first { it.categoryName == "Grant winners" }
+        assertEquals(2, grantWinnersCategory.projects.size, "Grant winners capped at limit=2")
+        assertEquals(listOf(60, 50), grantWinnersCategory.projects.map { it.vcsStars }, "Top-2 by stars")
     }
 
     @Test

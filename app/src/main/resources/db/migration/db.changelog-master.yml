@@ -174,6 +174,10 @@ databaseChangeLog:
   - include:
       file: db/migration/2026-Q2/2026-06-12_package_index_add_dependent_count.yml
   - include:
+      file: db/migration/2026-Q2/2026-06-22-create_user_request_tables.yml
+  - include:
       file: db/migration/2026-Q3/2026-07-08_remove-featured-category.yml
+  - include:
+      file: db/migration/2026-Q3/2026-07-09_add_description_generated_at_to_package.yml
   - include:
       file: db/migration/2026-Q3/2026-07-13_add_archive_fields_to_scm_repo.yml
