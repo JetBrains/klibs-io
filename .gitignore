@@ -46,9 +46,11 @@ cache
 # Docker Compose volumes
 docker-compose-volumes
 
+# Agents' dirs
 .junie/memory
 /.output.txt
 /.agents/skills/
 /.claude/skills/
 /.junie/skills/
+/.codex
 
