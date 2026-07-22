@@ -5,5 +5,8 @@ apply:
 
 dependencies:
   - $libs.kohsuke.githubApi
+  - $libs.jjwt.api
+  - $libs.jjwt.impl
+  - $libs.jjwt.jackson
   - $libs.okhttp
   - $libs.caffeine
