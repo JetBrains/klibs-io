@@ -6,6 +6,7 @@ import R3 from "@/app/img/kodee/r3.svg";
 
 import Image from "next/image";
 import Link from "next/link";
+import {SlackIcon} from "@rescui/icons";
 import Container from "@/app/ui/container";
 import {textCn} from "@rescui/typography";
 import styles from "./styles.module.css";
@@ -174,8 +175,8 @@ export default function Faq() {
                         href={'https://github.com/JetBrains/klibs-io/issues/new/choose'}>GitHub issue tracker</a>.
                     </p>
 
-                    <h4>
-                        Join the community discussion
+                    <h4 id="slack-guide" className={styles.slackGuide}>
+                        Join the community discussion <SlackIcon className={styles.slackIcon}/>
                     </h4>
                     <p>
                         If you are a member of Kotlin public Slack, <Link target="_blank"

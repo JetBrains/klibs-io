@@ -178,6 +178,7 @@ export default function Navbar() {
                                 href="/faq#slack-guide"
                                 data-testid="slack-link"
                                 className={cn(textCn('rs-link', {mode: 'clear'}), styles.navItem, styles.navIcon, "hide-on-small")}
+                                title="Join Slack channel"
                                 onClick={() => trackEvent(GAEvent.SLACK_CLICK, {})}
                             >
                                 <SlackIcon/>

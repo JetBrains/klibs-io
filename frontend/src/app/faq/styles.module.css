@@ -63,6 +63,25 @@
     z-index: 4;
 }
 
+.slackIcon {
+    color: var(--b70);
+}
+
+.slackGuide:target,
+.slackGuide:target + p {
+    border-radius: 6px;
+    animation: slackHighlight 2.5s ease-out;
+}
+
+@keyframes slackHighlight {
+    0%, 25% {
+        background-color: rgba(127, 82, 255, 0.25);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
 @keyframes kodeeMove {
     0%   {
         transform: rotate(0deg) translateX(0px)
