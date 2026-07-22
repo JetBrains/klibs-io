@@ -38,22 +38,22 @@ class AiIntegrationConfiguration {
         @Value("\${spring.ai.openai.api-key}") apiKey: String
     ): OpenAIClient {
         return OpenAiSetup.setupSyncClient(
-            /* baseUrl = */ null,
-            /* apiKey = */ apiKey,
-            /* credential = */ null,
-            /* azureDeploymentName = */ null,
-            /* azureOpenAiServiceVersion = */ null,
-            /* organizationId = */ null,
-            /* isAzure = */ false,
-            /* isGitHubModels = */ false,
-            /* modelName = */ null,
-            /* timeout = */ Duration.ofSeconds(120),
-            /* maxRetries = */ 2,
-            /* proxy = */ null,
-            /* customHeaders = */ null,
-            /* observationRegistry = */ ObservationRegistry.NOOP,
-            /* meterRegistry = */ null,
-            /* httpClientCustomizers = */ emptyList()
+            null,
+            apiKey,
+            null,
+            null,
+            null,
+            null,
+            false,
+            false,
+            null,
+            Duration.ofSeconds(120),
+            2,
+            null,
+            null,
+            ObservationRegistry.NOOP,
+            null,
+            emptyList()
         )
     }
 }

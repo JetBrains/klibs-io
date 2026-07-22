@@ -8,7 +8,6 @@ import com.openai.models.responses.ResponseOutputItem
 import com.openai.models.responses.WebSearchTool
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
-import org.springframework.ai.chat.model.ChatResponse
 import org.springframework.ai.chat.prompt.Prompt
 import org.springframework.ai.openai.OpenAiChatModel
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -52,22 +51,18 @@ class ChatGptSpringAiService(
         methodName: String,
         model: String,
     ): String {
-        // Start timing the request
-        val sample = Timer.start(meterRegistry)
+        val response = timed(methodName, model) { chatModel.call(prompt) }
 
-        val response = try {
-            chatModel.call(prompt)
-        } finally {
-            // Stop the timer immediately after the call, even if it throws
-            sample.stop(meterRegistry.timer("klibs.openai.request.time",
-                "method", methodName,
-                "model", model))
+        response.metadata.apply {
+            recordMetrics(
+                promptTokens = usage.promptTokens,
+                completionTokens = usage.completionTokens,
+                totalTokens = usage.totalTokens,
+                requestsRemaining = rateLimit.requestsRemaining,
+                tokensRemaining = rateLimit.tokensRemaining,
+            )
         }
 
-        // Record metrics from the response
-        recordMetrics(response)
-
-        // Process and return the response content
         return response.result?.output?.text ?: ""
     }
 
@@ -86,42 +81,45 @@ class ChatGptSpringAiService(
             .reasoning(Reasoning.builder().effort(ReasoningEffort.of(reasoningEffort)).build())
             .build()
 
-        val sample = Timer.start(meterRegistry)
-        val httpResponse = try {
+        val httpResponse = timed(methodName, model) {
             openAiClient.responses().withRawResponse().create(params)
-        } finally {
-            sample.stop(meterRegistry.timer("klibs.openai.request.time", "method", methodName, "model", model))
         }
 
         val response = httpResponse.parse()
-
-        response.usage().ifPresent {
-            promptTokensCounter.increment(it.inputTokens().toDouble())
-            completionTokensCounter.increment(it.outputTokens().toDouble())
-            totalTokensCounter.increment(it.totalTokens().toDouble())
-        }
-
+        val usage = response.usage().orElse(null)
         val headers = httpResponse.headers()
-        headers.values("x-ratelimit-remaining-requests").firstOrNull()?.toLongOrNull()
-            ?.let { rateLimitRequestsRemaining.set(it) }
-        headers.values("x-ratelimit-remaining-tokens").firstOrNull()?.toLongOrNull()
-            ?.let { rateLimitTokensRemaining.set(it) }
+        recordMetrics(
+            promptTokens = usage?.inputTokens(),
+            completionTokens = usage?.outputTokens(),
+            totalTokens = usage?.totalTokens(),
+            requestsRemaining = headers.values("x-ratelimit-remaining-requests").firstOrNull()?.toLongOrNull(),
+            tokensRemaining = headers.values("x-ratelimit-remaining-tokens").firstOrNull()?.toLongOrNull(),
+        )
 
         return extractResponseText(response.output())
     }
 
-    private fun recordMetrics(response: ChatResponse) {
-        response.metadata.apply {
-            usage?.apply {
-                promptTokens?.apply { promptTokensCounter.increment(this.toDouble()) }
-                completionTokens?.apply { completionTokensCounter.increment(this.toDouble()) }
-                totalTokens?.apply { totalTokensCounter.increment(this.toDouble()) }
-            }
-            rateLimit?.apply {
-                requestsRemaining?.apply { rateLimitRequestsRemaining.set(this) }
-                tokensRemaining?.apply { rateLimitTokensRemaining.set(this) }
-            }
+    private fun <T> timed(methodName: String, model: String, request: () -> T): T {
+        val sample = Timer.start(meterRegistry)
+        return try {
+            request()
+        } finally {
+            sample.stop(meterRegistry.timer("klibs.openai.request.time", "method", methodName, "model", model))
         }
+    }
+
+    private fun recordMetrics(
+        promptTokens: Number?,
+        completionTokens: Number?,
+        totalTokens: Number?,
+        requestsRemaining: Number?,
+        tokensRemaining: Number?,
+    ) {
+        promptTokens?.let { promptTokensCounter.increment(it.toDouble()) }
+        completionTokens?.let { completionTokensCounter.increment(it.toDouble()) }
+        totalTokens?.let { totalTokensCounter.increment(it.toDouble()) }
+        requestsRemaining?.let { rateLimitRequestsRemaining.set(it.toLong()) }
+        tokensRemaining?.let { rateLimitTokensRemaining.set(it.toLong()) }
     }
 }
 
