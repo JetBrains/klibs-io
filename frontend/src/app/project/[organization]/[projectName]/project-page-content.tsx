@@ -25,8 +25,17 @@ import Link from "next/link";
 import {PackageImporterDropdown} from "@/app/ui/package-importer-dropdown";
 import TargetsTablePopup from "@/app/ui/targets-table-popup";
 import {trackEvent, GAEvent} from "@/app/analytics";
+import {format} from "date-fns";
 
 const CREATE_ISSUE_URL = 'https://github.com/JetBrains/klibs-io-issue-management/issues/new';
+
+function buildArchivedNoticeText(projectOverview: ProjectDetails): string {
+    const archivedAt = projectOverview.archivedAtMillis != null
+        ? ` on ${format(new Date(projectOverview.archivedAtMillis), 'MMM d, yyyy')}`
+        : '';
+
+    return `The project's repository was archived${archivedAt}. The project will not receive updates.`;
+}
 
 function buildSuggestEditUrl(projectOverview: ProjectDetails): string {
     const params = new URLSearchParams();
@@ -62,80 +71,89 @@ export default function Project({
     const [activeIndex, setActiveIndex] = useState(0);
 
     return (
-        <Container className={"padding-bottom-large"}>
+        <>
+            {/* Archived repository notice */}
+            {projectOverview && projectOverview.archived &&
+                <div className={styles.archivedNotice}>
+                    {buildArchivedNoticeText(projectOverview)}
+                </div>
+            }
 
-            {/*Title wrapper*/}
-            <Container mode={"wrapper"} className={styles.titleWrapper}>
-                {projectOverview &&
-                    <>
-                        {/*Breadcrumbs*/}
-                        <ProjectBreadcrumb projectOverview={projectOverview}/>
-                        {/* Project name */}
-                        <h1 className={textCn('rs-h1')}>
-                            {projectOverview.name}
-                        </h1>
-                    </>
-                }
-            </Container>
+            <Container className={"padding-bottom-large"}>
 
-            {/*Body wrapper*/}
-            <Container mode={"wrapper"} split>
+                {/*Title wrapper*/}
+                <Container mode={"wrapper"} className={styles.titleWrapper}>
+                    {projectOverview &&
+                        <>
+                            {/*Breadcrumbs*/}
+                            <ProjectBreadcrumb projectOverview={projectOverview}/>
+                            {/* Project name */}
+                            <h1 className={textCn('rs-h1')}>
+                                {projectOverview.name}
+                            </h1>
+                        </>
+                    }
+                </Container>
 
-                {/* Page body section*/}
-                <Container mode={"wrapper"} className={styles.bodyWrapper}>
+                {/*Body wrapper*/}
+                <Container mode={"wrapper"} split>
 
-                    {/* Auto-gen data card */}
-                    <div className={cn(cardCn({paddings: 16}), styles.card)}>
-                        {/*Description*/}
-                        {projectOverview && projectOverview.description &&
-                            <p className={textCn('rs-text-2', {hardness: "hard"})}>
-                                {projectOverview.description}
-                            </p>
-                        }
-                        <div className={styles.descriptionRow}>
-                            {projectOverview && projectOverview.tags && <Tags tags={projectOverview.tags} className={styles.tagsRow}/>}
-                            <Link
-                                className={cn(textCn('rs-text-3'), styles.editLink)}
-                                href={buildSuggestEditUrl(projectOverview)}
-                                onClick={() => {trackEvent(GAEvent.PROJECT_INFO_LINK_CLICK, {eventCategory: projectOverview.name, eventLabel: 'Suggest an edit'})}}
-                            >
-                                Suggest an edit
-                            </Link>
+                    {/* Page body section*/}
+                    <Container mode={"wrapper"} className={styles.bodyWrapper}>
+
+                        {/* Auto-gen data card */}
+                        <div className={cn(cardCn({paddings: 16}), styles.card)}>
+                            {/*Description*/}
+                            {projectOverview && projectOverview.description &&
+                                <p className={textCn('rs-text-2', {hardness: "hard"})}>
+                                    {projectOverview.description}
+                                </p>
+                            }
+                            <div className={styles.descriptionRow}>
+                                {projectOverview && projectOverview.tags && <Tags tags={projectOverview.tags} className={styles.tagsRow}/>}
+                                <Link
+                                    className={cn(textCn('rs-text-3'), styles.editLink)}
+                                    href={buildSuggestEditUrl(projectOverview)}
+                                    onClick={() => {trackEvent(GAEvent.PROJECT_INFO_LINK_CLICK, {eventCategory: projectOverview.name, eventLabel: 'Suggest an edit'})}}
+                                >
+                                    Suggest an edit
+                                </Link>
+                            </div>
                         </div>
-                    </div>
 
-                    <Container mode="wrapper"
-                               className={cn(styles.rightSideColumnWrapper, textCn('rs-text-2'), "hide-on-max hide-on-large")}>
-                        <ProjectInfo projectOverview={projectOverview}/>
+                        <Container mode="wrapper"
+                                   className={cn(styles.rightSideColumnWrapper, textCn('rs-text-2'), "hide-on-max hide-on-large")}>
+                            <ProjectInfo projectOverview={projectOverview}/>
+                        </Container>
+
+                        {/*Project tabs desktop*/}
+                        <ProjectTabs projectReadme={projectReadme} projectPackages={projectPackages}
+                                     isMobile={false} activeIndex={activeIndex}
+                                     setActiveIndex={setActiveIndex} projectName={projectName}></ProjectTabs>
+
                     </Container>
 
-                    {/*Project tabs desktop*/}
-                    <ProjectTabs projectReadme={projectReadme} projectPackages={projectPackages}
-                                 isMobile={false} activeIndex={activeIndex}
-                                 setActiveIndex={setActiveIndex} projectName={projectName}></ProjectTabs>
+                    {/* Right-side page section */}
+                    <Container mode={"wrapper"} smallColumn>
+                        <Container
+                            mode="wrapper"
+                            className={cn(
+                                styles.rightSideColumnWrapper,
+                                textCn('rs-text-2'),
+                                "hide-on-medium hide-on-small"
+                            )}
+                        >
 
-                </Container>
-
-                {/* Right-side page section */}
-                <Container mode={"wrapper"} smallColumn>
-                    <Container
-                        mode="wrapper"
-                        className={cn(
-                            styles.rightSideColumnWrapper,
-                            textCn('rs-text-2'),
-                            "hide-on-medium hide-on-small"
-                        )}
-                    >
-
-                        <ProjectInfo projectOverview={projectOverview}/>
+                            <ProjectInfo projectOverview={projectOverview}/>
+                        </Container>
                     </Container>
                 </Container>
+
+                {/*Project tabs mobile and tablet*/}
+                <ProjectTabs projectReadme={projectReadme} projectPackages={projectPackages} isMobile={true}
+                             activeIndex={activeIndex} setActiveIndex={setActiveIndex} projectName={projectName}></ProjectTabs>
             </Container>
-
-            {/*Project tabs mobile and tablet*/}
-            <ProjectTabs projectReadme={projectReadme} projectPackages={projectPackages} isMobile={true}
-                         activeIndex={activeIndex} setActiveIndex={setActiveIndex} projectName={projectName}></ProjectTabs>
-        </Container>
+        </>
     );
 }
 

@@ -9,6 +9,7 @@ import io.klibs.integration.github.model.GitHubPullRequest
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.GqlCommitAuthorsResponse
+import io.klibs.integration.github.model.GqlRepositoryArchivedAtResponse
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
@@ -74,8 +75,9 @@ internal class GitHubIntegrationKohsukeLibrary(
 
 
     override fun getRepository(nativeId: Long): GitHubRepository? {
-        val repo = getRepositoryById(nativeId)
-        return repo?.toModel()
+        val ghRepository = getRepositoryById(nativeId) ?: return null
+
+        return ghRepository.toModel()
     }
 
     override fun getRepository(owner: String, name: String): GitHubRepository? {
@@ -124,10 +126,39 @@ internal class GitHubIntegrationKohsukeLibrary(
             hasGhPages = this.hasPages(),
             hasIssues = this.hasIssues(),
             hasWiki = this.hasWiki(),
+            archived = this.isArchived,
             stars = this.stargazersCount,
             openIssues = this.openIssueCount,
             lastActivity = this.pushedAt.toInstant(),
         )
+    }
+
+    override fun getArchivedAt(owner: String, name: String): Instant? {
+        val responseBody = postGraphQl(
+            REPOSITORY_ARCHIVED_AT_QUERY,
+            mapOf("owner" to owner, "name" to name)
+        ) ?: run {
+            logger.warn("GitHub GraphQL archivedAt request failed for $owner/$name")
+            return null
+        }
+
+        val response = jsonMapper.readValue(responseBody, GqlRepositoryArchivedAtResponse::class.java)
+        if (!response.errors.isNullOrEmpty()) {
+            logger.warn("GraphQL archivedAt errors for $owner/$name: ${response.errors.toString().take(300)}")
+            return null
+        }
+
+        val repository = response.data?.repository
+            ?: run {
+                logger.warn("GraphQL archivedAt response does not contain repository for $owner/$name")
+                return null
+            }
+
+        return repository.archivedAt?.let {
+            runCatching { Instant.parse(it) }
+                .onFailure { error -> logger.warn("Unable to parse GitHub archivedAt for $owner/$name: $it", error) }
+                .getOrNull()
+        }
     }
 
     override fun getLicense(repositoryId: Long): GitHubLicense? {
@@ -408,6 +439,14 @@ internal class GitHubIntegrationKohsukeLibrary(
                     }
                   }
                 }
+              }
+            }
+        """.trimIndent()
+
+        private val REPOSITORY_ARCHIVED_AT_QUERY = """
+            query RepositoryArchivedAt(${'$'}owner: String!, ${'$'}name: String!) {
+              repository(owner: ${'$'}owner, name: ${'$'}name) {
+                archivedAt
               }
             }
         """.trimIndent()

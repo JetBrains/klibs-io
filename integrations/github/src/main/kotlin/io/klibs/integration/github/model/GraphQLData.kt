@@ -1,5 +1,7 @@
 package io.klibs.integration.github.model
 
+import com.fasterxml.jackson.databind.JsonNode
+
 // --- GraphQL response shape, Maps directly to COMMIT_AUTHORS_QUERY. ---
 internal data class GqlCommitAuthorsResponse(
     val data: GqlCommitsData? = null,
@@ -18,3 +20,11 @@ internal data class GqlCommitNode(val author: GqlAuthor?)
 internal data class GqlAuthor(val user: GqlUser?, val email: String?)
 internal data class GqlUser(val login: String?)
 internal data class GqlPageInfo(val hasNextPage: Boolean, val endCursor: String?)
+
+internal data class GqlRepositoryArchivedAtResponse(
+    val data: GqlRepositoryArchivedAtData? = null,
+    val errors: List<JsonNode>? = null,
+)
+
+internal data class GqlRepositoryArchivedAtData(val repository: GqlRepositoryArchivedAt?)
+internal data class GqlRepositoryArchivedAt(val archivedAt: String?)

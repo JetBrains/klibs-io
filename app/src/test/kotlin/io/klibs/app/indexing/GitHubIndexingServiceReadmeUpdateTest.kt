@@ -48,7 +48,8 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
             createdAt = repo.createdTs,
             hasGhPages = repo.hasGhPages,
             hasIssues = repo.hasIssues,
-            hasWiki = repo.hasWiki
+            hasWiki = repo.hasWiki,
+            archived = repo.archived
         )
 
         whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
@@ -85,7 +86,8 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
             createdAt = repo.createdTs,
             hasGhPages = repo.hasGhPages,
             hasIssues = repo.hasIssues,
-            hasWiki = repo.hasWiki
+            hasWiki = repo.hasWiki,
+            archived = repo.archived
         )
 
         whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
@@ -120,7 +122,8 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
             createdAt = repo.createdTs,
             hasGhPages = repo.hasGhPages,
             hasIssues = repo.hasIssues,
-            hasWiki = repo.hasWiki
+            hasWiki = repo.hasWiki,
+            archived = repo.archived
         )
 
         whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
@@ -160,7 +163,8 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
             createdAt = repo.createdTs,
             hasGhPages = repo.hasGhPages,
             hasIssues = repo.hasIssues,
-            hasWiki = repo.hasWiki
+            hasWiki = repo.hasWiki,
+            archived = repo.archived
         )
 
         whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)

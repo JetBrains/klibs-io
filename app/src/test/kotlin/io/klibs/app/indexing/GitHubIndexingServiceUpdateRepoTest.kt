@@ -73,6 +73,7 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
             hasGhPages = scmRepoBefore.hasGhPages,
             hasIssues = scmRepoBefore.hasIssues,
             hasWiki = scmRepoBefore.hasWiki,
+            archived = scmRepoBefore.archived,
             stars = scmRepoBefore.stars,
             openIssues = scmRepoBefore.openIssues,
             lastActivity = scmRepoBefore.lastActivityTs,

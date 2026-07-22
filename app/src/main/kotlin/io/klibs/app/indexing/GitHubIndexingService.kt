@@ -96,6 +96,11 @@ class GitHubIndexingService(
 
         val hasReadme = updateReadme(projectEntity, repoToUpdate, ghRepo, repoToUpdate.updatedAtTs)
         val license = gitHubIntegration.getLicense(ghRepo.nativeId)
+        val archivedAt = if (ghRepo.archived) {
+            gitHubIntegration.getArchivedAt(ghRepo.owner, ghRepo.name) ?: repoToUpdate.archivedAt
+        } else {
+            null
+        }
 
         val scmRepositoryEntity = repoToUpdate.copy(
             nativeId = ghRepo.nativeId,
@@ -107,6 +112,8 @@ class GitHubIndexingService(
             hasGhPages = ghRepo.hasGhPages,
             hasIssues = ghRepo.hasIssues,
             hasWiki = ghRepo.hasWiki,
+            archived = ghRepo.archived,
+            archivedAt = archivedAt,
             hasReadme = hasReadme,
             licenseKey = license?.key,
             licenseName = license?.name,
@@ -295,6 +302,7 @@ class GitHubIndexingService(
 
         val ownerEntity = indexOwner(repo.owner)
         val license = gitHubIntegration.getLicense(repo.nativeId)
+        val archivedAt = if (repo.archived) gitHubIntegration.getArchivedAt(repo.owner, repo.name) else null
 
         val persistedEntity = scmRepositoryRepository.upsert(
             ScmRepositoryEntity(
@@ -310,6 +318,8 @@ class GitHubIndexingService(
                 hasGhPages = repo.hasGhPages,
                 hasIssues = repo.hasIssues,
                 hasWiki = repo.hasWiki,
+                archived = repo.archived,
+                archivedAt = archivedAt,
                 hasReadme = false, // to be set later
                 licenseKey = license?.key,
                 licenseName = license?.name,

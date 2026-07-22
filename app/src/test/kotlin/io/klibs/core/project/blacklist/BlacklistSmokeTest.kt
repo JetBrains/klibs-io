@@ -126,6 +126,7 @@ class BlacklistSmokeTest : SmokeTestBase() {
             hasGhPages = false,
             hasIssues = true,
             hasWiki = true,
+            archived = false,
             hasReadme = true,
             licenseKey = "mit",
             licenseName = "MIT License",
