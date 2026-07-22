@@ -21,7 +21,7 @@ spec:
               command: ["/bin/psql-backup"]
               envFrom:
                 - secretRef: # db secret
-                    name: db-secrets # secret to database admin user. Important: it should be admin for pg
+                    name: standalone-db-secrets # secret to database admin user. Important: it should be admin for pg
                 - secretRef: # bucket secret
                     name: db-backup-admin-secret # secret to bucket with Write/ReadWrite permissions
               env:
