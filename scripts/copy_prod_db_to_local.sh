@@ -18,17 +18,18 @@
 # -C <postgres_container>: Name or ID of the running PostgreSQL container.
 # -L <local_user>: Username of the local database.
 # -D <local_db>: Name of the local database.
+# -S <secret_name>: Name of the Kubernetes secret containing database credentials.
 #
 # DEPENDENCIES:
 # - Docker must be installed and running for local database management.
 # - kubectl must be configured correctly to access the Kubernetes API.
-# - The script assumes that database secrets are stored in a Kubernetes secret
-#   named "db-secrets".
+# - The script requires a Kubernetes secret name to be provided via the -S parameter,
+#   which contains the database credentials (host, port, username, password, database).
 #
 # EXAMPLES:
-# ./copy_prod_db_to_local.sh -K klibs-prod -C klibs-io -L postgres -D postgres
+# ./copy_prod_db_to_local.sh -K klibs-prod -C klibs-io -L postgres -D postgres -S evn-db-secrets
 #   - Syncs the "klibs-prod" remote database with "postgres" in a Docker container
-#     named "klibs-io" using the credentials provided.
+#     named "klibs-io" using the credentials from the "env-db-secrets" Kubernetes secret.
 #
 # CLEANUP:
 # Upon script exit (success or failure), any generated temporary files are 
@@ -85,27 +86,29 @@ cleanup() {
 trap cleanup EXIT
 
 usage() {
-  echo "Usage: $0 -K <context> -L <local_user> -D <local_db> -C <postgres_container>"
+  echo "Usage: $0 -K <context> -L <local_user> -D <local_db> -C <postgres_container> -S <secret_name>"
   echo "  -K   Kubernetes context (e.g., klibs-prod or klibs-test)"
   echo "  -C   Local PostgreSQL container name or ID"
   echo "  -L   Local database user"
   echo "  -D   Local database name"
+  echo "  -S   Kubernetes secret name for database credentials"
   exit 1
 }
 
 # Parse command-line arguments
-while getopts "K:L:D:C:" opt; do
+while getopts "K:L:D:C:S:" opt; do
   case "$opt" in
     K) CONTEXT="$OPTARG" ;;
     L) LOCAL_USER="$OPTARG" ;;
     D) LOCAL_DB="$OPTARG" ;;
     C) POSTGRES_CONTAINER="$OPTARG" ;;
+    S) SECRET_NAME="$OPTARG" ;;
     *) usage ;;
   esac
 done
 
 # Ensure required parameters are provided
-if [[ -z "$CONTEXT" || -z "$LOCAL_USER" || -z "$LOCAL_DB" || -z "$POSTGRES_CONTAINER" ]]; then
+if [[ -z "$CONTEXT" || -z "$LOCAL_USER" || -z "$LOCAL_DB" || -z "$POSTGRES_CONTAINER" || -z "$SECRET_NAME" ]]; then
   usage
 fi
 
@@ -121,18 +124,18 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-# Step 2: Validate and fetch secret values from 'db-secrets'
-echo "### Verifying and fetching database secrets..."
-if kubectl get secret db-secrets &>/dev/null; then
+# Step 2: Validate and fetch secret values from the specified Kubernetes secret
+echo "### Verifying and fetching database secrets from '$SECRET_NAME'..."
+if kubectl get secret "$SECRET_NAME" &>/dev/null; then
   echo "Secrets found. Decoding values..."
-  REMOTE_HOST=$(kubectl get secret db-secrets -o jsonpath="{.data.host}" | base64 -d)
-  REMOTE_PORT=$(kubectl get secret db-secrets -o jsonpath="{.data.port}" | base64 -d)
-  REMOTE_USER=$(kubectl get secret db-secrets -o jsonpath="{.data.username}" | base64 -d)
-  REMOTE_PASSWORD=$(kubectl get secret db-secrets -o jsonpath="{.data.password}" | base64 -d)
-  REMOTE_DB=$(kubectl get secret db-secrets -o jsonpath="{.data.database}" | base64 -d)
+  REMOTE_HOST=$(kubectl get secret "$SECRET_NAME" -o jsonpath="{.data.host}" | base64 -d)
+  REMOTE_PORT=$(kubectl get secret "$SECRET_NAME" -o jsonpath="{.data.port}" | base64 -d)
+  REMOTE_USER=$(kubectl get secret "$SECRET_NAME" -o jsonpath="{.data.username}" | base64 -d)
+  REMOTE_PASSWORD=$(kubectl get secret "$SECRET_NAME" -o jsonpath="{.data.password}" | base64 -d)
+  REMOTE_DB=$(kubectl get secret "$SECRET_NAME" -o jsonpath="{.data.name}" | base64 -d)
   echo "Secrets successfully decoded."
 else
-  echo "Warning: 'db-secrets' not found. Ensure that your database details are correct."
+  echo "Error: Kubernetes secret '$SECRET_NAME' not found. Ensure that the secret name is correct."
   exit 1
 fi
 

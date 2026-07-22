@@ -20,22 +20,22 @@ spec:
               /bin/psql-restore
           envFrom:
             - secretRef: # db secret
-                name: db-secrets # secret to database admin user. Important: it should be admin for pg
+                name: standalone-db-secrets # secret to database admin user. Important: it should be admin for pg
             - secretRef: # bucket secret
                 name: db-backup-admin-secret # secret to bucket with ReadOnly/ReadWrite permissions
           env:
             - name: BACKUP_FILE # prefix in the bucket for a backup file
               value: backups/mydatabase/klibs_prod_db_latest_version.pgdump.gz
             - name: PGHOST
-              valueFrom: { secretKeyRef: { name: db-secrets, key: host } }
+              valueFrom: { secretKeyRef: { name: standalone-db-secrets, key: host } }
             - name: PGPORT
-              valueFrom: { secretKeyRef: { name: db-secrets, key: port } }
+              valueFrom: { secretKeyRef: { name: standalone-db-secrets, key: port } }
             - name: PGUSER
-              valueFrom: { secretKeyRef: { name: db-secrets, key: username } }
+              valueFrom: { secretKeyRef: { name: standalone-db-secrets, key: username } }
             - name: PGPASSWORD
-              valueFrom: { secretKeyRef: { name: db-secrets, key: password } }
+              valueFrom: { secretKeyRef: { name: standalone-db-secrets, key: password } }
             - name: PGDATABASE
-              valueFrom: { secretKeyRef: { name: db-secrets, key: name } }
+              valueFrom: { secretKeyRef: { name: standalone-db-secrets, key: name } }
           volumeMounts:
             - name: tmp
               mountPath: /tmp

@@ -12,3 +12,5 @@ secrets:
   - klibs-readme-user
 configMaps:
   - prod-config
+databaseSecrets:
+  - standalone-db-secrets
