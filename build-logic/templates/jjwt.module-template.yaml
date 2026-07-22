@@ -1,0 +1,4 @@
+dependencies:
+  - $libs.jjwt.api
+  - $libs.jjwt.impl
+  - $libs.jjwt.jackson

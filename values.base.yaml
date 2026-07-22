@@ -1,0 +1,32 @@
+autoscaling:
+  enabled: false
+deployStrategy:
+  rollingUpdate:
+    maxUnavailable: 50%
+  type: RollingUpdate
+health:
+  path: /ping
+  liveness:
+    initialDelaySeconds: 300
+databaseSecrets:
+  - db-secrets
+ingress:
+  enabled: false
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: /actuator/prometheus
+  prometheus.io/port: "8080"
+  prometheus.io/scheme: http|https
+extraVolumes:
+  - name: data
+    ephemeral:
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 25Gi
+extraVolumeMounts:
+  - name: data
+    mountPath: /data

@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 ## Project Overview
 
@@ -9,7 +9,7 @@ klibs.io — a service that indexes, catalogs, and provides search for Kotlin Mu
 - **Language:** Kotlin 2.0+, JVM target: Java 21+
 - **Framework:** Spring Boot
 - **Database:** PostgreSQL 15+ (Liquibase migrations, JPA + raw JDBC)
-- **Build:** Gradle with Kotlin DSL, version catalog at `gradle/libs.versions.toml`
+- **Build:** Kotlin Toolchain (module manifests in `module.yaml`, shared templates under `build-logic/templates/`, version catalog at `gradle/libs.versions.toml` referenced via `$libs.*`)
 - **Docker:** PostgreSQL, localstack, Testcontainers
 
 Note: avoid introducing new dependencies unless absolutely necessary.
@@ -29,8 +29,10 @@ integrations/
   ai/                       # OpenAI integration (descriptions, tags)
   github/                   # GitHub API integration
   maven/                    # Maven Central scanning and indexing
-build-logic/                # Gradle convention plugins
-build-settings-logic/       # Gradle settings plugins
+build-logic/
+  templates/                # Shared Kotlin Toolchain module templates (base, kotlin-jvm, spring-*, persistence, mock)
+  plugins/                  # Local Kotlin Toolchain plugins (git-properties, jib)
+project.yaml                # Kotlin Toolchain project root (module list + plugin registrations)
 frontend/                   # Frontend app (React)
 ```
 
@@ -39,28 +41,34 @@ Module structure follows "module by feature". Each core module has its own entit
 ## Build & Run
 
 ```bash
-# Build
-./gradlew build
-
 # Build without tests
-./gradlew build -x test
+./kotlin build
+
+# Run tests (see Testing section for scoping flags)
+./kotlin test
+
+# Package the runnable JAR
+./kotlin package
+# Output: build/tasks/_app_executableJarJvm/app-jvm-executable.jar
 
 # Run locally with Spring profile (requires Docker for PostgreSQL and localstack via docker-compose)
-./gradlew bootRun --args='--spring.profiles.active=local'
+./kotlin run -m app
+
+# Or run the main function by ./kotlin run -m app --main-class <class>
 ```
 
 ## Testing
 
 ```bash
 # Run all tests
-./gradlew test
+./kotlin test
 
 # Run tests for a specific module
-./gradlew :app:test
-./gradlew :core:package:test
+./kotlin test -m app
+./kotlin test -m package
 
-# Run a specific test class
-./gradlew :app:test --tests "io.klibs.app.example.SimpleExampleTest"
+# Run a specific test (fully qualified name)
+./kotlin test --include-test=io.klibs.app.example.SimpleExampleTest
 ```
 
 - **Framework:** JUnit 5, Spring Boot Test, MockMvc, Testcontainers (PostgreSQL), Mockito Kotlin
@@ -119,7 +127,34 @@ Don't delete branches either.
 - `hotfix/KTL-<id>-<desc>` — hotfix branches from master
 - Release tags: `release-yyyy.mm.dd`
 
-## Claude Code Working Agreement (Milestone Gating)
+## API Documentation
+
+Swagger UI available at `/api-docs/swagger-ui.html`. Actuator at `/actuator/health` and `/actuator/info`.
+
+## Updating JVM Version
+
+Two places to update:
+1. `build-logic/templates/kotlin-jvm.module-template.yaml` — `settings.jvm.jdk.version`. All JVM modules inherit from this template, so this is the build-time source of truth.
+2. `app/module.yaml` — `plugins.jib.baseImage.fullName`. The container runtime must match the build JDK.
+
+## Updating Kotlin Toolchain version
+
+`./kotlin update`, if it's a dev version then `./kotlin update --dev`
+
+JVM runtime which Kotlin Toolchain runs on is tied to Kotlin Toolchain distribution, hence updating Kotlin Toolchain updates the JVM runtime under the hood.
+
+## Build Plugins
+
+If some functionality is not natively supported by Kotlin Toolchain's declarative YAML configuration, you can use [local plugins](https://kotlin-toolchain.org/dev/) to extend the build. This is the escape hatch for custom build logic — feel free to use it when needed.
+If Kotlin Toolchain does not provide some functionality out of the box, but an equivalent Gradle plugin exists, do not try to reuse or adapt the Gradle plugin inside this project. Reimplement the needed behavior using Kotlin Toolchain's local plugin system instead.
+
+When a library's standard workflow includes a build-time processing step (code generation from declarative files, schema compilation, resource transformation, etc.), that step must be implemented as a Kotlin Toolchain local plugin. Do not bypass or skip the processing step by manually writing code that the tool is designed to generate, or by using the library in a degraded/runtime-only mode. Preserve the library's full intended workflow.
+
+### Build Tool Policy
+
+Treat Kotlin Toolchain as a fixed project requirement. Do not ask to switch to Gradle or re-open the Kotlin Toolchain/Gradle tradeoff just because some library or tool commonly uses Gradle-oriented workflows. When build-time processing is needed, implement it within the Kotlin Toolchain workflow and keep the discussion focused on the chosen repository approach rather than on alternative build systems or plugin-name specifics, unless the user explicitly asks for that detail.
+
+## Codex Working Agreement (Milestone Gating)
 
 ### Objective
 Reduce context switching and rework. Prefer small, reviewable diffs and explicit stop points.

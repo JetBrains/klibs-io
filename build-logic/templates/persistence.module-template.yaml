@@ -1,0 +1,16 @@
+apply:
+  - ./spring.module-template.yaml
+  - ./testcontainers.module-template.yaml
+
+# Kotlin JPA is added by default by springBoot: enabled (via no-arg with JPA preset)
+
+settings:
+  kotlin:
+    freeCompilerArgs:
+      - -jvm-default=no-compatibility
+
+dependencies:
+  - $libs.spring.boot.starter.jdbc
+  - $libs.spring.boot.starter.data.jpa
+  - $libs.spring.boot.starter.liquibase
+  - $libs.postgresql

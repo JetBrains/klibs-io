@@ -1,0 +1,28 @@
+tasks:
+  jib:
+    action: !org.kotlintoolchain.plugin.jib.buildAndPush
+      runtimeClasspath: ${module.runtimeClasspath}
+      projectRootDir: ${project.rootDir}
+      container: ${pluginSettings.container}
+      baseImage: ${pluginSettings.baseImage}
+      targetImage: ${pluginSettings.targetImage}
+  jibDockerBuild:
+    action: !org.kotlintoolchain.plugin.jib.buildToDockerDaemon
+      runtimeClasspath: ${module.runtimeClasspath}
+      projectRootDir: ${project.rootDir}
+      container: ${pluginSettings.container}
+      baseImage: ${pluginSettings.baseImage}
+      targetImage: ${pluginSettings.targetImage}
+  jibBuildTar:
+    action: !org.kotlintoolchain.plugin.jib.buildTar
+      runtimeClasspath: ${module.runtimeClasspath}
+      projectRootDir: ${project.rootDir}
+      container: ${pluginSettings.container}
+      baseImage: ${pluginSettings.baseImage}
+      outputTar: ${taskOutputDir}/${module.name}-oci-image.tar
+      targetImage: ${pluginSettings.targetImage}
+
+
+commands:
+  - name: jib
+    performedBy: jib

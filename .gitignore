@@ -54,3 +54,5 @@ docker-compose-volumes
 /.junie/skills/
 /.codex
 
+### Cursor ###
+.cursor/plans/

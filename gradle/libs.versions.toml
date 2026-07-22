@@ -1,10 +1,11 @@
+# TODO(KTC-740): Migrate to a native Kotlin Toolchain project catalog when supported.
+
 [versions]
 
 kotlin = "2.3.20"
+mappie = "2.3.20-2.4.1"
 
 # Spring
-spring-boot = "4.0.5"
-spring-dependencyManagement = "1.1.7"
 spring-doc = "3.0.3"
 spring-ai = "2.0.0-M4"
 spring-cloud-aws = "4.0.0"
@@ -15,21 +16,15 @@ shedlock = "6.6.0"
 kohsuke-githubApi = "1.330"
 jjwt = "0.12.6"
 
-kotlinx-coroutines = "1.10.1"
-kotlinx-serialization = "1.6.3"
+kotlinx-coroutines = "1.10.2"
 
 okhttp = "4.12.0"
 bucket4j = "8.10.1"
-caffeine = "3.1.8"
+caffeine = "3.2.3"
 
-maven-model = "3.9.6"
+maven-model = "3.9.9"
 maven-indexer = "7.1.6"
 
-gorylenko-gitProperties = "2.5.4"
-
-jib = "3.4.3"
-
-mapstruct = "1.7.0.Beta1"
 mockito = "5.1.0"
 testcontainers = "1.21.4"
 
@@ -39,50 +34,33 @@ xml-util = "0.90.0"
 
 kotlin-semver = "3.0.0"
 
-[plugins]
-
-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-springBoot = { id = "org.springframework.boot", version.ref = "spring-boot" }
-springDependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependencyManagement" }
-gitProperties = { id = "com.gorylenko.gradle-git-properties", version.ref = "gorylenko-gitProperties" }
-jib = { id = "com.google.cloud.tools.jib", version.ref = "jib" }
-kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlinSpring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
-kotlinSpringJpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
-
-
 [libraries]
 
 kotlinx-coroutines-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm", version.ref = "kotlinx-coroutines" }
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
-kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlin-toolingMetadata = { module = "org.jetbrains.kotlin:kotlin-tooling-metadata", version.ref = "kotlin" }
+mappie-api = { module = "tech.mappie:mappie-api", version.ref = "mappie" }
+mappie-compiler-plugin = { module = "tech.mappie:mappie-compiler-plugin", version.ref = "mappie" }
 
 shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring", version.ref = "shedlock" }
 shedlock-jdbc = { module = "net.javacrumbs.shedlock:shedlock-provider-jdbc-template", version.ref = "shedlock" }
 
 springdoc-openapi-starter = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "spring-doc" }
 spring-ai-bom = { group = "org.springframework.ai", name = "spring-ai-bom", version.ref = "spring-ai" }
-spring-ai-starter-model-openai = { group = "org.springframework.ai", name = "spring-ai-starter-model-openai" }
-spring-ai-starter-mcp-server-webmvc = { group = "org.springframework.ai", name = "spring-ai-starter-mcp-server-webmvc" }
+spring-ai-starter-model-openai = { module = "org.springframework.ai:spring-ai-starter-model-openai" }
+spring-ai-starter-mcp-server-webmvc = { module = "org.springframework.ai:spring-ai-starter-mcp-server-webmvc" }
 spring-cloud-aws-starter-s3 = { group = "io.awspring.cloud", name = "spring-cloud-aws-starter-s3", version.ref= "spring-cloud-aws" }
 spring-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
-spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
-spring-boot-starter-logging = { module = "org.springframework.boot:spring-boot-starter-logging" }
-spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
-spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
 spring-boot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
-spring-boot-docker-compose = { module = "org.springframework.boot:spring-boot-docker-compose" }
-jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
-jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml" }
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version = "2.21.2" }
+jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version = "2.21.2" }
 
 kohsuke-githubApi = { module = "org.kohsuke:github-api", version.ref = "kohsuke-githubApi" }
 jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
@@ -96,8 +74,6 @@ maven-indexer-search-api = {module="org.apache.maven.indexer:search-api", versio
 maven-indexer-search-backend-smo = {module="org.apache.maven.indexer:search-backend-smo", version.ref = "maven-indexer"}
 maven-indexer-indexer-core = {module="org.apache.maven.indexer:indexer-core", version.ref = "maven-indexer"}
 maven-indexer-search-backend-indexer = {module="org.apache.maven.indexer:search-backend-indexer", version.ref = "maven-indexer"}
-mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
-mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
 
@@ -116,24 +92,3 @@ markdown = { module = "org.jetbrains:markdown", version.ref = "markdown" }
 xml-util = { module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xml-util" }
 
 kotlin-semver = { module = "io.github.z4kn4fein:semver", version.ref = "kotlin-semver" }
-
-[bundles]
-maven-indexer = [
-    "maven-indexer-search-api",
-    "maven-indexer-search-backend-smo",
-    "maven-indexer-indexer-core",
-    "maven-indexer-search-backend-indexer"
-]
-
-jjwt = [
-    "jjwt-api",
-    "jjwt-impl",
-    "jjwt-jackson"
-]
-
-testcontainers = [
-    "testcontainers",
-    "testcontainers-postgresql",
-    "testcontainers-jdbc",
-    "testcontainers-database-commons"
-]

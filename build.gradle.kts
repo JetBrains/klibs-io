@@ -1,9 +1,2 @@
-plugins {
-    id("klibs.base")
-    alias(libs.plugins.jib) apply false
-}
-
-// Use this task to update kotlin version
-tasks.updateDaemonJvm {
-    languageVersion = JavaLanguageVersion.of(21)
-}
+// TODO(KTC-5557): Remove when Dependabot supports dependencies declared in Kotlin Toolchain module.yaml files.
+// This file makes Dependabot detect a Gradle project and update gradle/libs.versions.toml in the meantime.

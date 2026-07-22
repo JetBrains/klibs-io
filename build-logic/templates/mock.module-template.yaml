@@ -1,0 +1,6 @@
+apply:
+  - ./spring.module-template.yaml
+
+test-dependencies:
+  - $libs.mockito
+  - $libs.mockito.kotlin

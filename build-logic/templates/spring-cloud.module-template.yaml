@@ -1,0 +1,5 @@
+apply:
+  - ./spring.module-template.yaml
+
+dependencies:
+  - $libs.spring.cloud.aws.starter.s3

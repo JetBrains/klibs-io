@@ -1,0 +1,12 @@
+product: jvm/lib
+
+apply:
+  - ../../build-logic/templates/spring-cloud.module-template.yaml
+  - ../../build-logic/templates/mock.module-template.yaml
+  - ../../build-logic/templates/persistence.module-template.yaml
+
+dependencies:
+  - ../storage
+  - ../../integrations/github
+  - $libs.markdown
+  - $libs.okhttp

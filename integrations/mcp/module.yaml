@@ -1,0 +1,23 @@
+product: jvm/lib
+
+apply:
+  - ../../build-logic/templates/mock.module-template.yaml
+
+dependencies:
+  - bom: $libs.spring.ai.bom
+  - $libs.mappie.api
+  - $libs.spring.ai.starter.mcp.server.webmvc: exported
+  - ../../core/package
+  - ../../core/search
+  - ../../core/project
+  - ../../core/scm-owner
+  - ../../core/readme
+
+settings:
+  kotlin:
+    compilerPlugins:
+      - id: mappie
+        dependency: $libs.mappie.compiler.plugin
+        options:
+          output-dir: build/mappie
+          use-default-arguments: false

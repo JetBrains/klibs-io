@@ -1,0 +1,12 @@
+apply:
+  - ./spring.module-template.yaml
+
+dependencies:
+  - $libs.spring.boot.starter.web
+  - $libs.spring.boot.starter.security
+  - $libs.spring.boot.starter.validation
+  - $libs.kotlinx.coroutines.reactor
+  - $libs.springdoc.openapi.starter
+
+test-dependencies:
+  - $libs.spring.boot.starter.webmvc.test

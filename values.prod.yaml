@@ -1,0 +1,14 @@
+minReplicaCount: 3
+resources:
+  requests:
+    cpu: 100m
+    memory: 1024Mi
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+secrets:
+  - prod-credentials
+  - prod-klibs-auth
+  - klibs-readme-user
+configMaps:
+  - prod-config

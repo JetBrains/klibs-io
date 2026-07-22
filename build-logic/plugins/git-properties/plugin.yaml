@@ -1,0 +1,10 @@
+tasks:
+  generateGitProperties:
+    action: !org.kotlintoolchain.plugin.gitcommitid.generateGitProperties
+      moduleRootDir: ${module.rootDir}
+      propertiesFile: ${taskOutputDir}/${pluginSettings.propertiesFile}
+      settings: ${pluginSettings}
+
+generated:
+  resources:
+    - directory: ${tasks.generateGitProperties.action.propertiesFile}
