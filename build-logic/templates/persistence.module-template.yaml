@@ -1,5 +1,6 @@
 apply:
   - ./spring.module-template.yaml
+  - ./testcontainers.module-template.yaml
 
 # Kotlin JPA is added by default by springBoot: enabled (via no-arg with JPA preset)
 
@@ -13,10 +14,3 @@ dependencies:
   - $libs.spring.boot.starter.data.jpa
   - $libs.spring.boot.starter.liquibase
   - $libs.postgresql
-
-# Equivalent to upstream libs.bundles.testcontainers.
-test-dependencies:
-  - $libs.testcontainers
-  - $libs.testcontainers.postgresql
-  - $libs.testcontainers.jdbc
-  - $libs.testcontainers.database.commons

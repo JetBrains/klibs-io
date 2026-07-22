@@ -1,0 +1,5 @@
+dependencies:
+  - $libs.maven.indexer.search.api
+  - $libs.maven.indexer.search.backend.smo
+  - $libs.maven.indexer.indexer.core
+  - $libs.maven.indexer.search.backend.indexer

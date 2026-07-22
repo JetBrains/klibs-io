@@ -2,11 +2,9 @@ product: jvm/lib
 
 apply:
   - ../../build-logic/templates/mock.module-template.yaml
+  - ../../build-logic/templates/jjwt.module-template.yaml
 
 dependencies:
   - $libs.kohsuke.githubApi
-  - $libs.jjwt.api
-  - $libs.jjwt.impl
-  - $libs.jjwt.jackson
   - $libs.okhttp
   - $libs.caffeine
