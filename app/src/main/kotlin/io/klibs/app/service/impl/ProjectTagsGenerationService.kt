@@ -10,8 +10,8 @@ import org.springframework.ai.chat.messages.Message
 import org.springframework.ai.chat.messages.SystemMessage
 import org.springframework.ai.chat.messages.UserMessage
 import org.springframework.ai.chat.prompt.Prompt
+import org.springframework.ai.openai.OpenAiChatModel
 import org.springframework.ai.openai.OpenAiChatOptions
-import org.springframework.ai.openai.api.ResponseFormat
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Service
@@ -79,15 +79,8 @@ internal class ProjectTagsGenerationService(
     private val modelName = AiService.DEFAULT_GPT
 
     private val options by lazy {
-        val jsonSchema = ResponseFormat.JsonSchema.builder()
-            .name("tag_indices")
-            .schema(schema)
-            .strict(true)
-            .build()
-
-        val responseFormat = ResponseFormat.builder()
-            .type(ResponseFormat.Type.JSON_SCHEMA)
-            .jsonSchema(jsonSchema)
+        val responseFormat = OpenAiChatModel.ResponseFormat.builder()
+            .jsonSchema(objectMapper.writeValueAsString(schema))
             .build()
 
         OpenAiChatOptions.builder()

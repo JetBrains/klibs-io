@@ -11,8 +11,17 @@ interface AiService {
         model: String,
     ): String
 
+    fun executeWebSearchRequest(
+        model: String,
+        instructions: String,
+        userContent: String,
+        reasoningEffort: String,
+        methodName: String,
+    ): String
+
     companion object {
         const val DEFAULT_GPT = "gpt-5-mini"
-        const val WEBSEARCH_GPT = "gpt-4o-search-preview"
+        const val WEBSEARCH_GPT = "gpt-5-mini"
+        const val WEBSEARCH_EFFORT = "low"
     }
 }
