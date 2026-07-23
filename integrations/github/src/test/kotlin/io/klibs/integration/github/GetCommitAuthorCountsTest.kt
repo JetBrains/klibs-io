@@ -2,6 +2,9 @@ package io.klibs.integration.github
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import java.time.Instant
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
@@ -9,10 +12,6 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.kohsuke.github.GitHubBuilder
-import org.kohsuke.github.authorization.AuthorizationProvider
-import java.time.Instant
-import kotlin.test.Test
-import kotlin.test.assertEquals
 
 class GetCommitAuthorCountsTest {
 
@@ -32,8 +31,9 @@ class GetCommitAuthorCountsTest {
         val integration = GitHubIntegrationKohsukeLibrary(
             SimpleMeterRegistry(),
             GitHubBuilder().build(),
+            GitHubBuilder().build(),
             OkHttpClient.Builder().addInterceptor(interceptor).build(),
-            AuthorizationProvider { AUTHORIZATION },
+            { AUTHORIZATION },
             jacksonObjectMapper(),
             "JetBrains/klibs-io",
         )

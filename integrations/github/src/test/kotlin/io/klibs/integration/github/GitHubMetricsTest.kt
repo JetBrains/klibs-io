@@ -2,18 +2,17 @@ package io.klibs.integration.github
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.kohsuke.github.GitHub
-import org.kohsuke.github.authorization.AuthorizationProvider
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
-import java.util.concurrent.TimeUnit
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 /**
  * Per-HTTP-request counting (`klibs.github.requests`) lives on an OkHttp interceptor and is
@@ -41,8 +40,9 @@ class GitHubMetricsTest {
         gitHubIntegration = GitHubIntegrationKohsukeLibrary(
             meterRegistry,
             githubApi,
+            githubApi,
             OkHttpClient(),
-            AuthorizationProvider { "token test_token" },
+            { "token test_token" },
             jacksonObjectMapper(),
             klibsRepoName,
         )
