@@ -1,5 +1,6 @@
-package io.klibs.integration.github
+package io.klibs.integration.github.configuration
 
+import io.klibs.integration.github.GitHubRequestMeteringInterceptor
 import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import io.micrometer.core.instrument.MeterRegistry
 import okhttp3.Cache
@@ -7,6 +8,7 @@ import okhttp3.OkHttpClient
 import org.kohsuke.github.GHRateLimit
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.GitHubBuilder
+import org.kohsuke.github.GitHubRateLimitHandler
 import org.kohsuke.github.RateLimitChecker
 import org.kohsuke.github.authorization.AppInstallationAuthorizationProvider
 import org.kohsuke.github.authorization.AuthorizationProvider
@@ -18,6 +20,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 
 @Configuration
 @EnableConfigurationProperties(value = [GitHubIntegrationProperties::class])
@@ -64,6 +67,7 @@ class GitHubIntegrationConfiguration {
     }
 
     @Bean
+    @Primary
     fun githubApi(okHttpClient: OkHttpClient, gitHubAuthorizationProvider: AuthorizationProvider): GitHub {
         return GitHubBuilder()
             .withAuthorizationProvider(gitHubAuthorizationProvider)
@@ -79,6 +83,15 @@ class GitHubIntegrationConfiguration {
                     warnAtUsed = RATE_LIMIT_WARN_AT_USED,
                 )
             )
+            .build()
+    }
+
+    @Bean
+    fun anonymousGithubApi(okHttpClient: OkHttpClient): GitHub {
+        return GitHubBuilder()
+            .withConnector(OkHttpGitHubConnector(okHttpClient))
+            .withRateLimitChecker(RateLimitChecker.LiteralValue(0))
+            .withRateLimitHandler(GitHubRateLimitHandler.WAIT)
             .build()
     }
 

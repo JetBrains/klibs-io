@@ -14,6 +14,14 @@ import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
+import java.io.FileNotFoundException
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -22,34 +30,23 @@ import org.kohsuke.github.GHIssueState
 import org.kohsuke.github.GHPullRequestQueryBuilder
 import org.kohsuke.github.GHRepository
 import org.kohsuke.github.GitHub
+import org.kohsuke.github.HttpException
 import org.kohsuke.github.MarkdownMode
 import org.kohsuke.github.authorization.AuthorizationProvider
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import java.io.FileNotFoundException
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.jvm.java
 
 @Component
 internal class GitHubIntegrationKohsukeLibrary(
-    @Autowired
     private val meterRegistry: MeterRegistry,
-    @Autowired
     private val githubApi: GitHub,
-    @Autowired
+    @param:Qualifier("anonymousGithubApi")
+    private val anonymousGithubApi: GitHub,
     private val okHttpClient: okhttp3.OkHttpClient,
-    @Autowired
     private val gitHubAuthorizationProvider: AuthorizationProvider,
-    @Autowired
     private val jsonMapper: ObjectMapper,
-    @Value("\${klibs.integration.github.index-requests.repository:JetBrains/klibs-io}")
+    @param:Value("\${klibs.integration.github.index-requests.repository:JetBrains/klibs-io}")
     private val klibsRepoName: String,
 ) : GitHubIntegration {
 
@@ -59,6 +56,10 @@ internal class GitHubIntegrationKohsukeLibrary(
         executeNullable { githubApi.getRepository(klibsRepoName) }
             ?: throw IllegalStateException("Could not fetch target repository: $klibsRepoName")
     }
+    private val repositoryCache = Caffeine.newBuilder()
+        .maximumSize(200)
+        .expireAfterWrite(10, TimeUnit.MINUTES)
+        .build<Long, GHRepository?>()
 
     init {
         Gauge.builder("klibs.github.lastSuccessfulRequestTime") {
@@ -68,12 +69,6 @@ internal class GitHubIntegrationKohsukeLibrary(
             .register(meterRegistry)
     }
 
-    private val repositoryCache = Caffeine.newBuilder()
-        .maximumSize(200)
-        .expireAfterWrite(10, TimeUnit.MINUTES)
-        .build<Long, GHRepository?>()
-
-
     override fun getRepository(nativeId: Long): GitHubRepository? {
         val ghRepository = getRepositoryById(nativeId) ?: return null
 
@@ -81,8 +76,8 @@ internal class GitHubIntegrationKohsukeLibrary(
     }
 
     override fun getRepository(owner: String, name: String): GitHubRepository? {
-        val ghRepository = executeNullable {
-            githubApi.getRepository("$owner/$name")
+        val ghRepository = executeNullableWithAnonymousFallback { github ->
+            github.getRepository("$owner/$name")
         } ?: return null
 
         repositoryCache.put(ghRepository.id, ghRepository)
@@ -93,8 +88,8 @@ internal class GitHubIntegrationKohsukeLibrary(
     override fun getUser(login: String): GitHubUser? {
         githubApi.refreshCache()
 
-        val ghUser = executeNullable {
-            githubApi.getUser(login)
+        val ghUser = executeNullableWithAnonymousFallback { github ->
+            github.getUser(login)
         } ?: return null
 
         return GitHubUser(
@@ -109,27 +104,6 @@ internal class GitHubIntegrationKohsukeLibrary(
             bio = ghUser.bio?.takeIf { it.isNotBlank() },
             twitterUsername = ghUser.twitterUsername?.takeIf { it.isNotBlank() },
             followers = ghUser.followersCount
-        )
-    }
-
-    private fun GHRepository.toModel(): GitHubRepository {
-        return GitHubRepository(
-            nativeId = this.id,
-            name = this.name,
-            createdAt = this.createdAt.toInstant(),
-            description = this.description?.takeIf { it.isNotBlank() },
-            defaultBranch = requireNotNull(this.defaultBranch) {
-                "The default branch is null for ${this.id}"
-            },
-            owner = this.owner.login,
-            homepage = this.homepage?.takeIf { it.isNotBlank() },
-            hasGhPages = this.hasPages(),
-            hasIssues = this.hasIssues(),
-            hasWiki = this.hasWiki(),
-            archived = this.isArchived,
-            stars = this.stargazersCount,
-            openIssues = this.openIssueCount,
-            lastActivity = this.pushedAt.toInstant(),
         )
     }
 
@@ -176,40 +150,63 @@ internal class GitHubIntegrationKohsukeLibrary(
         val sample = Timer.start(meterRegistry)
         try {
             val url = "$GITHUB_API_URL/repositories/$repositoryId/readme"
-
             val ifModifiedSince = ZonedDateTime.ofInstant(modifiedSince, ZoneOffset.UTC)
                 .format(DateTimeFormatter.RFC_1123_DATE_TIME)
 
-            val requestBuilder = Request.Builder()
-                .url(url)
-                .get()
-                .addHeader("Accept", "application/vnd.github.raw")
-                .addHeader("If-Modified-Since", ifModifiedSince)
-                .addHeader("Authorization", gitHubAuthorizationProvider.encodedAuthorization)
+            return executeReadmeRequest(
+                repositoryId,
+                modifiedSince,
+                url,
+                ifModifiedSince,
+                gitHubAuthorizationProvider.encodedAuthorization,
+            )
+        } finally {
+            sample.stop(meterRegistry.timer("klibs.github.request.time"))
+            lastSuccessfulRequestTime.set(Instant.now())
+        }
+    }
 
-            okHttpClient.newCall(requestBuilder.build()).execute().use { response ->
-                return when (response.code) {
-                    200 -> {
-                        val body = response.body?.string() ?: ""
-                        ReadmeFetchResult.Content(body)
-                    }
-                    304 -> {
-                        logger.debug("README of {} content not modified since {}.", repositoryId, modifiedSince)
-                        ReadmeFetchResult.NotModified
-                    }
-                    404 -> {
-                        logger.debug("README of {} not found.", repositoryId)
-                        ReadmeFetchResult.NotFound
-                    }
-                    else -> {
+    private fun executeReadmeRequest(
+        repositoryId: Long,
+        modifiedSince: Instant,
+        url: String,
+        ifModifiedSince: String,
+        authorization: String?,
+    ): ReadmeFetchResult {
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Accept", "application/vnd.github.raw")
+            .addHeader("If-Modified-Since", ifModifiedSince)
+            .apply { authorization?.let { addHeader("Authorization", it) } }
+            .build()
+
+        okHttpClient.newCall(request).execute().use { response ->
+            return when (response.code) {
+                200 -> ReadmeFetchResult.Content(response.body?.string().orEmpty())
+                304 -> {
+                    logger.debug("README of {} content not modified since {}.", repositoryId, modifiedSince)
+                    ReadmeFetchResult.NotModified
+                }
+                404 -> {
+                    logger.debug("README of {} not found.", repositoryId)
+                    ReadmeFetchResult.NotFound
+                }
+                403 -> {
+                    val responseBody = response.body?.string().orEmpty()
+                    if (authorization != null && isIpAllowListRejection(response.code, responseBody)) {
+                        logger.warn("GitHub README request was blocked by an organization IP allow list; retrying anonymously")
+                        executeReadmeRequest(repositoryId, modifiedSince, url, ifModifiedSince, null)
+                    } else {
                         logger.error("ERROR: ${response.code} from GitHub API at $url.")
                         ReadmeFetchResult.Error(status = response.code)
                     }
                 }
+                else -> {
+                    logger.error("ERROR: ${response.code} from GitHub API at $url.")
+                    ReadmeFetchResult.Error(status = response.code)
+                }
             }
-        } finally {
-            sample.stop(meterRegistry.timer("klibs.github.request.time"))
-            lastSuccessfulRequestTime.set(Instant.now())
         }
     }
 
@@ -222,33 +219,6 @@ internal class GitHubIntegrationKohsukeLibrary(
             githubApi.renderMarkdown(markdownText).readText()
         } else {
             getRepositoryById(contextRepositoryId)?.markdownRender(markdownText, MarkdownMode.GFM)
-        }
-    }
-
-    private fun getRepositoryById(id: Long): GHRepository? {
-        return repositoryCache.get(id) {
-            executeNullable {
-                githubApi.getRepositoryById(it)
-            }
-        }
-    }
-
-    private fun GHRepository.markdownRender(markdownContent: String, mode: MarkdownMode): String {
-        return this.renderMarkdown(markdownContent, mode).readText()
-    }
-
-    private fun <T> executeNullable(block: () -> T): T? {
-        // Start timing the request
-        val sample = Timer.start(meterRegistry)
-
-        return try {
-            block()
-        } catch (e: FileNotFoundException) {
-            null
-        } finally {
-            // Record the request time
-            sample.stop(meterRegistry.timer("klibs.github.request.time"))
-            lastSuccessfulRequestTime.set(Instant.now())
         }
     }
 
@@ -377,6 +347,89 @@ internal class GitHubIntegrationKohsukeLibrary(
         return counts
     }
 
+    override fun addKlibsIssueLabel(number: Int, label: String) {
+        executeNullable {
+            klibsRepo.getIssue(number).addLabels(label)
+        }
+    }
+
+    override fun addKlibsIssueComment(number: Int, body: String) {
+        executeNullable {
+            klibsRepo.getIssue(number).comment(body)
+        }
+    }
+
+    private fun GHRepository.toModel(): GitHubRepository {
+        return GitHubRepository(
+            nativeId = this.id,
+            name = this.name,
+            createdAt = this.createdAt.toInstant(),
+            description = this.description?.takeIf { it.isNotBlank() },
+            defaultBranch = requireNotNull(this.defaultBranch) {
+                "The default branch is null for ${this.id}"
+            },
+            owner = this.owner.login,
+            homepage = this.homepage?.takeIf { it.isNotBlank() },
+            hasGhPages = this.hasPages(),
+            hasIssues = this.hasIssues(),
+            hasWiki = this.hasWiki(),
+            archived = this.isArchived,
+            stars = this.stargazersCount,
+            openIssues = this.openIssueCount,
+            lastActivity = this.pushedAt.toInstant(),
+        )
+    }
+
+    private fun getRepositoryById(id: Long): GHRepository? {
+        return repositoryCache.get(id) {
+            executeNullableWithAnonymousFallback { github ->
+                github.getRepositoryById(it)
+            }
+        }
+    }
+
+    private fun GHRepository.markdownRender(markdownContent: String, mode: MarkdownMode): String {
+        return this.renderMarkdown(markdownContent, mode).readText()
+    }
+
+    private fun <T> executeNullable(block: () -> T): T? {
+        // Start timing the request
+        val sample = Timer.start(meterRegistry)
+
+        return try {
+            block()
+        } catch (e: FileNotFoundException) {
+            null
+        } finally {
+            // Record the request time
+            sample.stop(meterRegistry.timer("klibs.github.request.time"))
+            lastSuccessfulRequestTime.set(Instant.now())
+        }
+    }
+
+    private fun <T> executeNullableWithAnonymousFallback(block: (GitHub) -> T): T? = executeNullable {
+        try {
+            block(githubApi)
+        } catch (e: HttpException) {
+            if (!e.isIpAllowListRejection()) throw e
+
+            logger.warn("GitHub request was blocked by an organization IP allow list; retrying anonymously")
+            block(anonymousGithubApi)
+        }
+    }
+
+
+    private fun HttpException.isIpAllowListRejection(): Boolean {
+        return isIpAllowListRejection(responseCode, message.orEmpty())
+    }
+
+    private fun isIpAllowListRejection(responseCode: Int, response: String): Boolean {
+        return responseCode == 403 &&
+                (response.contains("Although you appear to have the correct authorization credentials") ||
+            response.contains("organization has an IP allow list enabled") ||
+            response.contains("your IP address is not permitted to access this resource"))
+    }
+
     /** POSTs a GraphQL query+variables to GitHub. Returns the raw response body or null on non-200. */
     private fun postGraphQl(query: String, variables: Map<String, Any>): String? {
         val payload = jsonMapper.writeValueAsString(mapOf("query" to query, "variables" to variables))
@@ -399,18 +452,6 @@ internal class GitHubIntegrationKohsukeLibrary(
         } finally {
             sample.stop(meterRegistry.timer("klibs.github.request.time"))
             lastSuccessfulRequestTime.set(Instant.now())
-        }
-    }
-
-    override fun addKlibsIssueLabel(number: Int, label: String) {
-        executeNullable {
-            klibsRepo.getIssue(number).addLabels(label)
-        }
-    }
-
-    override fun addKlibsIssueComment(number: Int, body: String) {
-        executeNullable {
-            klibsRepo.getIssue(number).comment(body)
         }
     }
 

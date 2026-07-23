@@ -4,13 +4,11 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import io.klibs.integration.github.configuration.GitHubIntegrationConfiguration
+import io.klibs.integration.github.configuration.GitHubRateLimitExhaustedException
 import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
-import org.kohsuke.github.GHRateLimit
-import org.kohsuke.github.authorization.AppInstallationAuthorizationProvider
-import org.kohsuke.github.extras.authorization.JWTTokenProvider
-import org.slf4j.LoggerFactory
 import java.security.GeneralSecurityException
-import java.util.Base64
+import java.util.*
 import kotlin.system.measureTimeMillis
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -20,6 +18,10 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import org.kohsuke.github.GHRateLimit
+import org.kohsuke.github.authorization.AppInstallationAuthorizationProvider
+import org.kohsuke.github.extras.authorization.JWTTokenProvider
+import org.slf4j.LoggerFactory
 
 class GitHubIntegrationConfigurationTest {
 
