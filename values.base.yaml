@@ -26,7 +26,7 @@ extraVolumes:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 25Gi
+              storage: 40Gi
 extraVolumeMounts:
   - name: data
     mountPath: /data
