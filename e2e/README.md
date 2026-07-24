@@ -2,10 +2,10 @@
 
 Two tiers, two bounds:
 
-| tier | bound | corpus | runs | expectation |
-|------|-------|--------|------|-------------|
-| **Regression** | lower — "search can't get worse than this" | **frozen prod snapshot** (Testcontainers) | manual today; the tier meant for CI | floor cases **all green** |
-| **Eval** | upper — "we strive for 100%" | **live prod-copy** (external DB) | manual, by whoever changes search | some **red** = the signal |
+| tier | bound | corpus | engine | runs | expectation |
+|------|-------|--------|--------|------|-------------|
+| **Regression** | lower — "search can't get worse than this" | **frozen prod snapshot** (Testcontainers) | Postgres FTS | manual today; the tier meant for CI | floor cases **all green** |
+| **Eval** | upper — "we strive for 100%" | **live prod-copy** (external DB) | OpenSearch (KTL-4711) | manual, by whoever changes search | some **red** = the signal |
 
 Both are excluded from the regular `./kotlin test` run — each needs Docker and a corpus, and is enabled
 explicitly by the commands below.
@@ -32,6 +32,9 @@ assume that layout and are run from the root of this repository:
 ## Regression tier — the deterministic floor
 
 Needs Docker and the snapshot file at `e2e/build/search-eval/frozen.pgdump`.
+
+Stays on Postgres FTS — it sets no `klibs.search.opensearch.*` properties, so the OS gate is off and
+no OpenSearch instance is needed.
 
 ### Run the tier
 
@@ -80,13 +83,29 @@ needs prod access (VPN and kubectl). Then download it and update the floor:
 
 ## Eval tier — the aspirational target
 
+Drives the production search path through **OpenSearch**, against eval-only indices (`project-eval`,
+`package-eval`) that the run wipes and refills itself — the `@BeforeAll` calls `refreshSearchViews()`,
+which rebuilds both the Postgres mat views and the OS indices from the DB via `OpenSearchTempPopulator`.
+So the corpus is always whatever the DB holds right now; no manual indexing step.
+
 Needs a local prod-copy database. Seeding it needs VPN and cluster access, and the script for it
 (`copy_prod_db_to_local.sh`) also lives in the infrastructure repository:
 
 ```bash
+docker compose up -d opensearch   # must be up on :9200
 ../klibs-io-infrastructure/database/copy_prod_db_to_local.sh -K klibs-prod -C klibs-postgres -L klibs -D klibs
 ./kotlin test -m e2e --include-classes '*SearchEvalE2ETest' --jvm-args '-Dsearch.eval.tier=eval'
 ```
+
+If OpenSearch is down or the DB is empty the run fails fast: `refreshSearchViews()` swallows exceptions,
+so the test asserts the project index is non-empty before scoring anything.
+
+Overridable via env: `SEARCH_EVAL_OS_URI` (default `http://localhost:9200`),
+`SEARCH_EVAL_OS_PROJECT_INDEX` (`project-eval`), `SEARCH_EVAL_OS_PACKAGE_INDEX` (`package-eval`),
+plus `SEARCH_EVAL_DB_URL` / `_USER` / `_PASSWORD` for the corpus DB.
+
+Compare runs only against each other on the **same** corpus — the headline is a function of the DB
+contents, so a re-copied prod DB moves it independently of any search change.
 
 **Progress readout**  
 Every run records itself to `e2e/build/search-eval/last-run.json`
