@@ -16,7 +16,8 @@ import {RadioButton, RadioButtonList} from '@rescui/radio-button';
 
 import cn from "classnames";
 import Container from "@/app/ui/container";
-import SearchField from "@/app/ui/search-field";
+import SearchField, {SearchFieldHandle} from "@/app/ui/search-field";
+import {useDebouncedCallback} from "@/app/hooks/use-debounced-callback";
 import {DropdownTrigger} from "@/app/ui/dropdown-trigger";
 
 import {FilterIcon, ProjectsIcon} from "@rescui/icons";
@@ -29,11 +30,12 @@ import SidebarMobile from "@/app/ui/sidebar-mobile/sidebar-mobile";
 interface SearchFilterProps {
     filters: SearchParams,
     setFilters: (params: SearchParams) => void;
-    updateURLFromState: (state: SearchParams) => void;
+    updateURLFromState: (state: SearchParams, options?: { scroll?: boolean }) => void;
     selectedCategory?: string | null;
     onCategoryReset?: () => void;
     categorySearchQuery?: string;
     onCategorySearch?: (query: string) => void;
+    onCategorySearchEnter?: (query: string) => void;
     onCategorySearchClear?: () => void;
     projectsCount?: string;
 }
@@ -41,13 +43,16 @@ interface SearchFilterProps {
 import {trackEvent, GAEvent} from "@/app/analytics";
 
 
-export default function SearchFilter({filters, setFilters, updateURLFromState, selectedCategory, onCategoryReset, categorySearchQuery, onCategorySearch, onCategorySearchClear, projectsCount}: SearchFilterProps) {
+export default function SearchFilter({filters, setFilters, updateURLFromState, selectedCategory, onCategoryReset, categorySearchQuery = "", onCategorySearch = () => {}, onCategorySearchEnter = () => {}, onCategorySearchClear, projectsCount}: SearchFilterProps) {
 
     const [textQuery, setTextQuery] = useState<string>(filters.query || "");
     const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>(
         filters.platforms || []
     );
     const searchFilterContainerRef = useRef<HTMLDivElement>(null);
+    const compactWrapperRef = useRef<HTMLDivElement>(null);
+    const mainFieldRef = useRef<SearchFieldHandle>(null);
+    const pendingFocusHandoff = useRef(false);
     const [showCompactFilter, setShowCompactFilter] = useState(false);
 
     useEffect(() => {
@@ -55,7 +60,13 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
             if (searchFilterContainerRef.current) {
                 const rect = searchFilterContainerRef.current.getBoundingClientRect();
                 const elementBottom = rect.bottom + window.scrollY;
-                setShowCompactFilter(window.scrollY > elementBottom);
+                const shouldShow = window.scrollY > elementBottom;
+                // Result updates can shrink the page and clamp scroll back to top,
+                // unmounting the compact bar mid-typing — hand focus to the main field
+                if (!shouldShow && compactWrapperRef.current?.contains(document.activeElement)) {
+                    pendingFocusHandoff.current = true;
+                }
+                setShowCompactFilter(shouldShow);
             }
         };
         onScroll();
@@ -65,14 +76,31 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
         };
     }, []);
 
-    const handleTextQueryChange = (value: string) => {
-        const newQuery = value;
-        setTextQuery(newQuery);
+    useEffect(() => {
+        if (!showCompactFilter && pendingFocusHandoff.current) {
+            pendingFocusHandoff.current = false;
+            mainFieldRef.current?.focus();
+        }
+    }, [showCompactFilter]);
 
+    const applyTextQueryNow = (newQuery: string) => {
         const newState = {...filters, query: newQuery, page: 1, tags: []};
         setFilters(newState);
 
-        updateURLFromState(newState);
+        updateURLFromState(newState, {scroll: false});
+    };
+
+    const applyTextQuery = useDebouncedCallback(applyTextQueryNow, 200);
+
+    const handleTextQueryChange = (value: string) => {
+        setTextQuery(value);
+        applyTextQuery(value);
+    };
+
+    const handleTextQueryEnter = (value: string) => {
+        applyTextQuery.cancel();
+        setTextQuery(value);
+        applyTextQueryNow(value);
     };
 
     const handlePlatformFilterChange = (platform: Platform) => {
@@ -186,6 +214,7 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
                         <div className={styles.searchFieldWrapper}>
                             {/*Search input*/}
                             <SearchField
+                                ref={mainFieldRef}
                                 value={selectedCategory ? categorySearchQuery : textQuery}
                                 onChange={selectedCategory ? onCategorySearch : handleTextQueryChange}
                                 onClear={selectedCategory ? onCategorySearchClear : undefined}
@@ -232,7 +261,7 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
 
             {/*Compact Filter*/}
             {showCompactFilter && (
-                <div className={styles.compactWrapper}>
+                <div ref={compactWrapperRef} className={styles.compactWrapper} data-testid="compact-search-filter">
                     <Container mode="container">
                         <div className={styles.compactInner}>
                             {!selectedCategory && (
@@ -250,8 +279,8 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
                             <div className={styles.compactSearchContainer}>
                                 <SearchField
                                     value={selectedCategory ? categorySearchQuery : textQuery}
-                                    onEnter={selectedCategory ? onCategorySearch : handleTextQueryChange}
-                                    onChange={selectedCategory ? onCategorySearch : undefined}
+                                    onEnter={selectedCategory ? onCategorySearchEnter : handleTextQueryEnter}
+                                    onChange={selectedCategory ? onCategorySearch : handleTextQueryChange}
                                     onClear={selectedCategory ? onCategorySearchClear : undefined}
                                     compact
                                     selectedCategory={selectedCategory}
