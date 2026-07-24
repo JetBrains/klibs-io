@@ -7,6 +7,7 @@ import io.klibs.integration.ai.AiService
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
+import org.opensearch.client.opensearch.OpenSearchClient
 import org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
 import org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
 import org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
@@ -60,6 +61,9 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
     @Autowired
     private lateinit var searchService: SearchService
 
+    @Autowired
+    private lateinit var openSearchClient: OpenSearchClient
+
     override val tier = "eval"
 
     /** The eval tier is aspirational: every case runs and every case is expected to pass. */
@@ -87,10 +91,23 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
     }
 
     @BeforeAll
-    fun refreshViews() = searchService.refreshSearchViews()
+    fun refreshViews() {
+        searchService.refreshSearchViews()
+        // refreshSearchViews swallows exceptions, so fail loudly if the OS index never got populated.
+        val indexed = openSearchClient.count { it.index(OS_PROJECT_INDEX) }.count()
+        check(indexed > 0) {
+            "OpenSearch project index '$OS_PROJECT_INDEX' is empty after refresh — " +
+                "is OpenSearch up at $OS_URI and the prod-copy DB populated?"
+        }
+        log.info("OpenSearch project index '{}' has {} docs", OS_PROJECT_INDEX, indexed)
+    }
 
     companion object {
         private fun env(key: String, default: String) = System.getenv(key)?.takeIf { it.isNotBlank() } ?: default
+
+        private val OS_URI = env("SEARCH_EVAL_OS_URI", "http://localhost:9200")
+        private val OS_PROJECT_INDEX = env("SEARCH_EVAL_OS_PROJECT_INDEX", "project-eval")
+        private val OS_PACKAGE_INDEX = env("SEARCH_EVAL_OS_PACKAGE_INDEX", "package-eval")
 
         @JvmStatic
         @DynamicPropertySource
@@ -98,6 +115,11 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
             registry.add("spring.datasource.url") { env("SEARCH_EVAL_DB_URL", "jdbc:postgresql://localhost:5432/klibs") }
             registry.add("spring.datasource.username") { env("SEARCH_EVAL_DB_USER", "klibs") }
             registry.add("spring.datasource.password") { env("SEARCH_EVAL_DB_PASSWORD", "klibs") }
+            // Drive the production search path through OpenSearch (eval-specific indices, wiped+refilled).
+            registry.add("klibs.search.opensearch.enabled") { "true" }
+            registry.add("klibs.search.opensearch.uri") { OS_URI }
+            registry.add("klibs.search.opensearch.project-index") { OS_PROJECT_INDEX }
+            registry.add("klibs.search.opensearch.package-index") { OS_PACKAGE_INDEX }
             // Corpus is a prod-copy; never seed the `test` profile's data.sql fixtures.
             registry.add("spring.sql.init.mode") { "never" }
             registry.add("klibs.readme.s3.bucket-name") { "test-bucket" }
