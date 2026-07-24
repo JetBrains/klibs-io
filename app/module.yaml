@@ -9,6 +9,7 @@ apply:
   - ../build-logic/templates/maven-indexer.module-template.yaml
 
 dependencies:
+  - $libs.swagger.annotations
   - ../core/package
   - ../core/project
   - ../core/readme
