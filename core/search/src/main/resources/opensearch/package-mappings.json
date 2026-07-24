@@ -1,0 +1,16 @@
+{
+  "properties": {
+    "group_id": { "type": "text", "analyzer": "code_split", "fields": { "keyword": { "type": "keyword" } } },
+    "artifact_id": { "type": "text", "analyzer": "code_split", "fields": { "keyword": { "type": "keyword" } } },
+    "project_id": { "type": "long" },
+    "latest_package_id": { "type": "long" },
+    "owner_type": { "type": "keyword" },
+    "owner_login": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+    "latest_description": { "type": "text" },
+    "platforms": { "type": "keyword" },
+    "targets": { "type": "keyword" },
+    "latest_license_name": { "type": "keyword" },
+    "latest_version": { "type": "keyword" },
+    "release_ts": { "type": "keyword" }
+  }
+}
