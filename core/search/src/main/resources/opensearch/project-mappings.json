@@ -1,0 +1,32 @@
+{
+  "properties": {
+    "project_id": { "type": "long" },
+    "owner_type": { "type": "keyword" },
+    "owner_login": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+    "repo_name": { "type": "text" },
+    "name": { "type": "text" },
+    "group_ids": { "type": "text", "analyzer": "code_split" },
+    "artifact_ids": { "type": "text", "analyzer": "code_split" },
+    "repo_description": { "type": "text" },
+    "project_description": { "type": "text" },
+    "platforms": { "type": "keyword" },
+    "tags": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+    "markers": { "type": "keyword" },
+    "targets": { "type": "keyword" },
+    "stars": { "type": "integer" },
+    "dependent_count": { "type": "integer" },
+    "has_readme": { "type": "boolean" },
+    "license_name": { "type": "keyword" },
+    "latest_version": { "type": "keyword" },
+    "latest_version_ts": { "type": "keyword" },
+    "plain_description": { "type": "text", "index": false },
+    "packages": {
+      "type": "nested",
+      "properties": {
+        "group_id": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+        "artifact_id": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+        "latest_description": { "type": "text" }
+      }
+    }
+  }
+}
