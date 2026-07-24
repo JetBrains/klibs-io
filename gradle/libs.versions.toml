@@ -25,6 +25,9 @@ caffeine = "3.2.3"
 maven-model = "3.9.9"
 maven-indexer = "7.1.6"
 
+# Search engine (KTL-2933 / KTL-4711)
+opensearch-java = "3.9.0"
+
 mockito = "5.1.0"
 testcontainers = "1.21.4"
 
@@ -74,6 +77,9 @@ maven-indexer-search-api = {module="org.apache.maven.indexer:search-api", versio
 maven-indexer-search-backend-smo = {module="org.apache.maven.indexer:search-backend-smo", version.ref = "maven-indexer"}
 maven-indexer-indexer-core = {module="org.apache.maven.indexer:indexer-core", version.ref = "maven-indexer"}
 maven-indexer-search-backend-indexer = {module="org.apache.maven.indexer:search-backend-indexer", version.ref = "maven-indexer"}
+
+opensearch-java = { module = "org.opensearch.client:opensearch-java", version.ref = "opensearch-java" }
+
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
 
