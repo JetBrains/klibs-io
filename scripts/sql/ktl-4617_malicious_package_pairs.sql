@@ -1,20 +1,4 @@
--- KTL-4617 — Detect potential malicious pairs of packages
--- =========================================================
--- Main signal: SAME project + SAME artifactId + DIFFERENT groupId.
--- Two artifacts that resolve to the same library name within one project but
--- publish under different Maven groupIds are a strong indicator of typo-/name-
--- squatting or impersonation (a hostile actor republishing a popular library
--- under a look-alike groupId).
---
--- This is a READ-ONLY analysis script (no schema changes). Run it against a
--- database populated with real data (e.g. a prod copy — see
--- scripts/copy_prod_db_to_local.sh); the local seed DB usually has no pairs.
---
--- Usage:
---   docker exec -e PGPASSWORD=klibs klibs-postgres \
---     psql -U klibs -d klibs -f - < scripts/sql/ktl-4617_malicious_package_pairs.sql
--- or (against any DB):
---   psql "$DATABASE_URL" -f scripts/sql/ktl-4617_malicious_package_pairs.sql
+-- This is a READ-ONLY analysis script.
 --
 -- Produces three result sets:
 --   1. Summary   — one row per suspicious (project, artifactId) with all groupIds
@@ -24,8 +8,6 @@
 \pset pager off
 \timing off
 
--- The set of (project, artifactId) coordinates that carry more than one groupId.
--- Reused by every section below.
 \set flagged_cte 'flagged AS (SELECT project_id, artifact_id FROM package WHERE project_id IS NOT NULL GROUP BY project_id, artifact_id HAVING count(DISTINCT group_id) > 1)'
 
 
