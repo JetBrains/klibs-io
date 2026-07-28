@@ -129,10 +129,10 @@ This block describes working on a release flow.
 * you have kubectl with prod environment setup
 
 #### Steps:
-1. Before deploying your branch to the test environment, you should apply a recent dump from prod.
+1. Before deploying your branch to the test environment, you should apply a recent dump from prod. For that clone the repo https://github.com/JetBrains/klibs-io-infrastructure. And inside this repo do: 
    * in the terminal run:
    ```bash
-   cd scripts/kubernetes && kubectl -n klibs-features apply -f apply-prod-dump-on-klibs-features-environment-job.yaml
+   cd database/kubernetes && kubectl -n klibs-features apply -f apply-prod-dump-on-klibs-features-environment-job.yaml
    ```
 2. Wait until the job is completed ([logs are here](https://grafana.intellij.net/goto/cVJGtu6Hg?orgId=1))
     * You can use this command to check the job status too:

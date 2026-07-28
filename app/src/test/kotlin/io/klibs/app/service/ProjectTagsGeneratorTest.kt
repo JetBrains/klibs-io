@@ -50,13 +50,11 @@ class ProjectTagsGeneratorTest : BaseUnitWithDbLayerTest() {
         val ai: AiService = mock()
         val generator = newGenerator(ai)
 
-        // Mock AI response: indices 0, 2, 5 from tag_rules.yaml
-        // 0 -> aes, 2 -> agents, 5 -> analytics
         whenever(
             ai.executeOpenAiRequest(
                 any(),
                 eq("generateProjectTags"),
-                eq(AiService.Companion.DEFAULT_GPT)
+                eq(AiService.DEFAULT_GPT)
             )
         ).thenReturn("{" + "\"indices\":[0,2,5]}")
 
