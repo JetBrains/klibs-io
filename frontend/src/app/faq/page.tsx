@@ -53,7 +53,7 @@ export default function Faq() {
                     <p>
                         klibs.io is a search platform and catalog for Kotlin Multiplatform (KMP) libraries. It helps
                         developers discover Kotlin libraries that work across multiple platforms such as Android, iOS,
-                        JVM, JS, and WASM. The website is designed to make library evaluation easier by bringing
+                        JVM, JS, and Wasm. The website is designed to make library evaluation easier by bringing
                         together KMP-related information in one place.
                         <br/><br/>
 
