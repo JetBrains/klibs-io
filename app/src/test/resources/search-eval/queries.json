@@ -724,6 +724,10 @@
       "expected": [
         "ktorio/ktor"
       ],
+      "targetFilters": {
+        "IOS": [],
+        "JVM": []
+      },
       "platforms": [
         "native",
         "jvm"
@@ -740,6 +744,9 @@
       "weight": 1.0,
       "graded": false,
       "expected": [],
+      "targetFilters": {
+        "JavaScript": []
+      },
       "platforms": [
         "js"
       ],
@@ -757,6 +764,10 @@
       "expected": [
         "Kotlin/kotlinx-datetime"
       ],
+      "targetFilters": {
+        "IOS": [],
+        "JVM": []
+      },
       "platforms": [
         "native",
         "jvm"
@@ -773,6 +784,9 @@
       "weight": 1.1557,
       "graded": false,
       "expected": [],
+      "targetFilters": {
+        "IOS": []
+      },
       "platforms": [
         "native"
       ],
@@ -788,6 +802,9 @@
       "weight": 1.6013,
       "graded": true,
       "expected": [],
+      "targetFilters": {
+        "Wasm": []
+      },
       "platforms": [
         "wasm"
       ],
