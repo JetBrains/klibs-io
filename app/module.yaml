@@ -25,6 +25,7 @@ dependencies:
 test-dependencies:
   - $libs.okhttp
   - $libs.kohsuke.githubApi
+  - $libs.spring.boot.testcontainers
 
 settings:
   jvm:
