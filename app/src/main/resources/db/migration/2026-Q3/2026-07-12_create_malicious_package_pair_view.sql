@@ -1,28 +1,7 @@
--- KTL-4617 — potential malicious package pairs.
--- =============================================================================
 -- Primary signal (KTL-4617): SAME project + SAME artifactId + DIFFERENT groupId.
--- Within one indexed project a library name (artifactId) should map to a single
--- publisher coordinate (groupId). When the same name appears under two or more
--- groupIds, one branch may be a typo-/name-squat or impersonation (e.g. a hostile
--- actor republishing a popular library under a look-alike groupId).
---
--- Secondary clues (KTL-4618) are carried in the same row so a reviewer can rank
--- branches without a second query:
---   * release_rank        — 1 = earliest first-publish = presumed ORIGINAL; a
---                           higher rank branch was published LATER (the ticket's
---                           main "malicious is usually released later" criterion).
---   * days_after_original — days between this branch's first publish and the
---                           earliest branch in the pair.
---   * versions            — squats tend to have very few releases.
---   * scm_url             — a mismatched/missing repo across branches is a red flag.
---   * has_generated_description — whether our AI wrote the description (weak clue).
---
--- Plain (non-materialized) VIEW: always live, no refresh job, no index. Release
--- dates come straight from `package` (min/max release_ts per branch), so the
--- first-publish date used for ranking is authoritative rather than the
--- latest-version date exposed by package_index.
---
+-- Secondary clues (KTL-4618) are carried in the same row
 -- One row per BRANCH (project_id, artifact_id, group_id) of a conflicting pair.
+
 CREATE OR REPLACE VIEW malicious_package_pair AS
 WITH conflicting AS (SELECT project_id, artifact_id
                      FROM package
