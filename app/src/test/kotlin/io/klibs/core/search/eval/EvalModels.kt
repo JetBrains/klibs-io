@@ -3,11 +3,16 @@ package io.klibs.core.search.eval
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import io.klibs.core.pckg.model.TargetGroup
 
 /** Models, mirroring the labeled query set in queries.json (KTL-4710). */
 
 enum class EvalClass(
-    /** represents our strategic focus; multiplicator for the normalized class mean */
+    /**
+     * Our strategic focus, as a relative multiplier: [Scorer.aggregate] normalizes by the sum of the
+     * classes present, so only ratios matter. A new class dilutes every existing share — weigh it
+     * against the current spread (D 0.15 low, B/M/E 0.40 high) rather than in isolation.
+     */
     val weight: Double
 ) {
     /** Exact-name: project name -> that project at rank 1. Low traffic, but a hard expectation. */
@@ -71,6 +76,12 @@ data class EvalCase(
     val expected: List<String> = emptyList(),
     /** Secondary answer, lower score */
     val also: List<String> = emptyList(),
+    /**
+     * The filter sent with the query. Groups are AND-ed, an empty set means "any target in this group",
+     * so `{IOS: [], JVM: []}` asks for libs supporting both iOS and the JVM.
+     */
+    val targetFilters: Map<TargetGroup, Set<String>> = emptyMap(),
+    /** Coarse platforms every top-k result must report back — what [PassSpec.AllSupportPlatform] checks. */
     val platforms: List<String> = emptyList(),
     val pass: PassSpec,
 ) {

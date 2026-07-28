@@ -102,5 +102,8 @@ class ScorerTest {
         id: String, cls: EvalClass, pass: PassSpec, expected: List<String> = emptyList(),
         also: List<String> = emptyList(), platforms: List<String> = emptyList(),
         weight: Double = 1.0, graded: Boolean = false,
-    ) = EvalCase(id, cls, "q", weight, graded, expected, also, platforms, pass)
+    ) = EvalCase(
+        id = id, cls = cls, query = "q", weight = weight, graded = graded,
+        expected = expected, also = also, platforms = platforms, pass = pass,
+    )
 }
