@@ -2,8 +2,11 @@ package io.klibs.core.search.service
 
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.opensearch.OpenSearchTempPopulator
 import io.klibs.core.search.repository.PackageSearchRepository
+import io.klibs.core.search.repository.PackageSearchRepositoryJdbc
 import io.klibs.core.search.repository.ProjectSearchRepository
+import io.klibs.core.search.repository.ProjectSearchRepositoryJdbc
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchPackageResult
 import io.klibs.core.search.dto.repository.SearchProjectResult
@@ -22,6 +25,9 @@ import kotlin.system.measureNanoTime
 class SearchService(
     private val projectSearchRepository: ProjectSearchRepository,
     private val packageSearchRepository: PackageSearchRepository,
+    private val projectIndexJdbc: ProjectSearchRepositoryJdbc,
+    private val packageIndexJdbc: PackageSearchRepositoryJdbc,
+    private val openSearchPopulator: OpenSearchTempPopulator?,
     private val applicationScope: CoroutineScope
 ) {
     /**
@@ -96,7 +102,7 @@ class SearchService(
 
     @Transactional(readOnly = true)
     fun searchByCategories(limit: Int): List<CategoryWithProjects> {
-        return projectSearchRepository.findCategoriesWithProjects(limit)
+        return projectIndexJdbc.findCategoriesWithProjects(limit)
             .map { (category, projects) ->
                 CategoryWithProjects(
                     categoryName = category.name,
@@ -106,16 +112,18 @@ class SearchService(
             }
     }
 
+    /** `project_index` also backs [searchByCategories], so it is refreshed in both engines' modes. */
     private fun refreshProjectIndexView() {
         val refreshProjectsNanosTaken = measureNanoTime {
-            projectSearchRepository.refreshIndex()
+            projectIndexJdbc.refreshIndex()
+            openSearchPopulator?.populateProjects()
         }
         logger.info("Updated project search index in ${TimeUnit.NANOSECONDS.toSeconds(refreshProjectsNanosTaken)} seconds")
     }
 
     private fun refreshPackageIndexView() {
         val refreshPackagesNanosTaken = measureNanoTime {
-            packageSearchRepository.refreshIndex()
+            openSearchPopulator?.populatePackages() ?: packageIndexJdbc.refreshIndex()
         }
         logger.info("Updated package search index in ${TimeUnit.NANOSECONDS.toSeconds(refreshPackagesNanosTaken)} seconds")
     }

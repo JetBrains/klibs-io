@@ -208,7 +208,7 @@ class PackageSearchRepositoryJdbc(
 
     private fun String.addWildcardPostfix(): String = "$this:*"
 
-    override fun refreshIndex() {
+    fun refreshIndex() {
         jdbcClient.sql("REFRESH MATERIALIZED VIEW CONCURRENTLY package_index")
             .update()
     }
