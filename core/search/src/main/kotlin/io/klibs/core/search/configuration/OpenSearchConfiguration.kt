@@ -1,5 +1,6 @@
-package io.klibs.core.search.opensearch
+package io.klibs.core.search.configuration
 
+import io.klibs.core.search.configuration.properties.OpenSearchProperties
 import org.apache.hc.client5.http.auth.AuthScope
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
@@ -23,11 +24,14 @@ import java.net.URI
 class OpenSearchConfiguration {
 
     @Bean
-    fun openSearchClient(properties: OpenSearchProperties): OpenSearchClient {
+    fun openSearchJsonpMapper(): JacksonJsonpMapper = JacksonJsonpMapper()
+
+    @Bean
+    fun openSearchClient(properties: OpenSearchProperties, mapper: JacksonJsonpMapper): OpenSearchClient {
         val uri = URI(properties.uri)
         val host = HttpHost(uri.scheme, uri.host, uri.port)
         val transport = ApacheHttpClient5TransportBuilder.builder(host)
-            .setMapper(JacksonJsonpMapper())
+            .setMapper(mapper)
             .apply {
                 val user = properties.username
                 val pass = properties.password
