@@ -2,6 +2,7 @@ package io.klibs.core.search.opensearch
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
+import io.klibs.core.search.configuration.properties.OpenSearchProperties
 import org.opensearch.client.opensearch.OpenSearchClient
 import org.opensearch.client.opensearch.core.BulkRequest
 import org.slf4j.LoggerFactory
@@ -108,7 +109,6 @@ class OpenSearchTempPopulator(
               'group_ids', COALESCE(gav.group_ids, ''),
               'artifact_ids', COALESCE(gav.artifact_ids, ''),
               'dependent_count', project.dependent_count,
-              'health_score', health.health_score,
               'has_readme', (project.minimized_readme IS NOT NULL),
               'packages', COALESCE(gav.packages, '[]'::json)
             )::text
@@ -119,7 +119,6 @@ class OpenSearchTempPopulator(
               LEFT JOIN gav ON gav.project_id = project.id
               LEFT JOIN markers_info ON markers_info.project_id = project.id
               LEFT JOIN tags_info ON tags_info.project_id = project.id
-              LEFT JOIN scm_repo_health_components health ON health.scm_repo_id = repo.id
         """.trimIndent()
 
         // Package docs from base tables. Mirrors package_index: latest version per (group, artifact),

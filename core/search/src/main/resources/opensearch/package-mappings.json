@@ -11,6 +11,6 @@
     "targets": { "type": "keyword" },
     "latest_license_name": { "type": "keyword" },
     "latest_version": { "type": "keyword" },
-    "release_ts": { "type": "keyword" }
+    "release_ts": { "type": "date" }
   }
 }

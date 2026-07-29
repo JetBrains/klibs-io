@@ -18,7 +18,7 @@
     "has_readme": { "type": "boolean" },
     "license_name": { "type": "keyword" },
     "latest_version": { "type": "keyword" },
-    "latest_version_ts": { "type": "keyword" },
+    "latest_version_ts": { "type": "date" },
     "plain_description": { "type": "text", "index": false },
     "packages": {
       "type": "nested",

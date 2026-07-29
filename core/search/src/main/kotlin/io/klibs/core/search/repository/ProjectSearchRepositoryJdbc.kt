@@ -206,7 +206,7 @@ class ProjectSearchRepositoryJdbc(
 
     private fun String.addWildcardPostfix(): String = "$this:*"
 
-    override fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
+    fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
         val sql = """
             SELECT c.id AS category_id, c.name AS category_name, c.markers AS category_markers,
                    pi.project_id, pi.owner_type, pi.owner_login, pi.repo_name, pi.name,
@@ -246,7 +246,7 @@ class ProjectSearchRepositoryJdbc(
         return result
     }
 
-    override fun refreshIndex() {
+    fun refreshIndex() {
         jdbcClient.sql("REFRESH MATERIALIZED VIEW CONCURRENTLY project_index")
             .update()
     }
