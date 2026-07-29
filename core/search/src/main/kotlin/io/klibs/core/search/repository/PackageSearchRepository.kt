@@ -26,9 +26,4 @@ interface PackageSearchRepository {
         page: Int,
         limit: Int
     ): List<SearchPackageResult>
-
-    /**
-     * Refreshes the search index to include recently indexed / updated packages.
-     */
-    fun refreshIndex()
 }
