@@ -1,0 +1,1701 @@
+{
+  "_doc": "Labeled query set for klibs.io search benchmark (KTL-4595). expected = list of 'ownerLogin/name' (case-insensitive). pass: type rank_le|any_in_top|precision_at|all_support_platform|non_empty. expected=primary (rel 2), optional also=secondary (rel 1); nDCG uses graded gains, pass-relevance = expected u also. `weight` is the traffic factor only (1 + share, so 1..2); `graded`=matched a human-graded real query, which the scorer doubles into the effective case weight. Headline = class-weighted mean of case-weighted nDCG@10. See testcases.md.",
+  "cases": [
+    {
+      "id": "A1",
+      "cls": "A",
+      "query": "ktor",
+      "weight": 2.0,
+      "graded": true,
+      "expected": [
+        "ktorio/ktor"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A2",
+      "cls": "A",
+      "query": "coil",
+      "weight": 1.63755,
+      "graded": true,
+      "expected": [
+        "coil-kt/coil"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A3",
+      "cls": "A",
+      "query": "voyager",
+      "weight": 1.17485,
+      "graded": true,
+      "expected": [
+        "adrielcafe/voyager"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A4",
+      "cls": "A",
+      "query": "koin",
+      "weight": 1.7079,
+      "graded": true,
+      "expected": [
+        "InsertKoinIO/koin"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A5",
+      "cls": "A",
+      "query": "room",
+      "weight": 1.742,
+      "graded": true,
+      "expected": [
+        "androidx/room"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 2
+      }
+    },
+    {
+      "id": "A6",
+      "cls": "A",
+      "query": "sqldelight",
+      "weight": 1.1258,
+      "graded": true,
+      "expected": [
+        "sqldelight/sqldelight"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A7",
+      "cls": "A",
+      "query": "okio",
+      "weight": 1.24945,
+      "graded": true,
+      "expected": [
+        "square/okio"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A8",
+      "cls": "A",
+      "query": "haze",
+      "weight": 1.0832,
+      "graded": false,
+      "expected": [
+        "chrisbanes/haze"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A9",
+      "cls": "A",
+      "query": "FileKit",
+      "weight": 1.1407,
+      "graded": false,
+      "expected": [
+        "vinceglb/FileKit"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A10",
+      "cls": "A",
+      "query": "Decompose",
+      "weight": 1.1151,
+      "graded": false,
+      "expected": [
+        "arkivanov/Decompose"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A11",
+      "cls": "A",
+      "query": "mockk",
+      "weight": 1.1066,
+      "graded": false,
+      "expected": [
+        "mockk/mockk"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A12",
+      "cls": "A",
+      "query": "qrose",
+      "weight": 1.0128,
+      "graded": false,
+      "expected": [
+        "alexzhirkevich/qrose"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A13",
+      "cls": "A",
+      "query": "Kermit",
+      "weight": 1.18125,
+      "graded": true,
+      "expected": [
+        "touchlab/Kermit"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 2
+      }
+    },
+    {
+      "id": "A14",
+      "cls": "A",
+      "query": "kotlinx.serialization",
+      "weight": 1.0299,
+      "graded": false,
+      "expected": [
+        "Kotlin/kotlinx.serialization"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "A15",
+      "cls": "A",
+      "query": "QR code generator",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "avan1235/QR-Code-generator-kotlin"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "B1",
+      "cls": "B",
+      "query": "chart",
+      "weight": 1.4584,
+      "graded": true,
+      "expected": [
+        "patrykandpatrick/vico",
+        "KoalaPlot/koalaplot-core",
+        "ehsannarmani/ComposeCharts"
+      ],
+      "also": [
+        "thechance101/aay-chart",
+        "hi-manshu/charty",
+        "netguru/compose-multiplatform-charts",
+        "hdcharts/charts"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.4
+      }
+    },
+    {
+      "id": "B2",
+      "cls": "B",
+      "query": "navigation",
+      "weight": 1.98295,
+      "graded": true,
+      "expected": [
+        "adrielcafe/voyager",
+        "androidx/navigation",
+        "androidx/navigation3"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.6
+      }
+    },
+    {
+      "id": "B3",
+      "cls": "B",
+      "query": "image",
+      "weight": 1.58635,
+      "graded": true,
+      "expected": [
+        "coil-kt/coil",
+        "skydoves/landscapist",
+        "panpf/sketch"
+      ],
+      "also": [
+        "qdsfdhvh/compose-imageloader",
+        "Kamel-Media/Kamel",
+        "onseok/peekaboo"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.6
+      }
+    },
+    {
+      "id": "B4",
+      "cls": "B",
+      "query": "dependency injection",
+      "weight": 1.0,
+      "graded": true,
+      "expected": [
+        "InsertKoinIO/koin",
+        "kosi-libs/Kodein",
+        "evant/kotlin-inject",
+        "ZacSweers/metro"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.6
+      }
+    },
+    {
+      "id": "B5",
+      "cls": "B",
+      "query": "logging",
+      "weight": 1.2196,
+      "graded": true,
+      "expected": [
+        "oshai/kotlin-logging",
+        "touchlab/Kermit"
+      ],
+      "also": [
+        "AAkira/Napier",
+        "diamondedge1/kmlogging",
+        "pocketbyte/kotlin-kydra-log"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.5
+      }
+    },
+    {
+      "id": "B6",
+      "cls": "B",
+      "query": "json",
+      "weight": 1.24945,
+      "graded": true,
+      "expected": [
+        "Kotlin/kotlinx.serialization"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "B7",
+      "cls": "B",
+      "query": "http client",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "ktorio/ktor",
+        "kittinunf/fuel",
+        "Foso/Ktorfit"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.6
+      }
+    },
+    {
+      "id": "B8",
+      "cls": "B",
+      "query": "datetime",
+      "weight": 1.3582,
+      "graded": true,
+      "expected": [
+        "Kotlin/kotlinx-datetime"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 2
+      }
+    },
+    {
+      "id": "B9",
+      "cls": "B",
+      "query": "database",
+      "weight": 1.24095,
+      "graded": true,
+      "expected": [
+        "sqldelight/sqldelight",
+        "androidx/room",
+        "MobileNativeFoundation/Store"
+      ],
+      "also": [
+        "androidx/sqlite",
+        "tamimattafi/kabin",
+        "xxfast/kstore"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.6
+      }
+    },
+    {
+      "id": "B10",
+      "cls": "B",
+      "query": "webview",
+      "weight": 1.6013,
+      "graded": true,
+      "expected": [
+        "KevinnZou/compose-webview-multiplatform",
+        "MohamedRejeb/Calf"
+      ],
+      "also": [
+        "parkwoocheol/compose-webview",
+        "final-class/webview-multiplatform-mobile"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.5
+      }
+    },
+    {
+      "id": "B11",
+      "cls": "B",
+      "query": "qr",
+      "weight": 1.2068,
+      "graded": true,
+      "expected": [
+        "ismai117/KScan",
+        "alexzhirkevich/qrose"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.5
+      }
+    },
+    {
+      "id": "B12",
+      "cls": "B",
+      "query": "permission",
+      "weight": 1.42855,
+      "graded": true,
+      "expected": [
+        "icerockdev/moko-permissions",
+        "splendo/kaluga"
+      ],
+      "also": [
+        "eygraber/compose-permissionx",
+        "reyazoct/kmm-permissions",
+        "mohamedrejeb/calf"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.5
+      }
+    },
+    {
+      "id": "B13",
+      "cls": "B",
+      "query": "camera",
+      "weight": 1.47975,
+      "graded": true,
+      "expected": [
+        "Kashif-E/CameraK"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "B14",
+      "cls": "B",
+      "query": "bluetooth",
+      "weight": 1.19615,
+      "graded": true,
+      "expected": [
+        "JuulLabs/kable",
+        "Reedyuk/blue-falcon"
+      ],
+      "also": [
+        "nordicsemi/kotlin-ble-library",
+        "nordicsemi/kmm-ble-library",
+        "beepiz/BleGattCoroutines",
+        "splendo/kaluga"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.5
+      }
+    },
+    {
+      "id": "B15",
+      "cls": "B",
+      "query": "map",
+      "weight": 1.50105,
+      "graded": true,
+      "expected": [
+        "software-mansion/kmp-maps",
+        "maplibre/maplibre-compose"
+      ],
+      "also": [
+        "yankeppey/kmp-maps-compose",
+        "the-best-is-best/kgoogle-map",
+        "kmp-naver-map/kmp-naver-map"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.5
+      }
+    },
+    {
+      "id": "B16",
+      "cls": "B",
+      "query": "markdown",
+      "weight": 1.2132,
+      "graded": true,
+      "expected": [
+        "mikepenz/multiplatform-markdown-renderer"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "B17",
+      "cls": "B",
+      "query": "lottie",
+      "weight": 1.24945,
+      "graded": true,
+      "expected": [
+        "alexzhirkevich/compottie"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "B18",
+      "cls": "B",
+      "query": "crypto",
+      "weight": 1.26865,
+      "graded": true,
+      "expected": [
+        "whyoleg/cryptography-kotlin"
+      ],
+      "also": [
+        "diglol/crypto",
+        "appmattus/crypto",
+        "andreypfau/kotlinx-crypto",
+        "ionspin/kotlin-multiplatform-libsodium"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "B19",
+      "cls": "B",
+      "query": "settings",
+      "weight": 1.18125,
+      "graded": true,
+      "expected": [
+        "russhwolf/multiplatform-settings",
+        "androidx/datastore"
+      ],
+      "also": [
+        "alorma/compose-settings",
+        "ch4rl3x/settings-multiplatform"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.5
+      }
+    },
+    {
+      "id": "B20",
+      "cls": "B",
+      "query": "firebase",
+      "weight": 1.5565,
+      "graded": true,
+      "expected": [
+        "GitLiveApp/firebase-kotlin-sdk"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 2
+      }
+    },
+    {
+      "id": "C1",
+      "cls": "C",
+      "query": "Hilt",
+      "weight": 1.162,
+      "graded": false,
+      "expected": [
+        "InsertKoinIO/koin",
+        "kosi-libs/Kodein"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "C2",
+      "cls": "C",
+      "query": "Retrofit",
+      "weight": 1.2111,
+      "graded": true,
+      "expected": [
+        "Foso/Ktorfit",
+        "ktorio/ktor"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "C3",
+      "cls": "C",
+      "query": "Glide",
+      "weight": 1.0576,
+      "graded": false,
+      "expected": [
+        "coil-kt/coil"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "C4",
+      "cls": "C",
+      "query": "Room alternative",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "sqldelight/sqldelight"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "C5",
+      "cls": "C",
+      "query": "Dagger",
+      "weight": 1.0576,
+      "graded": false,
+      "expected": [
+        "InsertKoinIO/koin"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "C6",
+      "cls": "C",
+      "query": "live activity",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "software-mansion-labs/kmp-live-activity"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "C7",
+      "cls": "C",
+      "query": "Lottie animation",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "alexzhirkevich/compottie"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "C8",
+      "cls": "C",
+      "query": "local notifications",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "mirzemehdi/KMPNotifier",
+        "Tweener/alarmee"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "C9",
+      "cls": "C",
+      "query": "rich text editor",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "MohamedRejeb/compose-rich-editor"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "C10",
+      "cls": "C",
+      "query": "PDF generation document multiplatform",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "D1",
+      "cls": "D",
+      "query": "http client",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "ktorio/ktor"
+      ],
+      "targetFilters": {
+        "IOS": [],
+        "JVM": []
+      },
+      "platforms": [
+        "native",
+        "jvm"
+      ],
+      "pass": {
+        "type": "all_support_platform",
+        "k": 10
+      }
+    },
+    {
+      "id": "D2",
+      "cls": "D",
+      "query": "state management",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [],
+      "targetFilters": {
+        "JavaScript": []
+      },
+      "platforms": [
+        "js"
+      ],
+      "pass": {
+        "type": "all_support_platform",
+        "k": 10
+      }
+    },
+    {
+      "id": "D3",
+      "cls": "D",
+      "query": "datetime",
+      "weight": 1.3582,
+      "graded": true,
+      "expected": [
+        "Kotlin/kotlinx-datetime"
+      ],
+      "targetFilters": {
+        "IOS": [],
+        "JVM": []
+      },
+      "platforms": [
+        "native",
+        "jvm"
+      ],
+      "pass": {
+        "type": "all_support_platform",
+        "k": 10
+      }
+    },
+    {
+      "id": "D4",
+      "cls": "D",
+      "query": "storage",
+      "weight": 1.1557,
+      "graded": false,
+      "expected": [],
+      "targetFilters": {
+        "IOS": []
+      },
+      "platforms": [
+        "native"
+      ],
+      "pass": {
+        "type": "all_support_platform",
+        "k": 10
+      }
+    },
+    {
+      "id": "D5",
+      "cls": "D",
+      "query": "webview",
+      "weight": 1.6013,
+      "graded": true,
+      "expected": [],
+      "targetFilters": {
+        "Wasm": []
+      },
+      "platforms": [
+        "wasm"
+      ],
+      "pass": {
+        "type": "all_support_platform",
+        "k": 10
+      }
+    },
+    {
+      "id": "M1",
+      "cls": "M",
+      "query": "dependency injection",
+      "weight": 1.0,
+      "graded": true,
+      "expected": [
+        "InsertKoinIO/koin",
+        "kosi-libs/Kodein",
+        "evant/kotlin-inject"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.6
+      }
+    },
+    {
+      "id": "M2",
+      "cls": "M",
+      "query": "image picker",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "onseok/peekaboo",
+        "jordond/peekaboo"
+      ],
+      "also": [
+        "vinceglb/FileKit"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 5
+      }
+    },
+    {
+      "id": "M3",
+      "cls": "M",
+      "query": "google maps",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "software-mansion/kmp-maps",
+        "maplibre/maplibre-compose"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "M4",
+      "cls": "M",
+      "query": "qr scanner",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "ismai117/KScan"
+      ],
+      "also": [
+        "kalinjul/EasyQRScan",
+        "ujizin/camposer"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 5
+      }
+    },
+    {
+      "id": "M5",
+      "cls": "M",
+      "query": "video player",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "kdroidFilter/ComposeMediaPlayer",
+        "KhubaibKhan4/MediaPlayer-KMP"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "M6",
+      "cls": "M",
+      "query": "room database",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "androidx/room",
+        "sqldelight/sqldelight"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 3
+      }
+    },
+    {
+      "id": "M7",
+      "cls": "M",
+      "query": "navigation compose",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "adrielcafe/voyager",
+        "androidx/navigation"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "M8",
+      "cls": "M",
+      "query": "date picker",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "darkokoa/compose-datetime-wheel-picker",
+        "kez-lab/compose-datetimepicker",
+        "shivathapaa/nepali-date-picker"
+      ],
+      "also": [
+        "kizitonwose/Calendar"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 5
+      }
+    },
+    {
+      "id": "M9",
+      "cls": "M",
+      "query": "compose calendar",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "kizitonwose/Calendar"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "M10",
+      "cls": "M",
+      "query": "kmp qrcode library",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "ismai117/KScan",
+        "alexzhirkevich/qrose"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "M11",
+      "cls": "M",
+      "query": "firebase auth",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "GitLiveApp/firebase-kotlin-sdk"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "M12",
+      "cls": "M",
+      "query": "audio player",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "kdroidFilter/ComposeMediaPlayer"
+      ],
+      "also": [
+        "rufenkhokhar/kmp-player",
+        "hyochan/kmp-audio-recorder-player"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 5
+      }
+    },
+    {
+      "id": "B21",
+      "cls": "B",
+      "query": "charts",
+      "weight": 1.15565,
+      "graded": true,
+      "expected": [
+        "patrykandpatrick/vico",
+        "KoalaPlot/koalaplot-core",
+        "ehsannarmani/ComposeCharts"
+      ],
+      "also": [
+        "thechance101/aay-chart",
+        "hi-manshu/charty",
+        "netguru/compose-multiplatform-charts",
+        "hdcharts/charts"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.4
+      }
+    },
+    {
+      "id": "B23",
+      "cls": "B",
+      "query": "date",
+      "weight": 1.43285,
+      "graded": true,
+      "expected": [
+        "Kotlin/kotlinx-datetime"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "B24",
+      "cls": "B",
+      "query": "time",
+      "weight": 1.1855,
+      "graded": true,
+      "expected": [
+        "Kotlin/kotlinx-datetime"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 5
+      }
+    },
+    {
+      "id": "B25",
+      "cls": "B",
+      "query": "audio",
+      "weight": 1.29,
+      "graded": true,
+      "expected": [
+        "kdroidFilter/ComposeMediaPlayer",
+        "KhubaibKhan4/MediaPlayer-KMP"
+      ],
+      "also": [
+        "atsushieno/compose-audio-controls",
+        "hyochan/kmp-audio-recorder-player",
+        "kkostov/gadulka"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.4
+      }
+    },
+    {
+      "id": "B26",
+      "cls": "B",
+      "query": "player",
+      "weight": 1.28785,
+      "graded": true,
+      "expected": [
+        "kdroidFilter/ComposeMediaPlayer",
+        "KhubaibKhan4/MediaPlayer-KMP"
+      ],
+      "also": [
+        "rufenkhokhar/kmp-player",
+        "joesteven/kmp-videoplayer"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.4
+      }
+    },
+    {
+      "id": "B27",
+      "cls": "B",
+      "query": "media",
+      "weight": 1.26865,
+      "graded": true,
+      "expected": [
+        "kdroidFilter/ComposeMediaPlayer",
+        "KhubaibKhan4/MediaPlayer-KMP"
+      ],
+      "also": [
+        "icerockdev/moko-media",
+        "Kamel-Media/Kamel",
+        "open-ani/mediamp"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.4
+      }
+    },
+    {
+      "id": "B28",
+      "cls": "B",
+      "query": "web",
+      "weight": 1.3326,
+      "graded": true,
+      "expected": [
+        "varabyte/kobweb",
+        "Kotlin/kotlinx.html",
+        "rjaros/kvision"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.4
+      }
+    },
+    {
+      "id": "B29",
+      "cls": "B",
+      "query": "ble",
+      "weight": 1.1706,
+      "graded": true,
+      "expected": [
+        "JuulLabs/kable",
+        "Reedyuk/blue-falcon"
+      ],
+      "also": [
+        "nordicsemi/kotlin-ble-library",
+        "nordicsemi/kmm-ble-library",
+        "beepiz/BleGattCoroutines",
+        "splendo/kaluga"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.5
+      }
+    },
+    {
+      "id": "B30",
+      "cls": "B",
+      "query": "viewmodel",
+      "weight": 1.26225,
+      "graded": true,
+      "expected": [
+        "androidx/lifecycle",
+        "rickclephas/KMP-ObservableViewModel",
+        "hoc081098/kmp-viewmodel"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 5
+      }
+    },
+    {
+      "id": "B31",
+      "cls": "B",
+      "query": "auth",
+      "weight": 1.2068,
+      "graded": true,
+      "expected": [
+        "GitLiveApp/firebase-kotlin-sdk",
+        "supabase-community/supabase-kt"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B32",
+      "cls": "B",
+      "query": "pdf",
+      "weight": 1.35395,
+      "graded": true,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "B33",
+      "cls": "B",
+      "query": "exposed",
+      "weight": 1.1407,
+      "graded": true,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "B34",
+      "cls": "B",
+      "query": "table",
+      "weight": 1.14285,
+      "graded": true,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "B35",
+      "cls": "B",
+      "query": "log",
+      "weight": 1.75055,
+      "graded": true,
+      "expected": [
+        "oshai/kotlin-logging",
+        "touchlab/Kermit"
+      ],
+      "also": [
+        "AAkira/Napier",
+        "diamondedge1/kmlogging",
+        "pocketbyte/kotlin-kydra-log",
+        "getstream/stream-log",
+        "05nelsonm/kmp-log"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B36",
+      "cls": "B",
+      "query": "video",
+      "weight": 1.5224,
+      "graded": true,
+      "expected": [
+        "KhubaibKhan4/MediaPlayer-KMP",
+        "kdroidFilter/ComposeMediaPlayer"
+      ],
+      "also": [
+        "joesteven/kmp-videoplayer",
+        "rufenkhokhar/kmp-player",
+        "skot-framework/sk-video"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B37",
+      "cls": "B",
+      "query": "file",
+      "weight": 1.4776,
+      "graded": true,
+      "expected": [
+        "vinceglb/FileKit"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B38",
+      "cls": "B",
+      "query": "sql",
+      "weight": 1.39445,
+      "graded": true,
+      "expected": [
+        "sqldelight/sqldelight",
+        "androidx/room",
+        "MobileNativeFoundation/Store"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B39",
+      "cls": "B",
+      "query": "compose",
+      "weight": 1.3305,
+      "graded": true,
+      "expected": [
+        "JetBrains/compose-multiplatform"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B40",
+      "cls": "B",
+      "query": "datastore",
+      "weight": 1.29425,
+      "graded": true,
+      "expected": [
+        "androidx/datastore",
+        "russhwolf/multiplatform-settings"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B41",
+      "cls": "B",
+      "query": "toast",
+      "weight": 1.31555,
+      "graded": true,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "B43",
+      "cls": "B",
+      "query": "mock",
+      "weight": 1.2196,
+      "graded": true,
+      "expected": [
+        "mockk/mockk"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B44",
+      "cls": "B",
+      "query": "icon",
+      "weight": 1.25375,
+      "graded": true,
+      "expected": [
+        "devsrsouza/compose-icons"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B45",
+      "cls": "B",
+      "query": "icons",
+      "weight": 1.24735,
+      "graded": true,
+      "expected": [
+        "devsrsouza/compose-icons"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B46",
+      "cls": "B",
+      "query": "http",
+      "weight": 1.1983,
+      "graded": true,
+      "expected": [
+        "ktorio/ktor",
+        "kittinunf/fuel",
+        "Foso/Ktorfit"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B47",
+      "cls": "B",
+      "query": "navi",
+      "weight": 1.2324,
+      "graded": true,
+      "expected": [
+        "adrielcafe/voyager",
+        "androidx/navigation",
+        "androidx/navigation3"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B48",
+      "cls": "B",
+      "query": "moko",
+      "weight": 1.24735,
+      "graded": true,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "B49",
+      "cls": "B",
+      "query": "paging",
+      "weight": 1.23455,
+      "graded": true,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "B50",
+      "cls": "B",
+      "query": "notification",
+      "weight": 1.19615,
+      "graded": true,
+      "expected": [
+        "mirzemehdi/KMPNotifier",
+        "Tweener/alarmee"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B51",
+      "cls": "B",
+      "query": "location",
+      "weight": 1.18975,
+      "graded": true,
+      "expected": [
+        "jordond/compass",
+        "icerockdev/moko-geo"
+      ],
+      "also": [
+        "xemb0/kmp-location",
+        "addhen/klocation",
+        "splendo/kaluga"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B52",
+      "cls": "B",
+      "query": "maps",
+      "weight": 1.1855,
+      "graded": true,
+      "expected": [
+        "software-mansion/kmp-maps",
+        "maplibre/maplibre-compose"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B53",
+      "cls": "B",
+      "query": "nav",
+      "weight": 1.2068,
+      "graded": true,
+      "expected": [
+        "adrielcafe/voyager",
+        "androidx/navigation",
+        "androidx/navigation3"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B54",
+      "cls": "B",
+      "query": "network",
+      "weight": 1.1919,
+      "graded": true,
+      "expected": [
+        "ktorio/ktor",
+        "kittinunf/fuel",
+        "Foso/Ktorfit"
+      ],
+      "also": [
+        "icerockdev/moko-network",
+        "apollographql/apollo-kotlin"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B55",
+      "cls": "B",
+      "query": "ui",
+      "weight": 1.14285,
+      "graded": true,
+      "expected": [
+        "JetBrains/compose-multiplatform"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B56",
+      "cls": "B",
+      "query": "naviga",
+      "weight": 1.1855,
+      "graded": true,
+      "expected": [
+        "adrielcafe/voyager",
+        "androidx/navigation",
+        "androidx/navigation3"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B57",
+      "cls": "B",
+      "query": "kotlin",
+      "weight": 1.18975,
+      "graded": true,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "B58",
+      "cls": "B",
+      "query": "google",
+      "weight": 1.17695,
+      "graded": true,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "B59",
+      "cls": "B",
+      "query": "html",
+      "weight": 1.16845,
+      "graded": true,
+      "expected": [
+        "varabyte/kobweb",
+        "Kotlin/kotlinx.html",
+        "rjaros/kvision"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B60",
+      "cls": "B",
+      "query": "store",
+      "weight": 1.16845,
+      "graded": true,
+      "expected": [
+        "MobileNativeFoundation/Store",
+        "sqldelight/sqldelight",
+        "androidx/room"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "B61",
+      "cls": "B",
+      "query": "navigation-compose",
+      "weight": 1.11085,
+      "graded": true,
+      "expected": [
+        "adrielcafe/voyager",
+        "androidx/navigation",
+        "androidx/navigation3"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "E2",
+      "cls": "E",
+      "query": "kotlinx.coroutines",
+      "weight": 1.0149,
+      "graded": false,
+      "expected": [
+        "Kotlin/kotlinx.coroutines"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "E3",
+      "cls": "E",
+      "query": "io.ktor:ktor-client",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "ktorio/ktor"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 1
+      }
+    },
+    {
+      "id": "E4",
+      "cls": "E",
+      "query": "user's json",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [],
+      "pass": {
+        "type": "non_empty"
+      }
+    },
+    {
+      "id": "E6",
+      "cls": "E",
+      "query": "the json library",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "Kotlin/kotlinx.serialization"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    },
+    {
+      "id": "E7",
+      "cls": "E",
+      "query": "koltin",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "JetBrains/kotlin-wrappers"
+      ],
+      "pass": {
+        "type": "any_in_top",
+        "k": 5
+      }
+    },
+    {
+      "id": "E9",
+      "cls": "E",
+      "query": "serializaton",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "Kotlin/kotlinx.serialization"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 3
+      }
+    }
+  ]
+}
