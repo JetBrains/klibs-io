@@ -36,7 +36,7 @@ class GitHubWebhookRequestsValidator(
             return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.noContent().build())
         }
 
-        if (payload.action != "opened") {
+        if (payload.action != "labeled") {
             logger.debug("Ignoring issues action '${payload.action}' (delivery=$delivery)")
             return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.noContent().build())
         }
