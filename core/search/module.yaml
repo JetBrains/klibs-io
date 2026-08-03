@@ -8,3 +8,4 @@ apply:
 dependencies:
   - ../package
   - ../scm-owner
+  - $libs.opensearch.java: exported

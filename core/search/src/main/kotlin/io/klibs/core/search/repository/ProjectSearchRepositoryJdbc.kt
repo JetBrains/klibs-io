@@ -15,71 +15,6 @@ class ProjectSearchRepositoryJdbc(
     private val jdbcClient: JdbcClient
 ) : ProjectSearchRepository {
 
-    override fun findRandomByStars(minStars: Int, maxStars: Int, limit: Int): List<SearchProjectResult> {
-        val sql = """
-            SELECT project_id,
-                   owner_type,
-                   owner_login,
-                   repo_name,
-                   name,
-                   stars,
-                   license_name,
-                   latest_version,
-                   latest_version_ts,
-                   array_to_string(platforms, ',') AS platforms,
-                   plain_description,
-                   tags,
-                   dependent_count
-            FROM project_index
-            WHERE stars BETWEEN :minStars AND :maxStars
-            ORDER BY random()
-            LIMIT :limit
-        """.trimIndent()
-
-        return jdbcClient.sql(sql)
-            .param("minStars", minStars)
-            .param("maxStars", maxStars)
-            .param("limit", limit)
-            .query(PROJECT_OVERVIEW_ROW_MAPPER)
-            .list()
-    }
-
-    override fun findRecentlyCreatedWithGoodQuality(searchLimit: Int, resultLimit: Int): List<SearchProjectResult> {
-        val sql = """
-            WITH matching_project_ids AS (SELECT project.id
-                                          FROM scm_repo
-                                                   JOIN project ON project.scm_repo_id = scm_repo.id
-                                          WHERE scm_repo.has_readme = true
-                                            AND scm_repo.license_key IS NOT NULL
-                                            AND scm_repo.description IS NOT NULL
-                                          ORDER BY scm_repo.created_ts DESC
-                                          LIMIT :searchLimit)
-            SELECT project_id,
-                   owner_type,
-                   owner_login,
-                   repo_name,
-                   name,
-                   stars,
-                   license_name,
-                   latest_version,
-                   latest_version_ts,
-                   array_to_string(platforms, ',') AS platforms,
-                   plain_description,
-                   tags,
-                   dependent_count
-            FROM project_index
-            WHERE project_id IN (SELECT id FROM matching_project_ids)
-            ORDER BY random()
-            LIMIT :resultLimit
-        """.trimIndent()
-
-        return jdbcClient.sql(sql)
-            .param("searchLimit", searchLimit)
-            .param("resultLimit", resultLimit)
-            .query(PROJECT_OVERVIEW_ROW_MAPPER)
-            .list()
-    }
-
     /**
      * This is an ugly implementation with StringBuilder, but FTS needs to be reimplemented anyway.
      *
@@ -271,7 +206,7 @@ class ProjectSearchRepositoryJdbc(
 
     private fun String.addWildcardPostfix(): String = "$this:*"
 
-    override fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
+    fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
         val sql = """
             SELECT c.id AS category_id, c.name AS category_name, c.markers AS category_markers,
                    pi.project_id, pi.owner_type, pi.owner_login, pi.repo_name, pi.name,
@@ -311,7 +246,7 @@ class ProjectSearchRepositoryJdbc(
         return result
     }
 
-    override fun refreshIndex() {
+    fun refreshIndex() {
         jdbcClient.sql("REFRESH MATERIALIZED VIEW CONCURRENTLY project_index")
             .update()
     }
