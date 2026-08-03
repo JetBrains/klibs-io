@@ -31,7 +31,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
 
     @Test
     fun `accepts a valid issues opened delivery and dispatches to the service`() {
-        val payload = openedPayload(
+        val payload = labeledPayload(
             number = 42,
             labels = listOf("index-request"),
             body = "### Group ID\n\norg.example\n\n### Artifact ID\n\nlib\n\n"
@@ -54,7 +54,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
 
     @Test
     fun `rejects an invalid signature with 401 and does not invoke the service`() {
-        val payload = openedPayload(number = 1, labels = listOf("index-request"), body = "x")
+        val payload = labeledPayload(number = 1, labels = listOf("index-request"), body = "x")
 
         mockMvc.post("/webhooks/github/issues") {
             contentType = MediaType.APPLICATION_JSON
@@ -107,7 +107,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
 
     @Test
     fun `ignores issues without the request label`() {
-        val payload = openedPayload(number = 8, labels = listOf("bug"), body = "x")
+        val payload = labeledPayload(number = 8, labels = listOf("bug"), body = "x")
 
         mockMvc.post("/webhooks/github/issues") {
             contentType = MediaType.APPLICATION_JSON
@@ -139,7 +139,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
 
     @Test
     fun `responds 400 on parse failure and notifies user`() {
-        val payload = openedPayload(
+        val payload = labeledPayload(
             number = 99,
             labels = listOf("index-request"),
             body = "invalid body"
@@ -159,12 +159,12 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
         verify(userIssueNotifier).notifyFailure(99, null)
     }
 
-    private fun openedPayload(number: Int, labels: List<String>, body: String): ByteArray {
+    private fun labeledPayload(number: Int, labels: List<String>, body: String): ByteArray {
         val labelsJson = labels.joinToString(prefix = "[", postfix = "]") { """{"name":"$it"}""" }
         val escapedBody = body.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
         return """
             {
-              "action": "opened",
+              "action": "labeled",
               "issue": {
                 "number": $number,
                 "body": "$escapedBody",
