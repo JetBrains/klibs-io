@@ -47,9 +47,10 @@ class GitHubWebhookRequestsValidator(
         }
 
         val requestLabel = gitHubIntegrationProperties.indexRequests.requestLabel
-        if (issuePayload.labels.none { it.name == requestLabel }) {
+        if (payload.label?.name != requestLabel) {
             logger.debug(
-                "Ignoring issue #${issuePayload.number} (delivery=$delivery): missing required label '$requestLabel'"
+                "Ignoring issue #${issuePayload.number} (delivery=$delivery): " +
+                    "added label '${payload.label?.name}' is not the required label '$requestLabel'"
             )
             return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.noContent().build())
         }

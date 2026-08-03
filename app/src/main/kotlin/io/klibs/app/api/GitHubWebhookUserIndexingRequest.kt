@@ -10,7 +10,8 @@ import java.time.Instant
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class GitHubWebhookUserIndexingRequest(
     val action: String? = null,
-    val issue: IssueDto? = null
+    val issue: IssueDto? = null,
+    val label: LabelDto? = null
 ) {
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class IssueDto(
