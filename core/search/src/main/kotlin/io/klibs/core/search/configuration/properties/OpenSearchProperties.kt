@@ -1,4 +1,4 @@
-package io.klibs.core.search.opensearch
+package io.klibs.core.search.configuration.properties
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 

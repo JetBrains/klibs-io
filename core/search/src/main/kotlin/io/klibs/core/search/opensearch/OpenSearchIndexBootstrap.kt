@@ -1,5 +1,6 @@
 package io.klibs.core.search.opensearch
 
+import io.klibs.core.search.configuration.properties.OpenSearchProperties
 import org.opensearch.client.json.JsonpDeserializer
 import org.opensearch.client.json.jackson.JacksonJsonpMapper
 import org.opensearch.client.opensearch.OpenSearchClient
@@ -13,16 +14,15 @@ import org.springframework.stereotype.Component
 import java.io.StringReader
 
 /**
- * Creates the project + package indices with their mappings on startup if absent.
+ * Creates the project + package OpenSearch indices with their mappings on startup if absent.
  */
 @Component
 @ConditionalOnProperty("klibs.search.opensearch.enabled", havingValue = "true")
-class IndexBootstrap(
+class OpenSearchIndexBootstrap(
     private val client: OpenSearchClient,
     private val properties: OpenSearchProperties,
+    private val mapper: JacksonJsonpMapper,
 ) {
-
-    private val mapper = JacksonJsonpMapper()
 
     @EventListener(ApplicationReadyEvent::class)
     fun bootstrap() {
@@ -42,11 +42,9 @@ class IndexBootstrap(
     }
 
     private fun <T> parse(json: String, deserializer: JsonpDeserializer<T>): T =
-        mapper.jsonProvider().createParser(StringReader(json)).use {
-            deserializer.deserialize(it, mapper)
-        }
+        mapper.jsonProvider().createParser(StringReader(json)).use { deserializer.deserialize(it, mapper) }
 
     private companion object {
-        private val log = LoggerFactory.getLogger(IndexBootstrap::class.java)
+        private val log = LoggerFactory.getLogger(OpenSearchIndexBootstrap::class.java)
     }
 }

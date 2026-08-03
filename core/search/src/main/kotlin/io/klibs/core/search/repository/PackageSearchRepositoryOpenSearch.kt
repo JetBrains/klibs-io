@@ -7,7 +7,7 @@ import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchPackageResult
-import io.klibs.core.search.opensearch.OpenSearchProperties
+import io.klibs.core.search.configuration.properties.OpenSearchProperties
 import io.klibs.core.search.opensearch.OpenSearchQueryBuilder
 import org.opensearch.client.opensearch.OpenSearchClient
 import org.opensearch.client.opensearch._types.SortOptions
@@ -29,7 +29,7 @@ class PackageSearchRepositoryOpenSearch(
 
     override val indexName: String = properties.packageIndex
 
-    override val sourceFields: List<String> = SOURCE_FIELDS
+    override val excludedSourceFields: List<String> = EXCLUDED_SOURCE_FIELDS
 
     override fun find(
         query: String?,
@@ -98,9 +98,6 @@ class PackageSearchRepositoryOpenSearch(
     }
 
     private companion object {
-        private val SOURCE_FIELDS = listOf(
-            "group_id", "artifact_id", "project_id", "latest_version", "latest_description", "release_ts",
-            "owner_type", "owner_login", "latest_license_name", "platforms", "targets",
-        )
+        private val EXCLUDED_SOURCE_FIELDS = listOf("project_id", "latest_package_id")
     }
 }

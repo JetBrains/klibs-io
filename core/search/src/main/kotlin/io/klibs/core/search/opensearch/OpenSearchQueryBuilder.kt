@@ -28,7 +28,8 @@ object OpenSearchQueryBuilder {
                 "Math.log(doc['dependent_count'].value + 1) * 0.2" +
                 ") * d;"
 
-    // Word-bag match: OR over the query terms, docs matching only some of them still score.
+    // Word-bag match: OR over the query terms, order-insensitive, and a doc matching only some of
+    // them still scores — query "ktor client" matches "ktor-server", just with a low score.
     // `text` goes in as a FieldValue, so the serializer quotes it — never concatenated into the DSL.
     fun match(field: String, text: String, boost: Int): Query =
         MatchQuery.Builder()
@@ -71,7 +72,7 @@ object OpenSearchQueryBuilder {
 
     // OR between values for a field
     fun termsAny(field: String, values: List<String>): Query {
-        // Wwe want to achieve something like:
+        // We want to achieve something like:
         // { "terms": { "targets": ["IOS_ios_arm64", "IOS_ios_x64"] } }
 
         // Wrap values into FieldValue

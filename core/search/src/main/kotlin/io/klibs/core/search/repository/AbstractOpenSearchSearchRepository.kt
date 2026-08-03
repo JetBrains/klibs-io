@@ -16,8 +16,8 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
 
     protected abstract val indexName: String
 
-    /** `_source` fields to fetch; must cover everything [toResult] reads. */
-    protected abstract val sourceFields: List<String>
+    /** `_source` fields to skip: indexed for matching, never read by [toResult]. */
+    protected abstract val excludedSourceFields: List<String>
 
     protected abstract fun shouldClauses(query: String): List<Query>
 
@@ -52,8 +52,8 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
                 .query(finalQuery)
                 .from(limit * (page - 1))
                 .size(limit)
-                // return only used fields
-                .source { s -> s.filter { f -> f.includes(sourceFields) } }
+                // drop the search-only fields from the response
+                .source { s -> s.filter { f -> f.excludes(excludedSourceFields) } }
                 .sort(sortOptions(sortBy, isQueryPresent))
         }, ObjectNode::class.java)
 

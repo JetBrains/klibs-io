@@ -6,7 +6,7 @@ import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchProjectResult
-import io.klibs.core.search.opensearch.OpenSearchProperties
+import io.klibs.core.search.configuration.properties.OpenSearchProperties
 import io.klibs.core.search.opensearch.OpenSearchQueryBuilder
 import org.opensearch.client.opensearch.OpenSearchClient
 import org.opensearch.client.opensearch._types.SortOptions
@@ -28,7 +28,7 @@ class ProjectSearchRepositoryOpenSearch(
 
     override val indexName: String = properties.projectIndex
 
-    override val sourceFields: List<String> = SOURCE_FIELDS
+    override val excludedSourceFields: List<String> = EXCLUDED_SOURCE_FIELDS
 
     override fun find(
         query: String?,
@@ -81,10 +81,11 @@ class ProjectSearchRepositoryOpenSearch(
     }
 
     override fun sortOptions(sortBy: SearchSort, isQueryPresent: Boolean): List<SortOptions> {
-        val primary = when {
-            sortBy == SearchSort.RELEVANCY && isQueryPresent -> scoreDesc()
-            sortBy == SearchSort.MOST_DEPENDENTS -> fieldSort("dependent_count", SortOrder.Desc)
-            sortBy == SearchSort.MOST_HEALTHY -> fieldSort("health_score", SortOrder.Desc)
+        val primary = when (sortBy) {
+            // OSS health is not indexed in OpenSearch, so this sort cannot be served here.
+            SearchSort.MOST_HEALTHY -> throw UnsupportedOperationException("$sortBy is not supported by OpenSearch")
+            SearchSort.RELEVANCY if isQueryPresent -> scoreDesc()
+            SearchSort.MOST_DEPENDENTS -> fieldSort("dependent_count", SortOrder.Desc)
             else -> fieldSort("stars", SortOrder.Desc)
         }
         return listOf(primary, fieldSort("project_id", SortOrder.Asc))
@@ -106,14 +107,13 @@ class ProjectSearchRepositoryOpenSearch(
         tags = src.stringList("tags"),
         markers = src.stringList("markers"),
         dependentCount = src.get("dependent_count").asInt(),
-        ossHealthScore = src.get("health_score")?.takeUnless { it.isNull }?.asInt(),
+        // Not indexed in OpenSearch, see sortOptions.
+        ossHealthScore = null,
     )
 
     private companion object {
-        private val SOURCE_FIELDS = listOf(
-            "project_id", "owner_type", "owner_login", "repo_name", "name", "stars", "license_name",
-            "latest_version", "latest_version_ts", "platforms", "plain_description", "tags", "markers",
-            "targets", "dependent_count", "health_score",
+        private val EXCLUDED_SOURCE_FIELDS = listOf(
+            "packages", "project_description", "repo_description", "group_ids", "artifact_ids", "has_readme",
         )
     }
 }
