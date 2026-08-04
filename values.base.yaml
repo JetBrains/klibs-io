@@ -27,6 +27,15 @@ extraVolumes:
           resources:
             requests:
               storage: 40Gi
+  - name: opensearch-ca
+    secret:
+      secretName: klibs-opensearch-node-cert
+      items:
+        - key: ca.crt
+          path: ca.crt
 extraVolumeMounts:
   - name: data
     mountPath: /data
+  - name: opensearch-ca
+    mountPath: /etc/opensearch-ca
+    readOnly: true
