@@ -2,7 +2,8 @@ package io.klibs.core.search.eval
 
 import io.awspring.cloud.s3.S3Template
 import io.klibs.app.Application
-import io.klibs.core.search.service.SearchService
+import io.klibs.core.search.opensearch.IndexNaming
+import io.klibs.core.search.opensearch.OpenSearchIndexer
 import io.klibs.integration.ai.AiService
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
@@ -59,7 +60,10 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
     override lateinit var mockMvc: MockMvc
 
     @Autowired
-    private lateinit var searchService: SearchService
+    private lateinit var indexer: OpenSearchIndexer
+
+    @Autowired
+    private lateinit var naming: IndexNaming
 
     @Autowired
     private lateinit var openSearchClient: OpenSearchClient
@@ -92,14 +96,15 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
 
     @BeforeAll
     fun refreshViews() {
-        searchService.refreshSearchViews()
-        // refreshSearchViews swallows exceptions, so fail loudly if the OS index never got populated.
-        val indexed = openSearchClient.count { it.index(OS_PROJECT_INDEX) }.count()
+        naming.all.forEach { indexer.sync(it) }
+        // Count through the alias, and top-level: `_cat` docs.count inflates with nested `packages`.
+        val alias = naming.project.alias
+        val indexed = openSearchClient.count { it.index(alias) }.count()
         check(indexed > 0) {
-            "OpenSearch project index '$OS_PROJECT_INDEX' is empty after refresh — " +
+            "OpenSearch project alias '$alias' is empty after sync — " +
                 "is OpenSearch up at $OS_URI and the prod-copy DB populated?"
         }
-        log.info("OpenSearch project index '{}' has {} docs", OS_PROJECT_INDEX, indexed)
+        log.info("OpenSearch project alias '{}' has {} docs", alias, indexed)
     }
 
     companion object {
