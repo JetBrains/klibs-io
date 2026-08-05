@@ -2,7 +2,6 @@ package io.klibs.core.search.service
 
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
-import io.klibs.core.search.opensearch.OpenSearchTempPopulator
 import io.klibs.core.search.repository.PackageSearchRepository
 import io.klibs.core.search.repository.PackageSearchRepositoryJdbc
 import io.klibs.core.search.repository.ProjectSearchRepository
@@ -27,7 +26,6 @@ class SearchService(
     private val packageSearchRepository: PackageSearchRepository,
     private val projectIndexJdbc: ProjectSearchRepositoryJdbc,
     private val packageIndexJdbc: PackageSearchRepositoryJdbc,
-    private val openSearchPopulator: OpenSearchTempPopulator?,
     private val applicationScope: CoroutineScope
 ) {
     /**
@@ -112,20 +110,18 @@ class SearchService(
             }
     }
 
-    /** `project_index` also backs [searchByCategories], so it is refreshed in both engines' modes. */
+    /**
+     * Both mat views are refreshed regardless of the active search engine: `project_index` also
+     * backs [searchByCategories], and both back the JDBC fallback, which would otherwise degrade to
+     * a view frozen at OpenSearch cutover. OpenSearch itself is driven by its own job (KTL-4713).
+     */
     private fun refreshProjectIndexView() {
-        val refreshProjectsNanosTaken = measureNanoTime {
-            projectIndexJdbc.refreshIndex()
-            openSearchPopulator?.populateProjects()
-        }
+        val refreshProjectsNanosTaken = measureNanoTime { projectIndexJdbc.refreshIndex() }
         logger.info("Updated project search index in ${TimeUnit.NANOSECONDS.toSeconds(refreshProjectsNanosTaken)} seconds")
     }
 
     private fun refreshPackageIndexView() {
-        val refreshPackagesNanosTaken = measureNanoTime {
-            packageIndexJdbc.refreshIndex()
-            openSearchPopulator?.populatePackages()
-        }
+        val refreshPackagesNanosTaken = measureNanoTime { packageIndexJdbc.refreshIndex() }
         logger.info("Updated package search index in ${TimeUnit.NANOSECONDS.toSeconds(refreshPackagesNanosTaken)} seconds")
     }
 
