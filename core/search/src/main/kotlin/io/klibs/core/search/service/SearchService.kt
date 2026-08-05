@@ -110,11 +110,6 @@ class SearchService(
             }
     }
 
-    /**
-     * Both mat views are refreshed regardless of the active search engine: `project_index` also
-     * backs [searchByCategories], and both back the JDBC fallback, which would otherwise degrade to
-     * a view frozen at OpenSearch cutover. OpenSearch itself is driven by its own job (KTL-4713).
-     */
     private fun refreshProjectIndexView() {
         val refreshProjectsNanosTaken = measureNanoTime { projectIndexJdbc.refreshIndex() }
         logger.info("Updated project search index in ${TimeUnit.NANOSECONDS.toSeconds(refreshProjectsNanosTaken)} seconds")

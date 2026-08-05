@@ -6,7 +6,7 @@ import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchProjectResult
-import io.klibs.core.search.opensearch.IndexNaming
+import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
 import io.klibs.core.search.opensearch.OpenSearchQueryBuilder
 import io.klibs.core.search.opensearch.ProjectFields
 import io.klibs.core.search.opensearch.keyword
@@ -23,10 +23,10 @@ import java.time.ZoneOffset
 @ConditionalOnProperty("klibs.search.opensearch.enabled", havingValue = "true")
 class ProjectSearchRepositoryOpenSearch(
     client: OpenSearchClient,
-    naming: IndexNaming,
+    projectIndexSpec: OpenSearchIndexSpec,
 ) : AbstractOpenSearchSearchRepository<SearchProjectResult>(client), ProjectSearchRepository {
 
-    override val indexName: String = naming.project.alias
+    override val indexName: String = projectIndexSpec.alias
 
     override val excludedSourceFields: List<String> = EXCLUDED_SOURCE_FIELDS
 
