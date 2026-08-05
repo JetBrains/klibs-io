@@ -3,6 +3,7 @@ package io.klibs.core.search.opensearch
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.klibs.core.search.configuration.properties.OpenSearchProperties
+import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
 import org.opensearch.client.json.JsonpDeserializer
 import org.opensearch.client.json.jackson.JacksonJsonpMapper
 import org.opensearch.client.opensearch.OpenSearchClient
@@ -32,11 +33,11 @@ class OpenSearchIndexer(
     private val mapper: ObjectMapper,
 ) {
 
-    fun aliasExists(spec: IndexSpec): Boolean =
+    fun aliasExists(spec: OpenSearchIndexSpec): Boolean =
         client.indices().existsAlias { it.name(spec.alias) }.value()
 
-    fun sync(spec: IndexSpec, now: Instant = Instant.now()) {
-        val indices = currentTargets(spec.alias)
+    fun sync(spec: OpenSearchIndexSpec, now: Instant = Instant.now()) {
+        val indices = generationsOf(spec.alias)
         check(indices.size <= 1) {
             "alias '${spec.alias}' points at ${indices.size} indices $indices; " +
                     "refusing to rebuild until it points at one"
@@ -44,6 +45,8 @@ class OpenSearchIndexer(
         val current = indices.singleOrNull()
 
         val generation = spec.generation(now)
+        // Reap before building: a build that throws mid-bulk then leaves its junk generation on
+        // disk to inspect, collected next cycle.
         reap(spec, newGen = generation, now = now, live = current)
 
         client.indices().create {
@@ -52,20 +55,23 @@ class OpenSearchIndexer(
                 .mappings(parse(withMeta(spec.mappings, spec.hash), TypeMapping._DESERIALIZER))
         }
 
-        val docs = jdbcClient.sql(spec.sql)
-            .query(String::class.java)
-            .list()
-            .map { mapper.readTree(it) as ObjectNode }
-        check(docs.isNotEmpty()) { "projection for '${spec.alias}' returned no rows; refusing to swap onto an empty index" }
+        val rows = jdbcClient.sql(spec.sql).query(String::class.java).list()
+        check(rows.isNotEmpty()) { "projection for '${spec.alias}' returned no rows; refusing to swap onto an empty index" }
 
-        docs.chunked(BATCH).forEach { batch -> bulk(generation, batch, spec.idOf) }
+        // Parse per batch rather than up front: the whole projection as ObjectNodes is several times
+        // its ~9MB of JSON, and only one batch is ever needed at a time.
+        rows.chunked(BATCH).forEach { chunk ->
+            bulkIndex(generation, chunk.map { mapper.readTree(it) as ObjectNode }, spec.idOf)
+        }
+        // Bulk-written docs aren't searchable until a refresh (default interval 1s).
+        // Force it, so alias can swap successfully.
         client.indices().refresh { it.index(generation) }
 
         swapAlias(spec, generation, current)
-        log.info("swapped alias '{}' onto '{}' with {} docs", spec.alias, generation, docs.size)
+        log.info("swapped alias '{}' onto '{}' with {} docs", spec.alias, generation, rows.size)
     }
 
-    private fun bulk(index: String, batch: List<ObjectNode>, idOf: (ObjectNode) -> String) {
+    private fun bulkIndex(index: String, batch: List<ObjectNode>, idOf: (ObjectNode) -> String) {
         val request = BulkRequest.Builder()
         batch.forEach { node ->
             request.operations { op -> op.index { it.index(index).id(idOf(node)).document(node) } }
@@ -76,7 +82,7 @@ class OpenSearchIndexer(
         }
     }
 
-    private fun swapAlias(spec: IndexSpec, generation: String, current: String?) {
+    private fun swapAlias(spec: OpenSearchIndexSpec, generation: String, current: String?) {
         client.indices().updateAliases { updateRequest ->
             current?.let { old ->
                 updateRequest.actions { a -> a.remove { it.index(old).alias(spec.alias) } }
@@ -85,17 +91,17 @@ class OpenSearchIndexer(
         }
     }
 
-    private fun reap(spec: IndexSpec, newGen: String, now: Instant, live: String?) {
-        val stale = sameAliasIndices(spec)
+    private fun reap(spec: OpenSearchIndexSpec, newGen: String, now: Instant, live: String?) {
+        val staleGenerations = sameAliasIndices(spec)
             .filter { it != newGen && it != live }
             .filter { index -> spec.timestampOf(index)?.isBefore(now.minus(properties.reapMinAge)) == true }
 
-        stale.forEach { index ->
+        staleGenerations.forEach { index ->
             client.indices().delete { it.index(index) }
             log.info("reaped stale generation '{}'", index)
         }
 
-        val staleForeign = sameBaseIndices(spec)
+        val staleOtherAliasGenerations = sameBaseIndices(spec)
             .filterKeys { index -> !spec.aliasMatches(index) }
             // don't delete indices in use
             .filterValues { state -> state.aliases().isEmpty() }
@@ -103,19 +109,19 @@ class OpenSearchIndexer(
                 spec.timestampOf(index)?.isBefore(now.minus(properties.foreignReapMinAge)) == true
             }
 
-        staleForeign.keys.forEach { index ->
+        staleOtherAliasGenerations.keys.forEach { index ->
             client.indices().delete { it.index(index) }
             log.info("reaped stale foreign generation '{}'", index)
         }
     }
 
-    private fun sameAliasIndices(spec: IndexSpec): Set<String> =
+    private fun sameAliasIndices(spec: OpenSearchIndexSpec): Set<String> =
         client.indices().get { it.index(spec.currentAliasGlob) }.result().keys
 
-    private fun sameBaseIndices(spec: IndexSpec): Map<String, IndexState> =
+    private fun sameBaseIndices(spec: OpenSearchIndexSpec): Map<String, IndexState> =
         client.indices().get { it.index("${spec.base}*") }.result()
 
-    private fun currentTargets(alias: String): Set<String> {
+    private fun generationsOf(alias: String): Set<String> {
         val indicesClient = client.indices()
         if (!indicesClient.existsAlias { it.name(alias) }.value()) return emptySet()
 

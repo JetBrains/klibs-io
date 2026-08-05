@@ -2,7 +2,7 @@ package io.klibs.core.search.eval
 
 import io.awspring.cloud.s3.S3Template
 import io.klibs.app.Application
-import io.klibs.core.search.opensearch.IndexNaming
+import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
 import io.klibs.core.search.opensearch.OpenSearchIndexer
 import io.klibs.integration.ai.AiService
 import org.junit.jupiter.api.BeforeAll
@@ -16,6 +16,7 @@ import org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConf
 import org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
 import org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -63,7 +64,11 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
     private lateinit var indexer: OpenSearchIndexer
 
     @Autowired
-    private lateinit var naming: IndexNaming
+    private lateinit var indexSpecs: List<OpenSearchIndexSpec>
+
+    @Autowired
+    @Qualifier("projectIndexSpec")
+    private lateinit var projectSpec: OpenSearchIndexSpec
 
     @Autowired
     private lateinit var openSearchClient: OpenSearchClient
@@ -96,9 +101,9 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
 
     @BeforeAll
     fun refreshViews() {
-        naming.all.forEach { indexer.sync(it) }
+        indexSpecs.forEach { indexer.sync(it) }
         // Count through the alias, and top-level: `_cat` docs.count inflates with nested `packages`.
-        val alias = naming.project.alias
+        val alias = projectSpec.alias
         val indexed = openSearchClient.count { it.index(alias) }.count()
         check(indexed > 0) {
             "OpenSearch project alias '$alias' is empty after sync — " +
