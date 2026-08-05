@@ -1,6 +1,7 @@
-package io.klibs.core.search.opensearch
+package io.klibs.core.search.dto.opensearch
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import io.klibs.core.search.opensearch.IndexDefinitions
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -13,8 +14,12 @@ import java.time.format.DateTimeFormatter
  * alias      project-a3f9c1e2
  * generation project-a3f9c1e2-20260730t101500
  * ```
+ *
+ * Readers only ever query the alias. Each build writes a new generation and the alias is swapped onto
+ * it in one atomic step, so a reader never sees a half-filled index. The hash in the alias covers
+ * settings, mappings and SQL, so changing any of them starts a new alias instead of mutating the live one.
  */
-class IndexSpec(
+class OpenSearchIndexSpec(
     val base: String,
     val settings: String,
     val mappings: String,
@@ -28,12 +33,12 @@ class IndexSpec(
     val alias = "$base-$hash"
     val currentAliasGlob = "$alias-*"
 
-    fun generation(now: Instant = Instant.now()): String = "$alias-${TIMESTAMP.format(now)}"
+    fun generation(now: Instant = Instant.now()): String = "$alias-${TIMESTAMP_FORMATTER.format(now)}"
 
     fun aliasMatches(index: String): Boolean = currentAliasWithTimestamp.matches(index)
 
     fun timestampOf(index: String): Instant? = runCatching {
-        LocalDateTime.parse(index.takeLast(TIMESTAMP_LENGTH), PARSER).toInstant(ZoneOffset.UTC)
+        LocalDateTime.parse(index.takeLast(TIMESTAMP_LENGTH), TIMESTAMP_FORMATTER).toInstant(ZoneOffset.UTC)
     }.getOrNull()
 
     private val currentAliasWithTimestamp = Regex("^${Regex.escape(alias)}-\\d{8}t\\d{6}$")
@@ -41,7 +46,7 @@ class IndexSpec(
     private companion object {
         private const val TIMESTAMP_LENGTH = 15
 
-        private val PARSER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd't'HHmmss")
-        private val TIMESTAMP: DateTimeFormatter = PARSER.withZone(ZoneOffset.UTC)
+        private val TIMESTAMP_FORMATTER: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("yyyyMMdd't'HHmmss").withZone(ZoneOffset.UTC)
     }
 }

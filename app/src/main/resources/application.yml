@@ -94,11 +94,16 @@ klibs:
       webhook:
         secret: ${KLIBS_GITHUB_WEBHOOK_SECRET:}
   indexing: ${KLIBS_ENABLE_INDEXING:false}
+  search:
+    opensearch:
+      request-timeout: ${KLIBS_OPENSEARCH_REQUEST_TIMEOUT:30s}
   scheduling:
     process-indexing-queue:
       enabled: ${PROCESS_INDEXING_QUEUE_ENABLED:true}
     fill-version-type:
       enabled: ${FILL_VERSION_TYPE_ENABLED:true}
+    search-index-sync:
+      enabled: ${SEARCH_INDEX_SYNC_ENABLED:true}
   indexing-configuration:
     executor:
       thread-count: 2

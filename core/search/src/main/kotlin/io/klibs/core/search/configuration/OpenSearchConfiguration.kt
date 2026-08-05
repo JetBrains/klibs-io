@@ -1,6 +1,8 @@
 package io.klibs.core.search.configuration
 
 import io.klibs.core.search.configuration.properties.OpenSearchProperties
+import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
+import io.klibs.core.search.opensearch.IndexDefinitions
 import org.apache.hc.client5.http.auth.AuthScope
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider
@@ -28,22 +30,31 @@ class OpenSearchConfiguration {
     fun openSearchJsonpMapper(): JacksonJsonpMapper = JacksonJsonpMapper()
 
     @Bean
+    fun projectIndexSpec(properties: OpenSearchProperties): OpenSearchIndexSpec = OpenSearchIndexSpec(
+        base = properties.projectIndex,
+        settings = IndexDefinitions.PROJECT_SETTINGS,
+        mappings = IndexDefinitions.PROJECT_MAPPINGS,
+        sql = IndexDefinitions.PROJECT_DOC_SQL,
+    ) { it.get("project_id").asText() }
+
+    @Bean
+    fun packageIndexSpec(properties: OpenSearchProperties): OpenSearchIndexSpec = OpenSearchIndexSpec(
+        base = properties.packageIndex,
+        settings = IndexDefinitions.PACKAGE_SETTINGS,
+        mappings = IndexDefinitions.PACKAGE_MAPPINGS,
+        sql = IndexDefinitions.PACKAGE_DOC_SQL,
+    ) { "${it.get("group_id").asText()}:${it.get("artifact_id").asText()}" }
+
+    @Bean
     fun openSearchClient(properties: OpenSearchProperties, mapper: JacksonJsonpMapper): OpenSearchClient {
         val uri = URI(properties.uri)
         val host = HttpHost(uri.scheme, uri.host, uri.port)
-        val connectTimeout = Timeout.of(properties.connectTimeout)
-        val socketTimeout = Timeout.of(properties.socketTimeout)
         val requestTimeout = Timeout.of(properties.requestTimeout)
         val transport = ApacheHttpClient5TransportBuilder.builder(host)
             .setMapper(mapper)
-            .setRequestConfigCallback {
-                it.setConnectionRequestTimeout(requestTimeout)
-                    .setResponseTimeout(requestTimeout)
-            }
-            .setConnectionConfigCallback {
-                it.setConnectTimeout(connectTimeout)
-                    .setSocketTimeout(socketTimeout)
-            }
+            // Connect and socket timeouts are left to the transport's own ConnectionConfig defaults
+            // (1s / 30s); only the pool-checkout wait needs overriding, see requestTimeout.
+            .setRequestConfigCallback { it.setConnectionRequestTimeout(requestTimeout) }
             .apply {
                 val user = properties.username
                 val pass = properties.password
