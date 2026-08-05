@@ -9,6 +9,9 @@ klibs:
       enabled: false
     fill-version-type:
       enabled: false
+    # Tests drive OpenSearchIndexer directly and assert exact generations; a scheduled run would race.
+    search-index-sync:
+      enabled: false
 
 spring:
   sql:

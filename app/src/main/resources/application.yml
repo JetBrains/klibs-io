@@ -29,6 +29,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  task:
+    scheduling:
+      # A single scheduler thread lets long jobs starve the 10-minute search sync indefinitely.
+      pool:
+        size: ${SPRING_TASK_SCHEDULING_POOL_SIZE:2}
   docker:
     compose:
       enabled: false
@@ -94,11 +99,18 @@ klibs:
       webhook:
         secret: ${KLIBS_GITHUB_WEBHOOK_SECRET:}
   indexing: ${KLIBS_ENABLE_INDEXING:false}
+  search:
+    opensearch:
+      connect-timeout: ${KLIBS_OPENSEARCH_CONNECT_TIMEOUT:5s}
+      socket-timeout: ${KLIBS_OPENSEARCH_SOCKET_TIMEOUT:30s}
+      request-timeout: ${KLIBS_OPENSEARCH_REQUEST_TIMEOUT:30s}
   scheduling:
     process-indexing-queue:
       enabled: ${PROCESS_INDEXING_QUEUE_ENABLED:true}
     fill-version-type:
       enabled: ${FILL_VERSION_TYPE_ENABLED:true}
+    search-index-sync:
+      enabled: ${SEARCH_INDEX_SYNC_ENABLED:true}
   indexing-configuration:
     executor:
       thread-count: 2
