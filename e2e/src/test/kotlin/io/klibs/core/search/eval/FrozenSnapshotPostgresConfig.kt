@@ -6,10 +6,9 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.context.annotation.Bean
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.MountableFile
-import java.io.File
 
 /**
- * Postgres Testcontainer seeded from the frozen prod snapshot (KTL-4710), exposed as a
+ * Postgres Testcontainer seeded from the frozen prod snapshot, exposed as a
  * `@ServiceConnection` bean so Spring Boot wires the datasource from it. Archive from
  * `SEARCH_EVAL_SNAPSHOT` (default `build/search-eval/frozen.pgdump`); missing → empty schema.
  */
@@ -31,7 +30,7 @@ class FrozenSnapshotPostgresConfig {
     }
 
     private fun restoreSnapshot(postgres: PostgreSQLContainer<Nothing>) {
-        val archive = snapshot()
+        val archive = SearchEvalData.snapshotFile()
         if (!archive.exists()) {
             log.warn(
                 "snapshot missing at {} — running on empty schema, floor will be empty. " +
@@ -59,9 +58,6 @@ class FrozenSnapshotPostgresConfig {
             )
         }
     }
-
-    private fun snapshot(): File =
-        File(System.getenv("SEARCH_EVAL_SNAPSHOT")?.takeIf { it.isNotBlank() } ?: "build/search-eval/frozen.pgdump")
 
     private companion object {
         const val DB = "klibs"

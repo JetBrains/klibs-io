@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
-import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -25,17 +24,19 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 
 /**
- * Search-eval REGRESSION tier (KTL-4710): the lower bound.
- *
- * Manual (needs Docker + a frozen snapshot).
- * Run with:
- * `./kotlin test -m app --include-classes '*SearchRegressionTest' --jvm-args '-Dsearch.eval.tier=regression'`.
-**/
-@EnabledIfSystemProperty(named = "search.eval.tier", matches = "regression")
+ * Search-eval EVAL tier: the aspirational upper bound.
+ * Run:
+ * ```
+ * ./kotlin test -m e2e --include-classes '*SearchEvalE2ETest' --jvm-args '-Dsearch.eval.tier=eval'
+ * ```
+ * Runs every case against a live **prod-copy** DB (`SEARCH_EVAL_DB_*` env; defaults to a local `klibs` DB).
+ * Each run diffs against the previous one recorded in `build/search-eval/last-run.json`: run it once
+ * before a search change and once after, and the delta is the change rather than corpus drift.
+ */
+@EnabledIfSystemProperty(named = "search.eval.tier", matches = "eval")
 @ActiveProfiles("test")
 @SpringBootTest(classes = [Application::class])
 @AutoConfigureMockMvc
-@Import(FrozenSnapshotPostgresConfig::class)
 @EnableAutoConfiguration(exclude = [
     OpenAiChatAutoConfiguration::class,
     OpenAiAudioTranscriptionAutoConfiguration::class,
@@ -45,7 +46,7 @@ import org.springframework.test.web.servlet.MockMvc
     OpenAiModerationAutoConfiguration::class,
 ])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class SearchRegressionTest : SearchEvalTestBase() {
+class SearchEvalE2ETest : SearchEvalTestBase() {
 
     @MockitoBean
     private lateinit var aiService: AiService
@@ -59,38 +60,45 @@ class SearchRegressionTest : SearchEvalTestBase() {
     @Autowired
     private lateinit var searchService: SearchService
 
-    override val tier = "regression"
-    override val isRecording get() = overwriteFloor
+    override val tier = "eval"
+
+    /** The eval tier is aspirational: every case runs and every case is expected to pass. */
+    override fun casesToRun() = SearchEvalData.loadCases()
 
     /**
-     * The floor is the gate, so a normal run only executes floor ids.
-     * An overwrite run executes everything to recompute the new floor.
+     * Headline delta and which cases gained or lost ground since the previous run on this machine,
+     * then record this run as the next "before". Run once before a search change and once after —
+     * both against the same prod-copy, so the delta is the change and nothing else.
      */
-    override fun casesToRun(): List<EvalCase> {
-        val cases = SearchEvalData.loadCases()
-        if (overwriteFloor) return cases
-        val byId = cases.associateBy { it.id }
-        return SearchEvalData.loadFloor().map { id -> byId[id] ?: error("floor id '$id' not in answer key") }
-    }
-
-    /** `-Dsearch.floor.overwrite`: record the ids passing on the frozen snapshot as the new floor. */
     override fun onRunComplete(report: RunReport) {
-        if (!overwriteFloor) return
-        val passing = report.passingIds()
-        SearchEvalData.writeFloor(passing)
-        log.info("floor.json rewritten: {} ids", passing.size)
+        val passing = report.passingIds().toSet()
+        val previous = SearchEvalData.loadLastRun()
+        if (previous == null) {
+            log.info("no previous eval run recorded — this run is the 'before'. Re-run after the change to see the delta.")
+        } else {
+            log.info(
+                "eval vs previous run: headline {} -> {} ({})  gained={}  lost={}",
+                "%.4f".format(previous.headline), "%.4f".format(report.headline),
+                "%+.4f".format(report.headline - previous.headline),
+                (passing - previous.passing.toSet()).sorted(), (previous.passing.toSet() - passing).sorted(),
+            )
+        }
+        SearchEvalData.writeLastRun(EvalRunRecord(report.headline, passing.sorted()))
     }
 
     @BeforeAll
     fun refreshViews() = searchService.refreshSearchViews()
 
-    private val overwriteFloor get() = System.getProperty("search.floor.overwrite") != null
-
     companion object {
+        private fun env(key: String, default: String) = System.getenv(key)?.takeIf { it.isNotBlank() } ?: default
+
         @JvmStatic
         @DynamicPropertySource
         fun properties(registry: DynamicPropertyRegistry) {
-            // Datasource is wired from the @ServiceConnection container; only app-level props here.
+            registry.add("spring.datasource.url") { env("SEARCH_EVAL_DB_URL", "jdbc:postgresql://localhost:5432/klibs") }
+            registry.add("spring.datasource.username") { env("SEARCH_EVAL_DB_USER", "klibs") }
+            registry.add("spring.datasource.password") { env("SEARCH_EVAL_DB_PASSWORD", "klibs") }
+            // Corpus is a prod-copy; never seed the `test` profile's data.sql fixtures.
             registry.add("spring.sql.init.mode") { "never" }
             registry.add("klibs.readme.s3.bucket-name") { "test-bucket" }
             registry.add("klibs.readme.s3.prefix") { "readme" }

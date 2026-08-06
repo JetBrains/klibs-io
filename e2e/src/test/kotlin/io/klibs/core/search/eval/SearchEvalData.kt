@@ -15,10 +15,16 @@ object SearchEvalData {
 
     fun loadCases(): List<EvalCase> = read("/search-eval/queries.json", QueriesFile::class.java).cases
 
-    fun loadFloor(): Set<String> = read("/search-eval/floor.json", Floor::class.java).ids.toSet()
+    fun loadFloor(): Floor = read("/search-eval/floor.json", Floor::class.java)
 
     /** `-Dsearch.floor.overwrite`: record the ids passing now as the new floor. */
-    fun writeFloor(ids: Collection<String>) = write("floor.json", Floor(ids.sorted()))
+    fun writeFloor(ids: Collection<String>) = write("floor.json", Floor(ids.sorted(), snapshotKey()))
+
+    fun snapshotFile(): File =
+        File(System.getenv("SEARCH_EVAL_SNAPSHOT")?.takeIf { it.isNotBlank() } ?: "build/search-eval/frozen.pgdump")
+
+    /** Bucket key of the downloaded snapshot, written by scripts/search-eval-fetch.sh. */
+    fun snapshotKey(): String? = File("${snapshotFile().path}.key").takeIf { it.exists() }?.readText()?.trim()
 
     /** The previous eval run on this machine, or null on the first run. */
     fun loadLastRun(): EvalRunRecord? =

@@ -3,7 +3,7 @@ package io.klibs.core.search.eval
 import kotlin.math.log2
 
 /**
- * Search-eval scoring (KTL-4710).
+ * Search-eval scoring.
 */
 object Scorer {
 
