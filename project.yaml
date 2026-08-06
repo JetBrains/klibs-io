@@ -9,6 +9,7 @@ modules:
   - core/scm-repository
   - core/search
   - core/storage
+  - e2e
   - integrations/ai
   - integrations/github
   - integrations/maven
