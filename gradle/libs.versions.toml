@@ -7,7 +7,6 @@ mappie = "2.3.20-2.4.1"
 
 # Spring
 spring-doc = "3.0.3"
-swagger-annotations = "2.2.47"
 spring-ai = "2.0.0"
 spring-cloud-aws = "4.0.0"
 
@@ -49,7 +48,6 @@ shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring", version.
 shedlock-jdbc = { module = "net.javacrumbs.shedlock:shedlock-provider-jdbc-template", version.ref = "shedlock" }
 
 springdoc-openapi-starter = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "spring-doc" }
-swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger-annotations" }
 spring-ai-bom = { group = "org.springframework.ai", name = "spring-ai-bom", version.ref = "spring-ai" }
 spring-ai-starter-model-openai = { module = "org.springframework.ai:spring-ai-starter-model-openai" }
 spring-ai-starter-mcp-server-webmvc = { module = "org.springframework.ai:spring-ai-starter-mcp-server-webmvc" }
@@ -86,6 +84,7 @@ testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
 testcontainers-database-commons = { module = "org.testcontainers:database-commons", version.ref = "testcontainers" }
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
 
 prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
 
