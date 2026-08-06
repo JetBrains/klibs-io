@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Port-fidelity checks for the scorer and the answer-key resources (KTL-4710). */
+/** Port-fidelity checks for the scorer and the answer-key resources. */
 class ScorerTest {
 
     @Test
@@ -92,7 +92,7 @@ class ScorerTest {
     @Test
     fun `regression floor references only real case ids`() {
         val ids = SearchEvalData.loadCases().map { it.id }.toSet()
-        val floor = SearchEvalData.loadFloor()
+        val floor = SearchEvalData.loadFloor().ids.toSet()
         assertTrue(ids.containsAll(floor)) { "floor references unknown ids: ${floor - ids}" }
     }
 

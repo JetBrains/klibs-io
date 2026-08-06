@@ -10,7 +10,7 @@ import org.springframework.test.web.servlet.MockMvc
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Base for both search-eval tiers (KTL-4710): runs each [EvalCase] as its own test, grouped by
+ * Base for both search-eval tiers: runs each [EvalCase] as its own test, grouped by
  * [EvalClass], and hands the aggregated [RunReport] to the subclass.
  *
  * A subclass supplies the corpus wiring ([mockMvc]), a [tier] label, the cases to run
