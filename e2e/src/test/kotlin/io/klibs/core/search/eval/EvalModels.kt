@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.klibs.core.pckg.model.TargetGroup
 
-/** Models, mirroring the labeled query set in queries.json (KTL-4710). */
+/** Models, mirroring the labeled query set in queries.json. */
 
 enum class EvalClass(
     /**
@@ -95,9 +95,9 @@ data class EvalCase(
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class QueriesFile(val cases: List<EvalCase>)
 
-/** Regression floor: case ids proven to pass on the frozen snapshot. Regression asserts these stay green. */
+/** Regression floor: case ids proven to pass on the [snapshot] key. Regression asserts these stay green. */
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class Floor(val ids: List<String> = emptyList())
+data class Floor(val ids: List<String> = emptyList(), val snapshot: String? = null)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 /** The previous eval run, kept in `build/` so a before/after diff always compares the same corpus. */

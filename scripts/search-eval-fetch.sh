@@ -4,7 +4,7 @@
 #
 # Downloads the pinned frozen snapshot to build/search-eval/frozen.pgdump, where
 # FrozenSnapshotPostgresConfig restores it into Testcontainers. Run before
-# `./kotlin test -m app --include-classes '*SearchRegressionTest' --jvm-args '-Dsearch.eval.tier=regression'` (dev + CI).
+# `./kotlin test -m e2e --include-classes '*SearchRegressionTest' --jvm-args '-Dsearch.eval.tier=regression'` (dev + CI).
 #
 # Credentials come from the environment if set (CI: inject AWS_ACCESS_KEY_ID,
 # AWS_SECRET_ACCESS_KEY, SEARCH_EVAL_BUCKET, GCS_ENDPOINT), else from the
@@ -22,8 +22,8 @@ export AWS_REQUEST_CHECKSUM_CALCULATION="${AWS_REQUEST_CHECKSUM_CALCULATION:-whe
 NS="${SEARCH_EVAL_NS:-klibs-prod}"
 SECRET=klibs-readme-user
 KEY="${SEARCH_EVAL_SNAPSHOT_KEY:?set SEARCH_EVAL_SNAPSHOT_KEY (e.g. search-eval/frozen-<date>.pgdump.gz)}"
-# Default lands under app/build — the regression test runs with the :app module as its cwd.
-OUT="${SEARCH_EVAL_SNAPSHOT:-app/build/search-eval/frozen.pgdump}"
+# Default lands under e2e/build — the regression test runs with the :e2e module as its cwd.
+OUT="${SEARCH_EVAL_SNAPSHOT:-e2e/build/search-eval/frozen.pgdump}"
 
 secret() { kubectl get secret "$SECRET" -n "$NS" -o jsonpath="{.data.$1}" | base64 -d; }
 
@@ -39,4 +39,5 @@ mkdir -p "$(dirname "$OUT")"
 echo "### Fetching s3://$BUCKET/$KEY ..."
 aws s3 cp "s3://$BUCKET/$KEY" "$OUT.gz" --endpoint-url "$ENDPOINT"
 gunzip -f "$OUT.gz"
+echo "$KEY" > "$OUT.key"
 echo "### Snapshot ready: $OUT"
