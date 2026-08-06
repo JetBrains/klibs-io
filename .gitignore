@@ -53,6 +53,7 @@ docker-compose-volumes
 /.claude/skills/
 /.junie/skills/
 /.codex
+/search-eval/
 
 ### Cursor ###
 .cursor/plans/
