@@ -100,7 +100,7 @@ docker compose up -d opensearch   # must be up on :9200
 If OpenSearch is down or the DB is empty the run fails fast: `refreshSearchViews()` swallows exceptions,
 so the test asserts the project index is non-empty before scoring anything.
 
-Overridable via env: `SEARCH_EVAL_OS_URI` (default `http://localhost:9200`),
+Overridable via env: `SEARCH_EVAL_OS_URI` (default `https://localhost:9200`),
 `SEARCH_EVAL_OS_PROJECT_INDEX` (`project-eval`), `SEARCH_EVAL_OS_PACKAGE_INDEX` (`package-eval`),
 plus `SEARCH_EVAL_DB_URL` / `_USER` / `_PASSWORD` for the corpus DB.
 

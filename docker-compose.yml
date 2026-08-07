@@ -32,15 +32,14 @@ services:
       - "9200:9200"
     environment:
       - discovery.type=single-node
-      - DISABLE_INSTALL_DEMO_CONFIG=true
-      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=OpenSearch!ocalPassw0rd
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
     volumes:
       - ./docker-compose-volumes/opensearch-data:/usr/share/opensearch/data
     networks:
       - klibs-net
     healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl --silent --fail -k -u admin:OpenSearch!ocalPassw0rd https://localhost:9200/_cluster/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12

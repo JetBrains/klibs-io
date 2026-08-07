@@ -47,3 +47,7 @@ klibs:
   search:
     opensearch:
       enabled: true
+      uri: https://localhost:9200
+      username: admin
+      password: OpenSearch!ocalPassw0rd
+      trust-all-certificates: true
