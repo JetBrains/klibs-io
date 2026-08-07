@@ -71,6 +71,31 @@ test.describe('Search bar', () => {
         await expect(page.getByRole('checkbox', { name: 'JS' })).toBeVisible();
     });
 
+    test('Typing in the compact (sticky) search field triggers search without Enter', async ({ page }) => {
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        const compactFilter = page.getByTestId('compact-search-filter');
+        await expect(compactFilter).toBeVisible();
+        const compactSearchInput = compactFilter.getByTestId('search-input');
+        await compactSearchInput.click();
+        // No Enter press anywhere: typing alone must trigger the search
+        await compactSearchInput.pressSequentially('Kt');
+        await expect(page).toHaveURL(/query=Kt/);
+        // Once at the top the sticky bar hides and hands focus and text over
+        // to the main search field. Short result pages clamp scroll to top on
+        // their own; scroll explicitly so this doesn't depend on result count.
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await expect(compactFilter).toBeHidden();
+        const searchInput = page.getByTestId('search-input');
+        await expect(searchInput).toHaveValue('Kt');
+        await expect(searchInput).toBeFocused();
+        // Typing continues seamlessly in the main field
+        await searchInput.pressSequentially('or');
+        await expect(searchInput).toHaveValue('Ktor');
+        await expect(page).toHaveURL(/query=Ktor/);
+        const ktorCard = page.getByRole('link', { name: 'Ktor' }).first();
+        await expect(ktorCard).toBeVisible();
+    });
+
     test('Search by package: com.zegreatrob.testmints/action-annotation', async ({ page }) => {
         const searchInput = page.getByTestId('search-input');
         await expect(searchInput).toBeVisible();
