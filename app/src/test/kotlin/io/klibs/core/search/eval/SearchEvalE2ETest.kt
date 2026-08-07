@@ -110,7 +110,7 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
     companion object {
         private fun env(key: String, default: String) = System.getenv(key)?.takeIf { it.isNotBlank() } ?: default
 
-        private val OS_URI = env("SEARCH_EVAL_OS_URI", "http://localhost:9200")
+        private val OS_URI = env("SEARCH_EVAL_OS_URI", "https://localhost:9200")
         private val OS_PROJECT_INDEX = env("SEARCH_EVAL_OS_PROJECT_INDEX", "project-eval")
         private val OS_PACKAGE_INDEX = env("SEARCH_EVAL_OS_PACKAGE_INDEX", "package-eval")
 
@@ -123,6 +123,9 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
             // Drive the production search path through OpenSearch (eval-specific indices, wiped+refilled).
             registry.add("klibs.search.opensearch.enabled") { "true" }
             registry.add("klibs.search.opensearch.uri") { OS_URI }
+            registry.add("klibs.search.opensearch.trust-all-certificates") { "true" }
+            registry.add("klibs.search.opensearch.username") { "admin" }
+            registry.add("klibs.search.opensearch.password") { "OpenSearch!ocalPassw0rd" }
             registry.add("klibs.search.opensearch.project-index") { OS_PROJECT_INDEX }
             registry.add("klibs.search.opensearch.package-index") { OS_PACKAGE_INDEX }
             // Corpus is a prod-copy; never seed the `test` profile's data.sql fixtures.
