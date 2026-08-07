@@ -96,6 +96,10 @@ klibs:
   indexing: ${KLIBS_ENABLE_INDEXING:false}
   search:
     opensearch:
+      uri: ${KLIBS_OPENSEARCH_URI:https://klibs-opensearch-master:9200}
+      username: ${KLIBS_OPENSEARCH_USERNAME:}
+      password: ${KLIBS_OPENSEARCH_PASSWORD:}
+      trust-all-certificates: ${KLIBS_OPENSEARCH_TRUST_ALL:false}
       request-timeout: ${KLIBS_OPENSEARCH_REQUEST_TIMEOUT:30s}
   scheduling:
     process-indexing-queue:
