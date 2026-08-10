@@ -10,6 +10,25 @@ Two tiers, two bounds:
 Both are excluded from the regular `./kotlin test` run — each needs Docker and a corpus, and is enabled
 explicitly by the commands below.
 
+## Who can run this
+
+Both tiers run against a copy of the production database, so they are JetBrains-internal: the corpus
+lives in klibs.io's private storage and the scripts that move it around live in the private
+[klibs-io-infrastructure](https://github.com/JetBrains/klibs-io-infrastructure) repository, under
+`database/search-eval/`.
+
+If you are an external contributor, you cannot run these tests — and you are not expected to. Open your
+pull request as usual; a klibs.io maintainer runs the tiers for you and reports back on the PR, with the
+failing cases if there are any.
+
+If you are on the klibs.io team, clone the infrastructure repository next to this one. The commands below
+assume that layout and are run from the root of this repository:
+
+```
+<parent>/klibs-io/                    # this repository
+<parent>/klibs-io-infrastructure/     # the private one
+```
+
 ## Regression tier — the deterministic floor
 
 Needs Docker and the snapshot file at `e2e/build/search-eval/frozen.pgdump`.
@@ -31,7 +50,8 @@ Once per machine, and again after `build/` is deleted. Needs VPN and kubectl, or
 environment:
 
 ```bash
-SEARCH_EVAL_SNAPSHOT_KEY=search-eval/frozen-<date>.pgdump.gz ./scripts/search-eval-fetch.sh
+SEARCH_EVAL_SNAPSHOT_KEY=search-eval/frozen-<date>.pgdump.gz \
+  ../klibs-io-infrastructure/database/search-eval/search-eval-fetch.sh
 ```
 
 The key to use is the `snapshot` field in `floor.json`. The fetch script saves the key it downloaded
@@ -55,13 +75,16 @@ Only when the corpus should move to newer data. Copies the weekly prod backup to
 needs prod access (VPN and kubectl). Then download it and update the floor:
 
 ```bash
-./scripts/search-eval-freeze.sh   # prints the new SEARCH_EVAL_SNAPSHOT_KEY
+../klibs-io-infrastructure/database/search-eval/search-eval-freeze.sh   # prints the new SEARCH_EVAL_SNAPSHOT_KEY
 ```
 
 ## Eval tier — the aspirational target
 
+Needs a local prod-copy database. Seeding it needs VPN and cluster access, and the script for it
+(`copy_prod_db_to_local.sh`) also lives in the infrastructure repository:
+
 ```bash
-./scripts/copy_prod_db_to_local.sh -K klibs-prod -C klibs-postgres -L klibs -D klibs   # seed prod-copy
+../klibs-io-infrastructure/database/copy_prod_db_to_local.sh -K klibs-prod -C klibs-postgres -L klibs -D klibs
 ./kotlin test -m e2e --include-classes '*SearchEvalE2ETest' --jvm-args '-Dsearch.eval.tier=eval'
 ```
 
