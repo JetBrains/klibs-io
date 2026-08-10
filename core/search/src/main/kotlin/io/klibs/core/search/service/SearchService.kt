@@ -123,7 +123,8 @@ class SearchService(
 
     private fun refreshPackageIndexView() {
         val refreshPackagesNanosTaken = measureNanoTime {
-            openSearchPopulator?.populatePackages() ?: packageIndexJdbc.refreshIndex()
+            packageIndexJdbc.refreshIndex()
+            openSearchPopulator?.populatePackages()
         }
         logger.info("Updated package search index in ${TimeUnit.NANOSECONDS.toSeconds(refreshPackagesNanosTaken)} seconds")
     }

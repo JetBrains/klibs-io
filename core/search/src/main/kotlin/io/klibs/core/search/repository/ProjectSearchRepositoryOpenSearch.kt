@@ -15,12 +15,10 @@ import org.opensearch.client.opensearch._types.SortOptions
 import org.opensearch.client.opensearch._types.SortOrder
 import org.opensearch.client.opensearch._types.query_dsl.Query
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-@Primary
 @Repository
 @ConditionalOnProperty("klibs.search.opensearch.enabled", havingValue = "true")
 class ProjectSearchRepositoryOpenSearch(
