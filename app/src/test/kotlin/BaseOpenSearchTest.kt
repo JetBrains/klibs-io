@@ -38,8 +38,6 @@ abstract class BaseOpenSearchTest : BaseUnitWithDbLayerTest() {
             registry.add("klibs.search.opensearch.uri") {
                 "http://${openSearchContainer.host}:${openSearchContainer.getMappedPort(OPENSEARCH_PORT)}"
             }
-            // Generations in a test are seconds old; the 1h production guard would reap nothing.
-            registry.add("klibs.search.opensearch.reap-min-age") { "0s" }
         }
     }
 }
