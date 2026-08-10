@@ -17,9 +17,4 @@ data class OpenSearchProperties(
 
     /** How long to wait for a connection from the HTTP client pool. Apache HC5 defaults to 3 minutes. */
     val requestTimeout: Duration = Duration.ofSeconds(30),
-
-    /** Minimum age before a superseded generation of our own config hash is deleted; the rollback window. */
-    val reapMinAge: Duration = Duration.ofHours(1),
-    /** Same for generations of other config hashes, which a rolling deploy may still be serving. */
-    val foreignReapMinAge: Duration = Duration.ofHours(24),
 )
