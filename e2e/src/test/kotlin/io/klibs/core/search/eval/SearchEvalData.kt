@@ -23,7 +23,7 @@ object SearchEvalData {
     fun snapshotFile(): File =
         File(System.getenv("SEARCH_EVAL_SNAPSHOT")?.takeIf { it.isNotBlank() } ?: "build/search-eval/frozen.pgdump")
 
-    /** Bucket key of the downloaded snapshot, written by scripts/search-eval-fetch.sh. */
+    /** Bucket key of the downloaded snapshot, written by search-eval-fetch.sh. */
     fun snapshotKey(): String? = File("${snapshotFile().path}.key").takeIf { it.exists() }?.readText()?.trim()
 
     /** The previous eval run on this machine, or null on the first run. */
