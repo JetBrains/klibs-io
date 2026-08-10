@@ -34,7 +34,7 @@ class FrozenSnapshotPostgresConfig {
         if (!archive.exists()) {
             log.warn(
                 "snapshot missing at {} — running on empty schema, floor will be empty. " +
-                    "Produce it with scripts/search-eval-freeze.sh + scripts/search-eval-fetch.sh.",
+                    "Download it with search-eval-fetch.sh — see e2e/README.md.",
                 archive.absolutePath,
             )
             return
