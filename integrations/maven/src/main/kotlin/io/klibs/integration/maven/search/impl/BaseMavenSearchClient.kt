@@ -5,6 +5,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.MavenPom
+import io.klibs.integration.maven.MavenRateLimitedException
 import io.klibs.integration.maven.MavenStaticDataProvider
 import io.klibs.integration.maven.PomWithReleaseDate
 import io.klibs.integration.maven.androidx.GradleMetadata
@@ -30,6 +31,7 @@ import java.time.format.DateTimeFormatter
 
 private const val DEFAULT_PAGE_SIZE = 200
 internal const val MAX_REDIRECTS = 3
+private const val HTTP_TOO_MANY_REQUESTS = 429 // not in HttpURLConnection constants
 
 abstract class BaseMavenSearchClient(
     private val xmlMapper: XmlMapper,
@@ -193,6 +195,8 @@ abstract class BaseMavenSearchClient(
                         }
                         followRedirects(location, headers, converter, redirectCount + 1, requestExecutor)
                     }
+
+                    HTTP_TOO_MANY_REQUESTS -> throw MavenRateLimitedException(serviceUri)
 
                     else -> throw IOException("Unexpected response: ${response.code}")
                 }

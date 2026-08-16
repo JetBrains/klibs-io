@@ -18,6 +18,7 @@ import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenPom
+import io.klibs.integration.maven.MavenRateLimitedException
 import io.klibs.integration.maven.PomWithReleaseDate
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.androidx.GradleMetadata
@@ -118,6 +119,27 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         assertEquals(1, failedAttempts, "Failed attempts should be incremented")
         assertContains(output.out, "Mocked getPom exception")
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
+    fun `a 429 from Maven Central stops the queue and keeps the request pending`() {
+        val requestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(requestBeforeProcessing)
+
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
+            .thenThrow(MavenRateLimitedException("https://repo1.maven.org/maven2/x/y/1.0.0/y-1.0.0.pom"))
+
+        val result = uut.processPackageQueue()
+
+        assertFalse(result, "Should stop draining the queue while the egress IP is rate limited")
+
+        val row = jdbcTemplate.queryForMap(
+            "SELECT status, failed_attempts FROM package_index_request WHERE id = ${requestBeforeProcessing.idNotNull}"
+        )
+        assertEquals("PENDING", row["status"], "Request should stay pending")
+        assertEquals(0, (row["failed_attempts"] as Number).toInt(), "Rate limiting should not burn a retry attempt")
+        assertNotNull(indexingRequestRepository.findFirstForIndexing(), "Request must be eligible for the next run")
     }
 
     @Test
