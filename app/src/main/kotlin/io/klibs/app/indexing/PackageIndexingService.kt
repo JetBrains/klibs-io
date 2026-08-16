@@ -19,6 +19,7 @@ import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.MavenPom
+import io.klibs.integration.maven.MavenRateLimitedException
 import io.klibs.integration.maven.MavenStaticDataProvider
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import kotlinx.coroutines.Dispatchers
@@ -102,7 +103,7 @@ class PackageIndexingService(
      * Claims and processes the highest-priority pending index request, marking it FAILED
      * (incrementing its retry counter) on error.
      *
-     * @return true if a request was processed, false if the queue is empty.
+     * @return true if a request was processed, false if the queue is empty or we are rate limited.
      */
     fun processPackageQueue(): Boolean {
         val indexRequest = indexingRequestRepository.findFirstForIndexing()
@@ -111,29 +112,41 @@ class PackageIndexingService(
             return false
         }
         val requestId = indexRequest.idNotNull
-        var succeeded = false
+        var outcome = Outcome.FAILED
         var errorMessage: String? = null
         try {
             selfProvider.getObject().processRequest(requestId)
-            succeeded = true
+            outcome = Outcome.SUCCESS
+        } catch (e: MavenRateLimitedException) {
+            outcome = Outcome.RATE_LIMITED
+            logger.warn("Stopping the indexing queue, request id=$requestId stays pending: ${e.message}")
         } catch (e: Exception) {
             errorMessage = e.message
             logger.error("Error during claiming an indexing request: ${e.message}", e)
         } finally {
             try {
-                if (succeeded) {
-                    userRequestReportWriter.saveSuccessReport(requestId)
-                    indexingRequestRepository.deleteById(requestId)
-                } else {
-                    indexingRequestRepository.markAsFailed(requestId, errorMessage)
-                    userRequestReportWriter.saveFailureReportIfTerminal(requestId, errorMessage)
+                when (outcome) {
+                    Outcome.SUCCESS -> {
+                        userRequestReportWriter.saveSuccessReport(requestId)
+                        indexingRequestRepository.deleteById(requestId)
+                    }
+
+                    Outcome.FAILED -> {
+                        indexingRequestRepository.markAsFailed(requestId, errorMessage)
+                        userRequestReportWriter.saveFailureReportIfTerminal(requestId, errorMessage)
+                    }
+
+                    // Leave the request untouched so a rate limit does not burn a retry attempt.
+                    Outcome.RATE_LIMITED -> Unit
                 }
             } catch (ex: Exception) {
                 logger.error("Error during finalizing index request with id=$requestId: ${ex.message}", ex)
             }
         }
-        return true
+        return outcome != Outcome.RATE_LIMITED
     }
+
+    private enum class Outcome { SUCCESS, FAILED, RATE_LIMITED }
 
     @Transactional
     internal fun processRequest(idToProcess: Long) {

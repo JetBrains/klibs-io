@@ -1,6 +1,7 @@
 package io.klibs.integration.maven.scraper.impl
 
 import io.klibs.integration.maven.MavenArtifact
+import io.klibs.integration.maven.MavenRateLimitedException
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.scraper.MavenCentralScraper
 import io.klibs.integration.maven.search.MavenSearchClient
@@ -69,7 +70,7 @@ class CentralSonatypeScraper(
         errorChannel: Channel<Exception>
     ): Flow<MavenArtifact> = flow {
         for ((coordinates, knownVersions) in knownArtifacts) {
-            runCatching {
+            val exception = runCatching {
                 val parts = coordinates.split(":")
                 if (parts.size != 2) return@runCatching
                 val groupId = parts[0]
@@ -92,10 +93,14 @@ class CentralSonatypeScraper(
                         )
                     }
                 }
-            }.onFailure { exception ->
-                errorChannel.send(
-                    Exception("Could not process request for metadata of $coordinates", exception)
-                )
+            }.exceptionOrNull() ?: continue
+
+            errorChannel.send(
+                Exception("Could not process request for metadata of $coordinates", exception)
+            )
+            if (exception is MavenRateLimitedException) {
+                logger.warn("Rate limited by Maven Central, stopping new version discovery")
+                break
             }
         }
     }
