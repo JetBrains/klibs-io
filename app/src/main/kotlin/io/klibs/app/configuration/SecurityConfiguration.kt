@@ -56,6 +56,9 @@ class SecurityConfiguration(
                 authorize(HttpMethod.GET, "/ping", permitAll)
                 authorize(HttpMethod.OPTIONS, "/ping", permitAll)
 
+                authorize(HttpMethod.POST, "/notify", permitAll)
+                authorize(HttpMethod.OPTIONS, "/notify", permitAll)
+
                 authorize(HttpMethod.POST, "/compare/**", permitAll)
                 authorize(HttpMethod.OPTIONS, "/compare/**", permitAll)
 
