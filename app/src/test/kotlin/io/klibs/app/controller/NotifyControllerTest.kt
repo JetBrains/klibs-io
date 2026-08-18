@@ -8,15 +8,18 @@ import org.springframework.test.web.servlet.post
 class NotifyControllerTest : SmokeTestBase() {
 
     @Test
-    fun `echoes the received form encoded body`() {
+    fun `echoes the number of received artifacts`() {
         mockMvc.post("/notify") {
-            contentType = MediaType.APPLICATION_FORM_URLENCODED
-            param("groupId", "io.github.zwiora")
-            param("artifactId", "fibonacci")
-            param("version", "1.0.0")
+            contentType = MediaType.APPLICATION_JSON
+            content = """
+                [
+                  {"groupId": "io.github.test", "artifactId": "fibonacci", "version": "1.0.0"},
+                  {"groupId": "io.github.test", "artifactId": "lucas", "version": "2.0.0"}
+                ]
+            """.trimIndent()
         }.andExpect {
             status { isOk() }
-            content { string("Received: groupId=io.github.zwiora&artifactId=fibonacci&version=1.0.0") }
+            content { string("Received 2 artifacts") }
         }
     }
 }
