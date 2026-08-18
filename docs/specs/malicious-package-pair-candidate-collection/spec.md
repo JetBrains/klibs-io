@@ -1,149 +1,124 @@
-# Spec: Malicious package-pair candidate collection
+# Spec: Suspicious package-pair candidate collection
 
 ## 1. Goal
-Detect "malicious package pairs" — the same `artifactId` published under more than one `groupId` within a single indexed project — and persist every detected entry into a durable, reviewable table enriched with dormancy and ownership signals plus a review lifecycle (`status` + reviewer `notes`), populated by a **scheduled job that periodically recomputes the conflict set from the catalogue**, so a human can triage cases over time. This task owns both detection and collection; it makes **no ban/verdict decision**.
+Find cases where the same `artifactId` is published under more than one `groupId` within a single indexed project, and store each one in a table a reviewer can work through. A scheduled job recomputes the conflict set on a fixed cadence and records each entry with the signals a reviewer needs (release history and a derived owner) plus a review lifecycle (`status` and reviewer `notes`). This task detects and collects the cases only; it makes no ban or verdict decision.
 
 ## 2. Problem
-- There is no durable record of malicious package pairs. The detection has only ever run as a throwaway SQL view on an unmerged spike branch; nothing that ships today computes or stores these cases.
-- A live view holds **no reviewer state**: a case silently appears or disappears as the catalogue changes, with no way to record "a human already looked at this."
-- The signals a reviewer needs aren't gathered per conflicting entry: release timestamps (dormancy) live scattered across per-version `package` rows. Nothing collects them per entry, alongside a `groupId`-derived owner login, into one triage-ready record.
-- **Who's affected:** klibs.io maintainers / security reviewers triaging potential impersonation or name-squat republishes; and, downstream, the future automated ban pipeline that will consume reviewed cases.
+klibs.io needs a way to ban packages that impersonate a real library: the same artifact republished under a different `groupId` while pointing at the original project's repository (KTL-4151). Before anything can be banned, the candidate cases have to be collected somewhere — which `(artifactId, groupId)` entries conflict within a project, the release history and derived owner for each, and the outcome once a reviewer handles them. Nothing collects or stores this today. This task builds that collection step and produces the input the ban work will draw on.
+
+Affected: klibs.io maintainers reviewing possible impersonation, and the later ban pipeline that consumes the reviewed cases.
 
 ## 3. User scenarios & acceptance
 
-### Scenario 1 — Malicious pairs are detected and collected (P1)
+### Scenario 1 — Suspicious pairs are detected and collected (P1)
 - **Given:** the catalogue contains a project where one `artifactId` is published under two distinct `groupId`s.
 - **When:** the collection job runs.
 - **Then:** one row per `(project_id, artifact_id, group_id)` entry exists in the candidate table, each with `status = PENDING` and a `detected_at` timestamp.
-- **Independent test:** DB-integration — seed `package` rows forming a conflicting pair, run the recompute, assert the expected entry rows exist with `PENDING`.
+- **Independent test:** a DB-integration test seeds `package` rows forming a conflicting pair, runs the recompute, and asserts the entry rows exist with `PENDING`.
 
 ### Scenario 2 — Reviewer decisions survive re-runs (P1)
-- **Given:** a reviewer has set a candidate row to `RESOLVED` (or `IGNORED`).
+- **Given:** a reviewer has set a candidate row to `RESOLVED` or `IGNORED`.
 - **When:** the collection job runs again while the pair still conflicts.
-- **Then:** the row's `status` **and reviewer `notes`** are unchanged (status not reset to `PENDING`) and no duplicate row is created; only the signal columns may be refreshed.
-- **Independent test:** DB-integration — mark a row `RESOLVED`, re-run the recompute, assert status still `RESOLVED` and exactly one row for that group key.
+- **Then:** the row's `status` and reviewer `notes` are unchanged (status is not reset to `PENDING`) and no duplicate row is created. Only the signal columns may be refreshed.
+- **Independent test:** a DB-integration test marks a row `RESOLVED`, re-runs the recompute, and asserts the status is still `RESOLVED` with exactly one row for that key.
 
 ### Scenario 3 — Owner is derived only for GitHub-account coordinates (P1)
 - **Given:** two entries, one under `io.github.alice`, one under `com.example`.
-- **When:** collected.
-- **Then:** the `io.github.alice` entry row has `derived_owner_login = alice`; the `com.example` entry row has `derived_owner_login = NULL`.
-- **Independent test:** DB-integration asserting both rows' `derived_owner_login`.
+- **When:** they are collected.
+- **Then:** the `io.github.alice` row has `derived_owner_login = alice`; the `com.example` row has `derived_owner_login = NULL`.
+- **Independent test:** a DB-integration test asserts both rows' `derived_owner_login`.
 
 ### Edge cases
-- Same `artifactId` under **3+ groupIds** → 3+ entry rows sharing the `(project_id, artifact_id)` group key.
-- Every candidate entry has a resolved repo: a candidate requires `project_id IS NOT NULL` (§8), and a `project` is only ever created from a resolved GitHub repo, so `project.scm_repo_id` is always present — `scm_repo_id` on the candidate is therefore non-null. (Each entry also has ≥1 release, since it derives from `package` rows whose `release_ts` is NOT NULL, so release timestamps are always present.)
-- A pair that **no longer conflicts** on a later run — possible only when an entry's packages are removed. Indexing never deletes packages (it only inserts new versions or updates existing rows) and a package's `group_id` never changes; the only deletion path is the admin ban flow (`DELETE FROM package`). The candidate rows are **retained as-is** with their last `status`/`notes`, as an audit record; the upsert never deletes rows that drop out of detection.
-- The two entries of a pair are indexed at **different times** → the conflict is recorded on the **first scheduled recompute after both entries exist** in `package`. No backfill is needed — the first run of the job seeds every conflict already present in the catalogue.
+- A pair can stop conflicting on a later run only if an entry's packages are removed. Indexing never deletes packages (it only inserts new versions or updates existing rows) and a package's `group_id` never changes; the only deletion path is the admin ban flow (`DELETE FROM package`). Rows are kept as they are, with their last `status` and `notes`, as an audit record; the upsert never deletes rows that drop out of detection.
+- The two entries of a pair are indexed at different times, so the conflict is recorded on the first scheduled run after both entries exist in `package`. No backfill is needed: the first run seeds every conflict already present in the catalogue.
 
 ## 4. Functional requirements
 - **FR-001:** For every `(project_id, artifact_id)` where that `artifactId` is published under more than one distinct `groupId` within the project, the system MUST record one row per `(project_id, artifact_id, group_id)` entry.
 - **FR-002:** Each row MUST expose `version_count`, `first_release_ts`, and `last_release_ts` for that entry.
-- **FR-003:** Each row MUST expose `project_id` (the group key together with `artifact_id`) and the entry project's `scm_repo_id`.
-- **FR-004:** For **every** `(project_id, artifact_id)` conflict, the system MUST record all of its entries — it MUST NOT pre-filter candidates by any signal (dormancy, owner mismatch, dependent count, etc.). Triage is manual.
-- **FR-005:** Each row MUST expose `derived_owner_login` equal to the **lower-cased** owner segment of an `io.github.<owner>` or `com.github.<owner>` coordinate, and it MUST be `NULL` when the `group_id` is not of that form.
-- **FR-006:** The system MUST provide a nullable free-text `notes` field for reviewers to record *why* a row was moved to `RESOLVED`/`IGNORED`. The collection job populates the table but MUST NOT write or overwrite `notes`.
+- **FR-003:** Each row MUST persist its full coordinate (`project_id`, `artifact_id`, `group_id`) as readable columns, so a reviewer can identify an entry and pull every entry that shares its `(project_id, artifact_id)` group.
+- **FR-004:** For every `(project_id, artifact_id)` conflict, the system MUST record all of its entries; it MUST NOT pre-filter candidates by any signal (dormancy, owner mismatch, etc.). Triage is manual.
+- **FR-005:** Each row MUST expose `derived_owner_login` equal to the lower-cased owner segment of an `io.github.<owner>` or `com.github.<owner>` coordinate, and it MUST be `NULL` when the `group_id` is not of that form.
+- **FR-006:** The system MUST provide a nullable free-text `notes` field for reviewers to record why a row was moved to `RESOLVED` or `IGNORED`. The collection job populates the table but MUST NOT write or overwrite `notes`.
 - **FR-007:** A newly detected entry MUST be recorded with `status = PENDING` and a `detected_at` timestamp.
 - **FR-008:** `status` MUST be one of `PENDING`, `RESOLVED`, `IGNORED`.
-- **FR-009:** A reviewer-set `status` **and `notes`** MUST persist across subsequent collection runs — a re-run MUST NOT revert a `RESOLVED`/`IGNORED` row to `PENDING` or clear its `notes`.
+- **FR-009:** A reviewer-set `status` and `notes` MUST persist across subsequent collection runs; a re-run MUST NOT revert a `RESOLVED` or `IGNORED` row to `PENDING` or clear its `notes`.
 - **FR-010:** A collection run MUST NOT create duplicate rows for the same `(project_id, artifact_id, group_id)` entry.
-- **FR-011:** When a previously recorded entry is no longer detected as conflicting, the system MUST retain its existing row unchanged — it MUST NOT delete rows that drop out of detection.
+- **FR-011:** When a previously recorded entry is no longer detected as conflicting, the system MUST keep its existing row unchanged; it MUST NOT delete rows that drop out of detection.
 
 ## 5. Non-functional requirements
-- **Performance / dataset size:** the *output* is small — a spike run against a prod copy produced ~1,000 conflicting entry rows across ~200 projects. Detection is a **single set-based aggregation** over `package` (`GROUP BY project_id, artifact_id HAVING count(DISTINCT group_id) > 1`, `project_id IS NOT NULL`) run on a schedule; PostgreSQL handles it cheaply (one sequential scan + hash aggregate) even at hundreds of thousands to millions of rows — seconds of work. The **indexing pipeline is not touched**: no per-package cost is added to the hot path.
-- **External rate limits:** **none.** Detection and every stored column come from existing local tables (`package`, `project`, `scm_repo`). `derived_owner_login` is a pure string parse of `group_id`. No GitHub / Maven Central / OpenAI calls.
-- **Concurrency:** detection is a standalone scheduled job under its own `@SchedulerLock` (ShedLock, so only one instance runs it). The upsert (FR-009/010) is idempotent on the unique `(project_id, artifact_id, group_id)` key, so any re-run — scheduled or manual — never duplicates or resets a row. It shares the single-threaded scheduler with the other jobs; a **low (daily) cadence** keeps its footprint on that thread negligible (see §8).
-- **Observability:** each run logs a summary (rows inserted / signal-updated / total candidates); the **first run's** insert count can be checked against the ~1,000-row spike baseline to confirm the seed worked.
+- **Performance and dataset size:** the output is small. An exploratory query against a production copy produced about 2,100 conflicting entry rows (about 1,000 `(project_id, artifact_id)` conflicts) across about 200 projects. Detection is a single set-based query over `package` (filtered `project_id IS NOT NULL`) run on a schedule: it aggregates per `(project_id, artifact_id, group_id)` and keeps only the entries whose `(project_id, artifact_id)` spans more than one `group_id`. PostgreSQL handles it in seconds (a sequential scan plus hash aggregation) even at hundreds of thousands to millions of rows. The indexing pipeline is not touched, so no per-package cost is added.
+- **External rate limits:** none. Detection and every stored column come from the local `package` table. `derived_owner_login` is a string parse of `group_id`. No GitHub, Maven Central, or OpenAI calls.
+- **Concurrency:** detection is a standalone scheduled job under its own `@SchedulerLock` (ShedLock), so only one instance runs it. The upsert (FR-009, FR-010) is idempotent on the unique `(project_id, artifact_id, group_id)` key, so any re-run, scheduled or manual, never duplicates or resets a row. It shares the single-threaded scheduler with the other jobs; a daily cadence keeps its footprint on that thread small (see §8).
+- **Observability:** each run logs a summary (rows inserted, rows signal-updated, total candidates). The first run's insert count can be checked against the ~2,100-row baseline above to confirm the seed worked.
 
 ## 6. Out of scope
-- Any **verdict / classification** (impersonation vs. namespace-migration / monorepo / transfer / relocation / fork) and any **ban** action.
-- **GitHub API ownership/fork verification** (does `derived_owner_login` actually own the repo; comparing it against the real `scm_owner.login`). This collection stores the *signals*; verification and decision are out of scope for this task.
-- **Domain-type groupId owner resolution** — irreducible domain↔account gap; such rows keep `derived_owner_login = NULL`. Only `io.github.*` / `com.github.*` account coordinates are parsed; `io.gitlab.*` and other hosts are out.
-- Any **pre-filtering / ranking of candidates** — all conflicting-pair entries are collected; the reviewer applies judgement.
-- Any **reviewer UI / API endpoint** — the table is populated only; a review surface is out of scope for this task.
-- **Auto-correlation with `banned_packages`** — when an entry is banned its `package` rows are deleted, so it simply drops out of detection and its candidate row is retained as-is (FR-011); automatically marking such rows (e.g. `RESOLVED`) by cross-referencing `banned_packages` is out of scope.
-- Repo rename/transfer (301) normalization — already handled upstream by indexing.
+- Any verdict or classification (impersonation vs. namespace migration, monorepo, transfer, relocation, fork) and any ban action.
+- GitHub API ownership or fork verification (whether `derived_owner_login` actually owns the repo; comparing it against the real `scm_owner.login`). This task stores the signals; verification and the decision come later.
+- Domain-type `groupId` owner resolution. Domain coordinates give only a domain, not an account, so those rows keep `derived_owner_login = NULL`. Only `io.github.*` and `com.github.*` are parsed; `io.gitlab.*` and other hosts are out.
+- Any pre-filtering or ranking of candidates. All conflicting entries are collected; the reviewer applies judgement.
+- Any reviewer UI or API endpoint. The table is populated only.
+- Auto-correlation with `banned_packages`. When an entry is banned its `package` rows are deleted, so it drops out of detection and its row is kept as-is (FR-011); marking such rows automatically by cross-referencing `banned_packages` is out of scope.
+- Repo rename or transfer (301) normalization, already handled upstream by indexing.
 
 ## 7. Klibs.io technical surface
-- **Modules touched:** `core/package` — new candidate `@Entity` + Spring Data repository, a collector service, and **one native detection query** (the full set-based recompute). This is the all-JPA module that owns the `package` table the query scans, and it already hosts the native-aggregation precedent `findAllKnownMavenCentralPackages`. `app` — **one new scheduled job class** (in the mould of `RefreshDependentCountJob`) that invokes the collector on a fixed cadence. The **indexing pipeline is not modified.**
-- **Database — one additive migration in `db/migration/2026-Q3/`** (registered in `db.changelog-master.yml`); the table ships empty and is populated by the scheduled recompute job (its first run seeds all pre-existing conflicts):
-  1. **Candidate table** (working name `malicious_package_pair_candidate`). Fields: `id` (PK, identity); `project_id` (FK → `project`); `scm_repo_id` (FK → `scm_repo`, NOT NULL — every candidate has a project and a project always has a repo); `artifact_id`; `group_id`; `version_count`; `first_release_ts`; `last_release_ts`; `derived_owner_login` (nullable); `status` (`PENDING`/`RESOLVED`/`IGNORED`); `notes` (nullable, reviewer-authored); `detected_at`. Group key `(project_id, artifact_id)`; unique `(project_id, artifact_id, group_id)`. Exact column types / index choices are plan-level.
-- **Persistence style:** **JPA throughout**, per CLAUDE.md ("JPA-first … avoid JDBC in new code"). The candidate table is a `@Entity` with a Spring Data repository (insert / status-preserving upsert / read). Detection is a single `@Query(nativeQuery = true)` method — the **full recompute** (`GROUP BY project_id, artifact_id HAVING count(DISTINCT group_id) > 1`, `project_id IS NOT NULL`) returning an interface projection, mirroring `findAllKnownMavenCentralPackages` (native aggregation → interface projection). No JDBC is introduced; a native `@Query` inside a JPA repository is not JDBC.
-- **Search / materialized views:** none — independent of `project_index` / `package_index`.
+- **Modules touched:** `core/package` gets a new candidate `@Entity`, a Spring Data repository, a collector service, and one native detection query (the full recompute). This is the JPA module that owns the `package` table the query scans, and it already hosts a native-aggregation precedent, `findAllKnownMavenCentralPackages`. `app` gets one new scheduled job class, modelled on `RefreshDependentCountJob`, that invokes the collector. The indexing pipeline is not modified.
+- **Database:** one additive migration in `db/migration/2026-Q3/`, registered in `db.changelog-master.yml`. The table ships empty and is populated by the job; its first run seeds all pre-existing conflicts.
+  1. Candidate table (working name `suspicious_package_pair_candidate`). Fields: `id` (PK, identity); `project_id` (FK to `project`); `artifact_id`; `group_id`; `version_count`; `first_release_ts`; `last_release_ts`; `derived_owner_login` (nullable); `status` (`PENDING`/`RESOLVED`/`IGNORED`); `notes` (nullable, reviewer-authored); `detected_at`. Group key `(project_id, artifact_id)`; unique `(project_id, artifact_id, group_id)`. Exact column types and index choices are plan-level.
+- **Persistence style:** JPA, per CLAUDE.md ("JPA-first, avoid JDBC in new code"). The candidate table is a `@Entity` with a Spring Data repository (insert, status-preserving upsert, read); `project_id` is a plain column with the FK enforced in the migration, not a JPA `@ManyToOne`, so the entity adds no `core/package` → `core/project` dependency. Detection is a single `@Query(nativeQuery = true)` that returns an interface projection, the same shape as `findAllKnownMavenCentralPackages`. A native `@Query` inside a JPA repository is not JDBC.
+- **Search and materialized views:** none. Independent of `project_index` and `package_index`.
 - **External integrations:** none.
-- **Scheduled jobs:** **one new recurring job** — a periodic full recompute in the mould of `RefreshDependentCountJob` (`@Scheduled(fixedRate = …)` + `@SchedulerLock` + `@ConditionalOnProperty`). Cadence: **daily** (`fixedRate = 1, timeUnit = DAYS`), because the conflict set changes slowly and a review queue does not need sub-day freshness; the cadence is a one-line change if it ever needs tuning. **No backfill mechanism is needed** — the job's first run recomputes and seeds every conflict already present in `package`. `@SchedulerLock(lockAtMostFor = …)` bounds a stuck run; the recompute method also stays independently invokable for tests/manual re-seed.
+- **Scheduled jobs:** one new recurring job, a periodic full recompute modelled on `RefreshDependentCountJob` (`@Scheduled(fixedRate = …)`, `@SchedulerLock`, `@ConditionalOnProperty`). Cadence is daily (`fixedRate = 1, timeUnit = DAYS`), because the conflict set changes slowly and the review queue does not need sub-day freshness; the cadence is a one-line change if it needs tuning. No backfill mechanism is needed: the first run seeds every conflict already in `package`. `@SchedulerLock(lockAtMostFor = …)` bounds a stuck run, and the recompute method stays independently callable for tests and manual re-seeding.
 - **Storage:** none.
-- **Configuration:** a `klibs.*` feature toggle gating the job (pattern: `@ConditionalOnProperty`, as sibling jobs use `klibs.indexing`).
+- **Configuration:** a `klibs.*` feature toggle gating the job, following the `@ConditionalOnProperty` pattern the sibling jobs use with `klibs.indexing`.
 - **API surface:** none.
 - **Frontend contract:** none.
 
 ## 8. Design decisions
 
-### Decision — Detection is a native `@Query`, no persisted view
-- **Choice:** conflicts are computed with a single read-only native `@Query` over `package` (filtered `project_id IS NOT NULL`): the **full** `GROUP BY project_id, artifact_id HAVING count(DISTINCT group_id) > 1`. Its rows are written straight to the candidate table; no SQL view is created.
-- **Why:** the detection logic has a single consumer (this collector); a persisted view would add a migration and a schema object with no other reader. Native `@Query` inside the JPA repository is the established idiom (`findAllKnownMavenCentralPackages` is a sibling aggregation; `findDuplicateDescriptions` is the same `GROUP BY … HAVING COUNT > 1` shape). The `project_id IS NOT NULL` filter is required because `package.project_id` is nullable — a package with no resolved repo has no project, and an intra-project pair requires one.
-- **Rejected:** a standalone `malicious_package_pair` view (extra DB object, only ever read by one caller).
+### Decision — Detection is a native `@Query`, not a persisted view
+- **Choice:** conflicts are computed by one read-only native `@Query` over `package` (filtered `project_id IS NOT NULL`). It aggregates per `(project_id, artifact_id, group_id)`, giving each entry its own `version_count`, `first_release_ts`, and `last_release_ts`, and keeps only the entries whose `(project_id, artifact_id)` spans more than one distinct `group_id` (a subquery or window over the `(project_id, artifact_id)` grouping supplies that cross-group test). Its rows map one-to-one onto candidate rows and are written straight to the table; no SQL view is created.
+- **Why:** the detection query has a single consumer, this collector, so a persisted view would add a migration and a schema object with no other reader. A native `@Query` in the repository is the established idiom (`findAllKnownMavenCentralPackages` is a sibling aggregation; `findDuplicateDescriptions` is a related `GROUP BY … HAVING COUNT > 1` precedent, on top of which this query adds a cross-group filter). The `project_id IS NOT NULL` filter is needed because `package.project_id` is nullable, and an intra-project pair requires a project.
+- **Rejected:** a standalone `suspicious_package_pair` view, an extra DB object read by only one caller.
 
 ### Decision — Persist detected pairs to a table
-- **Choice:** a physical candidate table populated by the collection step, keyed on `(project_id, artifact_id, group_id)`.
-- **Why:** detection alone is stateless; a review queue needs durable rows that hold reviewer state (`status`, `notes`, `detected_at`) and survive recomputation.
-- **Rejected:** compute conflicts on demand with no persistence (nowhere to record that a human already reviewed a case).
-
-### Decision — JPA throughout (detection via a native `@Query`)
-- **Choice:** the candidate table is a JPA `@Entity` with a Spring Data repository; the detection read is a `@Query(nativeQuery = true)` method (an interface projection for the recompute). No JDBC anywhere in the feature.
-- **Why:** CLAUDE.md is JPA-first. A native `@Query` inside a Spring Data repository is *not* JDBC — it is the project's normal way to express set-based SQL (`PackageRepository.findAllKnownMavenCentralPackages` is a native `GROUP BY`/`ARRAY_AGG` returning an interface projection). So persistence, upsert, and detection all stay within JPA, and the feature lives in `core/package` (entirely JPA) rather than `core/project` (whose `Project` aggregate is hand-rolled JDBC and not even a JPA `@Entity`).
-- **Rejected:** a `*RepositoryJdbc` for detection (as the `Project` aggregate uses) — unnecessary and against JPA-first.
+- **Choice:** a physical candidate table populated by the job, keyed on `(project_id, artifact_id, group_id)`.
+- **Why:** detection on its own is stateless. A review queue needs durable rows that hold reviewer state (`status`, `notes`, `detected_at`) and survive recomputation.
+- **Rejected:** compute conflicts on demand with no persistence, which leaves nowhere to record that a human already reviewed a case.
 
 ### Decision — `derived_owner_login` parsing rule
-- **Choice:** if `group_id` matches `io.github.<owner>[...]` or `com.github.<owner>[...]`, set `derived_owner_login` = `<owner>` **lower-cased**; otherwise `NULL`. Computed during collection.
-- **Why:** in the catalogue the only account-host coordinates are `io.github.*` / `com.github.*`; every other `group_id` (domain-type) gives only a domain, so it gets `NULL`. Stored lower-cased because GitHub logins are case-insensitive — this gives a canonical form for the later comparison against `scm_owner.login` (a distinct, out-of-scope verification step, §6).
-- **Rejected:** owner inference from reversed domains (unsound).
-
-### Decision — `dependent_count` is not stored on the candidate row
-- **Choice:** do not add a `dependent_count` column. A reviewer reads blast radius via the `project_id` FK (`JOIN project p ON p.id = c.project_id`, or through `project_index`).
-- **Why:** `dependent_count` is a per-project metric klibs already maintains (`RefreshDependentCountJob`, recomputed every 6h). Copying it onto the candidate row would duplicate a value already reachable via the FK and would go **stale** the moment that job recomputes `project.dependent_count`. The codebase's own precedent denormalizes `dependent_count` only into wholesale-rebuilt materialized views (`project_index`, `package_index`), never onto individual normalized rows.
-- **Rejected:** (a) copy `project.dependent_count` onto each row — redundant + staleness; (b) recompute a per-entry count at `group:artifact` granularity — fabricates a metric this collection task is not meant to produce.
-
-### Decision — `scm_repo_id` *is* stored on the candidate row (unlike `dependent_count`)
-- **Choice:** store `scm_repo_id` on the candidate even though it is reachable via `project`.
-- **Why:** unlike `dependent_count` (a volatile metric recomputed every 6h, so copying invites staleness), `scm_repo_id` is a **stable structural FK** — a project's repo is fixed at first index and a rename/transfer dedups back to the same `scm_repo` via GitHub `nativeId`. Storing it gives the reviewer a direct one-hop join to `scm_owner` for the later owner-mismatch check (comparing `derived_owner_login` against the real owner), without threading through `project`.
-- **Rejected:** derive it via `project` at read time — an extra hop for a value that never changes.
-
-### Decision — Idempotent upsert that preserves reviewer state
-- **Choice:** each recompute run upserts on `(project_id, artifact_id, group_id)`: insert new entries as `PENDING` with `detected_at = now`; for existing rows, refresh the signal columns only and leave `status`, `notes`, and `detected_at` untouched. Because the recompute returns the whole conflict set, **all** entries of every conflicting `(project_id, artifact_id)` are upserted each run.
-- **Why:** satisfies FR-009 (status + notes persist) and FR-010 (no duplicates).
-- **Rejected:** truncate-and-reload (destroys reviewer state).
+- **Choice:** if `group_id` matches `io.github.<owner>[...]` or `com.github.<owner>[...]`, set `derived_owner_login` to `<owner>` lower-cased; otherwise `NULL`. Computed during collection.
+- **Why:** in the catalogue the only account-host coordinates are `io.github.*` and `com.github.*`. Every other `group_id` is domain-type and yields only a domain, so it gets `NULL`. It is stored lower-cased because GitHub logins are case-insensitive, which gives a canonical form for the later comparison against `scm_owner.login` (an out-of-scope verification step, §6).
+- **Rejected:** inferring an owner from a reversed domain, which is unsound.
 
 ### Decision — Detection is a standalone periodic recompute job
-- **Choice:** detection runs as its **own scheduled job** that periodically executes the full recompute and upserts the result. The indexing pipeline is left untouched. Cadence is **daily**, because the conflict set changes slowly and nothing acts on a conflict in real time. There is **no one-time backfill** and **no per-package hook** — the job's first run seeds all pre-existing conflicts, and every subsequent run re-derives the full truth.
+- **Choice:** detection runs as its own scheduled job that periodically runs the full recompute and upserts the result. The indexing pipeline is left alone. Cadence is daily, because the conflict set changes slowly and nothing acts on a conflict in real time. There is no one-time backfill and no per-package hook: the first run seeds all pre-existing conflicts, and every later run re-derives the full set.
 - **Why:**
-  1. **Self-healing correctness.** Every run recomputes the complete conflict set from `package`, so a transient failure, a skipped run, a deploy gap, or a bug simply corrects itself on the next run. There is no state that can be *permanently* missed.
-  2. **Zero indexing risk.** It does not touch `PackageIndexingService` or the queue-drain hot path, so a detection bug can never slow, break, or roll back indexing. The blast radius is one isolated job.
-  3. **Simplest surface, no backfill.** One job + one query (the recompute we would have to write anyway) + one collector + toggle + migration. No transaction-boundary reasoning, no second (targeted) query, no separate backfill runner — the first scheduled run *is* the backfill.
-  4. **Freshness is worthless here.** The output is a queue triaged by a human over days (§1, §6 excludes any automated action). Detecting a conflict seconds vs. hours after it forms buys nothing.
-  5. **Precedent + affordable footprint.** It mirrors `RefreshDependentCountJob` — an accepted periodic full-recompute of a catalogue-wide derived set on the same single-threaded scheduler, with a heavier workload (dependency graph) and a tighter cadence (6h) than this daily aggregation. The scheduler thread is already dominated for hours by the queue drain (`lockAtMostFor = 4h`) and the daily Maven index (`lockAtMostFor = 23h`); a daily seconds-long aggregation adds negligible marginal contention next to those.
-- **Rejected — inline per-package hook + one-time backfill:** catches a conflict the moment its second package commits and adds no *recurring* scheduled job (though it still adds a run-once backfill runner, itself a `@Scheduled` method) — but it (a) edits the indexing hot path (`processPackageQueue`), taking on transaction-boundary risk; (b) needs a *second* query (the targeted check) plus a separate one-time backfill runner; and (c) in its **post-commit + try/catch** form, a swallowed detection error — or a JVM crash / deploy between the package commit and the post-commit hook — is **never retried**, silently and permanently missing that candidate until a package in the pair happens to be reindexed or the backfill is re-run by hand (re-discovery does *not* re-emit an already-indexed coordinate, so it cannot heal the miss). An **in-transaction** variant closes that specific miss — a rollback leaves the package absent, so re-discovery re-emits the coordinate on a later cycle — but it does so by discarding the request's already-fetched POM/GitHub work on every rollback and still edits the hot path, so it is not clearly better than this recompute. Either way, inline trades self-healing simplicity for a real-time benefit that this queue does not need.
-- **Rejected — tail-of-drain step:** conflates 'queue drained' with 'data complete'; the drain is priority-ordered (`released_ts DESC NULLS FIRST`) and may run far past its 4h lock under a backlog, offering no real completeness guarantee.
+  1. Correctness that recovers on its own. Every run recomputes the whole conflict set from `package`, so a transient failure, a skipped run, a deploy gap, or a bug is corrected on the next run. No state can be permanently missed.
+  2. No risk to indexing. The job does not touch `PackageIndexingService` or the queue-drain path, so a detection bug cannot slow, break, or roll back indexing. It affects only this one job.
+  3. Small surface, no backfill. One job, one query (the recompute we would write anyway), one collector, a toggle, and a migration. No transaction-boundary reasoning, no second targeted query, no separate backfill runner: the first run is the backfill.
+  4. Freshness does not matter here. A reviewer works through the queue over days (§1, §6), and nothing acts on a conflict automatically, so finding a conflict in seconds rather than hours gains nothing.
+  5. Precedent and affordable cost. It mirrors `RefreshDependentCountJob`, an accepted periodic full-recompute of a catalogue-wide derived set on the same single-threaded scheduler, with a heavier workload (the dependency graph) and a tighter cadence (6h) than this daily aggregation. The scheduler thread is already occupied for hours by the queue drain (`lockAtMostFor = 4h`) and the daily Maven index (`lockAtMostFor = 23h`); a daily seconds-long aggregation adds little next to those.
+- **Rejected — inline per-package hook plus one-time backfill:** this catches a conflict the moment its second package commits and adds no recurring job (though it still adds a run-once backfill runner, itself a `@Scheduled` method). But it (a) edits the indexing path (`processPackageQueue`) and takes on transaction-boundary risk; (b) needs a second, targeted query plus a separate backfill runner; and (c) in its post-commit form, a swallowed detection error, or a crash or deploy between the package commit and the hook, is never retried, so that candidate is missed until a package in the pair is reindexed or the backfill is re-run by hand (re-discovering an already-indexed coordinate does not re-emit it, so it cannot heal the miss). An in-transaction variant closes that miss, since a rollback leaves the package absent and the coordinate is re-emitted on a later cycle, but it discards the request's already-fetched POM and GitHub work on every rollback and still edits the indexing path. Neither variant is clearly better than the recompute for a queue that does not need real-time detection.
+- **Rejected — a tail-of-drain step:** this conflates "queue drained" with "data complete." The drain is priority-ordered (`released_ts DESC NULLS FIRST`) and can run well past its 4h lock under a backlog, so it offers no real completeness guarantee.
 
 ### Decision — Candidate PK type
-- **Choice:** `bigint` identity PK for the candidate table.
-- **Why:** a surrogate identity PK for a new, indefinitely-retained table (rows are kept as an audit record and never deleted — FR-011 — so the table only grows over time, even if slowly). `bigint` is the safe default, costs nothing now, and avoids any future widening migration. A generated identity is simplest for JPA. Called out because it diverges from the sibling `project` / `scm_repo` `int`/`SERIAL` PKs.
-- **Rejected:** `int`/`SERIAL` — fine at today's scale, but `bigint` future-proofs the PK for free. FK columns (`project_id`, `scm_repo_id`) stay `int` to match `project.id` / `scm_repo.id`.
+- **Choice:** a `bigint` identity PK for the candidate table.
+- **Why:** the table is retained indefinitely (rows are kept as an audit record and never deleted, FR-011), so it only grows. `bigint` is the safe default, costs nothing now, and avoids a future widening migration. A generated identity is simplest for JPA. It is called out because it differs from the sibling `project` `int`/`SERIAL` PK.
+- **Rejected:** `int`/`SERIAL`, fine at today's scale, but `bigint` future-proofs the PK for free. The FK column (`project_id`) stays `int` to match `project.id`.
 
 ## 9. Key entities (only if data model changes)
-- **`MaliciousPackagePairCandidate`** (working name) — one row per entry of a conflicting pair.
-  - **Key fields:** `id` (PK); `projectId` → `project`; `scmRepoId` → `scm_repo` (NOT NULL); `artifactId`; `groupId`; `versionCount`; `firstReleaseTs`; `lastReleaseTs`; `derivedOwnerLogin` (nullable); `status` (`PENDING`/`RESOLVED`/`IGNORED`); `notes` (nullable, reviewer-authored); `detectedAt`.
+- **`SuspiciousPackagePairCandidate`** (working name): one row per entry of a conflicting pair.
+  - **Key fields:** `id` (PK); `projectId` to `project`; `artifactId`; `groupId`; `versionCount`; `firstReleaseTs`; `lastReleaseTs`; `derivedOwnerLogin` (nullable); `status` (`PENDING`/`RESOLVED`/`IGNORED`); `notes` (nullable, reviewer-authored); `detectedAt`.
   - **Relationships:** many candidates per `project`; group key `(projectId, artifactId)`; unique `(projectId, artifactId, groupId)`.
-  - **Lifecycle:** created `PENDING` by the collection job → a reviewer moves it to `RESOLVED`/`IGNORED` and may add `notes`; `status` and `notes` are sticky across runs.
+  - **Lifecycle:** created `PENDING` by the job. A reviewer moves it to `RESOLVED` or `IGNORED` and may add `notes`. `status` and `notes` stay put across runs.
 
 ## 10. Database schema diagram (only if schema changes)
 ```mermaid
 erDiagram
-    PROJECT ||--o{ MALICIOUS_PACKAGE_PAIR_CANDIDATE : flags
-    SCM_REPO ||--o{ MALICIOUS_PACKAGE_PAIR_CANDIDATE : "resolves to"
-    MALICIOUS_PACKAGE_PAIR_CANDIDATE {
+    PROJECT ||--o{ SUSPICIOUS_PACKAGE_PAIR_CANDIDATE : has
+    SUSPICIOUS_PACKAGE_PAIR_CANDIDATE {
         bigint id PK "(new)"
         int project_id FK "(new)"
-        int scm_repo_id FK "(new)"
         string artifact_id "(new)"
         string group_id "(new)"
         int version_count "(new)"
@@ -157,28 +132,27 @@ erDiagram
 ```
 
 ## 11. Test strategy
-- **Unit:** the `derived_owner_login` parser (`io.github.*` / `com.github.*` → lower-cased owner; other → null; mixed-case input lower-cased) and the upsert-merge decision (preserve `status`/`notes` vs. insert `PENDING`) as pure-function unit tests — both are pure logic needing no DB and no mock.
-- **DB-integration (`BaseUnitWithDbLayerTest`):** method-level `@Sql` seeds building conflicting pairs; run the recompute and assert Scenario 1 (all entries of a conflicting pair recorded `PENDING`), Scenario 2 (a second run preserves a reviewer's `RESOLVED` status and `notes`, no dupes), and Scenario 3 (derived owner null vs. value). Also assert the recompute ignores a single-`groupId` artifact and skips `project_id IS NULL` packages, and that a first run against a pre-seeded catalogue produces the expected rows (the "no backfill needed" property).
-- **Web / smoke:** none — no endpoint in this task.
-- *Reviewer-only — manual / staging:* run the job on staging against a prod DB copy, confirm the first-run insert count roughly matches the ~1,000-row spike baseline; hand-edit a status and confirm it survives the next run.
+- **Unit:** the `derived_owner_login` parser (`io.github.*` and `com.github.*` to a lower-cased owner; other to null; mixed-case input lower-cased) and the upsert-merge decision (preserve `status` and `notes` vs. insert `PENDING`), as pure-function unit tests. Both are pure logic, so they need no DB and no mock.
+- **DB-integration (`BaseUnitWithDbLayerTest`):** method-level `@Sql` seeds build conflicting pairs; run the recompute and assert Scenario 1 (all entries recorded `PENDING`), Scenario 2 (a second run preserves a reviewer's `RESOLVED` status and `notes`, with no duplicates), and Scenario 3 (derived owner null vs. value). Also assert the recompute ignores a single-`groupId` artifact, skips `project_id IS NULL` packages, computes `version_count`, `first_release_ts`, and `last_release_ts` correctly from an entry's seeded versions (FR-002), keeps an existing row unchanged when its entry stops conflicting after a seeded `package` row is removed (FR-011), and that a first run against a pre-seeded catalogue produces the expected rows (the "no backfill needed" property).
+- **Web and smoke:** none, since there is no endpoint.
+- *Reviewer-only, manual on staging:* run the job against a production DB copy, confirm the first-run insert count roughly matches the ~2,100-row baseline, then hand-edit a status and confirm it survives the next run.
 
 ## 12. Assumptions
-- **Detection semantics:** within a project, `count(DISTINCT group_id) > 1` for a given `artifact_id`; one entry row per `(project_id, artifact_id, group_id)`.
-- **Detection is recompute-based:** each scheduled run recomputes the full conflict set from `package`; a pair appears on the first run after both its entries are committed. No backfill is needed — the first run seeds pre-existing conflicts. Because every run re-derives the whole truth, a missed or failed run self-heals on the next.
-- **`package.project_id` is nullable:** a package with no resolved GitHub repo has no project, so detection filters `project_id IS NOT NULL` — an intra-project pair requires a project.
-- **`package` is authoritative** for detection and timestamps: it carries `project_id`, `group_id`, `artifact_id`, `version`, `release_ts` (NOT NULL) with a unique `(group_id, artifact_id, version)` — so `version_count`, `first_release_ts`, `last_release_ts` are computable locally.
-- **Single-repo-per-project model:** both entries of a pair resolve to one repo because indexing dedups renamed/transferred repos on GitHub `nativeId`; a `project` is created only from a resolved repo, so `project.scm_repo_id` is non-null and well-defined per project (`ProjectEntity.scmRepoId: Int`).
-- **Indexing never deletes packages** (verified in code): the pipeline only *inserts* new package-versions or *updates* existing rows (reindex, description / version-type backfill), and a package's `group_id` never changes. The only path that removes `package` rows is the admin ban flow (`BlacklistService` → `DELETE FROM package`), which also permanently excludes the coordinate from re-indexing via a `banned_packages` `NOT EXISTS` filter. So a detected pair stops conflicting only when an entry is banned — which is why stale rows are retained as an audit record (FR-011).
-- **Banned coordinates never surface as candidates:** their `package` rows are deleted on ban and never re-indexed, so a detection scan over `package` cannot produce a candidate for them.
-- All conflicting-pair entries are collected (no pre-filtering); the reviewer applies the funnel/judgement manually.
-- `derived_owner_login` is deterministic only for `io.github.*` / `com.github.*`; domain-type coordinates remain `NULL` by design, and it is not the same as the real `scm_owner.login`.
+- **Detection semantics:** a `(project_id, artifact_id)` conflicts when it spans more than one distinct `group_id`, and the query records one entry row per `(project_id, artifact_id, group_id)` with that entry's own `version_count`, `first_release_ts`, and `last_release_ts`.
+- **Detection is recompute-based:** each scheduled run recomputes the full conflict set from `package`. A pair appears on the first run after both entries are committed. No backfill is needed, since the first run seeds pre-existing conflicts, and a missed or failed run is corrected on the next one because every run re-derives the whole set.
+- **`package.project_id` is nullable:** a package with no resolved GitHub repo has no project, so detection filters `project_id IS NOT NULL`. An intra-project pair requires a project.
+- **`package` is authoritative** for detection and timestamps: it carries `project_id`, `group_id`, `artifact_id`, `version`, and `release_ts` (NOT NULL), with a unique `(group_id, artifact_id, version)`, so `version_count`, `first_release_ts`, and `last_release_ts` are computable locally.
+- **Indexing never deletes packages** (verified in code): the pipeline only inserts new package-versions or updates existing rows (reindex, description and version-type backfill), and a package's `group_id` never changes. The only path that removes `package` rows is the admin ban flow (`BlacklistService`, `DELETE FROM package`), which also excludes the coordinate from re-indexing through a `banned_packages` `NOT EXISTS` filter. So a detected pair stops conflicting only when an entry is banned, which is why rows are kept as an audit record (FR-011).
+- **Banned coordinates never surface as candidates:** their `package` rows are deleted on ban and never re-indexed, so a scan over `package` cannot produce a candidate for them.
+- All conflicting entries are collected, with no pre-filtering; the reviewer applies judgement.
+- `derived_owner_login` is deterministic only for `io.github.*` and `com.github.*`; domain-type coordinates stay `NULL`, and it is not the same as the real `scm_owner.login`.
 - No external API is needed to populate any column.
-- Prod scale: ~1,000 conflicting entry rows / ~200 projects — that is the *output* (candidate-table and upsert size). Each run scans the whole `package` table as a single set-based aggregation that stays cheap (seconds) at hundreds of thousands to millions of rows; run daily.
+- Prod scale: about 2,100 conflicting entry rows (about 1,000 `(project_id, artifact_id)` conflicts) across about 200 projects, which is the output size. Each run scans the whole `package` table as one set-based aggregation that stays cheap (seconds) at hundreds of thousands to millions of rows; it runs daily.
 
 ## 13. References
-- **Primary precedent — periodic full-recompute job (in-repo):** `app/src/main/kotlin/io/klibs/app/job/RefreshDependentCountJob.kt` (`@Scheduled(fixedRate = 6, HOURS)`, `@SchedulerLock(lockAtMostFor = "1h")`, gated on `klibs.indexing`) — a catalogue-wide derived-set recompute on the shared single-threaded scheduler; this feature's job mirrors it at a lighter daily cadence. Recompute SQL prior art: `core/project/src/main/kotlin/io/klibs/core/project/repository/ProjectRepositoryJdbc.kt` (`recomputeAllDependentCounts`); per-project column added in `db/migration/2026-Q2/2026-04-24_add_project_dependent_count_column.yml`.
-- **Scheduling / single-thread config (in-repo):** `app/src/main/kotlin/io/klibs/app/configuration/SchedulingConfiguration.kt` (no `TaskScheduler` bean → single-threaded scheduler shared by all `@Scheduled` methods). That thread is already dominated for hours by `ProcessPackageIndexRequestJob` (queue drain, `fixedRate = 4h`, `lockAtMostFor = 4h`) and `IndexNewPackagesJob` (`cron 0 0 2 * * *`, `lockAtMostFor = 23h`); the frequent light jobs (GitHub owner/repo `30s`, AI description/tags `~60s`, MV refresh `10m`) already yield to those. A daily seconds-long aggregation is negligible next to that existing load.
-- **JPA native-query precedent (in-repo):** `PackageRepository.findAllKnownMavenCentralPackages` (native `GROUP BY`/`ARRAY_AGG` → `PackageVersionsView` interface projection — precedent for the recompute); `findDuplicateDescriptions` (native `GROUP BY … HAVING COUNT(*) > 1`) is the same detection shape. Both are `@Query(nativeQuery = true)`. Note: `package` has a DB unique constraint on `(group_id, artifact_id, version)` and single-column indexes on `project_id` / `artifact_id`.
-- **Ban flow (in-repo):** `BlacklistService` / `BlacklistRepositoryJdbc` (`DELETE FROM package`); `IndexingRequestRepository.findFirstForIndexing` (`banned_packages` `NOT EXISTS` filter); table `banned_packages` (`db/migration/2025-Q1/2025-03-21_add_banned_packages_table.yml`).
-- **Alternative approach (rejected):** the inline per-package hook variant of this feature is captured as the rejected alternative in §8 of this document.
-- **Tickets:** YouTrack KTL-4790 (this — collect potential cases in the table), building on KTL-4617 (detection) and KTL-4618 (secondary clues / owner-derivation rule).
+- **Primary precedent, periodic full-recompute job (in-repo):** `app/src/main/kotlin/io/klibs/app/job/RefreshDependentCountJob.kt` (`@Scheduled(fixedRate = 6, HOURS)`, `@SchedulerLock(lockAtMostFor = "1h")`, gated on `klibs.indexing`), a catalogue-wide derived-set recompute on the shared single-threaded scheduler; this job mirrors it at a lighter daily cadence. Recompute SQL prior art: `core/project/src/main/kotlin/io/klibs/core/project/repository/ProjectRepositoryJdbc.kt` (`recomputeAllDependentCounts`); the per-project column was added in `db/migration/2026-Q2/2026-04-24_add_project_dependent_count_column.yml`.
+- **Scheduling and single-thread config (in-repo):** `app/src/main/kotlin/io/klibs/app/configuration/SchedulingConfiguration.kt` (no `TaskScheduler` bean, so a single-threaded scheduler is shared by all `@Scheduled` methods). That thread is already occupied for hours by `ProcessPackageIndexRequestJob` (queue drain, `fixedRate = 4h`, `lockAtMostFor = 4h`) and `IndexNewPackagesJob` (`cron 0 0 2 * * *`, `lockAtMostFor = 23h`); the frequent light jobs (GitHub owner/repo 30s, AI description/tags ~60s, MV refresh 10m) already yield to those. A daily seconds-long aggregation is small next to that load.
+- **JPA native-query precedent (in-repo):** `PackageRepository.findAllKnownMavenCentralPackages` (native `GROUP BY`/`ARRAY_AGG` returning a `PackageVersionsView` interface projection, the precedent for the recompute); `findDuplicateDescriptions` (native `GROUP BY … HAVING COUNT(*) > 1`) is a related detection precedent, on top of which this query adds a cross-group filter. Both use `@Query(nativeQuery = true)`. Note: `package` has a DB unique constraint on `(group_id, artifact_id, version)` and single-column indexes on `project_id` and `artifact_id`.
+- **Ban flow (in-repo):** `BlacklistService` and `BlacklistRepositoryJdbc` (`DELETE FROM package`); `IndexingRequestRepository.findFirstForIndexing` (the `banned_packages` `NOT EXISTS` filter); table `banned_packages` (`db/migration/2025-Q1/2025-03-21_add_banned_packages_table.yml`).
+- **Alternative approach (rejected):** the inline per-package hook variant is captured as the rejected alternative in §8.
+- **Tickets:** KTL-4790 (this task, collect potential cases in the table), which supports KTL-4151 (ban packages linked to the original repository) and builds on KTL-4617 (detection) and KTL-4618 (secondary clues and the owner-derivation rule).
