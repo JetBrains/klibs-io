@@ -56,14 +56,15 @@ class SecurityConfiguration(
                 authorize(HttpMethod.GET, "/ping", permitAll)
                 authorize(HttpMethod.OPTIONS, "/ping", permitAll)
 
-                authorize(HttpMethod.POST, "/notify", permitAll)
-                authorize(HttpMethod.OPTIONS, "/notify", permitAll)
-
                 authorize(HttpMethod.POST, "/compare/**", permitAll)
                 authorize(HttpMethod.OPTIONS, "/compare/**", permitAll)
 
                 // GitHub webhook endpoint authenticates incoming requests via X-Hub-Signature-256.
                 authorize(HttpMethod.POST, "/webhooks/github/**", permitAll)
+
+                // Notifications from our Gradle plugin about artifacts newly published to Maven Central
+                authorize(HttpMethod.POST, "/notify", permitAll)
+                authorize(HttpMethod.OPTIONS, "/notify", permitAll)
 
                 // NOTE:
                 //  - /actuator/metrics and /actuator/prometheus are intentionally OPEN at the application level
