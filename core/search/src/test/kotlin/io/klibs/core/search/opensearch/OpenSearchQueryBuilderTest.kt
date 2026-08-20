@@ -72,7 +72,7 @@ class OpenSearchQueryBuilderTest {
                 shoulds = emptyList(),
                 filters = OpenSearchQueryBuilder.commonFilters(
                     platforms = listOf(PackagePlatform.JVM),
-                    targetFilters = mapOf(TargetGroup.JavaScript to emptySet()),
+                    targetFilters = listOf(mapOf(TargetGroup.JavaScript to emptySet())),
                     ownerLogin = "jetbrains",
                 ),
             )
@@ -91,7 +91,7 @@ class OpenSearchQueryBuilderTest {
                 shoulds = emptyList(),
                 filters = OpenSearchQueryBuilder.commonFilters(
                     platforms = emptyList(),
-                    targetFilters = mapOf(TargetGroup.IOS to emptySet()),
+                    targetFilters = listOf(mapOf(TargetGroup.IOS to emptySet())),
                     ownerLogin = null,
                 ),
             )
@@ -119,7 +119,7 @@ class OpenSearchQueryBuilderTest {
             """
             [{"terms":{"targets":["JVM_1.6","JVM_1.7","JVM_1.8","JVM_9","JVM_10","JVM_11","JVM_12",
             "JVM_13","JVM_14","JVM_15","JVM_16","JVM_17","JVM_18","JVM_19","JVM_20","JVM_21",
-            "JVM_22","JVM_23","JVM_24"]}}]
+            "JVM_22","JVM_23","JVM_24","JVM_25"]}}]
             """.flat(),
             targetJson(mapOf(TargetGroup.JVM to emptySet())),
         )
@@ -130,7 +130,7 @@ class OpenSearchQueryBuilderTest {
         assertEquals(
             """
             [{"terms":{"targets":["JVM_11","JVM_12","JVM_13","JVM_14","JVM_15","JVM_16","JVM_17",
-            "JVM_18","JVM_19","JVM_20","JVM_21","JVM_22","JVM_23","JVM_24"]}}]
+            "JVM_18","JVM_19","JVM_20","JVM_21","JVM_22","JVM_23","JVM_24","JVM_25"]}}]
             """.flat(),
             targetJson(mapOf(TargetGroup.JVM to setOf("11", "17"))),
         )
@@ -141,7 +141,7 @@ class OpenSearchQueryBuilderTest {
         assertEquals(
             """
             [{"terms":{"targets":["JVM_11","JVM_12","JVM_13","JVM_14","JVM_15","JVM_16","JVM_17",
-            "JVM_18","JVM_19","JVM_20","JVM_21","JVM_22","JVM_23","JVM_24"]}},
+            "JVM_18","JVM_19","JVM_20","JVM_21","JVM_22","JVM_23","JVM_24","JVM_25"]}},
             {"term":{"targets":{"value":"NATIVE_macos_arm64"}}}]
             """.flat(),
             targetJson(
@@ -156,8 +156,8 @@ class OpenSearchQueryBuilderTest {
             """
             [{"terms":{"targets":["JVM_1.6","JVM_1.7","JVM_1.8","JVM_9","JVM_10","JVM_11","JVM_12",
             "JVM_13","JVM_14","JVM_15","JVM_16","JVM_17","JVM_18","JVM_19","JVM_20","JVM_21",
-            "JVM_22","JVM_23","JVM_24"]}},{"term":{"targets":{"value":"NATIVE_macos_arm64"}}},
-            {"term":{"targets":{"value":"NATIVE_macos_x64"}}}]
+            "JVM_22","JVM_23","JVM_24","JVM_25"]}},{"bool":{"filter":[{"term":{"targets":{"value":"NATIVE_macos_arm64"}}},
+            {"term":{"targets":{"value":"NATIVE_macos_x64"}}}]}}]
             """.flat(),
             targetJson(
                 mapOf(
@@ -174,7 +174,7 @@ class OpenSearchQueryBuilderTest {
             """
             [{"term":{"platforms":{"value":"JS"}}},{"terms":{"targets":["JVM_11","JVM_12","JVM_13",
             "JVM_14","JVM_15","JVM_16","JVM_17","JVM_18","JVM_19","JVM_20","JVM_21","JVM_22",
-            "JVM_23","JVM_24"]}}]
+            "JVM_23","JVM_24","JVM_25"]}}]
             """.flat(),
             targetJson(
                 mapOf(TargetGroup.JavaScript to setOf("js_ir"), TargetGroup.JVM to setOf("11")),
@@ -212,7 +212,7 @@ class OpenSearchQueryBuilderTest {
         assertEquals(
             """
             [{"terms":{"targets":["JVM_17","JVM_18","JVM_19","JVM_20","JVM_21","JVM_22","JVM_23",
-            "JVM_24"]}},{"terms":{"targets":["ANDROIDJVM_15","ANDROIDJVM_16","ANDROIDJVM_17",
+            "JVM_24","JVM_25"]}},{"terms":{"targets":["ANDROIDJVM_15","ANDROIDJVM_16","ANDROIDJVM_17",
             "ANDROIDJVM_18","ANDROIDJVM_19","ANDROIDJVM_20","ANDROIDJVM_21","ANDROIDJVM_22",
             "ANDROIDJVM_23","ANDROIDJVM_24"]}}]
             """.flat(),
@@ -222,9 +222,78 @@ class OpenSearchQueryBuilderTest {
         )
     }
 
+    // Each entry becomes its own single-group map, i.e. AND between groups (equivalent to the old Map behavior).
     private fun targetJson(targetFilters: Map<TargetGroup, Set<String>>): String =
-        OpenSearchQueryBuilder.commonFilters(emptyList(), targetFilters, null)
+        OpenSearchQueryBuilder.commonFilters(emptyList(), targetFilters.map { mapOf(it.key to it.value) }, null)
             .joinToString(",", "[", "]") { json(it) }
+
+    @Test
+    fun `groups within one map are combined with OR via should`() {
+        val out = json(
+            OpenSearchQueryBuilder.bool(
+                shoulds = emptyList(),
+                filters = OpenSearchQueryBuilder.commonFilters(
+                    platforms = emptyList(),
+                    targetFilters = listOf(mapOf(TargetGroup.IOS to emptySet(), TargetGroup.MacOS to emptySet())),
+                    ownerLogin = null,
+                ),
+            )
+        )
+        assertTrue(out.contains("\"should\""))
+        assertTrue(out.contains("\"minimum_should_match\":\"1\""))
+        assertTrue(out.contains("NATIVE_ios_arm64"))
+        assertTrue(out.contains("NATIVE_macos_arm64"))
+    }
+
+    @Test
+    fun `separate maps are combined with AND as separate filters`() {
+        val filters = OpenSearchQueryBuilder.commonFilters(
+            platforms = emptyList(),
+            targetFilters = listOf(mapOf(TargetGroup.JVM to setOf("17")), mapOf(TargetGroup.IOS to emptySet())),
+            ownerLogin = null,
+        )
+        assertEquals(2, filters.size)
+    }
+
+    @Test
+    fun `MacOS and Windows as separate maps become OR within group and AND between groups`() {
+        val out = OpenSearchQueryBuilder.commonFilters(
+            platforms = emptyList(),
+            targetFilters = listOf(
+                mapOf(TargetGroup.MacOS to emptySet()),
+                mapOf(TargetGroup.Windows to emptySet()),
+            ),
+            ownerLogin = null,
+        ).joinToString(",", "[", "]") { json(it) }
+
+        assertEquals(
+            """
+            [{"terms":{"targets":["NATIVE_macos_arm64","NATIVE_macos_x64"]}},
+            {"terms":{"targets":["NATIVE_mingw_x64","NATIVE_mingw_x86"]}}]
+            """.flat(),
+            out,
+        )
+    }
+
+    @Test
+    fun `Unknown group is skipped instead of producing an empty terms clause`() {
+        val onlyUnknown = OpenSearchQueryBuilder.commonFilters(
+            platforms = emptyList(),
+            targetFilters = listOf(mapOf(TargetGroup.Unknown to emptySet())),
+            ownerLogin = null,
+        )
+        assertEquals(0, onlyUnknown.size)
+
+        val macosAndUnknown = OpenSearchQueryBuilder.commonFilters(
+            platforms = emptyList(),
+            targetFilters = listOf(mapOf(TargetGroup.MacOS to emptySet(), TargetGroup.Unknown to emptySet())),
+            ownerLogin = null,
+        ).joinToString(",", "[", "]") { json(it) }
+        assertEquals(
+            """[{"terms":{"targets":["NATIVE_macos_arm64","NATIVE_macos_x64"]}}]""",
+            macosAndUnknown,
+        )
+    }
 
     private fun String.flat() = trimIndent().replace("\n", "")
 

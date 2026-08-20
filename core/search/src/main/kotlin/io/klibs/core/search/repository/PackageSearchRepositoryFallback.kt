@@ -25,7 +25,7 @@ class PackageSearchRepositoryFallback(
     override fun find(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: Map<TargetGroup, Set<String>>,
+        targetFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         page: Int,

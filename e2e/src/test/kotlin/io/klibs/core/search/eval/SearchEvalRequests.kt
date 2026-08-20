@@ -11,7 +11,11 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 private val mapper = jacksonObjectMapper()
 
 fun MockMvc.searchProjects(case: EvalCase): List<SearchResult> {
-    val body = SearchProjectsRequest(query = case.query, targetFilters = case.targetFilters)
+    // Each group becomes its own single-group map, i.e. AND between groups (see EvalCase.targetFilters).
+    val body = SearchProjectsRequest(
+        query = case.query,
+        targetFilters = case.targetFilters.map { mapOf(it.key to it.value) },
+    )
     val requestBuilder = post("/search/projects")
         .param("limit", "20")
         .param("page", "1")

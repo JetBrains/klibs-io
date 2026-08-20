@@ -54,7 +54,7 @@ class SearchService(
     fun search(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: Map<TargetGroup, Set<String>>,
+        targetFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sort: SearchSort,
         markers: List<String>,
@@ -80,7 +80,7 @@ class SearchService(
     fun searchPackage(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: Map<TargetGroup, Set<String>>,
+        targetFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sort: SearchSort,
         page: Int,

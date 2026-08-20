@@ -16,12 +16,15 @@ data class SearchProjectsRequest(
     val query: String? = null,
 
     @Schema(
-        description = "Filter by specific targets within platform groups. Keys are target groups (e.g. 'JVM', 'Android Native'), values are sets of specific targets within that group.",
-        type = "object",
-        example = """{"JVM": ["11", "17"], "Android Native": []}"""
+        description = "Filter by specific targets within platform groups. Each list item is a group of target-group " +
+                "filters combined with OR; separate list items are combined with AND. Keys are target groups " +
+                "(e.g. 'JVM', 'Android Native'), values are sets of specific targets within that group " +
+                "(an empty set means any target in the group).",
+        type = "array",
+        example = """[{"JVM": ["11", "17"]}, {"IOS": [], "TvOS": []}]"""
     )
     @field:ValidTargetGroupValues
-    val targetFilters: Map<TargetGroup, Set<String>> = emptyMap(),
+    val targetFilters: List<Map<TargetGroup, Set<String>>> = emptyList(),
 
     @Schema(
         description = "Login of the owner",
