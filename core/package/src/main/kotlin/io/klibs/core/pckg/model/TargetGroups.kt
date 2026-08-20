@@ -91,7 +91,8 @@ enum class TargetGroup(val platformName: String?, val targets: List<String>) {
             "21",
             "22",
             "23",
-            "24"
+            "24",
+            "25"
         )
     ),
     AndroidJvm(
@@ -143,6 +144,7 @@ enum class TargetGroup(val platformName: String?, val targets: List<String>) {
                 platformMatches.firstOrNull()
             } else {
                 platformMatches.firstOrNull { it.targets.contains(target) }
+                // TODO(Dmitrii Krasnov): KTL-4917 add alert for unknown targets
             } ?: Unknown
         }
     }
