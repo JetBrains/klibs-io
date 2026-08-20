@@ -10,6 +10,7 @@ import { textCn } from "@rescui/typography";
 
 import Container from "@/app/ui/container";
 import KodeeSpinner from "@/app/ui/kodee-spinner";
+import { SearchProjectsRequest } from "@/app/types";
 
 import styles from "./styles.module.css";
 
@@ -38,12 +39,23 @@ async function fetchInsightsProjects(
     limit: number
 ): Promise<InsightsProject[]> {
     const params = new URLSearchParams();
-    params.set("sort", sort);
     params.set("page", String(page));
     params.set("limit", String(limit));
+
+    const request: SearchProjectsRequest = {
+        sortBy: sort,
+        tags: [],
+        markers: [],
+        targetFilters: {}
+    };
+
     const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/search/projects?${params.toString()}`,
-        { next: { revalidate: 600 } }
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(request)
+        }
     );
     return (await res.json()) as InsightsProject[];
 }
