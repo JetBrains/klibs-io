@@ -5,10 +5,10 @@ import {
     PackageSearchResults,
     ProjectDetails,
     ProjectSearchResults,
+    SearchPackagesRequest,
     SearchParams,
     SearchProjectsRequest,
     TagsStats,
-    toLegacyPlatforms,
     toTargetFilters
 } from "@/app/types";
 
@@ -101,12 +101,7 @@ export const getOwnerDetails = async<T>(login: string) => {
 }
 
 export const searchProjects = async(searchParams: SearchParams) => {
-    const pageParams = new URLSearchParams({ page: String(searchParams.page || 1) });
-    if (searchParams.limit) {
-        pageParams.set("limit", String(searchParams.limit));
-    }
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/projects?${pageParams.toString()}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/projects?${toPageParams(searchParams)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(toSearchProjectsRequest(searchParams))
@@ -116,16 +111,10 @@ export const searchProjects = async(searchParams: SearchParams) => {
 }
 
 export const searchPackages = async(searchParams: SearchParams) => {
-    // Packages still use the deprecated GET endpoint, which expects coarse platform ids.
-    const { platforms, ...rest } = searchParams;
-    const queryParams = toQueryParams({
-        ...rest,
-        page: searchParams.page || 1,
-        ...(platforms?.length ? { platforms: toLegacyPlatforms(platforms) } : {})
-    });
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/packages?${queryParams}`, {
-        next: { revalidate: 600 }
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/packages?${toPageParams(searchParams)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toSearchPackagesRequest(searchParams))
     });
 
     return await res.json() as PackageSearchResults[];
@@ -164,6 +153,16 @@ export const getCategoriesWithProjects = async (): Promise<CategoriesResponse | 
     return await res.json() as CategoriesResponse;
 };
 
+// Paging stays in the query string on both search endpoints; everything else moves to the body.
+function toPageParams(searchParams: SearchParams): string {
+    const pageParams = new URLSearchParams({ page: String(searchParams.page || 1) });
+    if (searchParams.limit) {
+        pageParams.set("limit", String(searchParams.limit));
+    }
+
+    return pageParams.toString();
+}
+
 function toSearchProjectsRequest(searchParams: SearchParams): SearchProjectsRequest {
     const request: SearchProjectsRequest = {
         sortBy: searchParams.sort || "relevance",
@@ -179,22 +178,15 @@ function toSearchProjectsRequest(searchParams: SearchParams): SearchProjectsRequ
     return request;
 }
 
-export function toQueryParams(params: Record<string, unknown>): string {
-    const urlSearchParams = new URLSearchParams();
+// Packages have no tags or markers.
+function toSearchPackagesRequest(searchParams: SearchParams): SearchPackagesRequest {
+    const request: SearchPackagesRequest = {
+        sortBy: searchParams.sort || "relevance",
+        targetFilters: toTargetFilters(searchParams.platforms)
+    };
 
-    Object.entries(params).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-            value.forEach(val => {
-                urlSearchParams.append(key, String(val));
-            });
-        } else if (value !== undefined && value !== null) {
-            urlSearchParams.append(key, String(value));
-        }
-    });
+    if (searchParams.query) request.query = searchParams.query;
+    if (searchParams.owner) request.owner = searchParams.owner;
 
-    if (!urlSearchParams.has("page")) {
-        urlSearchParams.append("page", "1");
-    }
-
-    return urlSearchParams.toString();
+    return request;
 }

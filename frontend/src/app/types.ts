@@ -43,7 +43,7 @@ export interface PackageSearchResults {
 	latestVersion: string;
 	releaseTsMillis: number;
 	platforms: Platform[];
-	targets: string[];
+	targets: Record<string, string[]>;
 }
 
 export function getProjectLink(projectOverview: ProjectSearchResults) {
@@ -212,6 +212,21 @@ export function mapNativeTargetToGroupName(prefix: string) {
 	}
 }
 
+// Kotlin/Native target groups only. JS and Wasm tags are rendered from `platforms` instead,
+// and JVM/AndroidJvm carry versions rather than target names.
+const nativeTargetGroupNames: Record<string, string> = {
+	AndroidNative: 'Android Native',
+	IOS: 'iOS',
+	Linux: 'Linux',
+	MacOS: 'macOS',
+	Windows: 'Windows',
+	TvOS: 'tvOS',
+	WatchOS: 'watchOS',
+	Unknown: 'Other',
+};
+
+export const getNativeTargetGroupName = (group: string) => nativeTargetGroupNames[group];
+
 export function hasAnyLink(projectOverview: ProjectDetails): boolean {
 	return !!projectOverview.linkHomepage ||
 		!!projectOverview.linkScm ||
@@ -292,15 +307,6 @@ const targetGroupsByFilter: Record<TargetGroupFilter, string[]> = {
 	wasm: ['Wasm'],
 };
 
-// Coarse platform ids for the deprecated GET /search/packages endpoint.
-const legacyPlatformsByFilter: Record<TargetGroupFilter, Platform> = {
-	ios: Platform.native,
-	android: Platform.androidJvm,
-	jvm: Platform.jvm,
-	js: Platform.js,
-	wasm: Platform.wasm,
-};
-
 // An empty target list means "any target in this group".
 export function toTargetFilters(filters: TargetGroupFilter[] = []): Record<string, string[]> {
 	const targetFilters: Record<string, string[]> = {};
@@ -310,8 +316,6 @@ export function toTargetFilters(filters: TargetGroupFilter[] = []): Record<strin
 
 	return targetFilters;
 }
-
-export const toLegacyPlatforms = (filters: TargetGroupFilter[]) => filters.map(filter => legacyPlatformsByFilter[filter]);
 
 export function parseTargetGroupFilters(values: string[]): TargetGroupFilter[] {
 	const legacyAliases: Record<string, TargetGroupFilter> = {androidJvm: 'android'};
@@ -334,14 +338,21 @@ export interface SearchParams {
 	markers?: string[];
 }
 
-// sortBy, tags, markers and targetFilters are non-nullable on the backend and have no
-// effective defaults there: omitting one, or sending null, is rejected with a 400.
+// The non-nullable fields below are non-nullable on the backend and have no effective
+// defaults there: omitting one, or sending null, is rejected with a 400.
 export interface SearchProjectsRequest {
 	query?: string;
 	owner?: string;
 	sortBy: SearchSort;
 	tags: string[];
 	markers: string[];
+	targetFilters: Record<string, string[]>;
+}
+
+export interface SearchPackagesRequest {
+	query?: string;
+	owner?: string;
+	sortBy: SearchSort;
 	targetFilters: Record<string, string[]>;
 }
 

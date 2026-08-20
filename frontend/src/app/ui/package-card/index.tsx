@@ -6,7 +6,7 @@ import {cardCn} from '@rescui/card';
 import {textCn} from '@rescui/typography';
 import {ReadIcon} from '@rescui/icons';
 import {Tag, presets} from '@rescui/tag';
-import {getPlatformName, mapNativeTargetToGroupName} from "@/app/types";
+import {getNativeTargetGroupName, getPlatformName} from "@/app/types";
 import {Platform} from "@/app/types";
 import PlatformTag from "@/app/ui/platform-tag";
 
@@ -48,26 +48,16 @@ function SearchTextWrap({search, children}: { search?: PackageCardProps['search'
     }, [search, children]);
 }
 
-function getVersionedPlatformsFromTargets(targets: string[]) {
-    return targets.filter(target => target.startsWith("JVM:") || target.startsWith("ANDROID_JVM:")).map(target => {
-        const [platform, version] = target.split(":");
-        if (platform === "ANDROID_JVM") {
-            return `AndroidJVM ${version}`;
-        }
-        return `${platform} ${version}`;
-    });
+type PackageTargets = PackageSearchResults['targets'];
+
+function getVersionedPlatformsFromTargets(targets: PackageTargets) {
+    return (targets["JVM"] || []).map(version => `JVM ${version}`);
 }
 
-function getNativePlatformGroups(targets: string[]): string[] {
-    const nativeGroups = new Set<string>();
-    for (const target of targets) {
-        const [platform, groupTarget] = target.split(":");
-        if (platform === "NATIVE") {
-            const group = groupTarget.split("_")[0]; // Take only the first part of group_target
-            nativeGroups.add(group);
-        }
-    }
-    return Array.from(nativeGroups);
+function getNativePlatformGroups(targets: PackageTargets): string[] {
+    return Object.keys(targets)
+        .map(getNativeTargetGroupName)
+        .filter((groupName): groupName is string => !!groupName);
 }
 
 // Helper function to generate package link
@@ -143,7 +133,7 @@ export default function PackageCard({featuredPackage, className, search}: Packag
                                         key={target}
                                         {...presets['filled-light']}
                                     >
-                                        {mapNativeTargetToGroupName(target)}
+                                        {target}
                                     </Tag>
                                 )) : null}
                             </div>
