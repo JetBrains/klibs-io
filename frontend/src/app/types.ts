@@ -269,9 +269,62 @@ export type SearchSort = 'most-stars' | 'relevance'| 'most-dependents';
 
 export type SearchMode = 'projects' | 'packages';
 
+export type TargetGroupFilter = 'ios' | 'android' | 'jvm' | 'js' | 'wasm';
+
+export const targetGroupFilters: TargetGroupFilter[] = ['ios', 'android', 'jvm', 'js', 'wasm'];
+
+const targetGroupFilterNames: Record<TargetGroupFilter, string> = {
+	ios: 'iOS',
+	android: 'Android',
+	jvm: 'JVM',
+	js: 'JavaScript',
+	wasm: 'Wasm',
+};
+
+export const getTargetGroupFilterName = (filter: TargetGroupFilter) => targetGroupFilterNames[filter];
+
+// Backend TargetGroup enum names, see core/package/.../model/TargetGroups.kt
+const targetGroupsByFilter: Record<TargetGroupFilter, string[]> = {
+	ios: ['IOS'],
+	android: ['AndroidNative', 'AndroidJvm'],
+	jvm: ['JVM'],
+	js: ['JavaScript'],
+	wasm: ['Wasm'],
+};
+
+// Coarse platform ids for the deprecated GET /search/packages endpoint.
+const legacyPlatformsByFilter: Record<TargetGroupFilter, Platform> = {
+	ios: Platform.native,
+	android: Platform.androidJvm,
+	jvm: Platform.jvm,
+	js: Platform.js,
+	wasm: Platform.wasm,
+};
+
+// An empty target list means "any target in this group".
+export function toTargetFilters(filters: TargetGroupFilter[] = []): Record<string, string[]> {
+	const targetFilters: Record<string, string[]> = {};
+	filters.forEach(filter => targetGroupsByFilter[filter]?.forEach(group => {
+		targetFilters[group] = [];
+	}));
+
+	return targetFilters;
+}
+
+export const toLegacyPlatforms = (filters: TargetGroupFilter[]) => filters.map(filter => legacyPlatformsByFilter[filter]);
+
+export function parseTargetGroupFilters(values: string[]): TargetGroupFilter[] {
+	const legacyAliases: Record<string, TargetGroupFilter> = {androidJvm: 'android'};
+	const parsed = values
+		.map(value => targetGroupFilters.find(filter => filter === value) ?? legacyAliases[value])
+		.filter((filter): filter is TargetGroupFilter => !!filter);
+
+	return Array.from(new Set(parsed));
+}
+
 export interface SearchParams {
 	query?: string;
-	platforms?: Platform[];
+	platforms?: TargetGroupFilter[];
 	sort?: SearchSort;
 	page: number;
 	limit?: number;
@@ -279,6 +332,17 @@ export interface SearchParams {
 	tags?: string[];
 	mode?: SearchMode;
 	markers?: string[];
+}
+
+// sortBy, tags, markers and targetFilters are non-nullable on the backend and have no
+// effective defaults there: omitting one, or sending null, is rejected with a 400.
+export interface SearchProjectsRequest {
+	query?: string;
+	owner?: string;
+	sortBy: SearchSort;
+	tags: string[];
+	markers: string[];
+	targetFilters: Record<string, string[]>;
 }
 
 export interface TagsStats {

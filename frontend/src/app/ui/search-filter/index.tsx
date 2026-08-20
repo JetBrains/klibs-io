@@ -1,8 +1,7 @@
 import {
-    getPlatformName,
-    Platform,
-    platformOrder,
-    sortedPlatforms,
+    getTargetGroupFilterName,
+    targetGroupFilters,
+    TargetGroupFilter,
     SearchMode,
     SearchParams
 } from "@/app/types";
@@ -44,7 +43,7 @@ import {trackEvent, GAEvent} from "@/app/analytics";
 export default function SearchFilter({filters, setFilters, updateURLFromState, selectedCategory, onCategoryReset, categorySearchQuery, onCategorySearch, onCategorySearchClear, projectsCount}: SearchFilterProps) {
 
     const [textQuery, setTextQuery] = useState<string>(filters.query || "");
-    const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>(
+    const [selectedPlatforms, setSelectedPlatforms] = useState<TargetGroupFilter[]>(
         filters.platforms || []
     );
     const searchFilterContainerRef = useRef<HTMLDivElement>(null);
@@ -75,7 +74,7 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
         updateURLFromState(newState);
     };
 
-    const handlePlatformFilterChange = (platform: Platform) => {
+    const handlePlatformFilterChange = (platform: TargetGroupFilter) => {
 
         trackEvent(GAEvent.FILTER_PLATFORM_CHANGE, {
             eventCategory: platform,
@@ -120,7 +119,7 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
     }
 
 
-    const filteredPlatforms = sortedPlatforms(platformOrder);
+    const filteredPlatforms = targetGroupFilters;
 
     return (
         <>
@@ -161,7 +160,7 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
                                 onChange={() => handlePlatformFilterChange(platformId)}
                                 className={styles.platformCheckbox}
                             >
-                                {getPlatformName(platformId)}
+                                {getTargetGroupFilterName(platformId)}
                             </Checkbox>
                         ))}
                     </div>
@@ -303,9 +302,9 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
 }
 
 interface PlatformFilterProps {
-    platforms: Platform[];
-    selected: Platform[];
-    onToggle: (platform: Platform) => void;
+    platforms: TargetGroupFilter[];
+    selected: TargetGroupFilter[];
+    onToggle: (platform: TargetGroupFilter) => void;
 }
 
 function PlatformFilter({platforms, selected, onToggle}: PlatformFilterProps) {
@@ -321,7 +320,7 @@ function PlatformFilter({platforms, selected, onToggle}: PlatformFilterProps) {
                         onChange={() => onToggle(platformId)}
                         className={styles.platformCheckbox}
                     >
-                        {getPlatformName(platformId)}
+                        {getTargetGroupFilterName(platformId)}
                     </Checkbox>
                 ))}
             </div>

@@ -4,7 +4,7 @@ import React, {Suspense, useState, useEffect} from "react";
 import {
     Category,
     CategoryWithProjects,
-    Platform, SearchMode,
+    parseTargetGroupFilters, SearchMode,
     SearchParams,
     SearchSort
 } from "@/app/types";
@@ -164,7 +164,7 @@ function getSearchParamsFromUrl(
     };
 
     const query = searchParams.get("query") || "";
-    const platforms = searchParams.getAll("platforms") || [];
+    const platforms = parseTargetGroupFilters(searchParams.getAll("platforms"));
     const sort = searchParams.get("sort") || "";
     const tags = searchParams.getAll("tags") || [];
     const mode = searchParams.get("mode") || "";
@@ -173,7 +173,7 @@ function getSearchParamsFromUrl(
         params.query = query;
     }
     if (platforms.length > 0) {
-        params.platforms = platforms as Platform[];
+        params.platforms = platforms;
     }
     if (sort) {
         params.sort = sort as SearchSort;
