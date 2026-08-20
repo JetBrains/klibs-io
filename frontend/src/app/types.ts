@@ -284,9 +284,9 @@ export type SearchSort = 'most-stars' | 'relevance'| 'most-dependents';
 
 export type SearchMode = 'projects' | 'packages';
 
-export type TargetGroupFilter = 'ios' | 'android' | 'jvm' | 'js' | 'wasm';
+export type TargetGroupFilter = 'ios' | 'android' | 'jvm' | 'js' | 'wasm' | 'other';
 
-export const targetGroupFilters: TargetGroupFilter[] = ['ios', 'android', 'jvm', 'js', 'wasm'];
+export const targetGroupFilters: TargetGroupFilter[] = ['ios', 'android', 'jvm', 'js', 'wasm', 'other'];
 
 const targetGroupFilterNames: Record<TargetGroupFilter, string> = {
 	ios: 'iOS',
@@ -294,9 +294,14 @@ const targetGroupFilterNames: Record<TargetGroupFilter, string> = {
 	jvm: 'JVM',
 	js: 'JavaScript',
 	wasm: 'Wasm',
+	other: 'Other',
 };
 
 export const getTargetGroupFilterName = (filter: TargetGroupFilter) => targetGroupFilterNames[filter];
+
+// Each entry maps backend TargetGroup names to target names, matching
+// List<Map<TargetGroup, Set<String>>> on the backend.
+export type TargetFilters = Record<string, string[]>[];
 
 // Backend TargetGroup enum names, see core/package/.../model/TargetGroups.kt
 const targetGroupsByFilter: Record<TargetGroupFilter, string[]> = {
@@ -305,16 +310,16 @@ const targetGroupsByFilter: Record<TargetGroupFilter, string[]> = {
 	jvm: ['JVM'],
 	js: ['JavaScript'],
 	wasm: ['Wasm'],
+	other: ['Linux', 'MacOS', 'Windows', 'TvOS', 'WatchOS', 'Unknown'],
 };
 
+// Groups inside one entry are OR-ed, entries in the list are AND-ed.
 // An empty target list means "any target in this group".
-export function toTargetFilters(filters: TargetGroupFilter[] = []): Record<string, string[]> {
-	const targetFilters: Record<string, string[]> = {};
-	filters.forEach(filter => targetGroupsByFilter[filter]?.forEach(group => {
-		targetFilters[group] = [];
-	}));
-
-	return targetFilters;
+export function toTargetFilters(filters: TargetGroupFilter[] = []): TargetFilters {
+	return filters
+		.map(filter => targetGroupsByFilter[filter] ?? [])
+		.filter(groups => groups.length > 0)
+		.map(groups => Object.fromEntries(groups.map(group => [group, [] as string[]])));
 }
 
 export function parseTargetGroupFilters(values: string[]): TargetGroupFilter[] {
@@ -346,14 +351,14 @@ export interface SearchProjectsRequest {
 	sortBy: SearchSort;
 	tags: string[];
 	markers: string[];
-	targetFilters: Record<string, string[]>;
+	targetFilters: TargetFilters;
 }
 
 export interface SearchPackagesRequest {
 	query?: string;
 	owner?: string;
 	sortBy: SearchSort;
-	targetFilters: Record<string, string[]>;
+	targetFilters: TargetFilters;
 }
 
 export interface TagsStats {
