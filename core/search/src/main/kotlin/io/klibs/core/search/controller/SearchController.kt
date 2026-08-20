@@ -102,7 +102,7 @@ class SearchController(
         return searchService.search(
             query = query,
             platforms = platforms.map { PackagePlatform.findBySerializableName(it) },
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             ownerLogin = owner,
             sort = SearchSort.findBySerializableName(sortBy),
             markers = markers,
@@ -213,7 +213,7 @@ class SearchController(
         return searchService.searchPackage(
             query = query,
             platforms = platforms.map { PackagePlatform.findBySerializableName(it) },
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             ownerLogin = owner,
             sort = SearchSort.findBySerializableName(sortBy),
             page = page,

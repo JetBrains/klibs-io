@@ -27,7 +27,7 @@ class ProjectSearchRepositoryFallback(
     override fun find(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: Map<TargetGroup, Set<String>>,
+        targetFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         tags: List<String>,

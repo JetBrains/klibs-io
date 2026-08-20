@@ -51,7 +51,7 @@ class McpProjectSearchServiceTest {
         val result = uut.mcpProjectSearch(
             query = "state machine",
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
         )
 
         assertEquals(1, result.projects.size)
@@ -79,7 +79,7 @@ class McpProjectSearchServiceTest {
         val result = uut.mcpProjectSearch(
             query = "nonexistent",
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
         )
 
         assertTrue(result.projects.isEmpty())
@@ -103,7 +103,7 @@ class McpProjectSearchServiceTest {
         val result = uut.mcpProjectSearch(
             query = "big",
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
         )
 
         assertEquals(1, result.projects.size)
@@ -129,7 +129,7 @@ class McpProjectSearchServiceTest {
         val result = uut.mcpProjectSearch(
             query = "big",
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             maxPackagesPerProject = 3,
         )
 
@@ -156,7 +156,7 @@ class McpProjectSearchServiceTest {
         val result = uut.mcpProjectSearch(
             query = "proj",
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
         )
 
         // most dependents first; ties broken by newest release

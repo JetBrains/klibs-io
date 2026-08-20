@@ -102,7 +102,7 @@ class McpProjectSearchToolE2ETest {
         verify(mcpProjectSearchService).mcpProjectSearch(
             query = "kotlin",
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             maxPackagesPerProject = DEFAULT_MAX_PACKAGES_PER_PROJECT,
         )
     }

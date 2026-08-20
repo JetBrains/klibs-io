@@ -72,6 +72,7 @@ enum class TargetGroup(val platformName: String?, val targets: List<String>) {
     ),
     JVM(
         "JVM",
+        // Targets must be in sorted order, it is important for correct filtering further.
         listOf(
             "1.6",
             "1.7",
@@ -98,6 +99,7 @@ enum class TargetGroup(val platformName: String?, val targets: List<String>) {
     AndroidJvm(
         "ANDROIDJVM",
         listOf(
+            // Targets must be in sorted order, it is important for correct filtering further.
             "1.6",
             "1.7",
             "1.8",

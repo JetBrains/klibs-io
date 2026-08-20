@@ -34,7 +34,7 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
         val results = projectSearchRepository.find(
             rawQuery = null,
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
             tags = emptyList(),
@@ -54,7 +54,7 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
         val results = projectSearchRepository.find(
             rawQuery = null,
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
             tags = emptyList(),
@@ -81,7 +81,7 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
         val results = projectSearchRepository.find(
             rawQuery = null,
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
             tags = emptyList(),
@@ -100,7 +100,7 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
         val results = projectSearchRepository.find(
             rawQuery = null,
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
             tags = emptyList(),

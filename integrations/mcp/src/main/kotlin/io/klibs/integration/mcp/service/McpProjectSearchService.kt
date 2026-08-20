@@ -23,7 +23,7 @@ class McpProjectSearchService(
     fun mcpProjectSearch(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: Map<TargetGroup, Set<String>>,
+        targetFilters: List<Map<TargetGroup, Set<String>>>,
         maxPackagesPerProject: Int = DEFAULT_MAX_PACKAGES_PER_PROJECT,
     ): McpProjectSearchResultDto {
         val searchResults = searchService.search(
