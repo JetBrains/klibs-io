@@ -112,7 +112,7 @@ object OpenSearchQueryBuilder {
 
     fun commonFilters(
         platforms: List<PackagePlatform>,
-        targetFilters: Map<TargetGroup, Set<String>>,
+        targetFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
     ): List<Query> = buildList {
         platforms.distinct().forEach { add(term(ProjectFields.PLATFORMS, it.name)) }
@@ -120,24 +120,36 @@ object OpenSearchQueryBuilder {
         addAll(targetFilterClauses(targetFilters))
     }
 
-    /** OR within a group, AND between groups. */
-    private fun targetFilterClauses(targetFilters: Map<TargetGroup, Set<String>>): List<Query> = buildList {
-        targetFilters.forEach { (group, targets) ->
-            when (group) {
-                TargetGroup.JavaScript -> add(term(ProjectFields.PLATFORMS, "JS"))
-                TargetGroup.Wasm -> add(term(ProjectFields.PLATFORMS, "WASM"))
-                TargetGroup.JVM, TargetGroup.AndroidJvm -> {
-                    val start = targets.mapNotNull { group.targets.indexOf(it).takeIf { i -> i >= 0 } }.minOrNull() ?: 0
-                    add(termsAny(ProjectFields.TARGETS, group.targets.drop(start).map { "${group.platformName}_$it" }))
-                }
-
-                else -> when {
-                    targets.isEmpty() ->
-                        add(termsAny(ProjectFields.TARGETS, group.targets.map { "${group.platformName}_$it" }))
-
-                    else -> targets.forEach { add(term(ProjectFields.TARGETS, "${group.platformName}_$it")) }
-                }
+    /** OR within a map (group set), AND between maps. */
+    private fun targetFilterClauses(targetFilters: List<Map<TargetGroup, Set<String>>>): List<Query> = buildList {
+        targetFilters.forEach { orGroup ->
+            val groupQueries = orGroup.mapNotNull { (group, targets) -> groupQuery(group, targets) }
+            when {
+                groupQueries.isEmpty() -> {}
+                groupQueries.size == 1 -> add(groupQueries.single())
+                else -> add(bool(shoulds = groupQueries, filters = emptyList()))
             }
+        }
+    }
+
+    private fun groupQuery(group: TargetGroup, targets: Set<String>): Query? = when (group) {
+        TargetGroup.JavaScript -> term(ProjectFields.PLATFORMS, "JS")
+        TargetGroup.Wasm -> term(ProjectFields.PLATFORMS, "WASM")
+        TargetGroup.JVM, TargetGroup.AndroidJvm -> {
+            val start = targets.mapNotNull { group.targets.indexOf(it).takeIf { i -> i >= 0 } }.minOrNull() ?: 0
+            termsAny(ProjectFields.TARGETS, group.targets.drop(start).map { "${group.platformName}_$it" })
+        }
+        TargetGroup.Unknown -> {
+            null
+        }
+
+        else -> when {
+            targets.isEmpty() -> termsAny(ProjectFields.TARGETS, group.targets.map { "${group.platformName}_$it" })
+            targets.size == 1 -> term(ProjectFields.TARGETS, "${group.platformName}_${targets.single()}")
+            else -> bool(
+                shoulds = emptyList(),
+                filters = targets.map { term(ProjectFields.TARGETS, "${group.platformName}_$it") },
+            )
         }
     }
 }

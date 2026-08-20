@@ -36,7 +36,7 @@ class ProjectSearchPaginationDbTest : BaseUnitWithDbLayerTest() {
         val page1 = projectSearchRepository.find(
             rawQuery = null,
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.MOST_STARS,
             tags = emptyList(),
@@ -48,7 +48,7 @@ class ProjectSearchPaginationDbTest : BaseUnitWithDbLayerTest() {
         val page2 = projectSearchRepository.find(
             rawQuery = null,
             platforms = emptyList(),
-            targetFilters = emptyMap(),
+            targetFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.MOST_STARS,
             tags = emptyList(),

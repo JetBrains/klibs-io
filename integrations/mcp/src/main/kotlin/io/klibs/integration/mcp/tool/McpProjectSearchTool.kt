@@ -55,13 +55,15 @@ class McpProjectSearchTool(
         )
         platforms: List<String>? = emptyList(),
         @ToolParam(
-            description = "Map of target group to specific targets. " +
+            description = "List of target-group maps. Groups within the same map are combined with OR; " +
+                    "separate maps in the list are combined with AND. " +
                     "Keys are target groups (e.g. 'JVM', 'IOS'), " +
                     "values are sets of specific targets within that group. " +
-                    "Empty set means any target in the group. Example: {\"JVM\": [\"11\", \"17\"], \"IOS\": []}.",
+                    "Empty set means any target in the group. " +
+                    "Example: [{\"JVM\": [\"11\", \"17\"]}, {\"IOS\": [], \"TvOS\": []}].",
             required = false
         )
-        targetFilters: Map<TargetGroup, Set<String>>? = emptyMap(),
+        targetFilters: List<Map<TargetGroup, Set<String>>>? = emptyList(),
         @ToolParam(
             description = "Maximum number of packages to return per project (newest first). Defaults to 10. " +
                     "Increase only when a project's totalPackages exceeds the returned count and you need more artifacts.",

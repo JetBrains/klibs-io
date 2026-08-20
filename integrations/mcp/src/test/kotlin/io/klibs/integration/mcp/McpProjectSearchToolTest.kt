@@ -27,7 +27,7 @@ class McpProjectSearchToolTest {
     @Test
     fun `searchProjects passes all parameters to service`() {
         val serviceResponse = McpProjectSearchResultDto(projects = emptyList())
-        val targetFilters = mapOf(TargetGroup.JVM to setOf("11", "17"))
+        val targetFilters = listOf(mapOf(TargetGroup.JVM to setOf("11", "17")))
 
         whenever(
             mcpProjectSearchService.mcpProjectSearch(
@@ -73,10 +73,10 @@ class McpProjectSearchToolTest {
             )
         )
 
-        whenever(mcpProjectSearchService.mcpProjectSearch(query = "state machine", platforms = emptyList(), targetFilters = emptyMap()))
+        whenever(mcpProjectSearchService.mcpProjectSearch(query = "state machine", platforms = emptyList(), targetFilters = emptyList()))
             .thenReturn(serviceResponse)
 
-        val result = uut.searchProjects(query = "state machine", platforms = emptyList(), targetFilters = emptyMap())
+        val result = uut.searchProjects(query = "state machine", platforms = emptyList(), targetFilters = emptyList())
 
         val mappedProject = result.projects.single()
         assertEquals("kstatemachine", mappedProject.projectName)

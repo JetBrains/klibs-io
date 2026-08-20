@@ -7,11 +7,13 @@ import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
 
-class TargetGroupValuesValidator : ConstraintValidator<ValidTargetGroupValues, Map<TargetGroup, Set<String>>> {
-    override fun isValid(map: Map<TargetGroup, Set<String>>?, context: ConstraintValidatorContext): Boolean {
-        map?.forEach { (group, targets) ->
-            if (!group.targets.containsAll(targets)) {
-                return false
+class TargetGroupValuesValidator : ConstraintValidator<ValidTargetGroupValues, List<Map<TargetGroup, Set<String>>>> {
+    override fun isValid(filters: List<Map<TargetGroup, Set<String>>>?, context: ConstraintValidatorContext): Boolean {
+        filters?.forEach { group ->
+            group.forEach { (targetGroup, targets) ->
+                if (!targetGroup.targets.containsAll(targets)) {
+                    return false
+                }
             }
         }
         return true

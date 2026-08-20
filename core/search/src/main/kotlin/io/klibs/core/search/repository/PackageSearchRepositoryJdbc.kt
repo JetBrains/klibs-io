@@ -73,7 +73,7 @@ class PackageSearchRepositoryJdbc(
     override fun find(
         rawQuery: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: Map<TargetGroup, Set<String>>,
+        targetFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         page: Int,
@@ -132,19 +132,9 @@ class PackageSearchRepositoryJdbc(
             }
 
             if (targetCondition != null) {
-                appendLine(" $prefix targets_vector @@ $targetCondition")
+                appendLine(" $prefix $targetCondition")
 
                 prefix = "AND"
-            }
-
-            if (targetFilters.containsKey(TargetGroup.JavaScript)) {
-                appendLine(" $prefix platforms_vector @@ 'JS'")
-
-                prefix = "AND"
-            }
-
-            if (targetFilters.containsKey(TargetGroup.Wasm)) {
-                appendLine(" $prefix platforms_vector @@ 'WASM'")
             }
 
             val orderBy = when {

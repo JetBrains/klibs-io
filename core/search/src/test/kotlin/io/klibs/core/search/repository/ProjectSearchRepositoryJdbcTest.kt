@@ -71,116 +71,201 @@ class ProjectSearchRepositoryJdbcTest {
 
     @Test
     fun `test formTargetCondition with empty target filters`() {
-        val result = formTargetCondition(emptyMap())
+        val result = formTargetCondition(emptyList())
         Assertions.assertNull(result, "Empty target filters should return null")
     }
 
     @Test
     fun `test formTargetCondition with JavaScript target group only`() {
-        val targetFilters = mapOf(
-            TargetGroup.JavaScript to setOf("js_ir", "js_legacy")
+        val targetFilters = listOf(
+            mapOf(TargetGroup.JavaScript to setOf("js_ir", "js_legacy"))
         )
         val result = formTargetCondition(targetFilters)
-        Assertions.assertNull(result, "JavaScript target group should be skipped and result in null")
+        Assertions.assertEquals(
+            "platforms_vector @@ 'JS'",
+            result,
+            "JavaScript target group should match on platforms_vector"
+        )
     }
 
     @Test
     fun `test formTargetCondition with target group having empty set`() {
-        val targetFilters = mapOf(
-            TargetGroup.JVM to emptySet<String>()
+        val targetFilters = listOf(
+            mapOf(TargetGroup.JVM to emptySet<String>())
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "'((JVM_1.6 | JVM_1.7 | JVM_1.8 | JVM_9 | JVM_10 | JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24))'::tsquery",
+            "targets_vector @@ '(JVM_1.6 | JVM_1.7 | JVM_1.8 | JVM_9 | JVM_10 | JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24 | JVM_25)'::tsquery",
             result
         )
     }
 
     @Test
     fun `test formTargetCondition with target group having specific targets`() {
-        val targetFilters = mapOf(
-            TargetGroup.JVM to setOf("11", "17")
+        val targetFilters = listOf(
+            mapOf(TargetGroup.JVM to setOf("11", "17"))
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "'((JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24))'::tsquery",
+            "targets_vector @@ '(JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24 | JVM_25)'::tsquery",
             result
         )
     }
 
     @Test
-    fun `test formTargetCondition with multiple target groups`() {
-        val targetFilters = mapOf(
-            TargetGroup.JVM to setOf("11", "17"),
-            TargetGroup.MacOS to setOf("macos_arm64")
+    fun `test formTargetCondition with multiple target groups is combined with AND`() {
+        val targetFilters = listOf(
+            mapOf(TargetGroup.JVM to setOf("11", "17")),
+            mapOf(TargetGroup.MacOS to setOf("macos_arm64"))
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "'((JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24) & NATIVE_macos_arm64)'::tsquery",
+            "targets_vector @@ '(JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24 | JVM_25)'::tsquery AND targets_vector @@ '(NATIVE_macos_arm64)'::tsquery",
             result
         )
     }
 
     @Test
     fun `test formTargetCondition with mixed empty and non-empty target sets`() {
-        val targetFilters = mapOf(
-            TargetGroup.JVM to emptySet(),
-            TargetGroup.MacOS to setOf("macos_arm64", "macos_x64")
+        val targetFilters = listOf(
+            mapOf(TargetGroup.JVM to emptySet()),
+            mapOf(TargetGroup.MacOS to setOf("macos_arm64", "macos_x64"))
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "'((JVM_1.6 | JVM_1.7 | JVM_1.8 | JVM_9 | JVM_10 | JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24) & NATIVE_macos_arm64 & NATIVE_macos_x64)'::tsquery",
+            "targets_vector @@ '(JVM_1.6 | JVM_1.7 | JVM_1.8 | JVM_9 | JVM_10 | JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24 | JVM_25)'::tsquery AND targets_vector @@ '(NATIVE_macos_arm64 & NATIVE_macos_x64)'::tsquery",
             result
         )
     }
 
     @Test
     fun `test formTargetCondition with JavaScript and other target groups`() {
-        val targetFilters = mapOf(
-            TargetGroup.JavaScript to setOf("js_ir"),
-            TargetGroup.JVM to setOf("11")
+        val targetFilters = listOf(
+            mapOf(TargetGroup.JavaScript to setOf("js_ir")),
+            mapOf(TargetGroup.JVM to setOf("11"))
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "'((JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24))'::tsquery",
-            result,
-            "JavaScript target group should be skipped"
+            "platforms_vector @@ 'JS' AND targets_vector @@ '(JVM_11 | JVM_12 | JVM_13 | JVM_14 | JVM_15 | JVM_16 | JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24 | JVM_25)'::tsquery",
+            result
         )
     }
 
     @Test
     fun `test formTargetCondition with AndroidJVM with empty set`() {
-        val targetFilters = mapOf(
-            TargetGroup.AndroidJvm to emptySet<String>()
+        val targetFilters = listOf(
+            mapOf(TargetGroup.AndroidJvm to emptySet<String>())
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "'((ANDROIDJVM_1.6 | ANDROIDJVM_1.7 | ANDROIDJVM_1.8 | ANDROIDJVM_9 | ANDROIDJVM_10 | ANDROIDJVM_11 | ANDROIDJVM_12 | ANDROIDJVM_13 | ANDROIDJVM_14 | ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24))'::tsquery",
+            "targets_vector @@ '(ANDROIDJVM_1.6 | ANDROIDJVM_1.7 | ANDROIDJVM_1.8 | ANDROIDJVM_9 | ANDROIDJVM_10 | ANDROIDJVM_11 | ANDROIDJVM_12 | ANDROIDJVM_13 | ANDROIDJVM_14 | ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24)'::tsquery",
             result
         )
     }
 
     @Test
     fun `test formTargetCondition with AndroidJVM with specific targets`() {
-        val targetFilters = mapOf(
-            TargetGroup.AndroidJvm to setOf("11", "17")
+        val targetFilters = listOf(
+            mapOf(TargetGroup.AndroidJvm to setOf("11", "17"))
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "'((ANDROIDJVM_11 | ANDROIDJVM_12 | ANDROIDJVM_13 | ANDROIDJVM_14 | ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24))'::tsquery",
+            "targets_vector @@ '(ANDROIDJVM_11 | ANDROIDJVM_12 | ANDROIDJVM_13 | ANDROIDJVM_14 | ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24)'::tsquery",
             result
         )
     }
 
     @Test
     fun `test formTargetCondition with both JVM and AndroidJVM target groups`() {
-        val targetFilters = mapOf(
-            TargetGroup.JVM to setOf("17"),
-            TargetGroup.AndroidJvm to setOf("15")
+        val targetFilters = listOf(
+            mapOf(TargetGroup.JVM to setOf("17")),
+            mapOf(TargetGroup.AndroidJvm to setOf("15"))
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "'((JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24) & (ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24))'::tsquery",
+            "targets_vector @@ '(JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24 | JVM_25)'::tsquery AND targets_vector @@ '(ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24)'::tsquery",
+            result
+        )
+    }
+
+    @Test
+    fun `test formTargetCondition combines groups within a map with OR`() {
+        val targetFilters = listOf(
+            mapOf(TargetGroup.JavaScript to emptySet<String>(), TargetGroup.Wasm to emptySet<String>())
+        )
+        val result = formTargetCondition(targetFilters)
+        Assertions.assertEquals(
+            "(platforms_vector @@ 'JS' OR platforms_vector @@ 'WASM')",
+            result
+        )
+    }
+
+    @Test
+    fun `test formTargetCondition expands empty native groups to their targets combined with OR within a group and AND between groups`() {
+        val targetFilters = listOf(
+            mapOf(TargetGroup.MacOS to emptySet<String>()),
+            mapOf(TargetGroup.Windows to emptySet<String>())
+        )
+        val result = formTargetCondition(targetFilters)
+        Assertions.assertEquals(
+            "targets_vector @@ '(NATIVE_macos_arm64 | NATIVE_macos_x64)'::tsquery AND targets_vector @@ '(NATIVE_mingw_x64 | NATIVE_mingw_x86)'::tsquery",
+            result
+        )
+    }
+
+    @Test
+    fun `test formTargetCondition combines OR groups and AND groups`() {
+        val targetFilters = listOf(
+            mapOf(TargetGroup.JavaScript to emptySet<String>(), TargetGroup.Wasm to emptySet<String>()),
+            mapOf(TargetGroup.JVM to setOf("17"))
+        )
+        val result = formTargetCondition(targetFilters)
+        Assertions.assertEquals(
+            "(platforms_vector @@ 'JS' OR platforms_vector @@ 'WASM') AND targets_vector @@ '(JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24 | JVM_25)'::tsquery",
+            result
+        )
+    }
+
+    @Test
+    fun `test formTargetCondition skips Unknown group without emitting an empty tsquery`() {
+        val targetFilters = listOf(
+            mapOf(TargetGroup.Unknown to emptySet<String>())
+        )
+        val result = formTargetCondition(targetFilters)
+        Assertions.assertEquals(null, result)
+    }
+
+    @Test
+    fun `test formTargetCondition skips Unknown group inside an OR group`() {
+        val targetFilters = listOf(
+            mapOf(TargetGroup.MacOS to emptySet(), TargetGroup.Unknown to emptySet<String>())
+        )
+        val result = formTargetCondition(targetFilters)
+        Assertions.assertEquals(
+            "targets_vector @@ '(NATIVE_macos_arm64 | NATIVE_macos_x64)'::tsquery",
+            result
+        )
+    }
+
+    @Test
+    fun `test formTargetCondition drops Unknown from a large native OR group without trailing OR`() {
+        val targetFilters = listOf(
+            mapOf(
+                TargetGroup.Linux to emptySet(),
+                TargetGroup.MacOS to emptySet(),
+                TargetGroup.Windows to emptySet(),
+                TargetGroup.TvOS to emptySet(),
+                TargetGroup.WatchOS to emptySet(),
+                TargetGroup.Unknown to emptySet<String>(),
+            )
+        )
+        val result = formTargetCondition(targetFilters)
+        Assertions.assertEquals(
+            "(targets_vector @@ '(NATIVE_linux_arm32_hfp | NATIVE_linux_arm64 | NATIVE_linux_mips32 | NATIVE_linux_mipsel32 | NATIVE_linux_x64)'::tsquery OR " +
+                "targets_vector @@ '(NATIVE_macos_arm64 | NATIVE_macos_x64)'::tsquery OR " +
+                "targets_vector @@ '(NATIVE_mingw_x64 | NATIVE_mingw_x86)'::tsquery OR " +
+                "targets_vector @@ '(NATIVE_tvos_arm64 | NATIVE_tvos_simulator_arm64 | NATIVE_tvos_x64)'::tsquery OR " +
+                "targets_vector @@ '(NATIVE_watchos_arm32 | NATIVE_watchos_arm64 | NATIVE_watchos_device_arm64 | NATIVE_watchos_simulator_arm64 | NATIVE_watchos_x64 | NATIVE_watchos_x86)'::tsquery)",
             result
         )
     }

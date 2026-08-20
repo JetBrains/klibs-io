@@ -31,7 +31,7 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
     protected fun doFind(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: Map<TargetGroup, Set<String>>,
+        targetFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         page: Int,
