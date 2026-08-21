@@ -26,7 +26,7 @@ import java.util.*
 class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
-    private lateinit var uut: DefaultUserRequestService
+    private lateinit var uut: UserRequestService
 
     @MockitoBean
     private lateinit var userRequestIssueRepository: UserRequestIssueRepository
@@ -49,7 +49,7 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
     fun `comments and labels as triaged on success`() {
         uut.processRequest(createMockDto(123, "g", "a", null))
 
-        verify(userIndexingRequestService, timeout(1000)).fulfillRequest(any<UUID>())
+        verify(userIndexingRequestService, timeout(1000)).discoverAndSaveRequest(any<UUID>())
         verify(userIssueNotifier, timeout(1000)).notifyAccepted(123)
 
         verify(userRequestIssueRepository).save(argThat {
@@ -63,7 +63,7 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `comments with reason as triaged on UserRequestProcessingException`() {
-        whenever(userIndexingRequestService.fulfillRequest(any<UUID>()))
+        whenever(userIndexingRequestService.discoverAndSaveRequest(any<UUID>()))
             .thenThrow(
                 UserRequestProcessingException(
                     "No Kotlin Multiplatform artifacts found for g.a: ${HttpStatus.BAD_REQUEST}"
@@ -72,7 +72,7 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
 
         uut.processRequest(createMockDto(123, "g", "a", null))
 
-        verify(userIndexingRequestService, timeout(1000)).fulfillRequest(any<UUID>())
+        verify(userIndexingRequestService, timeout(1000)).discoverAndSaveRequest(any<UUID>())
         verify(userIssueNotifier, timeout(1000)).notifyFailure(
             123,
             "No Kotlin Multiplatform artifacts found for g.a: 400 BAD_REQUEST"
@@ -86,18 +86,18 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
     fun `comments validation error and labels on invalid request data`() {
         uut.processRequest(createMockDto(123, "group with spaces", "a", "1.0.0"))
 
-        verify(userIndexingRequestService, never()).fulfillRequest(any<UUID>())
+        verify(userIndexingRequestService, never()).discoverAndSaveRequest(any<UUID>())
         verify(userIssueNotifier).notifyFailure(eq(123), argThat { contains("Invalid Group ID format") })
     }
 
     @Test
     fun `notifies failure on unexpected exception`() {
-        whenever(userIndexingRequestService.fulfillRequest(any<UUID>()))
+        whenever(userIndexingRequestService.discoverAndSaveRequest(any<UUID>()))
             .thenThrow(IllegalStateException("unexpected exception"))
 
         uut.processRequest(createMockDto(123, "g", "a", null))
 
-        verify(userIndexingRequestService, timeout(1000)).fulfillRequest(any<UUID>())
+        verify(userIndexingRequestService, timeout(1000)).discoverAndSaveRequest(any<UUID>())
         verify(userIssueNotifier, timeout(1000)).notifyServerErrorFailure(eq(123))
         verify(userRequestIssueRepository, timeout(1000)).save(argThat {
             processingStatus == UserRequestProcessingStatus.FAILED
@@ -112,7 +112,7 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
         uut.processRequest(createMockDto(123, "g", "a", null))
 
         verify(userIssueNotifier).notifyServerErrorFailure(eq(123))
-        verify(userIndexingRequestService, never()).fulfillRequest(any<UUID>())
+        verify(userIndexingRequestService, never()).discoverAndSaveRequest(any<UUID>())
     }
 
     private fun createMockDto(

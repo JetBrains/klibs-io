@@ -2,7 +2,7 @@ package io.klibs.app.controller
 
 import SmokeTestBase
 import io.klibs.app.service.UserIssueNotifier
-import io.klibs.app.service.impl.DefaultUserRequestService
+import io.klibs.app.service.impl.UserRequestService
 import io.klibs.core.pckg.dto.UserIndexingRequestDto
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -24,7 +24,7 @@ import javax.crypto.spec.SecretKeySpec
 class GitHubWebhookControllerTest : SmokeTestBase() {
 
     @MockitoBean
-    private lateinit var userRequestService: DefaultUserRequestService
+    private lateinit var userRequestService: UserRequestService
 
     @MockitoBean
     private lateinit var userIssueNotifier: UserIssueNotifier

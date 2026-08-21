@@ -27,7 +27,7 @@ class CentralSonatypeUserIndexingRequestService(
 ) : UserIndexingRequestService {
 
     @Transactional
-    override fun fulfillRequest(userRequestId: UUID) {
+    override fun discoverAndSaveRequest(userRequestId: UUID) {
         val userRequestIssue = userRequestIssueRepository.findById(userRequestId).getOrNull()
             ?: throw UserRequestProcessingException("User request not found")
 
@@ -39,7 +39,13 @@ class CentralSonatypeUserIndexingRequestService(
         )
     }
 
-    private fun fulfillRequest(
+    @Transactional
+    override fun saveGAVRequest(groupId: String, artifactId: String, version: String) {
+        val artifact = newMavenArtifact(groupId, artifactId, version)
+        saveUserRequests(listOf(artifact), issue = null)
+    }
+
+    internal fun fulfillRequest(
         groupId: String,
         artifactId: String,
         version: String?,
@@ -91,9 +97,7 @@ class CentralSonatypeUserIndexingRequestService(
     }
 
     private fun resolveSpecificVersion(groupId: String, artifactId: String, version: String): MavenArtifact {
-        val artifact = MavenArtifact(groupId, artifactId, version, centralSearchClient.scraperType)
-        if (isBanned(groupId, artifactId)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is banned")
-        if (isAlreadyIndexedOrQueued(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is already indexed or queued")
+        val artifact = newMavenArtifact(groupId, artifactId, version)
 
         centralSearchClient.getKotlinToolingMetadata(artifact)
             ?: throw UserRequestProcessingException(
@@ -101,6 +105,13 @@ class CentralSonatypeUserIndexingRequestService(
                         "(kotlin-tooling-metadata.json not found)"
             )
 
+        return artifact
+    }
+
+    private fun newMavenArtifact(groupId: String, artifactId: String, version: String): MavenArtifact {
+        val artifact = MavenArtifact(groupId, artifactId, version, centralSearchClient.scraperType)
+        if (isBanned(groupId, artifactId)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is banned")
+        if (isAlreadyIndexedOrQueued(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is already indexed or queued")
         return artifact
     }
 
