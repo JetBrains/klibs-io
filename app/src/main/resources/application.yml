@@ -101,6 +101,7 @@ klibs:
       password: ${KLIBS_OPENSEARCH_PASSWORD:}
       trust-all-certificates: ${KLIBS_OPENSEARCH_TRUST_ALL:false}
       request-timeout: ${KLIBS_OPENSEARCH_REQUEST_TIMEOUT:30s}
+      slow-query-threshold: ${KLIBS_OPENSEARCH_SLOW_QUERY_THRESHOLD:1s}
   scheduling:
     process-indexing-queue:
       enabled: ${PROCESS_INDEXING_QUEUE_ENABLED:true}

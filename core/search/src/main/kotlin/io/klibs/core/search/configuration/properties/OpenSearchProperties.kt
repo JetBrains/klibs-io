@@ -20,4 +20,7 @@ data class OpenSearchProperties(
 
     /** How long to wait for a connection from the HTTP client pool. Apache HC5 defaults to 3 minutes. */
     val requestTimeout: Duration = Duration.ofSeconds(30),
+
+    /** Queries slower than this are logged at WARN with the query text. */
+    val slowQueryThreshold: Duration = Duration.ofSeconds(1),
 )
