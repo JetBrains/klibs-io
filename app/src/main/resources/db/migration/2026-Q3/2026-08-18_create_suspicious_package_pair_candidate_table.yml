@@ -1,0 +1,110 @@
+databaseChangeLog:
+  - changeSet:
+      id: create suspicious_package_pair_candidate table
+      author: daniel.emeka-ilozor@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: suspicious_package_pair_candidate
+      changes:
+        - createTable:
+            tableName: suspicious_package_pair_candidate
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_suspicious_package_pair_candidate
+              - column:
+                  name: project_id
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+                    references: project(id)
+                    foreignKeyName: fk_suspicious_package_pair_candidate_project_id
+              - column:
+                  name: artifact_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: group_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version_count
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_release_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_release_ts
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: derived_owner_login
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: status
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: notes
+                  type: TEXT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: detected_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: add unique index on suspicious_package_pair_candidate coordinate
+      author: daniel.emeka-ilozor@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: suspicious_package_pair_candidate
+              indexName: uindex_suspicious_package_pair_candidate_coordinate
+      changes:
+        - createIndex:
+            tableName: suspicious_package_pair_candidate
+            indexName: uindex_suspicious_package_pair_candidate_coordinate
+            unique: true
+            columns:
+              - column:
+                  name: project_id
+              - column:
+                  name: artifact_id
+              - column:
+                  name: group_id
+
+  - changeSet:
+      id: create suspicious_package_pair_candidate sequence
+      author: daniel.emeka-ilozor@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            sequenceExists:
+              sequenceName: suspicious_package_pair_candidate_id_seq
+      changes:
+        - sql:
+            sql: |
+              CREATE SEQUENCE suspicious_package_pair_candidate_id_seq
+                  AS BIGINT
+                  INCREMENT BY 50
+                  START WITH 1;
