@@ -26,7 +26,7 @@ abstract class BaseOpenSearchTest : BaseUnitWithDbLayerTest() {
                 withEnv("OPENSEARCH_JAVA_OPTS", "-Xms512m -Xmx512m")
                 // Deploy-owned in prod (opensearch.yml via Helm, M0). Set here too, or the guard
                 // that turns a mapping-less auto-created index into a failed run ships untested.
-                withEnv("action.auto_create_index", "-project*,-package*,+*")
+                withEnv("action.auto_create_index", "-klibs-project*,-klibs-package*,+*")
                 waitingFor(
                     Wait.forHttp("/_cluster/health")
                         .usingTls()
