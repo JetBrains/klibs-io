@@ -1,6 +1,7 @@
 package io.klibs.core.search.opensearch
 
 import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
+import io.klibs.core.search.opensearch.metrics.SearchIndexMetrics
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
@@ -13,6 +14,7 @@ class SearchIndexSync(
     private val searchIndexLock: SearchIndexLock,
     private val indexer: OpenSearchIndexer,
     private val indexSpecs: List<OpenSearchIndexSpec>,
+    private val metrics: SearchIndexMetrics,
 ) {
 
     fun syncAll() = run(indexSpecs)
@@ -20,7 +22,9 @@ class SearchIndexSync(
     fun buildMissingAliases() = run(indexSpecs.filterNot { indexer.aliasExists(it) })
 
     private fun run(targets: List<OpenSearchIndexSpec>) {
-        val failures = targets.mapNotNull { runCatching { withLock(it) }.exceptionOrNull() }
+        val failures = targets.mapNotNull { spec ->
+            runCatching { withLock(spec) }.exceptionOrNull()?.also { metrics.recordFailure(spec) }
+        }
         failures.forEach { log.error("OpenSearch index sync failed", it) }
         failures.firstOrNull()?.let { throw it }
     }
@@ -28,10 +32,16 @@ class SearchIndexSync(
     private fun withLock(spec: OpenSearchIndexSpec) {
         val lock = LockSpec("searchIndexSync-${spec.base}-${spec.hash}", LOCK_AT_MOST_FOR, LOCK_AT_LEAST_FOR)
         val startedAt = Instant.now()
-        if (!searchIndexLock.runLocked(lock) { indexer.sync(spec) }) {
+        var rebuildDuration: Duration? = null
+        if (!searchIndexLock.runLocked(lock) {
+            val syncStartedAt = Instant.now()
+            indexer.sync(spec)
+            rebuildDuration = Duration.between(syncStartedAt, Instant.now())
+        }) {
             log.info("another pod holds '{}', skipping this run", lock.name)
             return
         }
+        rebuildDuration?.let { metrics.recordSuccess(spec, it) }
 
         val elapsed = Duration.between(startedAt, Instant.now())
         if (elapsed > LOCK_AT_MOST_FOR) {

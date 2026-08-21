@@ -9,9 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.context.jdbc.Sql
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class OpenSearchIndexerTest : BaseOpenSearchTest() {
@@ -142,6 +145,31 @@ class OpenSearchIndexerTest : BaseOpenSearchTest() {
         // Guarded in prod by opensearch.yml (M0); without it, a write to a deleted index silently
         // recreates it with dynamic mappings and the alias swaps onto a garbage index.
         assertFails { client.index { it.index("${projectSpec.base}-autocreate").id("1").document(mapOf("a" to 1)) } }
+    }
+
+    @Test
+    @Sql(value = [SEED])
+    fun `the creation date of the index the alias serves is readable`() {
+        val before = Instant.now().minusSeconds(60)
+        indexer.sync(projectSpec)
+
+        val createdAt = indexer.servingIndexCreatedAt(projectSpec)
+
+        assertNotNull(createdAt)
+        assertTrue(createdAt.isAfter(before), "expected $createdAt to be a just-created index")
+    }
+
+    @Test
+    @Sql(value = [SEED])
+    fun `the document count of the index the alias serves is readable`() {
+        indexer.sync(projectSpec)
+
+        assertEquals(countOf(projectSpec), indexer.servingDocCount(projectSpec))
+    }
+
+    @Test
+    fun `an alias that serves no index has no creation date`() {
+        assertNull(indexer.servingIndexCreatedAt(projectSpec))
     }
 
     private fun targetsOf(spec: OpenSearchIndexSpec): Set<String> =
