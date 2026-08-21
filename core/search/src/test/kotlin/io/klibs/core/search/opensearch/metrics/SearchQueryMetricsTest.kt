@@ -52,6 +52,14 @@ class SearchQueryMetricsTest {
         assertEquals(2L, timer("package").count())
     }
 
+    @Test
+    fun `a search answered by the PostgreSQL fallback is counted as degraded`() {
+        metrics.recordFallback(project)
+
+        assertEquals(1.0, registry.get("klibs.search.fallback").tag("index", "project").counter().count())
+        assertNull(registry.find("klibs.search.fallback").tag("index", "package").counter())
+    }
+
     private fun timer(index: String) = registry.get("klibs.search.query.time").tag("index", index).timer()
 
     private fun spec(base: String) = OpenSearchIndexSpec(
