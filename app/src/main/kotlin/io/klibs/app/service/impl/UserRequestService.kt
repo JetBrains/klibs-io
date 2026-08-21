@@ -3,7 +3,7 @@ package io.klibs.app.service.impl
 import io.klibs.app.service.UserIndexingRequestService
 import io.klibs.app.exceptions.UserRequestProcessingException
 import io.klibs.app.service.UserIssueNotifier
-import io.klibs.app.service.UserRequestService
+import io.klibs.app.service.PackageIndexingRequestProcessingService
 import io.klibs.core.pckg.dto.UserIndexingRequestDto
 import io.klibs.core.pckg.entity.UserRequestIssueEntity
 import io.klibs.core.pckg.enums.UserRequestProcessingStatus
@@ -22,13 +22,13 @@ import org.springframework.stereotype.Service
  * back to the issue.
  */
 @Service
-internal class DefaultUserRequestService(
+internal class UserRequestService(
     private val userIssueNotifier: UserIssueNotifier,
     private val userIndexingRequestService: UserIndexingRequestService,
     private val userRequestMapper: UserRequestMapper,
     private val userRequestIssueRepository: UserRequestIssueRepository,
     private val applicationScope: CoroutineScope,
-) : UserRequestService {
+) : PackageIndexingRequestProcessingService<UserIndexingRequestDto> {
 
     /**
      * Processes a single GitHub indexing-request issue end-to-end.
@@ -36,20 +36,20 @@ internal class DefaultUserRequestService(
      * Posts the appropriate status comment (success / user-side failure)
      * and applies the processed label.
      */
-    override fun processRequest(userIndexingRequestDto: UserIndexingRequestDto) {
+    override fun processRequest(request: UserIndexingRequestDto) {
         try {
-            if (!isUserIndexingRequestValid(userIndexingRequestDto)) return
+            if (!isUserIndexingRequestValid(request)) return
 
-            val savedRequest = userRequestIssueRepository.save(userRequestMapper.toEntity(userIndexingRequestDto))
+            val savedRequest = userRequestIssueRepository.save(userRequestMapper.toEntity(request))
 
             applicationScope.launch {
                 processValidRequest(savedRequest)
             }
         } catch (e: UserRequestProcessingException) {
-            userIssueNotifier.notifyFailure(userIndexingRequestDto.githubIssueNumber, e.reason)
+            userIssueNotifier.notifyFailure(request.githubIssueNumber, e.reason)
         } catch (e: Exception) {
-            logger.error("Initial processing failed for issue #${userIndexingRequestDto.githubIssueNumber}", e)
-            userIssueNotifier.notifyServerErrorFailure(userIndexingRequestDto.githubIssueNumber)
+            logger.error("Initial processing failed for issue #${request.githubIssueNumber}", e)
+            userIssueNotifier.notifyServerErrorFailure(request.githubIssueNumber)
         }
     }
 
@@ -76,7 +76,7 @@ internal class DefaultUserRequestService(
     private fun processValidRequest(savedIssueRequest: UserRequestIssueEntity) {
         val issueNumber = savedIssueRequest.githubIssueNumber
         try {
-            userIndexingRequestService.fulfillRequest(requireNotNull(savedIssueRequest.id))
+            userIndexingRequestService.discoverAndSaveRequest(requireNotNull(savedIssueRequest.id))
             updateProcessingStatus(savedIssueRequest, UserRequestProcessingStatus.ACCEPTED)
             userIssueNotifier.notifyAccepted(issueNumber)
         } catch (e: UserRequestProcessingException) {
@@ -94,7 +94,7 @@ internal class DefaultUserRequestService(
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(DefaultUserRequestService::class.java)
+        private val logger = LoggerFactory.getLogger(UserRequestService::class.java)
     }
 }
 

@@ -1,9 +1,10 @@
 package io.klibs.app.controller
 
 import io.klibs.app.api.GitHubWebhookUserIndexingRequest
-import io.klibs.app.service.UserRequestService
-import io.klibs.app.dto.UserIndexingRequestValidationResult
-import io.klibs.app.webhook.GitHubWebhookRequestsValidator
+import io.klibs.app.service.PackageIndexingRequestProcessingService
+import io.klibs.app.dto.IndexingRequestValidationResult
+import io.klibs.app.validator.GitHubWebhookRequestsValidator
+import io.klibs.core.pckg.dto.UserIndexingRequestDto
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/webhooks/github")
 class GitHubWebhookController(
-    private val userRequestService: UserRequestService,
+    private val processingService: PackageIndexingRequestProcessingService<UserIndexingRequestDto>,
     private val gitHubWebhookRequestsValidator: GitHubWebhookRequestsValidator,
 ) {
 
@@ -29,9 +30,9 @@ class GitHubWebhookController(
         @RequestHeader(name = "X-GitHub-Delivery", required = false) delivery: String?,
     ): ResponseEntity<Void> {
         return when (val result = gitHubWebhookRequestsValidator.validateUserIndexingRequest(payload, event, delivery)) {
-            is UserIndexingRequestValidationResult.NotApplicable -> result.response
-            is UserIndexingRequestValidationResult.Valid -> {
-                userRequestService.processRequest(result.request)
+            is IndexingRequestValidationResult.NotApplicable -> result.response
+            is IndexingRequestValidationResult.Valid -> {
+                processingService.processRequest(result.request)
                 ResponseEntity.accepted().build()
             }
         }
