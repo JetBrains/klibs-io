@@ -9,6 +9,7 @@ import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
 import io.klibs.core.search.opensearch.OpenSearchQueryBuilder
 import io.klibs.core.search.opensearch.ProjectFields
+import io.klibs.core.search.opensearch.metrics.SearchQueryMetrics
 import io.klibs.core.search.opensearch.keyword
 import org.opensearch.client.opensearch.OpenSearchClient
 import org.opensearch.client.opensearch._types.SortOptions
@@ -24,9 +25,10 @@ import java.time.ZoneOffset
 class ProjectSearchRepositoryOpenSearch(
     client: OpenSearchClient,
     projectIndexSpec: OpenSearchIndexSpec,
-) : AbstractOpenSearchSearchRepository<SearchProjectResult>(client), ProjectSearchRepository {
+    metrics: SearchQueryMetrics,
+) : AbstractOpenSearchSearchRepository<SearchProjectResult>(client, metrics), ProjectSearchRepository {
 
-    override val indexName: String = projectIndexSpec.alias
+    override val spec: OpenSearchIndexSpec = projectIndexSpec
 
     override val excludedSourceFields: List<String> = EXCLUDED_SOURCE_FIELDS
 
