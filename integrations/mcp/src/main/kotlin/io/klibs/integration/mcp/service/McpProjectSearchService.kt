@@ -29,7 +29,7 @@ class McpProjectSearchService(
         val searchResults = searchService.search(
             query = query,
             platforms = platforms,
-            targetFilters = targetFilters,
+            targetGroupFilters = targetFilters,
             ownerLogin = null,
             sort = SearchSort.RELEVANCY,
             markers = emptyList(),

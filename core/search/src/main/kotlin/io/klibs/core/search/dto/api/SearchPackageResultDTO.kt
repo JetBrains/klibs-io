@@ -74,5 +74,13 @@ data class SearchPackageResultDTO(
         type = "object",
         example = """{"JVM": ["11", "17"], "IOS": ["ios_arm64", "ios_x64"]}"""
     )
-    val targets: Map<TargetGroup, Set<String>>
+    @Deprecated(message = "Remove when KTL-4196 is finished")
+    val targets: Map<TargetGroup, Set<String>>,
+
+    @Schema(
+    description = "Targets supported by the package. Map where keys are target groups (e.g. 'JVM', 'IOS') and values are sets of specific targets within that group.",
+    type = "object",
+    example = """{"JVM": ["11", "17"], "IOS": ["ios_arm64", "ios_x64"]}"""
+    )
+    val targetGroups: Map<TargetGroup, Set<String>>
 )

@@ -3,6 +3,7 @@ package io.klibs.core.search.repository
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.pckg.util.getTargetsVector
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.Category
 import io.klibs.core.search.dto.repository.SearchProjectResult
@@ -23,7 +24,7 @@ class ProjectSearchRepositoryJdbc(
     override fun find(
         rawQuery: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         tags: List<String>,
@@ -49,7 +50,7 @@ class ProjectSearchRepositoryJdbc(
             )
         } ?: Pair("", "")
 
-        val targetCondition = formTargetCondition(targetFilters)
+        val targetCondition = formTargetCondition(targetGroupFilters)
 
         val sql = buildString {
             append("SELECT project_id, owner_type, owner_login, repo_name, name, stars, license_name, latest_version")
@@ -259,7 +260,7 @@ class ProjectSearchRepositoryJdbc(
                         if (it.isNullOrEmpty()) emptyList() else it.split(",").map { p -> PackagePlatform.valueOf(p) }
                     },
                 markers = rs.getArray("markers")?.array?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList(),
-                targets = rs.getString("targets_vector")?.split(" ")?.map { it.trim('\'') } ?: emptyList(),
+                targets = rs.getTargetsVector("targets_vector"),
                 tags = rs.getArray("tags")?.array?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList(),
                 dependentCount = rs.getInt("dependent_count"),
                 ossHealthScore = rs.getObject("health_score") as Int?,

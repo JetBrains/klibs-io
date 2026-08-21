@@ -95,7 +95,7 @@ class SearchRepositoryFallbackTest {
     private fun findProjects(sortBy: SearchSort = SearchSort.RELEVANCY) = projects.find(
         query = "ktor",
         platforms = emptyList(),
-        targetFilters = emptyList(),
+        targetGroupFilters = emptyList(),
         ownerLogin = null,
         sortBy = sortBy,
         tags = emptyList(),
@@ -107,7 +107,7 @@ class SearchRepositoryFallbackTest {
     private fun findPackages() = packages.find(
         query = "ktor",
         platforms = emptyList(),
-        targetFilters = emptyList(),
+        targetGroupFilters = emptyList(),
         ownerLogin = null,
         sortBy = SearchSort.RELEVANCY,
         page = 1,
@@ -144,6 +144,6 @@ class SearchRepositoryFallbackTest {
         releaseTs = Instant.EPOCH,
         platforms = emptyList(),
         targetsList = emptyList(),
-        targetsMap = emptyMap(),
+        targetGroups = emptyMap(),
     )
 }

@@ -112,18 +112,18 @@ object OpenSearchQueryBuilder {
 
     fun commonFilters(
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
     ): List<Query> = buildList {
         platforms.distinct().forEach { add(term(ProjectFields.PLATFORMS, it.name)) }
         ownerLogin?.let { add(term(ProjectFields.OWNER_LOGIN.keyword, it)) }
-        addAll(targetFilterClauses(targetFilters))
+        addAll(targetGroupFiltersClauses(targetGroupFilters))
     }
 
     /** OR within a map (group set), AND between maps. */
-    private fun targetFilterClauses(targetFilters: List<Map<TargetGroup, Set<String>>>): List<Query> = buildList {
-        targetFilters.forEach { orGroup ->
-            val groupQueries = orGroup.mapNotNull { (group, targets) -> groupQuery(group, targets) }
+    private fun targetGroupFiltersClauses(targetGroupFilters: List<Map<TargetGroup, Set<String>>>): List<Query> = buildList {
+        targetGroupFilters.forEach { orGroup ->
+            val groupQueries = orGroup.mapNotNull { (group, targets) -> createOrQueryWithinOneTargetGroup(group, targets) }
             when {
                 groupQueries.isEmpty() -> {}
                 groupQueries.size == 1 -> add(groupQueries.single())
@@ -132,23 +132,23 @@ object OpenSearchQueryBuilder {
         }
     }
 
-    private fun groupQuery(group: TargetGroup, targets: Set<String>): Query? = when (group) {
+    private fun createOrQueryWithinOneTargetGroup(targetGroup: TargetGroup, targets: Set<String>): Query? = when (targetGroup) {
         TargetGroup.JavaScript -> term(ProjectFields.PLATFORMS, "JS")
         TargetGroup.Wasm -> term(ProjectFields.PLATFORMS, "WASM")
         TargetGroup.JVM, TargetGroup.AndroidJvm -> {
-            val start = targets.mapNotNull { group.targets.indexOf(it).takeIf { i -> i >= 0 } }.minOrNull() ?: 0
-            termsAny(ProjectFields.TARGETS, group.targets.drop(start).map { "${group.platformName}_$it" })
+            val start = targets.mapNotNull { targetGroup.targets.indexOf(it).takeIf { i -> i >= 0 } }.minOrNull() ?: 0
+            termsAny(ProjectFields.TARGETS, targetGroup.targets.drop(start).map { "${targetGroup.platform}_$it" })
         }
         TargetGroup.Unknown -> {
             null
         }
 
         else -> when {
-            targets.isEmpty() -> termsAny(ProjectFields.TARGETS, group.targets.map { "${group.platformName}_$it" })
-            targets.size == 1 -> term(ProjectFields.TARGETS, "${group.platformName}_${targets.single()}")
+            targets.isEmpty() -> termsAny(ProjectFields.TARGETS, targetGroup.targets.map { "${targetGroup.platform}_$it" })
+            targets.size == 1 -> term(ProjectFields.TARGETS, "${targetGroup.platform}_${targets.single()}")
             else -> bool(
                 shoulds = emptyList(),
-                filters = targets.map { term(ProjectFields.TARGETS, "${group.platformName}_$it") },
+                filters = targets.map { term(ProjectFields.TARGETS, "${targetGroup.platform}_$it") },
             )
         }
     }

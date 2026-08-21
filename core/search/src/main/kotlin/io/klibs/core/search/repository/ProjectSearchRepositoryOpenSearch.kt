@@ -35,7 +35,7 @@ class ProjectSearchRepositoryOpenSearch(
     override fun find(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         tags: List<String>,
@@ -45,7 +45,7 @@ class ProjectSearchRepositoryOpenSearch(
     ): List<SearchProjectResult> = doFind(
         query = query,
         platforms = platforms,
-        targetFilters = targetFilters,
+        targetGroupFilters = targetGroupFilters,
         ownerLogin = ownerLogin,
         sortBy = sortBy,
         page = page,

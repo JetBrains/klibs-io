@@ -24,5 +24,5 @@ data class SearchPackageResult(
     // TODO KTL-2556 remove once deprecated on frontend
     val targetsList: List<PackageTarget> = emptyList(),
 
-    val targetsMap: Map<TargetGroup, Set<String>>
+    val targetGroups: Map<TargetGroup, Set<String>>
 )

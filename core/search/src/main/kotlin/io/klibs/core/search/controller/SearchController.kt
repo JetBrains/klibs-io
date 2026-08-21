@@ -102,7 +102,7 @@ class SearchController(
         return searchService.search(
             query = query,
             platforms = platforms.map { PackagePlatform.findBySerializableName(it) },
-            targetFilters = emptyList(),
+            targetGroupFilters = emptyList(),
             ownerLogin = owner,
             sort = SearchSort.findBySerializableName(sortBy),
             markers = markers,
@@ -143,7 +143,7 @@ class SearchController(
             val res = searchService.search(
                 query = query,
                 platforms = emptyList(),
-                targetFilters = targetFilters,
+                targetGroupFilters = targetGroupFilters,
                 ownerLogin = owner,
                 sort = SearchSort.findBySerializableName(sortBy),
                 markers = markers,
@@ -213,7 +213,7 @@ class SearchController(
         return searchService.searchPackage(
             query = query,
             platforms = platforms.map { PackagePlatform.findBySerializableName(it) },
-            targetFilters = emptyList(),
+            targetGroupFilters = emptyList(),
             ownerLogin = owner,
             sort = SearchSort.findBySerializableName(sortBy),
             page = page,
@@ -250,7 +250,7 @@ class SearchController(
             val res = searchService.searchPackage(
                 query = query,
                 platforms = emptyList(),
-                targetFilters = targetFilters,
+                targetGroupFilters = targetGroupFilters,
                 ownerLogin = owner,
                 sort = SearchSort.findBySerializableName(sortBy),
                 page = page,
@@ -273,7 +273,8 @@ internal fun SearchPackageResult.toDTO(): SearchPackageResultDTO {
         latestVersion = this.latestVersion,
         releaseTsMillis = this.releaseTs.toEpochMilli(),
         platforms = this.platforms.map { it.serializableName },
-        targets = this.targetsMap
+        targets = this.targetGroups,
+        targetGroups = this.targetGroups,
     )
 }
 

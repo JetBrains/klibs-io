@@ -27,7 +27,7 @@ class ProjectSearchRepositoryFallback(
     override fun find(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         tags: List<String>,
@@ -35,14 +35,14 @@ class ProjectSearchRepositoryFallback(
         page: Int,
         limit: Int,
     ): List<SearchProjectResult> = try {
-        openSearch.find(query, platforms, targetFilters, ownerLogin, sortBy, tags, markers, page, limit)
+        openSearch.find(query, platforms, targetGroupFilters, ownerLogin, sortBy, tags, markers, page, limit)
     } catch (e: UnsupportedOperationException) {
         // rethrow if deliberately skipped (i.e. oss health sort parameter)
         throw e
     } catch (e: Exception) {
         metrics.recordFallback(projectIndexSpec)
         log.warn("OpenSearch project search failed, falling back to PostgreSQL FTS (sort={})", sortBy, e)
-        postgres.find(query, platforms, targetFilters, ownerLogin, sortBy, tags, markers, page, limit)
+        postgres.find(query, platforms, targetGroupFilters, ownerLogin, sortBy, tags, markers, page, limit)
     }
 
     private companion object {

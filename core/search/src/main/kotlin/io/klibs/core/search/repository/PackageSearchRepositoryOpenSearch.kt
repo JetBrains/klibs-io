@@ -36,7 +36,7 @@ class PackageSearchRepositoryOpenSearch(
     override fun find(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         page: Int,
@@ -44,7 +44,7 @@ class PackageSearchRepositoryOpenSearch(
     ): List<SearchPackageResult> = doFind(
         query = query,
         platforms = platforms,
-        targetFilters = targetFilters,
+        targetGroupFilters = targetGroupFilters,
         ownerLogin = ownerLogin,
         sortBy = sortBy,
         page = page,
@@ -95,12 +95,7 @@ class PackageSearchRepositoryOpenSearch(
             releaseTs = LocalDateTime.parse(src.get(PackageFields.RELEASE_TS).asText()).toInstant(ZoneOffset.UTC),
             platforms = src.stringList(PackageFields.PLATFORMS).map { PackagePlatform.valueOf(it) },
             targetsList = packageTargets,
-            targetsMap = packageTargets.filter { it.target != null }
-                .groupBy(
-                    keySelector = { TargetGroup.fromPlatformAndTarget(it.platform.name, it.target!!) },
-                    valueTransform = { it.target!! },
-                )
-                .mapValues { it.value.toSet() },
+            targetGroups = TargetGroup.gatherTargetGroupsFromTargets(packageTargets)
         )
     }
 

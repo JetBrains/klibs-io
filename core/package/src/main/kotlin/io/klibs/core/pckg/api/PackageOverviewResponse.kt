@@ -1,5 +1,6 @@
 package io.klibs.core.pckg.api
 
+import io.klibs.core.pckg.model.TargetGroup
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(
@@ -44,5 +45,13 @@ data class PackageOverviewResponse(
     val description: String?,
 
     @Schema(description = "Platforms and targets supported by this package")
-    val targets: List<PackageTargetResponse>
+    val targets: List<PackageTargetResponse>,
+
+    @Schema(
+        description = "Targets supported by this package, grouped by target group. " +
+            "Map where keys are target groups (e.g. 'JVM', 'IOS') and values are sets of specific targets within that group.",
+        type = "object",
+        example = """{"JVM": ["11", "17"], "IOS": ["ios_arm64", "ios_x64"]}"""
+    )
+    val targetGroups: Map<TargetGroup, Set<String>>
 )

@@ -25,6 +25,7 @@ class ProjectDetailsLinkTest {
             name = name,
             description = null,
             platforms = emptyList(),
+            targetGroups = emptyMap(),
             latestReleaseVersion = "1.0.0",
             latestReleasePublishedAt = now,
             linkHomepage = linkHomepage,

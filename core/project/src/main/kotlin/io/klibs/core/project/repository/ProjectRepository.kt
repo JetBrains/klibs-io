@@ -40,6 +40,12 @@ interface ProjectRepository {
      */
     fun findPlatformsById(projectId: Int): List<PackagePlatform>?
 
+    /**
+     * Returns `platform_target` tokens from the project_index materialized view.
+     * Returns an empty list if project is not in project_index (i.e., has no packages).
+     */
+    fun findTargetsById(projectId: Int): List<String>
+
     fun findAllForSitemap(): List<SitemapProjectEntry>
 
     /**
