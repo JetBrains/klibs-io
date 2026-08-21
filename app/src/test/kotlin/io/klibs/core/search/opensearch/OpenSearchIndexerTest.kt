@@ -40,8 +40,8 @@ class OpenSearchIndexerTest : BaseOpenSearchTest() {
     fun wipeSearchIndices() {
         runCatching {
             val indices = (
-                runCatching { client.indices().get { it.index("project*", "package*") }.result().keys }.getOrDefault(emptySet()) +
-                    runCatching { client.indices().getAlias { it.name("project*", "package*") }.result().keys }.getOrDefault(emptySet())
+                runCatching { client.indices().get { it.index(basePatterns()) }.result().keys }.getOrDefault(emptySet()) +
+                    runCatching { client.indices().getAlias { it.name(basePatterns()) }.result().keys }.getOrDefault(emptySet())
                 )
                 .filter { it.isSearchIndex() }
                 .toSet()
@@ -179,6 +179,8 @@ class OpenSearchIndexerTest : BaseOpenSearchTest() {
         client.indices().get { it.index("${spec.alias}-*") }.result().keys
 
     private fun countOf(spec: OpenSearchIndexSpec): Long = client.count { it.index(spec.alias) }.count()
+
+    private fun basePatterns(): List<String> = listOf("${projectSpec.base}*", "${packageSpec.base}*")
 
     private fun String.isSearchIndex(): Boolean =
         this == projectSpec.base ||
