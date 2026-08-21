@@ -51,6 +51,15 @@ class SearchQueryMetrics(
         }
     }
 
+    /** A search OpenSearch could not serve, answered from PostgreSQL FTS instead. */
+    fun recordFallback(spec: OpenSearchIndexSpec) {
+        Counter.builder(FALLBACK)
+            .description("Klibs: Searches served by the PostgreSQL fallback after OpenSearch failed")
+            .tags(tagsOf(spec))
+            .register(registry)
+            .increment()
+    }
+
     private companion object {
         private val log = LoggerFactory.getLogger(SearchQueryMetrics::class.java)
 
@@ -58,6 +67,7 @@ class SearchQueryMetrics(
 
         private const val QUERY_TIME = "klibs.search.query.time"
         private const val QUERY_ERRORS = "klibs.search.query.errors"
+        private const val FALLBACK = "klibs.search.fallback"
         private const val MAX_LOGGED_QUERY = 200
     }
 }

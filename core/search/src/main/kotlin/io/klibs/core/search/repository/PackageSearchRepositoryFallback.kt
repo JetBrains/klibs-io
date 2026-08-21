@@ -3,7 +3,9 @@ package io.klibs.core.search.repository
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
+import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
 import io.klibs.core.search.dto.repository.SearchPackageResult
+import io.klibs.core.search.opensearch.metrics.SearchQueryMetrics
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Primary
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Repository
 class PackageSearchRepositoryFallback(
     private val openSearch: PackageSearchRepositoryOpenSearch,
     private val postgres: PackageSearchRepositoryJdbc,
+    private val packageIndexSpec: OpenSearchIndexSpec,
+    private val metrics: SearchQueryMetrics,
 ) : PackageSearchRepository {
 
     override fun find(
@@ -31,6 +35,7 @@ class PackageSearchRepositoryFallback(
     } catch (e: UnsupportedOperationException) {
         throw e
     } catch (e: Exception) {
+        metrics.recordFallback(packageIndexSpec)
         log.warn("OpenSearch package search failed, falling back to PostgreSQL FTS (sort={})", sortBy, e)
         postgres.find(query, platforms, targetFilters, ownerLogin, sortBy, page, limit)
     }
