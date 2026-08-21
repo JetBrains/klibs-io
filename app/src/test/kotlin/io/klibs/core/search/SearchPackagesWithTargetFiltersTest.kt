@@ -34,7 +34,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
     fun testJavaScriptTargetFilter() {
         // Arrange
         val searchRequest = SearchPackagesRequest(
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.JavaScript to setOf("js_ir", "js_legacy"))
             )
         )
@@ -71,7 +71,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
         // Arrange
         val searchRequest = SearchPackagesRequest(
             query = "kotlin",
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.JavaScript to setOf("js_ir", "js_legacy"))
             )
         )
@@ -114,7 +114,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
     fun testJavaScriptTargetFilterWithOtherTargets() {
         // Arrange
         val searchRequest = SearchPackagesRequest(
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.JavaScript to setOf("js_ir", "js_legacy")),
                 mapOf(TargetGroup.JVM to setOf("11", "17"))
             )
@@ -158,7 +158,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
     fun testJvmTargetFilter() {
         // Arrange
         val searchRequest = SearchPackagesRequest(
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.JVM to setOf("11", "17"))
             )
         )
@@ -203,7 +203,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
     fun testNativeTargetFilter() {
         // Arrange
         val searchRequest = SearchPackagesRequest(
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.IOS to setOf("ios_arm64", "ios_x64"))
             )
         )
@@ -248,7 +248,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
     fun testMultipleNativeTargetFilter() {
         // Arrange
         val searchRequest = SearchPackagesRequest(
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.IOS to setOf("ios_arm64")),
                 mapOf(TargetGroup.MacOS to setOf("macos_arm64", "macos_x64"))
             )
@@ -301,7 +301,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
     fun testUnknownTargetInTargetFilters() {
         val searchRequest = SearchPackagesRequest(
             query = "anything",
-            targetFilters = listOf(mapOf(TargetGroup.JVM to setOf("999")))
+            targetGroupFilters = listOf(mapOf(TargetGroup.JVM to setOf("999")))
         )
 
         mockMvc.post("/search/packages") {
@@ -340,7 +340,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
     @DisplayName("Should return 200 with old jvm")
     fun testOldJvmTargetInTargetFilters() {
         val searchRequest = SearchPackagesRequest(
-            targetFilters = listOf(mapOf(TargetGroup.JVM to setOf("9")))
+            targetGroupFilters = listOf(mapOf(TargetGroup.JVM to setOf("9")))
         )
 
         val result = mockMvc.post("/search/packages") {

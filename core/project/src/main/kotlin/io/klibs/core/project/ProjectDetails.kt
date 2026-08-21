@@ -2,6 +2,7 @@ package io.klibs.core.project
 
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.pckg.model.PackagePlatform
+import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.project.enums.MarkerType
 import java.time.Instant
 
@@ -16,6 +17,7 @@ data class ProjectDetails(
     val description: String?,
 
     val platforms: List<PackagePlatform>,
+    val targetGroups: Map<TargetGroup, Set<String>>,
 
     val latestReleaseVersion: String?,
     val latestReleasePublishedAt: Instant?,

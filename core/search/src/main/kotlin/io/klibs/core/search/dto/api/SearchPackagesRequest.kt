@@ -24,7 +24,7 @@ data class SearchPackagesRequest(
         example = """[{"JVM": ["11", "17"]}, {"AndroidJvm": [], "AndroidNative": []}]"""
     )
     @field:ValidTargetGroupValues
-    val targetFilters: List<Map<TargetGroup, Set<String>>> = emptyList(),
+    val targetGroupFilters: List<Map<TargetGroup, Set<String>>> = emptyList(),
 
     @Schema(
         description = "Login of the owner",

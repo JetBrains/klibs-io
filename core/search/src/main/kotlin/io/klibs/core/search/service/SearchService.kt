@@ -10,6 +10,7 @@ import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchPackageResult
 import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.core.search.dto.service.CategoryWithProjects
+import io.klibs.core.search.dto.validation.validateTargetGroupFilters
 import io.micrometer.core.annotation.Timed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,7 +55,7 @@ class SearchService(
     fun search(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sort: SearchSort,
         markers: List<String>,
@@ -62,10 +63,11 @@ class SearchService(
         page: Int,
         limit: Int
     ): List<SearchProjectResult> {
+        validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
         return projectSearchRepository.find(
             query = query,
             platforms = platforms,
-            targetFilters = targetFilters,
+            targetGroupFilters = targetGroupFilters,
             ownerLogin = ownerLogin,
             sortBy = sort,
             markers = markers,
@@ -80,17 +82,18 @@ class SearchService(
     fun searchPackage(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sort: SearchSort,
         page: Int,
         limit: Int
     ): List<SearchPackageResult> {
+        validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
         return packageSearchRepository.find(
             query = query,
             platforms = platforms,
             ownerLogin = ownerLogin,
-            targetFilters = targetFilters,
+            targetGroupFilters = targetGroupFilters,
             sortBy = sort,
             page = page,
             limit = limit

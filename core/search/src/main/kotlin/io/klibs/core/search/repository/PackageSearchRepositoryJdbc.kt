@@ -18,7 +18,7 @@ class PackageSearchRepositoryJdbc(
     private val objectMapper: ObjectMapper
 ) : PackageSearchRepository {
 
-    private val packageOverviewRowMapper = RowMapper<SearchPackageResult> { rs, _ ->
+    private val packageOverviewRowMapper = RowMapper { rs, _ ->
         val targetsJson = rs.getString("targets")
 
         val packageTargets = if (!targetsJson.isNullOrBlank()) {
@@ -52,16 +52,7 @@ class PackageSearchRepositoryJdbc(
                 .filter { it.isNotBlank() }
                 .map { PackagePlatform.valueOf(it) },
             targetsList = packageTargets,
-            targetsMap = packageTargets.filter { it.target != null }
-                .groupBy(
-                    keySelector = { it: PackageTarget ->
-                        TargetGroup.fromPlatformAndTarget(it.platform.name, it.target!!)
-                    },
-                    valueTransform = { it: PackageTarget ->
-                        it.target!!
-                    }
-                )
-                .mapValues { it.value.toSet() }
+            targetGroups = TargetGroup.gatherTargetGroupsFromTargets(packageTargets)
         )
     }
 
@@ -73,7 +64,7 @@ class PackageSearchRepositoryJdbc(
     override fun find(
         rawQuery: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         page: Int,
@@ -90,7 +81,7 @@ class PackageSearchRepositoryJdbc(
             )
         } ?: Pair("", "")
 
-        val targetCondition = formTargetCondition(targetFilters)
+        val targetCondition = formTargetCondition(targetGroupFilters)
 
         val sql = buildString {
             append("SELECT group_id, artifact_id, latest_version, latest_description, release_ts, ")

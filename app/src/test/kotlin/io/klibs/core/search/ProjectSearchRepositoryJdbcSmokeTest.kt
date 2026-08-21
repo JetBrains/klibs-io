@@ -37,7 +37,7 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         val searchResults = projectSearchRepository.find(
             rawQuery = null,
             platforms = emptyList(),
-            targetFilters = targetFilters,
+            targetGroupFilters = targetFilters,
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
             tags = emptyList(),
@@ -69,7 +69,7 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         val searchResults = projectSearchRepository.find(
             rawQuery = null,
             platforms = emptyList(),
-            targetFilters = targetFilters,
+            targetGroupFilters = targetFilters,
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
             tags = emptyList(),
@@ -85,7 +85,7 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         assertTrue(
             searchResults.all { project ->
                 val minRequiredTarget = jvmTargets.min()
-                val requiredTargets = TargetGroup.JVM.targets.filter { it >= minRequiredTarget } .map { "${TargetGroup.JVM.platformName}_$it" }
+                val requiredTargets = TargetGroup.JVM.targets.filter { it >= minRequiredTarget } .map { "${TargetGroup.JVM.platform}_$it" }
                 requiredTargets.any { it in project.targets }
             },
             "Required targets not found in search results. All required targets should be present."
@@ -106,7 +106,7 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         val searchResults = projectSearchRepository.find(
             rawQuery = null,
             platforms = emptyList(),
-            targetFilters = targetFilters,
+            targetGroupFilters = targetFilters,
             ownerLogin = null,
             sortBy = SearchSort.MOST_STARS,
             tags = emptyList(),
@@ -121,7 +121,7 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         assertTrue(
             searchResults.all { project ->
                 val minRequiredTarget = jvmTargets.min()
-                val requiredTargets = TargetGroup.JVM.targets.filter { it >= minRequiredTarget } .map { "${TargetGroup.JVM.platformName}_$it" }
+                val requiredTargets = TargetGroup.JVM.targets.filter { it >= minRequiredTarget } .map { "${TargetGroup.JVM.platform}_$it" }
                 requiredTargets.any { it in project.targets }
             },
             "Required JVM targets not found in search results."
@@ -129,7 +129,7 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
 
         assertTrue(
             searchResults.all { project ->
-                project.targets.any { it in TargetGroup.IOS.targets.map { "${TargetGroup.IOS.platformName}_$it" } }
+                project.targets.any { it in TargetGroup.IOS.targets.map { "${TargetGroup.IOS.platform}_$it" } }
             },
             "Required IOS targets not found in search results."
         )

@@ -34,7 +34,7 @@ class SearchControllerSmokeTest : SmokeTestBase() {
     fun testJavaScriptTargetFilter() {
         // Arrange
         val searchRequest = SearchProjectsRequest(
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.JavaScript to setOf("js_ir", "js_legacy"))
             )
         )
@@ -70,7 +70,7 @@ class SearchControllerSmokeTest : SmokeTestBase() {
     fun testJavaScriptTargetFilterWithSpecificValues() {
         // Arrange
         val searchRequest = SearchProjectsRequest(
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.JavaScript to setOf("js_ir"))
             )
         )
@@ -107,7 +107,7 @@ class SearchControllerSmokeTest : SmokeTestBase() {
         // Arrange
         val searchRequest = SearchProjectsRequest(
             query = "kotlin",
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.JavaScript to setOf("js_ir", "js_legacy"))
             )
         )
@@ -143,7 +143,7 @@ class SearchControllerSmokeTest : SmokeTestBase() {
     fun testJavaScriptTargetFilterWithOtherTargets() {
         // Arrange
         val searchRequest = SearchProjectsRequest(
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.JavaScript to setOf("js_ir", "js_legacy")),
                 mapOf(TargetGroup.JVM to setOf("11", "17"))
             )
@@ -182,7 +182,7 @@ class SearchControllerSmokeTest : SmokeTestBase() {
     fun testJvmTargetFilter() {
         // Arrange
         val searchRequest = SearchProjectsRequest(
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.JVM to setOf("11", "17"))
             )
         )
@@ -210,6 +210,12 @@ class SearchControllerSmokeTest : SmokeTestBase() {
         foundProjects.forEach { project ->
             assertTrue(project.platforms.contains("jvm"), 
                 "Project ${project.name} does not support JVM platform")
+        }
+        foundProjects.forEach { project ->
+            assertTrue(
+                project.targetGroups.containsKey(TargetGroup.JVM),
+                "Project ${project.name} should expose the JVM target group in its targets map"
+            )
         }
     }
 }

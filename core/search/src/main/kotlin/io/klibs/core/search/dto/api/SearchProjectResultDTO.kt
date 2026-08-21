@@ -1,5 +1,6 @@
 package io.klibs.core.search.dto.api
 
+import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -76,6 +77,13 @@ data class SearchProjectResultDTO(
     val platforms: List<String>,
 
     @Schema(
+        description = "Targets supported by the project's packages. Map where keys are target groups (e.g. 'JVM', 'IOS') and values are sets of specific targets within that group.",
+        type = "object",
+        example = """{"JVM": ["11", "17"], "IOS": ["ios_arm64", "ios_x64"]}"""
+    )
+    val targetGroups: Map<TargetGroup, Set<String>>,
+
+    @Schema(
         description = "Tags associated with the project. Can be used for filtering or grouping",
         example = "[Compose UI, Jetpack Compose]"
     )
@@ -114,6 +122,7 @@ fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
         latestReleaseVersion = this.latestVersion,
         latestReleasePublishedAtMillis = this.latestVersionPublishedAt.toEpochMilli(),
         platforms = this.platforms.map { it.serializableName },
+        targetGroups = TargetGroup.getTargetGroupsFromTargets(this.targets),
         tags = this.tags,
         markers = markers,
         dependentCount = this.dependentCount,

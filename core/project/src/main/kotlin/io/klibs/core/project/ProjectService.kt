@@ -3,6 +3,7 @@ package io.klibs.core.project
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackagePlatform
+import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.project.entity.Marker
 import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.project.enums.TagOrigin
@@ -58,12 +59,14 @@ class ProjectService(
 
         // Fetch platforms from project_index; returns null if project has no packages
         val projectPlatforms = projectRepository.findPlatformsById(projectEntity.idNotNull) ?: return null
+        val projectTargetGroups = TargetGroup.getTargetGroupsFromTargets(projectRepository.findTargetsById(projectEntity.idNotNull))
 
         val healthScore = scmRepoHealthComponentsRepository.findByScmRepoId(scmRepositoryEntity.idNotNull)?.healthScore
         return projectEntity.toDetails(
             projectEntity = projectEntity,
             scmRepositoryEntity = scmRepositoryEntity,
             projectPlatforms = projectPlatforms,
+            projectTargetGroups = projectTargetGroups,
             projectMarkers = markerRepository.findAllByProjectId(projectEntity.idNotNull),
             projectTags = tagRepository.getTagsByProjectId(projectEntity.idNotNull),
             dependentCount = projectEntity.dependentCount,
@@ -172,6 +175,7 @@ private fun ProjectEntity.toDetails(
     projectEntity: ProjectEntity,
     scmRepositoryEntity: ScmRepositoryEntity,
     projectPlatforms: List<PackagePlatform>,
+    projectTargetGroups: Map<TargetGroup, Set<String>>,
     projectMarkers: List<Marker>,
     projectTags: List<String>,
     dependentCount: Int,
@@ -185,6 +189,7 @@ private fun ProjectEntity.toDetails(
         name = this.name,
         description = projectEntity.description ?: scmRepositoryEntity.description,
         platforms = projectPlatforms,
+        targetGroups = projectTargetGroups,
         latestReleaseVersion = projectEntity.latestVersion,
         latestReleasePublishedAt = projectEntity.latestVersionTs,
         linkHomepage = scmRepositoryEntity.homepage,

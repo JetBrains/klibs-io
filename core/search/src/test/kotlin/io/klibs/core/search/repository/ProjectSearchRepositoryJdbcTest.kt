@@ -158,7 +158,7 @@ class ProjectSearchRepositoryJdbcTest {
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "targets_vector @@ '(ANDROIDJVM_1.6 | ANDROIDJVM_1.7 | ANDROIDJVM_1.8 | ANDROIDJVM_9 | ANDROIDJVM_10 | ANDROIDJVM_11 | ANDROIDJVM_12 | ANDROIDJVM_13 | ANDROIDJVM_14 | ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24)'::tsquery",
+            "targets_vector @@ '(ANDROIDJVM_1.6 | ANDROIDJVM_1.7 | ANDROIDJVM_1.8 | ANDROIDJVM_9 | ANDROIDJVM_10 | ANDROIDJVM_11 | ANDROIDJVM_12 | ANDROIDJVM_13 | ANDROIDJVM_14 | ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24 | ANDROIDJVM_25)'::tsquery",
             result
         )
     }
@@ -170,7 +170,7 @@ class ProjectSearchRepositoryJdbcTest {
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "targets_vector @@ '(ANDROIDJVM_11 | ANDROIDJVM_12 | ANDROIDJVM_13 | ANDROIDJVM_14 | ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24)'::tsquery",
+            "targets_vector @@ '(ANDROIDJVM_11 | ANDROIDJVM_12 | ANDROIDJVM_13 | ANDROIDJVM_14 | ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24 | ANDROIDJVM_25)'::tsquery",
             result
         )
     }
@@ -183,7 +183,7 @@ class ProjectSearchRepositoryJdbcTest {
         )
         val result = formTargetCondition(targetFilters)
         Assertions.assertEquals(
-            "targets_vector @@ '(JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24 | JVM_25)'::tsquery AND targets_vector @@ '(ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24)'::tsquery",
+            "targets_vector @@ '(JVM_17 | JVM_18 | JVM_19 | JVM_20 | JVM_21 | JVM_22 | JVM_23 | JVM_24 | JVM_25)'::tsquery AND targets_vector @@ '(ANDROIDJVM_15 | ANDROIDJVM_16 | ANDROIDJVM_17 | ANDROIDJVM_18 | ANDROIDJVM_19 | ANDROIDJVM_20 | ANDROIDJVM_21 | ANDROIDJVM_22 | ANDROIDJVM_23 | ANDROIDJVM_24 | ANDROIDJVM_25)'::tsquery",
             result
         )
     }

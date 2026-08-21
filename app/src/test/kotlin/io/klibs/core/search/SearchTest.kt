@@ -287,5 +287,8 @@ class SearchTest : SmokeTestBase() {
         )
 
         assertEquals(projectSearchDto.first().platforms.sorted(), projectDetailsDto.platforms.sorted())
+
+        // The grouped targets map must be consistent between project search and project details
+        assertEquals(projectSearchDto.first().targetGroups, projectDetailsDto.targetGroups)
     }
 }

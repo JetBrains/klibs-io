@@ -31,7 +31,7 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
     protected fun doFind(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         page: Int,
@@ -41,7 +41,7 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
     ): List<T> {
         val isQueryPresent = !query.isNullOrBlank()
         val trimmed = query?.trim().orEmpty()
-        val filters = OpenSearchQueryBuilder.commonFilters(platforms, targetFilters, ownerLogin) + extraFilters
+        val filters = OpenSearchQueryBuilder.commonFilters(platforms, targetGroupFilters, ownerLogin) + extraFilters
         val shoulds = if (isQueryPresent) shouldClauses(trimmed) else emptyList()
         val boolQuery = OpenSearchQueryBuilder.bool(shoulds, filters)
         val finalQuery = if (popularityScored && isQueryPresent && sortBy == SearchSort.RELEVANCY) {

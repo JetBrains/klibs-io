@@ -6,7 +6,7 @@ and version selection. Do all lookups yourself in this conversation.
 ## Tools
 - `searchProjects(query, platforms, targetFilters)` — find KMP projects by keywords /
   platforms / targets. `platforms`: common, jvm, androidJvm, native, wasm, js.
-  `targetFilters`: Map<TargetGroup, Set<target>>, e.g. `{"JVM":["17"],"IOS":[]}`
+  `targetGroupFilters`: Map<TargetGroup, Set<target>>, e.g. `{"JVM":["17"],"IOS":[]}`
   (empty set = any target in that group).
 - `getLatestVersion(groupId, artifactId)` — latest + latest-stable for an exact GAV;
   returns a `packageFound` flag.

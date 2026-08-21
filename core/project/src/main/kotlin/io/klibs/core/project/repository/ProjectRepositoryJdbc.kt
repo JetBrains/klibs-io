@@ -1,6 +1,7 @@
 package io.klibs.core.project.repository
 
 import io.klibs.core.pckg.model.PackagePlatform
+import io.klibs.core.pckg.util.getTargetsVector
 import io.klibs.core.project.ProjectEntity
 import org.hibernate.type.SqlTypes
 import org.springframework.jdbc.core.JdbcTemplate
@@ -343,6 +344,23 @@ class ProjectRepositoryJdbc(
             }
             .optional()
             .getOrNull()
+    }
+
+    override fun findTargetsById(projectId: Int): List<String> {
+        val sql = """
+            SELECT targets_vector
+            FROM project_index
+            WHERE project_id = :projectId
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("projectId", projectId)
+            .query { rs, _ ->
+                rs.getTargetsVector("targets_vector")
+            }
+            .optional()
+            .getOrNull()
+            ?: emptyList()
     }
 
     override fun recomputeAllDependentCounts() {
