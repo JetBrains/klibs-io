@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
 import java.io.StringReader
+import java.time.Instant
 
 /**
  * Rebuilds into whichever of an alias's two slots is idle and swaps the alias onto it, so readers
@@ -31,6 +32,16 @@ class OpenSearchIndexer(
 
     fun aliasExists(spec: OpenSearchIndexSpec): Boolean =
         client.indices().existsAlias { it.name(spec.alias) }.value()
+
+    fun servingIndexCreatedAt(spec: OpenSearchIndexSpec): Instant? {
+        val response = client.indices().getSettings { it.index(spec.alias).ignoreUnavailable(true) }
+        val settings = response.result().values.singleOrNull()?.settings()
+        val createdAt = settings?.index()?.creationDate() ?: return null
+        return Instant.ofEpochMilli(createdAt)
+    }
+
+    fun servingDocCount(spec: OpenSearchIndexSpec): Long =
+        client.count { it.index(spec.alias) }.count()
 
     fun sync(spec: OpenSearchIndexSpec) {
         val (oldIndex, newIndex) = createNewIndex(spec)

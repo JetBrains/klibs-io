@@ -1,7 +1,6 @@
 package io.klibs.app.job
 
 import io.klibs.core.search.opensearch.SearchIndexSync
-import io.micrometer.core.annotation.Timed
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -16,15 +15,13 @@ class SearchIndexSyncJob(
     private val searchIndexSync: SearchIndexSync,
 ) {
 
+    // Duration is measured per index by SearchIndexMetrics; a timer here would only add
+    // the lock wait and would score a skipped run as a fast success.
     @Scheduled(
         scheduler = "searchIndexSyncScheduler",
         initialDelay = 0,
         fixedRate = 10,
         timeUnit = TimeUnit.MINUTES,
-    )
-    @Timed(
-        value = "klibs.search.opensearch.sync.time",
-        description = "Klibs: Time taken to rebuild the OpenSearch indices and swap their aliases",
     )
     fun sync() = searchIndexSync.syncAll()
 }
