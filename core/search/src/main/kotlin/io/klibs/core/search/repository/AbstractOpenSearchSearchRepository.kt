@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
+import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
 import io.klibs.core.search.opensearch.OpenSearchQueryBuilder
+import io.klibs.core.search.opensearch.metrics.SearchQueryMetrics
 import org.opensearch.client.opensearch.OpenSearchClient
 import org.opensearch.client.opensearch._types.SortOptions
 import org.opensearch.client.opensearch._types.SortOrder
@@ -12,9 +14,10 @@ import org.opensearch.client.opensearch._types.query_dsl.Query
 
 abstract class AbstractOpenSearchSearchRepository<T : Any>(
     private val client: OpenSearchClient,
+    private val metrics: SearchQueryMetrics,
 ) {
 
-    protected abstract val indexName: String
+    protected abstract val spec: OpenSearchIndexSpec
 
     /** `_source` fields to skip: indexed for matching, never read by [toResult]. */
     protected abstract val excludedSourceFields: List<String>
@@ -47,15 +50,17 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
             boolQuery
         }
 
-        val response = client.search({ b ->
-            b.index(indexName)
-                .query(finalQuery)
-                .from(limit * (page - 1))
-                .size(limit)
-                // drop the search-only fields from the response
-                .source { s -> s.filter { f -> f.excludes(excludedSourceFields) } }
-                .sort(sortOptions(sortBy, isQueryPresent))
-        }, ObjectNode::class.java)
+        val response = metrics.measure(spec, query) {
+            client.search({ b ->
+                b.index(spec.alias)
+                    .query(finalQuery)
+                    .from(limit * (page - 1))
+                    .size(limit)
+                    // drop the search-only fields from the response
+                    .source { s -> s.filter { f -> f.excludes(excludedSourceFields) } }
+                    .sort(sortOptions(sortBy, isQueryPresent))
+            }, ObjectNode::class.java)
+        }
 
         return response.hits().hits().mapNotNull { it.source()?.let(::toResult) }
     }
