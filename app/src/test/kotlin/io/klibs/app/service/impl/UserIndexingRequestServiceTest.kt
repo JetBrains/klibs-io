@@ -115,7 +115,7 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
             )
         )
 
-        uut.fulfillRequest(requireNotNull(issue.id))
+        uut.discoverAndSaveRequest(requireNotNull(issue.id))
 
         val saved = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "lib", "1.0.0")
         assertTrue(saved != null, "Index request should be saved")
@@ -278,5 +278,52 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         )
 
         uut.fulfillRequest(requireNotNull(issue.id))
+    }
+
+    // Tests for saveGAVRequest
+
+    @Test
+    fun `saveGAVRequest should save index request without checking against Maven Central`() {
+        uut.saveGAVRequest("com.example", "lib", "1.0.0")
+
+        verify(centralSonatypeSearchClient, never()).getKotlinToolingMetadata(any())
+
+        val saved = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "lib", "1.0.0")
+        assertTrue(saved != null, "Index request should be saved")
+        assertEquals("com.example", saved.groupId)
+        assertEquals("lib", saved.artifactId)
+        assertEquals("1.0.0", saved.version)
+        assertEquals(ScraperType.CENTRAL_SONATYPE, saved.repo)
+        assertNull(saved.userRequestIssue, "saveGAVRequest should not link to any issue")
+    }
+
+    @Test
+    @Sql(value = ["classpath:sql/UserIndexingRequestServiceTest/insert-into-banned-packages.sql"])
+    fun `saveGAVRequest should throw 400 when artifact is banned`() {
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.saveGAVRequest("com.example", "lib", "1.0.0")
+        }
+
+        assertEquals("Artifact com.example:lib:1.0.0 is banned", exception.reason)
+    }
+
+    @Test
+    @Sql(value = ["classpath:sql/UserIndexingRequestServiceTest/insert-into-package.sql"])
+    fun `saveGAVRequest should throw 400 when artifact is already indexed`() {
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.saveGAVRequest("com.example", "lib", "1.0.0")
+        }
+
+        assertEquals("Artifact com.example:lib:1.0.0 is already indexed or queued", exception.reason)
+    }
+
+    @Test
+    @Sql(value = ["classpath:sql/UserIndexingRequestServiceTest/insert-into-package-index-request.sql"])
+    fun `saveGAVRequest should throw 400 when artifact is already queued`() {
+        val exception = assertThrows<UserRequestProcessingException> {
+            uut.saveGAVRequest("com.example", "lib", "1.0.0")
+        }
+
+        assertEquals("Artifact com.example:lib:1.0.0 is already indexed or queued", exception.reason)
     }
 }
