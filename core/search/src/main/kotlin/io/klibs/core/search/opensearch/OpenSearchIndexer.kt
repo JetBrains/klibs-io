@@ -31,7 +31,7 @@ class OpenSearchIndexer(
 ) {
 
     fun aliasExists(spec: OpenSearchIndexSpec): Boolean =
-        client.indices().existsAlias { it.name(spec.alias) }.value()
+        client.indices().existsAlias { it.name(spec.alias).index(slotPattern(spec.alias)) }.value()
 
     fun servingIndexCreatedAt(spec: OpenSearchIndexSpec): Instant? {
         val response = client.indices().getSettings { it.index(spec.alias).ignoreUnavailable(true) }
@@ -109,11 +109,13 @@ class OpenSearchIndexer(
         }
     }
 
+    private fun slotPattern(alias: String): String = "$alias-*"
+
     private fun servingIndices(alias: String): Set<String> {
         val indicesClient = client.indices()
-        if (!indicesClient.existsAlias { it.name(alias) }.value()) return emptySet()
+        if (!indicesClient.existsAlias { it.name(alias).index(slotPattern(alias)) }.value()) return emptySet()
 
-        val aliasesByIndex = indicesClient.getAlias { it.name(alias) }.result()
+        val aliasesByIndex = indicesClient.getAlias { it.name(alias).index(slotPattern(alias)) }.result()
         return aliasesByIndex.keys
     }
 

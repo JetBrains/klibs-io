@@ -10,8 +10,8 @@ import java.time.Duration
 data class OpenSearchProperties(
     val enabled: Boolean = false,
     val uri: String = "https://localhost:9200",
-    val projectIndex: String = "project",
-    val packageIndex: String = "package",
+    val projectIndex: String = "klibs-project",
+    val packageIndex: String = "klibs-package",
     val username: String? = null,
     val password: String? = null,
 
