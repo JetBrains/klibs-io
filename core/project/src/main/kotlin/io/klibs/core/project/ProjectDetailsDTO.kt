@@ -1,5 +1,6 @@
 package io.klibs.core.project
 
+import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.project.enums.MarkerType
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -45,6 +46,13 @@ data class ProjectDetailsDTO(
         allowableValues = ["common", "jvm", "androidJvm", "native", "wasm", "js"]
     )
     val platforms: List<String>,
+
+    @Schema(
+        description = "Targets supported by the project's packages. Map where keys are target groups (e.g. 'JVM', 'IOS') and values are sets of specific targets within that group.",
+        type = "object",
+        example = """{"JVM": ["11", "17"], "IOS": ["ios_arm64", "ios_x64"]}"""
+    )
+    val targetGroups: Map<TargetGroup, Set<String>>,
 
     @Schema(
         description = "Latest version of the project. Not guaranteed to be the same as package versions",

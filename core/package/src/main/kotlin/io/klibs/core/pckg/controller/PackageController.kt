@@ -138,6 +138,7 @@ private fun PackageDetails.toDTO(): PackageDetailsResponse {
         name = this.artifactId,
         description = this.description,
         targets = this.targets.map { it.toDTO() },
+        targetGroups = TargetGroup.gatherTargetGroupsFromTargets(this.targets),
         licenses = this.licenses.map { OptionalLinkResponse(title = it.name, url = it.url) },
         developers = this.developers.map { OptionalLinkResponse(title = it.name, url = it.url) },
         buildTool = "${this.buildTool} ${this.buildToolVersion}",
@@ -156,7 +157,8 @@ fun PackageOverview.toDTO(): PackageOverviewResponse {
         version = this.version,
         releasedAtMillis = this.releasedAt.toEpochMilli(),
         description = this.description,
-        targets = this.targets.map { it.toDTO() }
+        targets = this.targets.map { it.toDTO() },
+        targetGroups = TargetGroup.gatherTargetGroupsFromTargets(this.targets)
     )
 }
 

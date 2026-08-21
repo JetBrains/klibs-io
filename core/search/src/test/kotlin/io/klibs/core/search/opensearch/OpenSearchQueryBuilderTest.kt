@@ -72,7 +72,7 @@ class OpenSearchQueryBuilderTest {
                 shoulds = emptyList(),
                 filters = OpenSearchQueryBuilder.commonFilters(
                     platforms = listOf(PackagePlatform.JVM),
-                    targetFilters = listOf(mapOf(TargetGroup.JavaScript to emptySet())),
+                    targetGroupFilters = listOf(mapOf(TargetGroup.JavaScript to emptySet())),
                     ownerLogin = "jetbrains",
                 ),
             )
@@ -91,7 +91,7 @@ class OpenSearchQueryBuilderTest {
                 shoulds = emptyList(),
                 filters = OpenSearchQueryBuilder.commonFilters(
                     platforms = emptyList(),
-                    targetFilters = listOf(mapOf(TargetGroup.IOS to emptySet())),
+                    targetGroupFilters = listOf(mapOf(TargetGroup.IOS to emptySet())),
                     ownerLogin = null,
                 ),
             )
@@ -189,7 +189,7 @@ class OpenSearchQueryBuilderTest {
             [{"terms":{"targets":["ANDROIDJVM_1.6","ANDROIDJVM_1.7","ANDROIDJVM_1.8","ANDROIDJVM_9",
             "ANDROIDJVM_10","ANDROIDJVM_11","ANDROIDJVM_12","ANDROIDJVM_13","ANDROIDJVM_14",
             "ANDROIDJVM_15","ANDROIDJVM_16","ANDROIDJVM_17","ANDROIDJVM_18","ANDROIDJVM_19",
-            "ANDROIDJVM_20","ANDROIDJVM_21","ANDROIDJVM_22","ANDROIDJVM_23","ANDROIDJVM_24"]}}]
+            "ANDROIDJVM_20","ANDROIDJVM_21","ANDROIDJVM_22","ANDROIDJVM_23","ANDROIDJVM_24","ANDROIDJVM_25"]}}]
             """.flat(),
             targetJson(mapOf(TargetGroup.AndroidJvm to emptySet())),
         )
@@ -201,7 +201,7 @@ class OpenSearchQueryBuilderTest {
             """
             [{"terms":{"targets":["ANDROIDJVM_11","ANDROIDJVM_12","ANDROIDJVM_13","ANDROIDJVM_14",
             "ANDROIDJVM_15","ANDROIDJVM_16","ANDROIDJVM_17","ANDROIDJVM_18","ANDROIDJVM_19",
-            "ANDROIDJVM_20","ANDROIDJVM_21","ANDROIDJVM_22","ANDROIDJVM_23","ANDROIDJVM_24"]}}]
+            "ANDROIDJVM_20","ANDROIDJVM_21","ANDROIDJVM_22","ANDROIDJVM_23","ANDROIDJVM_24","ANDROIDJVM_25"]}}]
             """.flat(),
             targetJson(mapOf(TargetGroup.AndroidJvm to setOf("11", "17"))),
         )
@@ -214,7 +214,7 @@ class OpenSearchQueryBuilderTest {
             [{"terms":{"targets":["JVM_17","JVM_18","JVM_19","JVM_20","JVM_21","JVM_22","JVM_23",
             "JVM_24","JVM_25"]}},{"terms":{"targets":["ANDROIDJVM_15","ANDROIDJVM_16","ANDROIDJVM_17",
             "ANDROIDJVM_18","ANDROIDJVM_19","ANDROIDJVM_20","ANDROIDJVM_21","ANDROIDJVM_22",
-            "ANDROIDJVM_23","ANDROIDJVM_24"]}}]
+            "ANDROIDJVM_23","ANDROIDJVM_24","ANDROIDJVM_25"]}}]
             """.flat(),
             targetJson(
                 mapOf(TargetGroup.JVM to setOf("17"), TargetGroup.AndroidJvm to setOf("15")),
@@ -234,7 +234,7 @@ class OpenSearchQueryBuilderTest {
                 shoulds = emptyList(),
                 filters = OpenSearchQueryBuilder.commonFilters(
                     platforms = emptyList(),
-                    targetFilters = listOf(mapOf(TargetGroup.IOS to emptySet(), TargetGroup.MacOS to emptySet())),
+                    targetGroupFilters = listOf(mapOf(TargetGroup.IOS to emptySet(), TargetGroup.MacOS to emptySet())),
                     ownerLogin = null,
                 ),
             )
@@ -249,7 +249,7 @@ class OpenSearchQueryBuilderTest {
     fun `separate maps are combined with AND as separate filters`() {
         val filters = OpenSearchQueryBuilder.commonFilters(
             platforms = emptyList(),
-            targetFilters = listOf(mapOf(TargetGroup.JVM to setOf("17")), mapOf(TargetGroup.IOS to emptySet())),
+            targetGroupFilters = listOf(mapOf(TargetGroup.JVM to setOf("17")), mapOf(TargetGroup.IOS to emptySet())),
             ownerLogin = null,
         )
         assertEquals(2, filters.size)
@@ -259,7 +259,7 @@ class OpenSearchQueryBuilderTest {
     fun `MacOS and Windows as separate maps become OR within group and AND between groups`() {
         val out = OpenSearchQueryBuilder.commonFilters(
             platforms = emptyList(),
-            targetFilters = listOf(
+            targetGroupFilters = listOf(
                 mapOf(TargetGroup.MacOS to emptySet()),
                 mapOf(TargetGroup.Windows to emptySet()),
             ),
@@ -279,14 +279,14 @@ class OpenSearchQueryBuilderTest {
     fun `Unknown group is skipped instead of producing an empty terms clause`() {
         val onlyUnknown = OpenSearchQueryBuilder.commonFilters(
             platforms = emptyList(),
-            targetFilters = listOf(mapOf(TargetGroup.Unknown to emptySet())),
+            targetGroupFilters = listOf(mapOf(TargetGroup.Unknown to emptySet())),
             ownerLogin = null,
         )
         assertEquals(0, onlyUnknown.size)
 
         val macosAndUnknown = OpenSearchQueryBuilder.commonFilters(
             platforms = emptyList(),
-            targetFilters = listOf(mapOf(TargetGroup.MacOS to emptySet(), TargetGroup.Unknown to emptySet())),
+            targetGroupFilters = listOf(mapOf(TargetGroup.MacOS to emptySet(), TargetGroup.Unknown to emptySet())),
             ownerLogin = null,
         ).joinToString(",", "[", "]") { json(it) }
         assertEquals(

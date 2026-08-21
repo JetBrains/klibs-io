@@ -12,7 +12,8 @@ internal fun formTargetCondition(targetFilters: List<Map<TargetGroup, Set<String
     if (targetFilters.isEmpty()) return null
 
     val andGroups = targetFilters.mapNotNull { orGroup ->
-        val orConditions = orGroup.mapNotNull { (group, targets) -> groupSqlPredicate(group, targets) }
+        val orConditions =
+            orGroup.mapNotNull { (group, targets) -> createOrPredicateWithinOneTargetGroup(group, targets) }
         when {
             orConditions.isEmpty() -> null
             orConditions.size == 1 -> orConditions.single()
@@ -23,31 +24,31 @@ internal fun formTargetCondition(targetFilters: List<Map<TargetGroup, Set<String
     return andGroups.takeIf { it.isNotEmpty() }?.joinToString(" AND ")
 }
 
-private fun groupSqlPredicate(group: TargetGroup, targets: Set<String>): String? = when {
-    group == TargetGroup.JavaScript -> "platforms_vector @@ 'JS'"
-    group == TargetGroup.Wasm -> "platforms_vector @@ 'WASM'"
-    group in setOf(TargetGroup.JVM, TargetGroup.AndroidJvm) -> {
+private fun createOrPredicateWithinOneTargetGroup(targetGroup: TargetGroup, targets: Set<String>): String? = when {
+    targetGroup == TargetGroup.JavaScript -> "platforms_vector @@ 'JS'"
+    targetGroup == TargetGroup.Wasm -> "platforms_vector @@ 'WASM'"
+    targetGroup in setOf(TargetGroup.JVM, TargetGroup.AndroidJvm) -> {
         // Compare targets by their order in the target list
         val targetIndices = targets.map { t ->
-            val idx = group.targets.indexOf(t)
-            if (idx >= 0) idx else error("target not found: $t; group: $group")
+            val idx = targetGroup.targets.indexOf(t)
+            if (idx >= 0) idx else error("target not found: $t; group: $targetGroup")
         }
         val startIndex = targetIndices.minOrNull() ?: 0
-        val compatibleTargets = group.targets
+        val compatibleTargets = targetGroup.targets
             .drop(startIndex)
-            .joinToString(" | ") { "${group.platformName}_$it" }
+            .joinToString(" | ") { "${targetGroup.platform}_$it" }
         "targets_vector @@ '($compatibleTargets)'::tsquery"
     }
 
-    group == TargetGroup.Unknown -> null
+    targetGroup == TargetGroup.Unknown -> null
 
     // If a target group has an empty set, it means "any target in this group".
-    targets.isEmpty() -> group.targets
-        .joinToString(" | ") { "${group.platformName}_$it" }
+    targets.isEmpty() -> targetGroup.targets
+        .joinToString(" | ") { "${targetGroup.platform}_$it" }
         .let { "targets_vector @@ '($it)'::tsquery" }
 
     else -> {
-        val specificTargets = targets.joinToString(" & ") { "${group.platformName}_$it" }
+        val specificTargets = targets.joinToString(" & ") { "${targetGroup.platform}_$it" }
         "targets_vector @@ '($specificTargets)'::tsquery"
     }
 }

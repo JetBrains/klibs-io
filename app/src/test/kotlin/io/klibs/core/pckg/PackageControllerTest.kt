@@ -104,6 +104,7 @@ class PackageControllerTest : BaseUnitWithDbLayerTest() {
                     PackageTargetResponse(platform = "js", target = null),
                     PackageTargetResponse(platform = "jvm", target = "1.8"),
                 ),
+                targetGroups = mapOf(TargetGroup.JavaScript to emptySet(), TargetGroup.JVM to setOf("1.8")),
             ),
             PackageOverviewResponse(
                 id = 19004,
@@ -115,6 +116,7 @@ class PackageControllerTest : BaseUnitWithDbLayerTest() {
                 targets = listOf(
                     PackageTargetResponse(platform = "js", target = null),
                 ),
+                targetGroups = mapOf(TargetGroup.JavaScript to emptySet()),
             ),
         )
 

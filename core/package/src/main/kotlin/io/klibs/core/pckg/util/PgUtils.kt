@@ -35,3 +35,6 @@ internal inline fun <reified T> ResultSet.getJsonValue(columnName: String): T? {
     return objectMapper.readValue(json)
 }
 
+fun ResultSet.getTargetsVector(columnName: String): List<String> =
+    getString(columnName)?.split(" ")?.map { it.trim('\'') } ?: emptyList()
+

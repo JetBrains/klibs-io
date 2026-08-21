@@ -24,7 +24,7 @@ data class SearchProjectsRequest(
         example = """[{"JVM": ["11", "17"]}, {"IOS": [], "TvOS": []}]"""
     )
     @field:ValidTargetGroupValues
-    val targetFilters: List<Map<TargetGroup, Set<String>>> = emptyList(),
+    val targetGroupFilters: List<Map<TargetGroup, Set<String>>> = emptyList(),
 
     @Schema(
         description = "Login of the owner",

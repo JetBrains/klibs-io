@@ -20,7 +20,7 @@ interface PackageSearchRepository {
     fun find(
         query: String?,
         platforms: List<PackagePlatform>,
-        targetFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         page: Int,

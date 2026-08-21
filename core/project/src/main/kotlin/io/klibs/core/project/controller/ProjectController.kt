@@ -132,6 +132,7 @@ private fun ProjectDetails.toDTO(): ProjectDetailsDTO {
         name = this.name,
         description = this.description,
         platforms = this.platforms.map { it.serializableName },
+        targetGroups = this.targetGroups,
         latestReleaseVersion = this.latestReleaseVersion,
         latestReleasePublishedAtMillis = this.latestReleasePublishedAt?.toEpochMilli(),
         linkHomepage = this.getHomepageLink(),
