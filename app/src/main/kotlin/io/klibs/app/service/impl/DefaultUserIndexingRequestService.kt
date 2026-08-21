@@ -31,11 +31,17 @@ internal class DefaultUserIndexingRequestService(
 ) : UserIndexingRequestService {
 
     @Transactional
-    override fun fulfillRequest(userRequestId: UUID) {
+    override fun discoverAndSaveRequest(userRequestId: UUID) {
         val userRequestIssue = userRequestIssueRepository.findById(userRequestId).getOrNull()
             ?: throw UserRequestProcessingException("User request not found")
 
         fulfillRequest(userRequestIssue.groupId, userRequestIssue.artifactId, userRequestIssue.version, userRequestIssue)
+    }
+
+    @Transactional
+    override fun saveGAVRequest(groupId: String, artifactId: String, version: String) {
+        val artifact = newMavenArtifact(groupId, artifactId, version)
+        saveUserRequests(listOf(artifact), issue = null)
     }
 
     internal fun fulfillRequest(
@@ -83,9 +89,7 @@ internal class DefaultUserIndexingRequestService(
     }
 
     private fun resolveSpecificVersion(groupId: String, artifactId: String, version: String): MavenArtifact {
-        val artifact = MavenArtifact(groupId, artifactId, version, ScraperType.CENTRAL_SONATYPE)
-        if (isBanned(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is banned")
-        if (isAlreadyIndexedOrQueued(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is already indexed or queued")
+        val artifact = newMavenArtifact(groupId, artifactId, version)
 
         centralSonatypeSearchClient.getKotlinToolingMetadata(artifact)
             ?: throw UserRequestProcessingException(
@@ -93,6 +97,13 @@ internal class DefaultUserIndexingRequestService(
                         "(kotlin-tooling-metadata.json not found)"
             )
 
+        return artifact
+    }
+
+    private fun newMavenArtifact(groupId: String, artifactId: String, version: String): MavenArtifact {
+        val artifact = MavenArtifact(groupId, artifactId, version, ScraperType.CENTRAL_SONATYPE)
+        if (isBanned(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is banned")
+        if (isAlreadyIndexedOrQueued(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is already indexed or queued")
         return artifact
     }
 

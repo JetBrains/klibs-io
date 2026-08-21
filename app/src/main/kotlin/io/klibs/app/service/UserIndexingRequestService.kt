@@ -6,5 +6,10 @@ interface UserIndexingRequestService {
     /**
      * Processing user's request: discovers and saves packages for indexing
      */
-    fun fulfillRequest(userRequestId: UUID)
+    fun discoverAndSaveRequest(userRequestId: UUID)
+
+    /**
+     * Saves packages for a GAV request without running the discovery
+     */
+    fun saveGAVRequest(groupId: String, artifactId: String, version: String)
 }
