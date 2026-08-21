@@ -1,9 +1,10 @@
-package io.klibs.app.webhook
+package io.klibs.app.validator
 
-import io.klibs.app.dto.UserIndexingRequestValidationResult
+import io.klibs.app.dto.IndexingRequestValidationResult
 import io.klibs.app.api.GitHubWebhookUserIndexingRequest
 import io.klibs.app.mapper.GitHubWebhookMapper
 import io.klibs.app.service.UserIssueNotifier
+import io.klibs.core.pckg.dto.UserIndexingRequestDto
 import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
@@ -25,25 +26,25 @@ class GitHubWebhookRequestsValidator(
         payload: GitHubWebhookUserIndexingRequest,
         event: String?,
         delivery: String?
-    ): UserIndexingRequestValidationResult {
+    ): IndexingRequestValidationResult<UserIndexingRequestDto> {
         if (event == "ping") {
             logger.info("Received GitHub webhook ping (delivery=$delivery)")
-            return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.ok().build())
+            return IndexingRequestValidationResult.NotApplicable(ResponseEntity.ok().build())
         }
 
         if (event != "issues") {
             logger.debug("Ignoring GitHub event '$event' (delivery=$delivery)")
-            return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.noContent().build())
+            return IndexingRequestValidationResult.NotApplicable(ResponseEntity.noContent().build())
         }
 
         if (payload.action != "labeled") {
             logger.debug("Ignoring issues action '${payload.action}' (delivery=$delivery)")
-            return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.noContent().build())
+            return IndexingRequestValidationResult.NotApplicable(ResponseEntity.noContent().build())
         }
 
         val issuePayload = payload.issue ?: run {
             logger.warn("Missing `issue` object in webhook delivery $delivery")
-            return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.badRequest().build())
+            return IndexingRequestValidationResult.NotApplicable(ResponseEntity.badRequest().build())
         }
 
         val requestLabel = gitHubIntegrationProperties.indexRequests.requestLabel
@@ -52,7 +53,7 @@ class GitHubWebhookRequestsValidator(
                 "Ignoring issue #${issuePayload.number} (delivery=$delivery): " +
                     "added label '${payload.label?.name}' is not the required label '$requestLabel'"
             )
-            return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.noContent().build())
+            return IndexingRequestValidationResult.NotApplicable(ResponseEntity.noContent().build())
         }
 
         val issueNumber = issuePayload.number
@@ -61,10 +62,10 @@ class GitHubWebhookRequestsValidator(
             if (issueNumber != null) {
                 userIssueNotifier.notifyFailure(issueNumber, null)
             }
-            return UserIndexingRequestValidationResult.NotApplicable(ResponseEntity.badRequest().build())
+            return IndexingRequestValidationResult.NotApplicable(ResponseEntity.badRequest().build())
         }
 
-        return UserIndexingRequestValidationResult.Valid(issueDto)
+        return IndexingRequestValidationResult.Valid(issueDto)
     }
 }
 

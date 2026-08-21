@@ -62,9 +62,9 @@ class SecurityConfiguration(
                 // GitHub webhook endpoint authenticates incoming requests via X-Hub-Signature-256.
                 authorize(HttpMethod.POST, "/webhooks/github/**", permitAll)
 
-                // Notifications from our Gradle plugin about artifacts newly published to Maven Central
-                authorize(HttpMethod.POST, "/notify", permitAll)
-                authorize(HttpMethod.OPTIONS, "/notify", permitAll)
+                // Notifications from the klibs-io-notifier Gradle plugin about artifacts newly published to Maven Central
+                authorize(HttpMethod.POST, "/notify/**", permitAll)
+                authorize(HttpMethod.OPTIONS, "/notify/**", permitAll)
 
                 // NOTE:
                 //  - /actuator/metrics and /actuator/prometheus are intentionally OPEN at the application level
