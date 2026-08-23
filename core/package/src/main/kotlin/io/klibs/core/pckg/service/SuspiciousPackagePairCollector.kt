@@ -15,10 +15,8 @@ class SuspiciousPackagePairCollector(
 ) {
 
     /**
-     * Recomputes the current within-project conflicts and upserts them on the unique
-     * `(project_id, artifact_id, group_id)` key: new conflicts are inserted `PENDING`, existing
-     * rows have only their signal columns refreshed (reviewer `status`/`notes` untouched), and
-     * rows that no longer conflict are left in place.
+     * Upserts current conflicts on the unique `(project_id, artifact_id, group_id)` key
+     * new ones inserted `PENDING`; existing rows have only signal columns refreshed
      */
     @Transactional
     fun recompute() {
@@ -49,8 +47,8 @@ class SuspiciousPackagePairCollector(
             GITHUB_OWNER.find(groupId)?.groupValues?.get(1)?.lowercase()
 
         /**
-         * Status-preserving merge: refresh signal columns on an existing row (keeping its id,
-         * status, notes and detected_at); otherwise build a new `PENDING` row stamped `detectedAt`.
+         * refresh signal columns on an existing row (keeping its id, status, notes, and detected_at)
+         * otherwise build a new `PENDING` row stamped `detectedAt`.
          */
         fun merge(
             existing: SuspiciousPackagePairCandidateEntity?,

@@ -1,5 +1,4 @@
--- Minimal fixture: one scm_owner + one project so a candidate row's project_id FK resolves.
--- scm_repo_id is nullable, so the scm_repo chain is skipped; owner_id is NOT NULL (FK to scm_owner).
+-- Minimal parent rows so a candidate's project_id FK resolves.
 INSERT INTO scm_owner (id, id_native, followers, updated_at, login, type, name, description, homepage,
                        twitter_handle, email, location, company)
 VALUES (9001, 9001, 0, CURRENT_TIMESTAMP, 'klibs-test-owner', 'author',

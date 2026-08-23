@@ -10,8 +10,7 @@ interface SuspiciousPackagePairCandidateRepository :
 
     /**
      * Within each project, finds every `(project_id, artifact_id, group_id)` entry whose
-     * `artifact_id` is published under more than one `group_id` — the within-project conflict.
-     * One row per entry, carrying the per-entry version count and release-timestamp range.
+     * `artifact_id` is published under more than one `group_id`
      */
     @Query(value = """
         SELECT
