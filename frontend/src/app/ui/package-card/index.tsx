@@ -5,7 +5,7 @@ import {PackageSearchResults} from "@/app/types";
 import {cardCn} from '@rescui/card';
 import {textCn} from '@rescui/typography';
 import {ReadIcon} from '@rescui/icons';
-import {getTargetGroupNames} from "@/app/types";
+import {getPackageTargetGroupLabels} from "@/app/types";
 import PlatformTag from "@/app/ui/platform-tag";
 
 import styles from './styles.module.css';
@@ -54,7 +54,7 @@ function getPackageLink(packageData: PackageSearchResults) {
 export default function PackageCard({featuredPackage, className, search}: PackageCardProps) {
     const packageLink = featuredPackage ? getPackageLink(featuredPackage) : null;
 
-    const targetGroups = featuredPackage?.targets ? getTargetGroupNames(featuredPackage.targets) : [];
+    const targetGroups = featuredPackage?.targets ? getPackageTargetGroupLabels(featuredPackage.targets) : [];
 
     return (
         <Link

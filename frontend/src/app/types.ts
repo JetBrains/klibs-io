@@ -217,6 +217,29 @@ export function getTargetGroupNames(targetGroups: TargetGroups): string[] {
 	return getSortedTargetGroups(targetGroups).map(getTargetGroupName);
 }
 
+// JVM targets are version strings ('1.8', '17'), the legacy 1.x ones sort below 9 numerically.
+export function latestJvmTarget(targets: string[] = []): string | undefined {
+	return targets
+		.filter(target => !isNaN(parseFloat(target)))
+		.reduce<string | undefined>(
+			(latest, target) => !latest || parseFloat(target) > parseFloat(latest) ? target : latest,
+			undefined,
+		);
+}
+
+// Package card labels: same as getTargetGroupNames, except JVM also carries its latest version.
+// Android keeps a plain label on purpose, so this is not a drop-in for the project card.
+export function getPackageTargetGroupLabels(targetGroups: TargetGroups): string[] {
+	return getSortedTargetGroups(targetGroups).map(group => {
+		const name = getTargetGroupName(group);
+
+		if (group !== 'JVM') return name;
+
+		const version = latestJvmTarget(targetGroups[group]);
+		return version ? `${name} ${version}` : name;
+	});
+}
+
 export function hasAnyLink(projectOverview: ProjectDetails): boolean {
 	return !!projectOverview.linkHomepage ||
 		!!projectOverview.linkScm ||
