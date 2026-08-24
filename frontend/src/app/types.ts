@@ -167,10 +167,10 @@ export type TargetGroups = Record<string, string[]>;
 
 // Display order and labels for the backend TargetGroup names.
 const targetGroupNames: Record<string, string> = {
-	AndroidJvm: 'Android',
-	JVM: 'JVM',
-	AndroidNative: 'Android Native',
 	IOS: 'iOS',
+	AndroidJvm: 'Android',
+	AndroidNative: 'Android Native',
+	JVM: 'JVM',
 	MacOS: 'macOS',
 	WatchOS: 'watchOS',
 	TvOS: 'tvOS',
@@ -291,21 +291,22 @@ export const getTargetGroupFilterName = (filter: TargetGroupFilter) => targetGro
 
 // Each entry maps backend TargetGroup names to target names, matching
 // List<Map<TargetGroup, Set<String>>> on the backend.
-export type TargetFilters = Record<string, string[]>[];
+export type TargetGroupFilters = Record<string, string[]>[];
 
 // Backend TargetGroup enum names, see core/package/.../model/TargetGroups.kt
+// `Unknown` is rejected by the backend validator, so it is not filterable.
 const targetGroupsByFilter: Record<TargetGroupFilter, string[]> = {
 	ios: ['IOS'],
 	android: ['AndroidNative', 'AndroidJvm'],
 	jvm: ['JVM'],
 	js: ['JavaScript'],
 	wasm: ['Wasm'],
-	other: ['Linux', 'MacOS', 'Windows', 'TvOS', 'WatchOS', 'Unknown'],
+	other: ['Linux', 'MacOS', 'Windows', 'TvOS', 'WatchOS'],
 };
 
 // Groups inside one entry are OR-ed, entries in the list are AND-ed.
 // An empty target list means "any target in this group".
-export function toTargetFilters(filters: TargetGroupFilter[] = []): TargetFilters {
+export function toTargetGroupFilters(filters: TargetGroupFilter[] = []): TargetGroupFilters {
 	return filters
 		.map(filter => targetGroupsByFilter[filter] ?? [])
 		.filter(groups => groups.length > 0)
@@ -341,14 +342,14 @@ export interface SearchProjectsRequest {
 	sortBy: SearchSort;
 	tags: string[];
 	markers: string[];
-	targetFilters: TargetFilters;
+	targetGroupFilters: TargetGroupFilters;
 }
 
 export interface SearchPackagesRequest {
 	query?: string;
 	owner?: string;
 	sortBy: SearchSort;
-	targetFilters: TargetFilters;
+	targetGroupFilters: TargetGroupFilters;
 }
 
 export interface TagsStats {

@@ -46,7 +46,7 @@ async function fetchInsightsProjects(
         sortBy: sort,
         tags: [],
         markers: [],
-        targetFilters: []
+        targetGroupFilters: []
     };
 
     const res = await fetch(
