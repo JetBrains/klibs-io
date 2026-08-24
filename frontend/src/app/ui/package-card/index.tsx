@@ -5,9 +5,7 @@ import {PackageSearchResults} from "@/app/types";
 import {cardCn} from '@rescui/card';
 import {textCn} from '@rescui/typography';
 import {ReadIcon} from '@rescui/icons';
-import {Tag, presets} from '@rescui/tag';
-import {getNativeTargetGroupName, getPlatformName} from "@/app/types";
-import {Platform} from "@/app/types";
+import {getTargetGroupNames} from "@/app/types";
 import PlatformTag from "@/app/ui/platform-tag";
 
 import styles from './styles.module.css';
@@ -48,18 +46,6 @@ function SearchTextWrap({search, children}: { search?: PackageCardProps['search'
     }, [search, children]);
 }
 
-type PackageTargets = PackageSearchResults['targets'];
-
-function getVersionedPlatformsFromTargets(targets: PackageTargets) {
-    return (targets["JVM"] || []).map(version => `JVM ${version}`);
-}
-
-function getNativePlatformGroups(targets: PackageTargets): string[] {
-    return Object.keys(targets)
-        .map(getNativeTargetGroupName)
-        .filter((groupName): groupName is string => !!groupName);
-}
-
 // Helper function to generate package link
 function getPackageLink(packageData: PackageSearchResults) {
     return `/package/${packageData.groupId}/${packageData.artifactId}`;
@@ -68,9 +54,7 @@ function getPackageLink(packageData: PackageSearchResults) {
 export default function PackageCard({featuredPackage, className, search}: PackageCardProps) {
     const packageLink = featuredPackage ? getPackageLink(featuredPackage) : null;
 
-    const versionedPlatforms = featuredPackage?.targets && getVersionedPlatformsFromTargets(featuredPackage?.targets);
-    const nonVersionedPlatforms = featuredPackage?.platforms.filter(platform => platform !== Platform.common && platform !== Platform.native && platform !== Platform.jvm && platform !== Platform.androidJvm)
-    const nativeTargets = featuredPackage?.targets && getNativePlatformGroups(featuredPackage?.targets);
+    const targetGroups = featuredPackage?.targets ? getTargetGroupNames(featuredPackage.targets) : [];
 
     return (
         <Link
@@ -116,26 +100,13 @@ export default function PackageCard({featuredPackage, className, search}: Packag
                                 </p>
                             </div>
 
-                            {/*Platforms and targets*/}
+                            {/*Target groups*/}
                             <div className={styles.platforms}>
-                                {versionedPlatforms?.length ? versionedPlatforms.map(platform => (
-                                    <PlatformTag key={platform}>
-                                        {platform}
+                                {targetGroups.map(group => (
+                                    <PlatformTag key={group}>
+                                        {group}
                                     </PlatformTag>
-                                )) : null}
-                                {nonVersionedPlatforms?.length ? nonVersionedPlatforms.map(platform => (
-                                    <PlatformTag key={platform}>
-                                        {getPlatformName(platform)}
-                                    </PlatformTag>
-                                )) : null}
-                                {nativeTargets?.length ? nativeTargets.map(target => (
-                                    <Tag
-                                        key={target}
-                                        {...presets['filled-light']}
-                                    >
-                                        {target}
-                                    </Tag>
-                                )) : null}
+                                ))}
                             </div>
                         </div>
                 </>

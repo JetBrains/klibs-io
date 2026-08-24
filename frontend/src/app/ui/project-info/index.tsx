@@ -1,4 +1,4 @@
-import {getOwnerLink, hasAnyLink, isFeaturedProject, isGrantWinner, ProjectDetails, sortedPlatforms} from "@/app/types";
+import {getOwnerLink, getSortedTargetGroups, hasAnyLink, isFeaturedProject, isGrantWinner, ProjectDetails} from "@/app/types";
 import PlatformBadge from "@/app/ui/platform-badge";
 import Link from "next/link";
 import TimeAgo from "@/app/ui/time-ago";
@@ -40,10 +40,10 @@ export function ProjectInfo({projectOverview}: {projectOverview: ProjectDetails}
 
     return (
         <>
-            {/* Platforms */}
+            {/* Target groups */}
             <div className={styles.platformTagWrapper}>
-                {projectOverview && sortedPlatforms(projectOverview.platforms).map(platform =>
-                    <PlatformBadge key={platform} platform={platform}/>
+                {projectOverview?.targetGroups && getSortedTargetGroups(projectOverview.targetGroups).map(group =>
+                    <PlatformBadge key={group} group={group}/>
                 )}
             </div>
 

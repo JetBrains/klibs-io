@@ -16,7 +16,6 @@ import {
 } from "@/app/types";
 import TimeAgo from "@/app/ui/time-ago";
 import {TimestampToDate} from "@/app/ui/time-ago";
-import PlatformsNames from "@/app/ui/platforms-names";
 import {textCn} from "@rescui/typography";
 
 import {TabList, Tab} from '@rescui/tab-list';
@@ -325,7 +324,7 @@ function VersionHistoryTable({isMobile, packageVersions, version, packageName}: 
                     <tr className={textCn("rs-text-3", {hardness: "hard"})}>
                         <th className="padding-left-medium">Version</th>
                         <th>Release</th>
-                        <th>Platforms and targets</th>
+                        <th>Target groups</th>
                     </tr>
                     </thead>
 
@@ -361,11 +360,10 @@ function VersionHistoryTable({isMobile, packageVersions, version, packageName}: 
                                     </div>
                                 </td>
 
-                                {/* Platforms and targets */}
+                                {/* Target groups */}
                                 <td className={styles.platformsAndTargetsCell}>
                                     <div className={styles.platformsTargetsWrapper}>
                                         <div className={styles.platformsListWrapper}>
-                                            <PlatformsNames packageOverview={packageVersion}/>
                                             <SidePopup
                                                 target={
                                                     <TargetsList projectPackage={packageVersion}/>
