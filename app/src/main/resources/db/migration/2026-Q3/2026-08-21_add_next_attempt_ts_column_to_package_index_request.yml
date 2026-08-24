@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: Add next_attempt_ts column to package_index_request table
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - addColumn:
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: next_attempt_ts
+                  type: timestamptz
+        - sql:
+            sql: UPDATE package_index_request SET next_attempt_ts = CURRENT_TIMESTAMP WHERE failed_attempts < 2;
+
+  - changeSet:
+      id: Add package_index_request_next_attempt_ts_idx to package_index_request
+      author: zofia.zuzanna.wiora@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: package_index_request
+              indexName: package_index_request_next_attempt_ts_idx
+      changes:
+        - createIndex:
+            indexName: package_index_request_next_attempt_ts_idx
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: next_attempt_ts

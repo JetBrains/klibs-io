@@ -163,7 +163,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `should return false when queue is empty`(output: CapturedOutput) {
-        assertNull(indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts))
+        assertNull(indexingRequestRepository.findFirstForIndexing())
 
         val result = uut.processPackageQueue()
 
@@ -174,8 +174,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should handle an exceptions during processing and return true`(output: CapturedOutput) {
-        val packageIndexRequestBeforeProcessing =
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequestBeforeProcessing)
 
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenThrow(RuntimeException("Mocked getPom exception"))
@@ -202,8 +201,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `a 429 from Maven Central stops the queue and keeps the request pending`() {
-        val requestBeforeProcessing =
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val requestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(requestBeforeProcessing)
 
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
@@ -218,18 +216,14 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         assertEquals("PENDING", row["status"], "Request should stay pending")
         assertEquals(0, (row["failed_attempts"] as Number).toInt(), "Rate limiting should not burn a retry attempt")
-        assertNotNull(
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
-            "Request must be eligible for the next run"
-        )
+        assertNotNull(indexingRequestRepository.findFirstForIndexing(), "Request must be eligible for the next run")
     }
 
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should successfully process package indexing request`(output: CapturedOutput) {
 
-        val packageIndexRequestBeforeProcessing =
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequestBeforeProcessing)
 
         val pom = mock<MavenPom>()
@@ -253,7 +247,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertFalse(output.out.contains("Unable to process the index request"))
 
         assertNull(
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
+            indexingRequestRepository.findFirstForIndexing(),
             "Processed request should be removed from the queue"
         )
         val foundPackages = packageRepository.findByGroupIdAndArtifactIdOrderByReleaseTsDesc(
@@ -316,9 +310,45 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-failed-tooling-metadata-request.sql"])
+    fun `should make historical tooling metadata failures retryable after reset`() {
+        assertNull(
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
+            "Historical tooling metadata failures should not be retryable before reset",
+        )
+
+        val updatedRows = jdbcTemplate.update(
+            """
+                UPDATE package_index_request
+                SET status = 'PENDING',
+                    failed_attempts = 0,
+                    failed_ts = NULL,
+                    last_error_message = NULL
+                WHERE last_error_message LIKE 'Unable to find tooling metadata for %'
+            """.trimIndent()
+        )
+
+        assertEquals(1, updatedRows)
+
+        val retryableRequest = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(retryableRequest)
+        assertEquals("com.example", retryableRequest.groupId)
+        assertEquals("stale-tooling-metadata", retryableRequest.artifactId)
+        assertEquals("1.0.0", retryableRequest.version)
+
+        val resetRow = jdbcTemplate.queryForMap(
+            "SELECT status, failed_attempts, failed_ts, last_error_message FROM package_index_request WHERE id = 9201"
+        )
+        assertEquals("PENDING", resetRow["status"])
+        assertEquals(0, (resetRow["failed_attempts"] as Number).toInt())
+        assertNull(resetRow["failed_ts"])
+        assertNull(resetRow["last_error_message"])
+    }
+
+    @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should parse androidJvm platform when jvm target is KotlinMultiplatformAndroidLibraryTargetImpl`() {
-        val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val indexRequest = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(indexRequest)
 
         val pom = mock<MavenPom>()
@@ -355,7 +385,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         // Assert basic processing
         assertTrue(result, "Should return true")
         assertNull(
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
+            indexingRequestRepository.findFirstForIndexing(),
             "Processed request should be removed from the queue"
         )
 
@@ -580,8 +610,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should markAsFailed when ReadmeContentBuilder buildFromMarkdown throws exception`(output: CapturedOutput) {
-        val packageIndexRequest =
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val before = Instant.now()
+        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequest)
 
         val ownerLogin = "test-owner"
@@ -651,13 +681,110 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertTrue(result, "Should return true when a request is processed")
         assertContains(output.out, "Error during claiming an indexing request")
 
-        // Verify the failed_attempts count is incremented
-        val failedAttempts = jdbcTemplate.queryForObject(
-            "SELECT failed_attempts FROM package_index_request WHERE id = ${packageIndexRequest.idNotNull}",
-            Int::class.java
+        // Verify the record in package_index_reqest is correctly updated
+        val updatedRequest = jdbcTemplate.queryForMap(
+            "SELECT status, failed_attempts, last_error_message, next_attempt_ts, failed_ts FROM package_index_request WHERE id = ${packageIndexRequest.idNotNull}"
         )
-        assertEquals(1, failedAttempts, "Failed attempts should be incremented")
-        assertContains(output.out, "Mocked buildFromMarkdown exception")
+        assertEquals("PENDING", updatedRequest["status"], "status should be set to PENDING")
+        assertEquals(1, (updatedRequest["failed_attempts"] as Number).toInt(), "Failed attempts should be incremented")
+        assertEquals("Mocked buildFromMarkdown exception", updatedRequest["last_error_message"], "last_error_message should store correct error message")
+        assertNotNull(updatedRequest["failed_ts"], "failed_ts should be set")
+
+        val nextAttemptTs = (updatedRequest["next_attempt_ts"] as java.sql.Timestamp).toInstant()
+        assertTrue(
+            nextAttemptTs.isAfter(before.plus(Duration.ofHours(3))),
+            "next_attempt_ts should be at least 3h from beginning of the test"
+        )
+        assertTrue(
+            nextAttemptTs.isBefore(Instant.now().plus(Duration.ofHours(3))),
+            "next_attempt_ts should be at most 3h from end of the test"
+        )
+
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing-last-attempt.sql"])
+    fun `should markAsFailed as no next attempt when processing fails for the fourth time`(output: CapturedOutput) {
+        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(packageIndexRequest)
+        assertEquals(3, packageIndexRequest.failedAttempts)
+
+        val ownerLogin = "test-owner"
+        val repoName = "test-repo"
+        val repoNativeId = 12345L
+        val ownerNativeId = 67890L
+
+        val pom = mock<MavenPom>()
+        whenever(pom.groupId).thenReturn(packageIndexRequest.groupId)
+        whenever(pom.artifactId).thenReturn(packageIndexRequest.artifactId)
+        whenever(pom.version).thenReturn(packageIndexRequest.version)
+        val scm = Scm()
+        scm.url = "https://github.com/$ownerLogin/$repoName"
+        whenever(pom.scm).thenReturn(scm)
+
+        val kotlinToolingMetadata = mock<GradleMetadata>()
+        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
+            PomWithReleaseDate(
+                pom,
+                Instant.now()
+            )
+        )
+        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+
+        // Mock GitHub integration to successfully create SCM entities
+        val ghRepo = GitHubRepository(
+            nativeId = repoNativeId,
+            name = repoName,
+            owner = ownerLogin,
+            defaultBranch = "main",
+            createdAt = Instant.now(),
+            hasGhPages = false,
+            hasIssues = true,
+            hasWiki = false,
+            archived = false,
+            stars = 10,
+            lastActivity = Instant.now(),
+        )
+        whenever(gitHubIntegration.getRepository(ownerLogin, repoName)).thenReturn(ghRepo)
+        whenever(gitHubIntegration.getUser(ownerLogin)).thenReturn(
+            GitHubUser(
+                id = ownerNativeId,
+                login = ownerLogin,
+                type = "User",
+                name = "Test Owner",
+                company = null,
+                blog = null,
+                location = null,
+                email = null,
+                bio = null,
+                twitterUsername = null,
+                followers = 0,
+            )
+        )
+        whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(null)
+        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(repoNativeId), any()))
+            .thenReturn(ReadmeFetchResult.Content("# Test README"))
+
+        // Mock ReadmeContentBuilder to throw an exception
+        whenever(readmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()))
+            .thenThrow(RuntimeException("Mocked buildFromMarkdown exception"))
+
+        val result = uut.processPackageQueue()
+
+        assertTrue(result, "Should return true when a request is processed")
+        assertContains(output.out, "Error during claiming an indexing request")
+
+        // Verify the record in package_index_reqest is correctly updated
+        val updatedRequest = jdbcTemplate.queryForMap(
+            "SELECT status, failed_attempts, last_error_message, next_attempt_ts, failed_ts FROM package_index_request WHERE id = ${packageIndexRequest.idNotNull}"
+        )
+        assertEquals("PENDING", updatedRequest["status"], "status should be set to PENDING")
+        assertEquals(4, (updatedRequest["failed_attempts"] as Number).toInt(), "Failed attempts should be incremented")
+        assertEquals("Mocked buildFromMarkdown exception", updatedRequest["last_error_message"], "last_error_message should store correct error message")
+        assertNotNull(updatedRequest["failed_ts"], "failed_ts should be set")
+        assertNull(updatedRequest["next_attempt_ts"], "next_attempt_ts should be null")
     }
 
     @Test
