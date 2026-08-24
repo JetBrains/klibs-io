@@ -16,5 +16,5 @@ VALUES (9301, 'com.example', 'test-library-ttl', '1.0.0');
 INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, scraper_type, generated_description, description_generated_at, maven_artifact_id) VALUES (9301, 9301, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '1 day', 'com.example', 'test-library-ttl', '1.0.0', 'Recent AI description', 'https://example.com/test-library', NULL, 'gradle', '7.0', '1.6.0', NULL, '[]'::jsonb, '[]'::jsonb, 'CENTRAL_SONATYPE', true, CURRENT_TIMESTAMP - INTERVAL '1 day', 9301);
 
 
-INSERT INTO package_index_request(id, group_id, artifact_id, version, released_ts, scraper_type, reindex, failed_attempts, status)
-VALUES (9301, 'com.example', 'test-library-ttl', '2.0.0', CURRENT_TIMESTAMP, 'CENTRAL_SONATYPE', false, 0, 'PENDING');
+INSERT INTO package_index_request(id, group_id, artifact_id, version, released_ts, scraper_type, reindex, failed_attempts, status, next_attempt_ts)
+VALUES (9301, 'com.example', 'test-library-ttl', '2.0.0', CURRENT_TIMESTAMP, 'CENTRAL_SONATYPE', false, 0, 'PENDING', current_timestamp);

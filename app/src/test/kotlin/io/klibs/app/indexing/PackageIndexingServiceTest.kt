@@ -38,6 +38,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
+import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.test.assertContains
@@ -447,6 +448,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should markAsFailed when ReadmeContentBuilder buildFromMarkdown throws exception`(output: CapturedOutput) {
+        val before = Instant.now()
         val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequest)
 
@@ -517,13 +519,110 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertTrue(result, "Should return true when a request is processed")
         assertContains(output.out, "Error during claiming an indexing request")
 
-        // Verify the failed_attempts count is incremented
-        val failedAttempts = jdbcTemplate.queryForObject(
-            "SELECT failed_attempts FROM package_index_request WHERE id = ${packageIndexRequest.idNotNull}",
-            Int::class.java
+        // Verify the record in package_index_reqest is correctly updated
+        val updatedRequest = jdbcTemplate.queryForMap(
+            "SELECT status, failed_attempts, last_error_message, next_attempt_ts, failed_ts FROM package_index_request WHERE id = ${packageIndexRequest.idNotNull}"
         )
-        assertEquals(1, failedAttempts, "Failed attempts should be incremented")
-        assertContains(output.out, "Mocked buildFromMarkdown exception")
+        assertEquals("PENDING", updatedRequest["status"], "status should be set to PENDING")
+        assertEquals(1, (updatedRequest["failed_attempts"] as Number).toInt(), "Failed attempts should be incremented")
+        assertEquals("Mocked buildFromMarkdown exception", updatedRequest["last_error_message"], "last_error_message should store correct error message")
+        assertNotNull(updatedRequest["failed_ts"], "failed_ts should be set")
+
+        val nextAttemptTs = (updatedRequest["next_attempt_ts"] as java.sql.Timestamp).toInstant()
+        assertTrue(
+            nextAttemptTs.isAfter(before.plus(Duration.ofHours(3))),
+            "next_attempt_ts should be at least 3h from beginning of the test"
+        )
+        assertTrue(
+            nextAttemptTs.isBefore(Instant.now().plus(Duration.ofHours(3))),
+            "next_attempt_ts should be at most 3h from end of the test"
+        )
+
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing-last-attempt.sql"])
+    fun `should markAsFailed as no next attempt when processing fails for the fourth time`(output: CapturedOutput) {
+        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
+        assertNotNull(packageIndexRequest)
+        assertEquals(3, packageIndexRequest.failedAttempts)
+
+        val ownerLogin = "test-owner"
+        val repoName = "test-repo"
+        val repoNativeId = 12345L
+        val ownerNativeId = 67890L
+
+        val pom = mock<MavenPom>()
+        whenever(pom.groupId).thenReturn(packageIndexRequest.groupId)
+        whenever(pom.artifactId).thenReturn(packageIndexRequest.artifactId)
+        whenever(pom.version).thenReturn(packageIndexRequest.version)
+        val scm = Scm()
+        scm.url = "https://github.com/$ownerLogin/$repoName"
+        whenever(pom.scm).thenReturn(scm)
+
+        val kotlinToolingMetadata = mock<GradleMetadata>()
+        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
+            PomWithReleaseDate(
+                pom,
+                Instant.now()
+            )
+        )
+        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+
+        // Mock GitHub integration to successfully create SCM entities
+        val ghRepo = GitHubRepository(
+            nativeId = repoNativeId,
+            name = repoName,
+            owner = ownerLogin,
+            defaultBranch = "main",
+            createdAt = Instant.now(),
+            hasGhPages = false,
+            hasIssues = true,
+            hasWiki = false,
+            archived = false,
+            stars = 10,
+            lastActivity = Instant.now(),
+        )
+        whenever(gitHubIntegration.getRepository(ownerLogin, repoName)).thenReturn(ghRepo)
+        whenever(gitHubIntegration.getUser(ownerLogin)).thenReturn(
+            GitHubUser(
+                id = ownerNativeId,
+                login = ownerLogin,
+                type = "User",
+                name = "Test Owner",
+                company = null,
+                blog = null,
+                location = null,
+                email = null,
+                bio = null,
+                twitterUsername = null,
+                followers = 0,
+            )
+        )
+        whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(null)
+        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(repoNativeId), any()))
+            .thenReturn(ReadmeFetchResult.Content("# Test README"))
+
+        // Mock ReadmeContentBuilder to throw an exception
+        whenever(readmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()))
+            .thenThrow(RuntimeException("Mocked buildFromMarkdown exception"))
+
+        val result = uut.processPackageQueue()
+
+        assertTrue(result, "Should return true when a request is processed")
+        assertContains(output.out, "Error during claiming an indexing request")
+
+        // Verify the record in package_index_reqest is correctly updated
+        val updatedRequest = jdbcTemplate.queryForMap(
+            "SELECT status, failed_attempts, last_error_message, next_attempt_ts, failed_ts FROM package_index_request WHERE id = ${packageIndexRequest.idNotNull}"
+        )
+        assertEquals("PENDING", updatedRequest["status"], "status should be set to PENDING")
+        assertEquals(4, (updatedRequest["failed_attempts"] as Number).toInt(), "Failed attempts should be incremented")
+        assertEquals("Mocked buildFromMarkdown exception", updatedRequest["last_error_message"], "last_error_message should store correct error message")
+        assertNotNull(updatedRequest["failed_ts"], "failed_ts should be set")
+        assertNull(updatedRequest["next_attempt_ts"], "next_attempt_ts should be null")
     }
 
     @Test
