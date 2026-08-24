@@ -10,6 +10,7 @@ export interface ProjectSearchResults {
 	latestReleaseVersion: string;
 	latestReleasePublishedAtMillis: number;
 	platforms: Platform[];
+	targetGroups: TargetGroups;
 	tags: string[];
 	markers: string[];
 }
@@ -43,7 +44,7 @@ export interface PackageSearchResults {
 	latestVersion: string;
 	releaseTsMillis: number;
 	platforms: Platform[];
-	targets: Record<string, string[]>;
+	targets: TargetGroups;
 }
 
 export function getProjectLink(projectOverview: ProjectSearchResults) {
@@ -92,20 +93,13 @@ export const sortedPlatforms = (platforms: Platform[]) => {
 	});
 }
 
-type Target = string;// to many variants, i skip it for now
-
-interface PackageTarget {
-	target: Target;
-	platform: Platform;
-}
-
 export interface PackageOverview {
 	id: number;
 	groupId: string;
 	artifactId: string;
 	version: string;
 	releasedAtMillis: number;
-	targets: PackageTarget[];
+	targetGroups: TargetGroups;
 	description: null | string;
 }
 
@@ -136,96 +130,92 @@ export function getPackageCoordinates(packageOverview: PackageOverview) {
 	return `${packageOverview.groupId}:${packageOverview.artifactId}:${packageOverview.version}`;
 }
 
-export function getUniquePlatforms(packageOverview: PackageOverview): Platform[] {
-	const platforms = packageOverview.targets.map(target => target.platform);
-	const uniquePlatforms = Array.from(new Set(platforms));
-
-	return sortedPlatforms(uniquePlatforms);
+export function hasTargetGroups(packageOverview: PackageOverview) {
+	return !!packageOverview.targetGroups && Object.keys(packageOverview.targetGroups).length > 0;
 }
 
-export function toTargetGroups(targets: PackageTarget[], native: boolean = false) {
-	const filteredTargets = (native ? targets.filter(target => target.platform === Platform.native) : targets).filter(target => target.platform !== Platform.common);
-	const grouped = filteredTargets.reduce((acc, curr) => {
-		const platformName = getPlatformName(curr.platform);
-		const target = curr.target;
-		let existingPlatform = acc.find((item) => item.platformName === platformName);
-		let groupId = "";
-		const targetId = target;
+export interface TargetGroupsByPlatform {
+	platformId: Platform;
+	platformName: string;
+	groups: { groupId: string, targets: string[] }[];
+}
 
-		if (curr.platform === Platform.native && target.includes('_')) {
-			const targetPrefix = targetId.split(/_(.*)/)[0];
-			groupId = mapNativeTargetToGroupName(targetPrefix);
+// Groups the target groups by the platform they belong to, for the targets table.
+export function toTargetGroupsByPlatform(targetGroups: TargetGroups, native: boolean = false): TargetGroupsByPlatform[] {
+	const grouped = getSortedTargetGroups(targetGroups).reduce((acc, group) => {
+		const platformId = getTargetGroupPlatform(group);
+
+		if (platformId === Platform.common || (native && platformId !== Platform.native)) return acc;
+
+		let platform = acc.find(item => item.platformId === platformId);
+
+		if (!platform) {
+			platform = {platformId, platformName: getPlatformName(platformId), groups: []};
+			acc.push(platform);
 		}
 
-		if (!existingPlatform) {
-			existingPlatform = {
-				platformId: curr.platform,
-				platformName,
-				groups: []
-			}
-
-			acc.push(existingPlatform);
-		}
-
-		let existingGroup = existingPlatform.groups.find(group => group.groupId === groupId);
-
-		if (!existingGroup) {
-			existingGroup = {
-				groupId: groupId,
-				targets: [],
-			}
-
-			existingPlatform.groups.push(existingGroup);
-		}
-
-		existingGroup.targets.push(targetId);
+		platform.groups.push({groupId: getTargetGroupName(group), targets: targetGroups[group]});
 
 		return acc;
-	}, [] as { platformId: Platform; platformName: string; groups: {groupId: string, targets: string[]}[] }[]);
+	}, [] as TargetGroupsByPlatform[]);
 
-	return grouped.sort((a, b) => {
-		return platformOrder.indexOf(a.platformId as Platform) - platformOrder.indexOf(b.platformId as Platform);
-	});
+	return grouped.sort((a, b) => platformOrder.indexOf(a.platformId) - platformOrder.indexOf(b.platformId));
 }
 
+// Backend TargetGroup name -> its targets (JVM versions for JVM/AndroidJvm, target names otherwise).
+export type TargetGroups = Record<string, string[]>;
 
-export function mapNativeTargetToGroupName(prefix: string) {
-	switch (prefix) {
-		case 'android':
-			return 'Android Native';
-		case 'ios':
-			return 'iOS';
-		case 'linux':
-			return 'Linux';
-		case 'macos':
-			return 'macOS';
-		case 'mingw':
-			return 'Windows';
-		case 'tvos':
-			return 'tvOS';
-		case 'watchos':
-			return 'watchOS';
-		case 'wasm':
-			return 'Wasm';
-		default:
-			return 'Other';
-	}
-}
-
-// Kotlin/Native target groups only. JS and Wasm tags are rendered from `platforms` instead,
-// and JVM/AndroidJvm carry versions rather than target names.
-const nativeTargetGroupNames: Record<string, string> = {
+// Display order and labels for the backend TargetGroup names.
+const targetGroupNames: Record<string, string> = {
+	AndroidJvm: 'Android',
+	JVM: 'JVM',
 	AndroidNative: 'Android Native',
 	IOS: 'iOS',
-	Linux: 'Linux',
 	MacOS: 'macOS',
-	Windows: 'Windows',
-	TvOS: 'tvOS',
 	WatchOS: 'watchOS',
+	TvOS: 'tvOS',
+	Linux: 'Linux',
+	Windows: 'Windows',
+	Wasm: 'Wasm',
+	JavaScript: 'JS',
 	Unknown: 'Other',
 };
 
-export const getNativeTargetGroupName = (group: string) => nativeTargetGroupNames[group];
+const targetGroupOrder = Object.keys(targetGroupNames);
+
+// Groups unknown to the map keep their raw name and go last.
+const targetGroupIndex = (group: string) => {
+	const index = targetGroupOrder.indexOf(group);
+	return index === -1 ? targetGroupOrder.length : index;
+};
+
+// Platform each group belongs to, used for the badge colors.
+const targetGroupPlatforms: Record<string, Platform> = {
+	AndroidJvm: Platform.androidJvm,
+	JVM: Platform.jvm,
+	AndroidNative: Platform.native,
+	IOS: Platform.native,
+	MacOS: Platform.native,
+	WatchOS: Platform.native,
+	TvOS: Platform.native,
+	Linux: Platform.native,
+	Windows: Platform.native,
+	Wasm: Platform.wasm,
+	JavaScript: Platform.js,
+	Unknown: Platform.common,
+};
+
+export const getTargetGroupName = (group: string) => targetGroupNames[group] || group;
+
+export const getTargetGroupPlatform = (group: string) => targetGroupPlatforms[group] || Platform.common;
+
+export function getSortedTargetGroups(targetGroups: TargetGroups): string[] {
+	return Object.keys(targetGroups).sort((a, b) => targetGroupIndex(a) - targetGroupIndex(b));
+}
+
+export function getTargetGroupNames(targetGroups: TargetGroups): string[] {
+	return getSortedTargetGroups(targetGroups).map(getTargetGroupName);
+}
 
 export function hasAnyLink(projectOverview: ProjectDetails): boolean {
 	return !!projectOverview.linkHomepage ||

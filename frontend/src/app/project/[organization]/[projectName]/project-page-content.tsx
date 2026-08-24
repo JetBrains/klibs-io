@@ -4,12 +4,11 @@
 import "github-markdown-css/github-markdown-light.css";
 import styles from "./styles.module.css"
 
-import {getPackageCoordinates, PackageOverview, ProjectDetails} from "@/app/types";
+import {getPackageCoordinates, hasTargetGroups, PackageOverview, ProjectDetails} from "@/app/types";
 import {ProjectBreadcrumb} from "@/app/ui/breadcrumb";
 import cn from "classnames";
 import {ReactNode, useEffect, useState} from "react";
 
-import PlatformsNames from "@/app/ui/platforms-names";
 import {textCn} from "@rescui/typography";
 import {cardCn} from "@rescui/card";
 import Container from "@/app/ui/container";
@@ -210,7 +209,7 @@ function ProjectTabs({projectReadme, projectPackages, isMobile, activeIndex, set
                                 Package id
                             </div>
                             <div>
-                                Supported platforms and targets
+                                Target groups
                             </div>
                         </div>
                         {/*Table body*/}
@@ -238,23 +237,20 @@ function ProjectTabs({projectReadme, projectPackages, isMobile, activeIndex, set
                                                 </div>
                                             </div>
 
-                                            {/* List of targets */}
-                                            {packageOverview.targets && packageOverview.targets.length &&
+                                            {/* List of target groups */}
+                                            {hasTargetGroups(packageOverview) &&
                                                 <>
                                                     <div className={styles.platformsAndTargetsWrapper}>
                                                         <div className={styles.listWrapper}>
-                                                            <PlatformsNames packageOverview={packageOverview}/>
-                                                            {packageOverview.targets && packageOverview.targets.length > 0 &&
-                                                                <SidePopup
-                                                                    target={
-                                                                        <TargetsList
-                                                                            projectPackage={packageOverview}/>
-                                                                    }
-                                                                >
-                                                                    <TargetsTablePopup
+                                                            <SidePopup
+                                                                target={
+                                                                    <TargetsList
                                                                         projectPackage={packageOverview}/>
-                                                                </SidePopup>
-                                                            }
+                                                                }
+                                                            >
+                                                                <TargetsTablePopup
+                                                                    projectPackage={packageOverview}/>
+                                                            </SidePopup>
                                                         </div>
                                                         {/*Dropdown, not visible on mobile*/}
                                                         <div className={styles.packageDropdown}>
