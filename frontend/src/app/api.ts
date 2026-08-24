@@ -9,7 +9,7 @@ import {
     SearchParams,
     SearchProjectsRequest,
     TagsStats,
-    toTargetFilters
+    toTargetGroupFilters
 } from "@/app/types";
 
 export const getProjectById = async(id: number) => {
@@ -168,7 +168,7 @@ function toSearchProjectsRequest(searchParams: SearchParams): SearchProjectsRequ
         sortBy: searchParams.sort || "relevance",
         tags: searchParams.tags || [],
         markers: searchParams.markers || [],
-        targetFilters: toTargetFilters(searchParams.platforms)
+        targetGroupFilters: toTargetGroupFilters(searchParams.platforms)
     };
 
     // Only the nullable fields may be omitted.
@@ -182,7 +182,7 @@ function toSearchProjectsRequest(searchParams: SearchParams): SearchProjectsRequ
 function toSearchPackagesRequest(searchParams: SearchParams): SearchPackagesRequest {
     const request: SearchPackagesRequest = {
         sortBy: searchParams.sort || "relevance",
-        targetFilters: toTargetFilters(searchParams.platforms)
+        targetGroupFilters: toTargetGroupFilters(searchParams.platforms)
     };
 
     if (searchParams.query) request.query = searchParams.query;
