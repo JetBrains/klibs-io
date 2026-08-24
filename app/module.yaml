@@ -9,6 +9,7 @@ apply:
   - ../build-logic/templates/maven-indexer.module-template.yaml
 
 dependencies:
+  - $libs.swagger.annotations # do not remove it, it is a workaround for jar hell
   - ../core/package
   - ../core/project
   - ../core/readme
