@@ -132,7 +132,7 @@ class PackageIndexingService(
                     }
 
                     Outcome.FAILED -> {
-                        indexingRequestRepository.markAsFailed(requestId, errorMessage)
+                        indexingRequestRepository.markAsFailed(requestId, getNextAttemptTs(indexRequest.failedAttempts + 1), errorMessage)
                         userRequestReportWriter.saveFailureReportIfTerminal(requestId, errorMessage)
                     }
 
@@ -317,6 +317,18 @@ class PackageIndexingService(
         val wasGenerated: Boolean,
         val generatedAt: Instant?
     )
+
+    private fun getNextAttemptTs(
+        failedAttempts: Int
+    ): Instant? {
+        // Indexing runs every 4h, so to make sure retry will be triggered when expected, the lock duration is always set to (expected_duration - 1h)
+        return when (failedAttempts) {
+            1 -> Instant.now().plus(Duration.ofHours(3))    // 4h
+            2 -> Instant.now().plus(Duration.ofHours(11))   // 12h
+            3 -> Instant.now().plus(Duration.ofHours(24*4 - 1)) // 4 days
+            else -> null
+        }
+    }
 
     private companion object {
         private val logger = LoggerFactory.getLogger(PackageIndexingService::class.java)

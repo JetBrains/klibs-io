@@ -8,6 +8,7 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.query.Param
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long> {
 
@@ -24,14 +25,15 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
         SELECT req.*
         FROM package_index_request req
         WHERE req.status = 'PENDING'
-          AND req.failed_attempts < :#{@indexingRetryConfiguration.maxAttempts}
+          AND req.next_attempt_ts IS NOT NULL
+          AND req.next_attempt_ts < current_timestamp
           AND NOT EXISTS (
               SELECT 1
               FROM banned_packages bp
               WHERE bp.group_id = req.group_id 
                 AND (bp.artifact_id = req.artifact_id OR bp.artifact_id IS NULL)
           )
-        ORDER BY req.released_ts DESC NULLS FIRST
+        ORDER BY req.next_attempt_ts
         LIMIT 1
     """, nativeQuery = true)
     fun findFirstForIndexing(): IndexingRequestEntity?
@@ -43,10 +45,11 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
         SET status = 'PENDING',
             failed_ts = current_timestamp,
             failed_attempts = failed_attempts + 1,
-            last_error_message = :errorMessage
+            last_error_message = :errorMessage,
+            next_attempt_ts = :nextAttemptTs
         WHERE id = :id
     """, nativeQuery = true)
-    fun markAsFailed(@Param("id") id: Long, @Param("errorMessage") errorMessage: String?)
+    fun markAsFailed(@Param("id") id: Long, @Param("nextAttemptTs") nextAttemptTs: Instant?, @Param("errorMessage") errorMessage: String?)
 
     @Modifying
     @Transactional
