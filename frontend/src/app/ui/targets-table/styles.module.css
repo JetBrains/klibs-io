@@ -68,6 +68,12 @@
 
 .Ko .groupWrapper{
     background-color: rgba(255,255,255,0.8);
+    &:first-child {
+        border-top-left-radius: 4px;
+    }
+    &:last-child {
+        border-bottom-left-radius: 4px;;
+    }
 }
 
 .Wa{

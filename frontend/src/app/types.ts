@@ -141,11 +141,16 @@ export interface TargetGroupsByPlatform {
 }
 
 // Groups the target groups by the platform they belong to, for the targets table.
-export function toTargetGroupsByPlatform(targetGroups: TargetGroups, native: boolean = false): TargetGroupsByPlatform[] {
+export function toTargetGroupsByPlatform(
+	targetGroups: TargetGroups,
+	native: boolean = false,
+	includeCommon: boolean = false,
+): TargetGroupsByPlatform[] {
 	const grouped = getSortedTargetGroups(targetGroups).reduce((acc, group) => {
 		const platformId = getTargetGroupPlatform(group);
 
-		if (platformId === Platform.common || (native && platformId !== Platform.native)) return acc;
+		if (!includeCommon && platformId === Platform.common) return acc;
+		if (native && platformId !== Platform.native) return acc;
 
 		let platform = acc.find(item => item.platformId === platformId);
 
