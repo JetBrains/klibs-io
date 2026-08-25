@@ -129,18 +129,15 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 						</div>
 
 						{/*Description*/}
-						{/*To-do: Truncation for description*/}
 						<p className={cn(textCn('rs-text-3', { hardness: 'hard' }), styles.cardDescription)}>
 							<SearchTextWrap search={search}>{featuredProject.description}</SearchTextWrap>
 						</p>
 
 						{/*Tags*/}
-						{hasTags && <div className={styles.tagsRow}>
-							<p className={cn(textCn('rs-text-3'))}
-								title={'#' + featuredProject.tags?.join(', #')}>
-								{tagsContent}
-							</p>
-						</div>}
+						{hasTags && <p className={cn(textCn('rs-text-3'), styles.tagsRow)}
+							title={'#' + featuredProject.tags?.join(', #')}>
+							{tagsContent}
+						</p>}
 					</div>
 
 					{/*Footer section*/}

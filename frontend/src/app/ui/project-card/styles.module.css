@@ -86,9 +86,13 @@
 }
 
 .tagsRow {
-    white-space: wrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 40px;
+    /* Fallback for browsers without line clamp support */
+    max-height: 40px;
 }
 
 
@@ -98,13 +102,15 @@
     flex-direction: column;
     /*    justify-content: flex-end;*/
     gap: 8px;
-    margin-top: auto;
+    flex: 1;
+/*    margin-top: auto;*/
 }
 
 .footerRow {
     display: flex;
     align-items: center;
     gap: 4px;
+    margin-top: auto;
 }
 
 .footerPlatforms {
