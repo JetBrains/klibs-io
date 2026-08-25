@@ -64,11 +64,12 @@ test.describe('Search bar', () => {
         await filterTrigger.click();
         await page.waitForTimeout(2000);
         // Assert that all platform checkboxes from the dropdown list are visible
-        await expect(page.getByRole('checkbox', { name: 'Android JVM' })).toBeVisible();
+        await expect(page.getByRole('checkbox', { name: 'iOS' })).toBeVisible();
+        await expect(page.getByRole('checkbox', { name: 'Android' })).toBeVisible();
         await expect(page.getByRole('checkbox', { name: 'JVM', exact: true })).toBeVisible();
-        await expect(page.getByRole('checkbox', { name: 'Kotlin/Native' })).toBeVisible();
+        await expect(page.getByRole('checkbox', { name: 'JavaScript' })).toBeVisible();
         await expect(page.getByRole('checkbox', { name: 'Wasm' })).toBeVisible();
-        await expect(page.getByRole('checkbox', { name: 'JS' })).toBeVisible();
+        await expect(page.getByRole('checkbox', { name: 'Other' })).toBeVisible();
     });
 
     test('Search by package: com.zegreatrob.testmints/action-annotation', async ({ page }) => {
