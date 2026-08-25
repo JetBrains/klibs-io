@@ -176,14 +176,14 @@ const targetGroupNames: Record<string, string> = {
 	AndroidJvm: 'Android',
 	AndroidNative: 'Android Native',
 	JVM: 'JVM',
+	Wasm: 'Wasm',
+	JavaScript: 'JS',
 	MacOS: 'macOS',
 	WatchOS: 'watchOS',
 	TvOS: 'tvOS',
 	Linux: 'Linux',
 	Windows: 'Windows',
-	Wasm: 'Wasm',
-	JavaScript: 'JS',
-	Unknown: 'Other',
+	Unknown: 'Other'
 };
 
 const targetGroupOrder = Object.keys(targetGroupNames);
