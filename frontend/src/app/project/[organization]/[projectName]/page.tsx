@@ -1,7 +1,7 @@
 import ProjectPageContent from './project-page-content'
 import {getProjectDetails, getProjectPackages, getProjectReadme, NotFoundException} from "@/app/api";
 import {notFound} from "next/navigation";
-import {getPlatformName, sortedPlatforms} from "@/app/types";
+import {getTargetGroupNames} from "@/app/types";
 
 type MetadataParamsProps = {
     organization: string;
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: MetadataParamsProps
     }
 
     const displayName = projectDetails?.name || params?.projectName;
-    const platforms = sortedPlatforms(projectDetails?.platforms ?? []).map(getPlatformName).join(', ');
+    const platforms = getTargetGroupNames(projectDetails?.targetGroups ?? {}).join(', ');
     const title = platforms
         ? `${displayName} — KMP library for ${platforms}`
         : displayName;

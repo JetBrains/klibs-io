@@ -9,7 +9,6 @@ export interface ProjectSearchResults {
 	licenseName: string;
 	latestReleaseVersion: string;
 	latestReleasePublishedAtMillis: number;
-	platforms: Platform[];
 	targetGroups: TargetGroups;
 	tags: string[];
 	markers: string[];
@@ -43,8 +42,7 @@ export interface PackageSearchResults {
 	licenseName: string;
 	latestVersion: string;
 	releaseTsMillis: number;
-	platforms: Platform[];
-	targets: TargetGroups;
+	targetGroups: TargetGroups;
 }
 
 export function getProjectLink(projectOverview: ProjectSearchResults) {
@@ -85,13 +83,6 @@ export const platformOrder = [
 	Platform.js,
 	Platform.common,
 ];
-
-export const sortedPlatforms = (platforms: Platform[]) => {
-    const filteredCommonPlatform = platforms.filter((platform) => platform !== Platform.common);
-	return filteredCommonPlatform.sort((a, b) => {
-		return platformOrder.indexOf(a) - platformOrder.indexOf(b);
-	});
-}
 
 export interface PackageOverview {
 	id: number;

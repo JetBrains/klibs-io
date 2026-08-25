@@ -54,7 +54,7 @@ function getPackageLink(packageData: PackageSearchResults) {
 export default function PackageCard({featuredPackage, className, search}: PackageCardProps) {
     const packageLink = featuredPackage ? getPackageLink(featuredPackage) : null;
 
-    const targetGroups = featuredPackage?.targets ? getPackageTargetGroupLabels(featuredPackage.targets) : [];
+    const targetGroups = featuredPackage?.targetGroups ? getPackageTargetGroupLabels(featuredPackage.targetGroups) : [];
 
     return (
         <Link
