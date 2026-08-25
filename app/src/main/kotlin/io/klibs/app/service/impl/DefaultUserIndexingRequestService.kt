@@ -171,7 +171,6 @@ internal class DefaultUserIndexingRequestService(
         artifactId = artifactId,
         version = version,
         scraperType = ScraperType.CENTRAL_SONATYPE,
-        releasedAt = releasedAt,
     )
 
     companion object {

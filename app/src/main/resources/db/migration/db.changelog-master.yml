@@ -183,3 +183,5 @@ databaseChangeLog:
       file: db/migration/2026-Q3/2026-07-13_add_archive_fields_to_scm_repo.yml
   - include:
       file: db/migration/2026-Q3/2026-08-21_add_next_attempt_ts_column_to_package_index_request.yml
+  - include:
+      file: db/migration/2026-Q3/2026-08-24_remove_released_ts_from_package_index_request.yml

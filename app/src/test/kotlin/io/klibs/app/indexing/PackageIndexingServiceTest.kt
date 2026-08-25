@@ -380,7 +380,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
             .thenReturn("AI SENTINEL - must not be persisted for a non-latest version")
 
-        stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description")
+        stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description", releasedAt = Instant.now().minus(Duration.ofDays(30)))
 
         val request = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(request)
@@ -430,7 +430,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
      * Stubs the Maven static-data boundary (POM + release date + tooling metadata) so a queued
      * request can be processed end-to-end against the real database without network access.
      */
-    private fun stubMavenFetch(groupId: String, artifactId: String, version: String, pomDescription: String?) {
+    private fun stubMavenFetch(groupId: String, artifactId: String, version: String, pomDescription: String?, releasedAt: Instant = Instant.now()) {
         val pom = mock<MavenPom>()
         whenever(pom.groupId).thenReturn(groupId)
         whenever(pom.artifactId).thenReturn(artifactId)
@@ -441,7 +441,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             .thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
-            .thenReturn(PomWithReleaseDate(pom, Instant.now()))
+            .thenReturn(PomWithReleaseDate(pom, releasedAt))
         whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
     }
 
@@ -710,7 +710,6 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
                 groupId = "com.example",
                 artifactId = "test-artifact",
                 version = "1.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.CENTRAL_SONATYPE,
                 failedAttempts = failedAttempts,
                 userRequestIssue = issue,

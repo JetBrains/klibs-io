@@ -24,7 +24,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.transaction.support.TransactionTemplate
-import java.time.Instant
 
 class PackageIndexingServiceTestOld {
     private val discoverer: PackageDiscoverer = mock()
@@ -77,7 +76,6 @@ class PackageIndexingServiceTestOld {
             artifactId = "kotlin-stdlib",
             version = "1.9.0",
             scraperType = ScraperType.SEARCH_MAVEN,
-            releasedAt = Instant.now()
         )
 
         whenever(discoverer.discover(any())).thenAnswer { invocation ->
@@ -91,7 +89,6 @@ class PackageIndexingServiceTestOld {
             groupId = artifact.groupId,
             artifactId = artifact.artifactId,
             version = artifact.version,
-            releasedAt = artifact.releasedAt,
             repo = artifact.scraperType
         )))
         whenever(indexingRequestRepository.removeRepeating()).thenReturn(0)
