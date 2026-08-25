@@ -1,9 +1,10 @@
-import {getOwnerLink, getSortedTargetGroups, hasAnyLink, isFeaturedProject, isGrantWinner, ProjectDetails} from "@/app/types";
-import PlatformBadge from "@/app/ui/platform-badge";
+import {getOwnerLink, hasAnyLink, isFeaturedProject, isGrantWinner, ProjectDetails, toTargetGroupsByPlatform} from "@/app/types";
 import Link from "next/link";
 import TimeAgo from "@/app/ui/time-ago";
 import cn from "classnames";
+import {textCn} from "@rescui/typography";
 import styles from "./styles.module.css";
+import tableStyles from "@/app/ui/targets-table/styles.module.css";
 import FeaturedLabel from "@/app/ui/featured-label";
 import {trackEvent, GAEvent} from "@/app/analytics";
 import {Tooltip, TooltipPlacement} from "@rescui/tooltip";
@@ -41,10 +42,23 @@ export function ProjectInfo({projectOverview}: {projectOverview: ProjectDetails}
     return (
         <>
             {/* Target groups */}
-            <div className={styles.platformTagWrapper}>
-                {projectOverview?.targetGroups && getSortedTargetGroups(projectOverview.targetGroups).map(group =>
-                    <PlatformBadge key={group} group={group}/>
-                )}
+            <div className={cn(styles.platformTagWrapper, textCn("rs-text-3", {hardness: "hard"}))}>
+                {projectOverview?.targetGroups && toTargetGroupsByPlatform(projectOverview.targetGroups, false, true).map(platform => (
+
+                    // Platform wrapper
+                    <div key={platform.platformId}
+                         className={cn(tableStyles.platformWrapper, tableStyles[platform.platformName.substring(0, 2)])}>
+
+                        {/*Group wrapper*/}
+                        <div className={tableStyles.groupTargetWrapper}>
+                            {platform.groups.map(group => (
+                                <div key={group.groupId} className={cn(textCn("rs-h5"), tableStyles.groupWrapper)}>
+                                    {group.groupId}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* Metadata section 1 */}
