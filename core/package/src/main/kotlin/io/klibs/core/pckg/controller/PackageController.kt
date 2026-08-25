@@ -4,9 +4,12 @@ import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.api.OptionalLinkResponse
 import io.klibs.core.pckg.api.PackageDetailsResponse
 import io.klibs.core.pckg.api.PackageOverviewResponse
+import io.klibs.core.pckg.api.PackageStatusResponse
 import io.klibs.core.pckg.api.PackageTargetResponse
+import io.klibs.core.pckg.enums.PackageProcessingStatus
 import io.klibs.core.pckg.model.PackageDetails
 import io.klibs.core.pckg.model.PackageOverview
+import io.klibs.core.pckg.model.PackageStatusOverview
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.model.TargetGroup
 import io.swagger.v3.oas.annotations.Operation
@@ -55,6 +58,39 @@ class PackageController(
             artifactId = artifactId,
             version = version
         )?.toDTO()
+    }
+
+    @Operation(
+        summary = "Get indexing status of a package by its coordinates",
+    )
+    @GetMapping("/{groupId}/{artifactId}/{version}/status")
+    fun getPackageStatus(
+        @PathVariable("groupId")
+        @Parameter(
+            description = "Group ID of the Maven artifact",
+            example = "org.jetbrains.kotlinx"
+        )
+        groupId: String,
+
+        @PathVariable("artifactId")
+        @Parameter(
+            description = "Artifact ID of the Maven artifact",
+            example = "kotlinx-coroutines-core"
+        )
+        artifactId: String,
+
+        @PathVariable("version")
+        @Parameter(
+            description = "Version of the Maven artifact",
+            example = "1.9.0-RC"
+        )
+        version: String
+    ): PackageStatusResponse {
+        return packageService.getPackageStatus(
+            groupId = groupId,
+            artifactId = artifactId,
+            version = version
+        ).toDTO()
     }
 
     @Operation(summary = "Get the full info of the latest version by the group id and the artifact id")
@@ -167,6 +203,27 @@ private fun PackageTarget.toDTO(): PackageTargetResponse {
         platform = this.platform.serializableName,
         target = this.target
     )
+}
+
+private fun PackageStatusOverview.toDTO(): PackageStatusResponse {
+    return PackageStatusResponse(
+        groupId = this.groupId,
+        artifactId = this.artifactId,
+        version = this.version,
+        status = this.status,
+        statusDescription = this.status.toDescription(),
+    )
+}
+
+private fun PackageProcessingStatus.toDescription(): String = when (this) {
+    PackageProcessingStatus.INDEXED ->
+        "This package has been indexed and is available on klibs.io."
+    PackageProcessingStatus.QUEUED ->
+        "This package is queued for indexing. Please check its progress later."
+    PackageProcessingStatus.FAILED ->
+        "Indexing of this package failed and will not be retried."
+    PackageProcessingStatus.UNKNOWN ->
+        "This package is unknown to klibs.io."
 }
 
 internal fun PackageDetails.getFilesUrl(): String {
