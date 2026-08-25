@@ -16,5 +16,5 @@ VALUES (9201, 'com.example', 'test-library-older', '2.0.0');
 INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, scraper_type, generated_description, maven_artifact_id) VALUES (9201, 9201, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'test-library-older', '2.0.0', 'This is a generated description for the latest version 2.0.0', 'https://example.com/test-library', NULL, 'gradle', '7.0', '1.6.0', NULL, '[]'::jsonb, '[]'::jsonb, 'CENTRAL_SONATYPE', true, 9201);
 
 
-INSERT INTO package_index_request(id, group_id, artifact_id, version, released_ts, scraper_type, reindex, failed_attempts, status, next_attempt_ts)
-VALUES (9201, 'com.example', 'test-library-older', '1.0.0', CURRENT_TIMESTAMP - INTERVAL '1 month', 'CENTRAL_SONATYPE', false, 0, 'PENDING', current_timestamp);
+INSERT INTO package_index_request(id, group_id, artifact_id, version, scraper_type, reindex, failed_attempts, status, next_attempt_ts)
+VALUES (9201, 'com.example', 'test-library-older', '1.0.0', 'CENTRAL_SONATYPE', false, 0, 'PENDING', current_timestamp);
