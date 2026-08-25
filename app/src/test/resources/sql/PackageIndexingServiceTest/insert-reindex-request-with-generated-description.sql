@@ -16,5 +16,5 @@ VALUES (9101, 'com.example', 'test-library-reindex', '1.0.0');
 INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, scraper_type, generated_description, description_generated_at, maven_artifact_id) VALUES (9101, 9101, CURRENT_TIMESTAMP - INTERVAL '1 month', CURRENT_TIMESTAMP - INTERVAL '1 month', 'com.example', 'test-library-reindex', '1.0.0', 'This is a generated description for version 1.0.0', 'https://example.com/test-library', NULL, 'gradle', '7.0', '1.6.0', NULL, '[]'::jsonb, '[]'::jsonb, 'CENTRAL_SONATYPE', true, CURRENT_TIMESTAMP - INTERVAL '10 days', 9101);
 
 
-INSERT INTO package_index_request(id, group_id, artifact_id, version, released_ts, scraper_type, reindex, failed_attempts, status, next_attempt_ts)
-VALUES (9101, 'com.example', 'test-library-reindex', '1.0.0', CURRENT_TIMESTAMP, 'CENTRAL_SONATYPE', true, 0, 'PENDING', current_timestamp);
+INSERT INTO package_index_request(id, group_id, artifact_id, version, scraper_type, reindex, failed_attempts, status, next_attempt_ts)
+VALUES (9101, 'com.example', 'test-library-reindex', '1.0.0', 'CENTRAL_SONATYPE', true, 0, 'PENDING', current_timestamp);

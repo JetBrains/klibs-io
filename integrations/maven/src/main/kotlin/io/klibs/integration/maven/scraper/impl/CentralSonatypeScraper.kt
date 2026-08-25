@@ -54,7 +54,6 @@ class CentralSonatypeScraper(
                         it.artifactId,
                         it.version,
                         scraperType,
-                        it.releasedAt
                     )
                 )
             }
@@ -88,7 +87,6 @@ class CentralSonatypeScraper(
                                 artifactId = artifactId,
                                 version = version,
                                 scraperType = scraperType,
-                                releasedAt = null
                             )
                         )
                     }

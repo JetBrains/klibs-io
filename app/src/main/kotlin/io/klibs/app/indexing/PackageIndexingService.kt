@@ -173,10 +173,8 @@ class PackageIndexingService(
             provider.getPomWithReleaseDate(mavenArtifact)
                 ?: error("Unable to find the .pom for ${provider.getPomUrl(mavenArtifact)}")
 
-        if (mavenArtifact.releasedAt == null) {
-            mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
-            logger.trace("Set releasedAt for {}", mavenArtifact)
-        }
+        mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
+        logger.trace("Set releasedAt for {}", mavenArtifact)
 
         logger.trace("Indexing GitHub info of {}", mavenArtifact)
         val gitHubRepoEntity = indexGitHubInfoIfPresent(pom)
@@ -220,7 +218,6 @@ class PackageIndexingService(
             scraperType = requireNotNull(this.repo) {
                 "Request's repoId is set to null, unable to convert to MavenArtifact: $this"
             },
-            releasedAt = this.releasedAt
         )
     }
 

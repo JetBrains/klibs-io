@@ -24,7 +24,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Instant
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class CentralSonatypeScraperTest {
@@ -172,8 +171,6 @@ class CentralSonatypeScraperTest {
         assertEquals("org.example", result[0].groupId)
         assertEquals("example-artifact", result[0].artifactId)
         assertEquals(ScraperType.CENTRAL_SONATYPE, result[0].scraperType)
-        assertNull(result[0].releasedAt, "ReleasedAt should be null for new versions during discovery")
-        assertNull(result[1].releasedAt, "ReleasedAt should be null for new versions during discovery")
     }
 
     @Test
@@ -204,7 +201,6 @@ class CentralSonatypeScraperTest {
         // Verify - should only return valid artifact
         assertEquals(1, result.size, "Should skip invalid coordinates")
         assertEquals("1.1.0", result[0].version)
-        assertNull(result[0].releasedAt)
     }
 
     @Test
