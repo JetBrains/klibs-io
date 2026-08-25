@@ -12,6 +12,7 @@ import org.apache.maven.index.Indexer
 import org.apache.maven.index.IteratorSearchRequest
 import org.apache.maven.index.context.IndexingContext
 import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Service
 import java.time.Instant
 
 /**
@@ -47,7 +48,6 @@ abstract class MavenIndexScannerService(
                                 artifactId = artifactInfo.artifactId,
                                 version = artifactInfo.version,
                                 scraperType = scraperType,
-                                releasedAt = Instant.ofEpochMilli(artifactInfo.lastModified)
                             )
                         )
                     }
