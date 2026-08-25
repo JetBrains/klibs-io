@@ -207,10 +207,8 @@ class PackageIndexingService(
                     scmUrl = null,
                 )
 
-        if (mavenArtifact.releasedAt == null) {
-            mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
-            logger.trace("Set releasedAt for {}", mavenArtifact)
-        }
+        mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
+        logger.trace("Set releasedAt for {}", mavenArtifact)
 
         val mavenCoordinates = MavenCoordinateDTO(pom.groupId, pom.artifactId, pom.version)
         val toolingMetadata = getKotlinToolingMetadata(mavenArtifact, provider, mavenCoordinates, pom)
@@ -269,7 +267,6 @@ class PackageIndexingService(
             scraperType = requireNotNull(this.repo) {
                 "Request's repoId is set to null, unable to convert to MavenArtifact: $this"
             },
-            releasedAt = this.releasedAt
         )
     }
 

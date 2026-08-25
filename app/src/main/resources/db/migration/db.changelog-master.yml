@@ -184,6 +184,8 @@ databaseChangeLog:
   - include:
       file: db/migration/2026-Q3/2026-08-21_add_next_attempt_ts_column_to_package_index_request.yml
   - include:
+      file: db/migration/2026-Q3/2026-08-24_remove_released_ts_from_package_index_request.yml
+  - include:
       file: db/migration/2026-Q3/2026-09-03_add_project_visibility.yml
   - include:
       file: db/migration/2026-Q3/2026-09-03_indices_exclude_hidden_projects.yml

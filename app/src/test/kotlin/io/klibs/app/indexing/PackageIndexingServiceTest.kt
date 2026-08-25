@@ -109,7 +109,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     fun `discards banned scheduled requests without Maven access`(groupId: String) {
         indexingRequestRepository.save(IndexingRequestEntity(
             groupId = groupId, artifactId = "lib", version = "1.0.0",
-            releasedAt = Instant.now(), repo = ScraperType.CENTRAL_SONATYPE,
+            repo = ScraperType.CENTRAL_SONATYPE
         ))
 
         assertTrue(uut.processPackageQueue())
@@ -146,7 +146,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         indexingRequestRepository.save(IndexingRequestEntity(
             groupId = "com.example", artifactId = "sibling", version = "1.0.0",
-            releasedAt = Instant.now(), repo = ScraperType.CENTRAL_SONATYPE,
+            repo = ScraperType.CENTRAL_SONATYPE,
         ))
         stubMavenFetch("com.example", "sibling", "1.0.0", null)
         assertTrue(uut.processPackageQueue())
@@ -542,7 +542,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
             .thenReturn("AI SENTINEL - must not be persisted for a non-latest version")
 
-        stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description")
+        stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description", releasedAt = Instant.now().minus(Duration.ofDays(30)))
 
         val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(request)
@@ -592,7 +592,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
      * Stubs the Maven static-data boundary (POM + release date + tooling metadata) so a queued
      * request can be processed end-to-end against the real database without network access.
      */
-    private fun stubMavenFetch(groupId: String, artifactId: String, version: String, pomDescription: String?) {
+    private fun stubMavenFetch(groupId: String, artifactId: String, version: String, pomDescription: String?, releasedAt: Instant = Instant.now()) {
         val pom = mock<MavenPom>()
         whenever(pom.groupId).thenReturn(groupId)
         whenever(pom.artifactId).thenReturn(artifactId)
@@ -603,7 +603,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             .thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
-            .thenReturn(PomWithReleaseDate(pom, Instant.now()))
+            .thenReturn(PomWithReleaseDate(pom, releasedAt))
         whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
     }
 
@@ -885,8 +885,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     fun `findFirstForIndexing only selects requests with PENDING status`() {
         jdbcTemplate.update(
             """
-            INSERT INTO package_index_request (id, group_id, artifact_id, version, released_ts, scraper_type, status, failed_attempts)
-            VALUES (999, 'com.example', 'legacy-in-process', '1.0.0', NOW(), 'CENTRAL_SONATYPE', 'IN_PROCESS', 0)
+            INSERT INTO package_index_request (id, group_id, artifact_id, version, scraper_type, status, failed_attempts, next_attempt_ts)
+            VALUES (999, 'com.example', 'legacy-in-process', '1.0.0', 'CENTRAL_SONATYPE', 'IN_PROCESS', 0, '-infinity')
             """
         )
         try {
@@ -916,7 +916,6 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
                 groupId = "com.example",
                 artifactId = "test-artifact",
                 version = "1.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.CENTRAL_SONATYPE,
                 failedAttempts = failedAttempts,
                 userRequestIssue = issue,
