@@ -18,7 +18,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -59,9 +58,6 @@ class MavenIndexScannerServiceTest {
 
     @Test
     fun `should scan and emit MavenArtifact objects`(): Unit = runBlocking {
-        // Given
-        val from = Instant.parse("2023-01-01T00:00:00Z")
-
         whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
             .thenReturn(indexingContext)
 
@@ -69,7 +65,6 @@ class MavenIndexScannerServiceTest {
             groupId = "io.klibs"
             artifactId = "test-artifact"
             version = "1.0.0"
-            lastModified = from.toEpochMilli()
         }
 
         whenever(indexer.searchIterator(any())).thenReturn(iteratorSearchResponse)
@@ -87,7 +82,6 @@ class MavenIndexScannerServiceTest {
         assertEquals("test-artifact", artifact.artifactId)
         assertEquals("1.0.0", artifact.version)
         assertEquals(ScraperType.CENTRAL_SONATYPE, artifact.scraperType)
-        assertEquals(from, artifact.releasedAt)
 
         verify(indexer).searchIterator(any())
     }
@@ -103,7 +97,6 @@ class MavenIndexScannerServiceTest {
             groupId = "io.klibs"
             artifactId = "test-artifact"
             version = "1.0.0"
-            lastModified = Instant.parse("2023-01-01T00:00:00Z").toEpochMilli()
         }
 
         whenever(indexer.searchIterator(any())).thenReturn(iteratorSearchResponse)
@@ -118,7 +111,6 @@ class MavenIndexScannerServiceTest {
 
     @Test
     fun `should handle empty search results`(): Unit = runBlocking {
-        // Given
         whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
             .thenReturn(indexingContext)
 
@@ -135,7 +127,6 @@ class MavenIndexScannerServiceTest {
 
     @Test
     fun `should handle exceptions during scanning`(): Unit = runBlocking {
-        // Given
         whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
             .thenReturn(indexingContext)
 

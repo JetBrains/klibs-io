@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: Remove released_ts column from package_index_request table
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - dropColumn:
+            tableName: package_index_request
+            columnName: released_ts

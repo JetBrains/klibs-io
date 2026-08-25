@@ -27,7 +27,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
-import java.time.Instant
 
 @ActiveProfiles("test")
 class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
@@ -60,7 +59,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.example",
                 artifactId = "remove-lib",
                 version = "1.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.SEARCH_MAVEN,
             )
         )
@@ -97,7 +95,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.example",
                 artifactId = "multi-lib",
                 version = "1.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.SEARCH_MAVEN,
             )
         )
@@ -106,7 +103,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.example",
                 artifactId = "multi-lib",
                 version = "2.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.SEARCH_MAVEN,
             )
         )
@@ -161,7 +157,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.example",
                 artifactId = "non-kmp-lib",
                 version = "1.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.SEARCH_MAVEN,
             )
         )
@@ -200,7 +195,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.example",
                 artifactId = "non-kmp-multi",
                 version = "1.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.SEARCH_MAVEN,
             )
         )
@@ -209,7 +203,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.example",
                 artifactId = "non-kmp-multi",
                 version = "1.1.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.SEARCH_MAVEN,
             )
         )
@@ -320,7 +313,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.batch",
                 artifactId = "item-one",
                 version = "1.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.SEARCH_MAVEN,
             )
         )
@@ -329,7 +321,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.batch",
                 artifactId = "item-two",
                 version = "2.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.SEARCH_MAVEN,
             )
         )
@@ -377,7 +368,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.user",
                 artifactId = "reported-lib",
                 version = "1.0.0",
-                releasedAt = Instant.now(),
                 repo = ScraperType.CENTRAL_SONATYPE,
                 userRequestIssue = issue,
             )
@@ -539,7 +529,6 @@ class PackageIndexRequestControllerTest : BaseUnitWithDbLayerTest() {
             groupId = "org.example",
             artifactId = artifactId,
             version = version,
-            releasedAt = Instant.now(),
             repo = repo,
             userRequestIssue = issue,
         )

@@ -163,7 +163,6 @@ class GoogleMavenPackageDiscoverer(
                                 artifactId = artifactId,
                                 version = version,
                                 scraperType = scraperType,
-                                releasedAt = nonNullMetadata.releasedAt
                             )
                         } else {
                             null
