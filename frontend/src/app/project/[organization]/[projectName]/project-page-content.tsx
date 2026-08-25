@@ -209,7 +209,7 @@ function ProjectTabs({projectReadme, projectPackages, isMobile, activeIndex, set
                                 Package id
                             </div>
                             <div>
-                                Target groups
+                                Platforms
                             </div>
                         </div>
                         {/*Table body*/}

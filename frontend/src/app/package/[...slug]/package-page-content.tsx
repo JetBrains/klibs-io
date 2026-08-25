@@ -324,7 +324,7 @@ function VersionHistoryTable({isMobile, packageVersions, version, packageName}: 
                     <tr className={textCn("rs-text-3", {hardness: "hard"})}>
                         <th className="padding-left-medium">Version</th>
                         <th>Release</th>
-                        <th>Target groups</th>
+                        <th>Platforms</th>
                     </tr>
                     </thead>
 
