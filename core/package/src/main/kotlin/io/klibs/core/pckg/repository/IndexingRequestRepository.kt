@@ -25,18 +25,18 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
         SELECT req.*
         FROM package_index_request req
         WHERE req.status = 'PENDING'
-          AND req.failed_attempts < :#{@indexingRetryConfiguration.maxAttempts} 
+          AND req.failed_attempts < :maxAttempts
           AND req.next_attempt_ts < current_timestamp
         ORDER BY req.next_attempt_ts
         LIMIT 1
     """, nativeQuery = true)
-    fun findFirstForIndexing(): IndexingRequestEntity?
+    fun findFirstForIndexing(@Param("maxAttempts") maxAttempts: Int): IndexingRequestEntity?
 
     @Modifying
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Query(value = """
         UPDATE package_index_request
-        SET status = CASE WHEN failed_attempts + 1 >= :#{@indexingRetryConfiguration.maxAttempts}
+        SET status = CASE WHEN failed_attempts + 1 >= :maxAttempts
                       THEN 'FAILED' ELSE 'PENDING' END,
             failed_ts = current_timestamp,
             failed_attempts = failed_attempts + 1,
@@ -44,7 +44,7 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
             next_attempt_ts = COALESCE(:nextAttemptTs, 'infinity'::timestamptz)
         WHERE id = :id
     """, nativeQuery = true)
-    fun markAsFailed(@Param("id") id: Long, @Param("nextAttemptTs") nextAttemptTs: Instant?, @Param("errorMessage") errorMessage: String?)
+    fun markAsFailed(@Param("id") id: Long, @Param("maxAttempts") maxAttempts: Int,@Param("nextAttemptTs") nextAttemptTs: Instant?, @Param("errorMessage") errorMessage: String?)
 
     fun countByStatus(status: IndexingRequestStatus): Long
 

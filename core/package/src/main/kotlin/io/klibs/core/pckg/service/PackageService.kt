@@ -14,8 +14,9 @@ import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.dto.projection.SitemapPackageView
 import io.klibs.core.pckg.enums.PackageProcessingStatus
-import io.klibs.core.pckg.model.PackageStatusOverview
-import io.klibs.core.pckg.repository.BannedPackagesRepository
+import io.klibs.core.pckg.dto.PackageStatusDTO
+import io.klibs.core.pckg.enums.IndexingRequestStatus
+import io.klibs.core.pckg.repository.BlacklistRepository
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import org.slf4j.LoggerFactory
@@ -30,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional
 class PackageService(
     private val packageRepository: PackageRepository,
     private val packageIndexRepository: PackageIndexRepository,
-    private val bannedPackagesRepository: BannedPackagesRepository,
+    private val blacklistRepository: BlacklistRepository,
     private val indexingRequestRepository: IndexingRequestRepository,
     private val selfProvider: ObjectProvider<PackageService>,
 ) {
@@ -136,27 +137,28 @@ class PackageService(
         groupId: String,
         artifactId: String,
         version: String
-    ): PackageStatusOverview = PackageStatusOverview(
-        groupId = groupId,
-        artifactId = artifactId,
-        version = version,
-        status = when {
-            packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version) != null ->
-                PackageProcessingStatus.INDEXED
+    ): PackageStatusDTO? = when {
+        packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version) != null ->
+            PackageProcessingStatus.INDEXED
 
-            bannedPackagesRepository.isBanned(groupId, artifactId) ->
-                PackageProcessingStatus.BANNED
+        blacklistRepository.checkPackageBanned(groupId, artifactId) ->
+            PackageProcessingStatus.BANNED
 
-            else -> indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
-                ?.let {
-                    if (it.nextAttemptAt != null)
-                        PackageProcessingStatus.QUEUED
-                    else
-                        PackageProcessingStatus.FAILED
-                }
-                ?: PackageProcessingStatus.UNKNOWN
-        }
-    )
+        else -> indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
+            ?.let {
+                if (it.status == IndexingRequestStatus.FAILED)
+                    PackageProcessingStatus.FAILED
+                else
+                    PackageProcessingStatus.QUEUED
+            }
+    }?.let {
+        PackageStatusDTO(
+            groupId = groupId,
+            artifactId = artifactId,
+            version = version,
+            status = it,
+        )
+    }
 }
 
 

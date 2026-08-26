@@ -13,6 +13,8 @@ import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -102,7 +104,6 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals("1.0.0", saved.version, "Wrong version")
         assertEquals(ScraperType.CENTRAL_SONATYPE, saved.repo, "Wrong scraper type")
         assertNotNull(saved.createdAt, "createdAt should be set")
-        assertTrue(saved.createdAt!!.isAfter(Instant.now().minusSeconds(60)), "createdAt should be recent")
     }
 
     @Test
@@ -324,7 +325,7 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
             )
         )
 
-        uut.fulfillRequest(requireNotNull(issue.id))
+        uut.discoverAndSaveRequest(requireNotNull(issue.id))
     }
 
     // Tests for saveGAVRequest

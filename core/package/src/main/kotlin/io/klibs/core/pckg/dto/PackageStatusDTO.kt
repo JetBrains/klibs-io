@@ -1,8 +1,8 @@
-package io.klibs.core.pckg.model
+package io.klibs.core.pckg.dto
 
 import io.klibs.core.pckg.enums.PackageProcessingStatus
 
-data class PackageStatusOverview (
+data class PackageStatusDTO (
     val groupId: String,
     val artifactId: String,
     val version: String,

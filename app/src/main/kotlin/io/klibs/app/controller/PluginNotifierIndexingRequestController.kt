@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.util.UriComponentsBuilder
 
 /**
  * Receives notifications from the Gradle klibs-io-notifier plugin about artifacts newly published to Maven Central.
@@ -28,23 +29,34 @@ class PluginNotifierIndexingRequestController(
     fun handleRequest(
         @Valid @RequestBody payload: PluginNotifierIndexingRequest
     ): ResponseEntity<out Any> {
-        return when(val result = notifierRequestValidator.validatePluginNotifierIndexingRequest(payload)){
+        return when (val result = notifierRequestValidator.validatePluginNotifierIndexingRequest(payload)) {
             is IndexingRequestValidationResult.NotApplicable -> result.response
             is IndexingRequestValidationResult.Valid -> {
                 try {
                     processingService.processRequest(result.request)
-                    ResponseEntity.ok().body("Indexing request has been successfully added to the klibs.io queue")
+                    val statusUrl = buildStatusURL(result)
+                    ResponseEntity.ok()
+                        .body("The indexing request has been successfully added to the klibs.io queue. You can check the indexing status of your artifact at $statusUrl")
                 } catch (e: UserRequestProcessingException) {
-                    ResponseEntity.badRequest().body("Indexing request could not be processed by klibs.io: ${e.reason}")
+                    ResponseEntity.badRequest()
+                        .body("The indexing request could not be processed by klibs.io: ${e.reason}")
                 } catch (e: Exception) {
                     logger.error("Notification processing failed with error: $e")
-                    ResponseEntity.internalServerError().body("Indexing request failed due to internal klibs.io error")
+                    ResponseEntity.internalServerError()
+                        .body("The indexing request failed due to an internal klibs.io error")
                 }
             }
         }
     }
 
-    private companion object{
+    private fun buildStatusURL(result: IndexingRequestValidationResult.Valid<PluginNotifierIndexingRequest>): String =
+        UriComponentsBuilder.fromUriString("https://klibs.io")
+            .pathSegment("package", result.request.groupId, result.request.artifactId, result.request.version, "status")
+            .build()
+            .encode()
+            .toUriString()
+
+    private companion object {
         private val logger = LoggerFactory.getLogger(PluginNotifierIndexingRequestController::class.java)
     }
 }
