@@ -218,6 +218,8 @@ private fun PackageStatusOverview.toDTO(): PackageStatusResponse {
 private fun PackageProcessingStatus.toDescription(): String = when (this) {
     PackageProcessingStatus.INDEXED ->
         "This package has been indexed and is available on klibs.io."
+    PackageProcessingStatus.BANNED ->
+        "This package has been banned and will not be available on klibs.io."
     PackageProcessingStatus.QUEUED ->
         "This package is queued for indexing. Please check its progress later."
     PackageProcessingStatus.FAILED ->
