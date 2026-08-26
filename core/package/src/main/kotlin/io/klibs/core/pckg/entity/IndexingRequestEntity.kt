@@ -38,6 +38,9 @@ data class IndexingRequestEntity(
     @Column(name = "version")
     val version: String?,
 
+    @Column(name = "created_ts")
+    val createdAt: Instant? = Instant.now(),
+
     @Column(name = "next_attempt_ts", nullable = false)
     val nextAttemptAt: Instant = Instant.EPOCH,
 
