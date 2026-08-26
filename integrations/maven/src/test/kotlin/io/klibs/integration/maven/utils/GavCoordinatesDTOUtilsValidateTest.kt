@@ -53,6 +53,38 @@ class GavCoordinatesDTOUtilsValidateTest {
     }
 
     @Test
+    fun `should return error when version contains forbidden characters`() {
+        val parsed = GavCoordinatesDTO(
+            groupId = "org.jetbrains.kotlinx",
+            artifactId = "kotlinx.coroutines.core",
+            version = "1.10.2?"
+        )
+        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
+
+        assertNotNull(error)
+        assertEquals(
+            "Invalid Version format. Whitespace, control characters, and the following characters are not allowed: /, \\, %, ?, #, &.",
+            error
+        )
+    }
+
+    @Test
+    fun `should return error when version contains spaces`() {
+        val parsed = GavCoordinatesDTO(
+            groupId = "org.jetbrains.kotlinx",
+            artifactId = "kotlinx.coroutines.core",
+            version = "1.10 2"
+        )
+        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
+
+        assertNotNull(error)
+        assertEquals(
+            "Invalid Version format. Whitespace, control characters, and the following characters are not allowed: /, \\, %, ?, #, &.",
+            error
+        )
+    }
+
+    @Test
     fun `should allow special characters in version`() {
         val parsed = GavCoordinatesDTO(
             groupId = "org.jetbrains.kotlinx",
