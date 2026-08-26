@@ -99,6 +99,8 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals("lib", saved.artifactId, "Wrong artifactId")
         assertEquals("1.0.0", saved.version, "Wrong version")
         assertEquals(ScraperType.CENTRAL_SONATYPE, saved.repo, "Wrong scraper type")
+        assertNotNull(saved.createdAt, "createdAt should be set")
+        assertTrue(saved.createdAt!!.isAfter(Instant.now().minusSeconds(60)), "createdAt should be recent")
     }
 
     @Test
