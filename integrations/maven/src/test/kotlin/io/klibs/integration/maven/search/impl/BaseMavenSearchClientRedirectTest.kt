@@ -5,32 +5,45 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
+import io.klibs.integration.maven.exception.MavenRateLimitedException
+import io.klibs.integration.maven.request.RequestRateLimiter
 import io.klibs.integration.maven.request.impl.UnlimitedRateLimiter
 import io.klibs.integration.maven.search.MavenSearchResponse
+import java.io.ByteArrayInputStream
+import java.nio.charset.StandardCharsets
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.time.Clock
+import kotlin.time.Instant
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.datetime.format
 import org.apache.maven.search.api.request.Query
 import org.apache.maven.search.api.transport.Transport
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
-import java.io.ByteArrayInputStream
-import java.nio.charset.StandardCharsets
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
-import kotlin.test.assertFailsWith
 
 class BaseMavenSearchClientRedirectTest {
 
     private lateinit var transport: Transport
     private lateinit var client: TestClient
+
+    private val mockedNow = Instant.parse("2026-08-31T12:00:00Z")
+    private val mockedClock = object : Clock {
+        override fun now(): Instant = mockedNow
+    }
 
     @BeforeEach
     fun setup() {
@@ -72,7 +85,11 @@ class BaseMavenSearchClientRedirectTest {
         }
         val ok = mockResponse(code = 200, body = pom)
         // enqueue 5 redirects then OK
-        whenever(transport.get(any(), any())).thenReturn(redirects[0], *redirects.subList(1, redirects.size).toTypedArray(), ok)
+        whenever(transport.get(any(), any())).thenReturn(
+            redirects[0],
+            *redirects.subList(1, redirects.size).toTypedArray(),
+            ok
+        )
 
         val result = client.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
@@ -125,7 +142,8 @@ class BaseMavenSearchClientRedirectTest {
         val notFound = mockResponse(code = 404)
         whenever(transport.get(any(), any())).thenReturn(notFound)
 
-        val result = client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
+        val result =
+            client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
         assertNull(result, "Expected null for HTTP 404 response")
     }
 
@@ -157,6 +175,107 @@ class BaseMavenSearchClientRedirectTest {
         )
 
         assertNull(result, "Expected null when fallback also returns 404")
+    }
+
+    @Test
+    fun `rate limited with retry-after applies cooldown and carries the delay`() {
+        val rateLimiter = passthroughRateLimiter()
+        val tooMany = mockResponse(code = 429, headers = mapOf("retry-after" to "120"))
+        whenever(transport.get(any(), any())).thenReturn(tooMany)
+
+        val rateLimitedClient = TestClient(transport, rateLimiter = rateLimiter, clock = mockedClock)
+        val ex = assertFailsWith<MavenRateLimitedException> {
+            rateLimitedClient.getPom(
+                MavenArtifact(
+                    "org.example",
+                    "example-artifact",
+                    "1.0.0",
+                    ScraperType.CENTRAL_SONATYPE
+                )
+            )
+        }
+
+        assertEquals(mockedNow.plus(120.seconds), ex.retryAfter)
+        verify(rateLimiter).applyCooldown(eq(mockedNow.plus(120.seconds)))
+    }
+
+    @Test
+    fun `rate limited with retry-after date applies cooldown and carries the instant`() {
+        val rateLimiter = passthroughRateLimiter()
+        val expectedRetryCooldownTime = mockedNow.plus(120.seconds)
+
+        val retryAfterHeader = Instant.parse("2026-08-31T12:02:00Z").format(
+            kotlinx.datetime.format.DateTimeComponents.Formats.RFC_1123
+        )
+        val tooManyRequestsResponse = mockResponse(code = 429, headers = mapOf("retry-after" to retryAfterHeader))
+        whenever(transport.get(any(), any())).thenReturn(tooManyRequestsResponse)
+
+        val uut = TestClient(transport, rateLimiter = rateLimiter, clock = mockedClock)
+        val ex = assertFailsWith<MavenRateLimitedException> {
+            uut.getPom(
+                MavenArtifact(
+                    "org.example",
+                    "example-artifact",
+                    "1.0.0",
+                    ScraperType.CENTRAL_SONATYPE
+                )
+            )
+        }
+
+        assertEquals(expectedRetryCooldownTime, ex.retryAfter)
+        verify(rateLimiter).applyCooldown(eq(expectedRetryCooldownTime))
+    }
+
+    @Test
+    fun `rate limited without retry-after does not apply cooldown`() {
+        val rateLimiter = passthroughRateLimiter()
+        val tooMany = mockResponse(code = 429)
+        whenever(transport.get(any(), any())).thenReturn(tooMany)
+
+        val rateLimitedClient = TestClient(transport, rateLimiter = rateLimiter)
+        val ex = assertFailsWith<MavenRateLimitedException> {
+            rateLimitedClient.getPom(
+                MavenArtifact(
+                    "org.example",
+                    "example-artifact",
+                    "1.0.0",
+                    ScraperType.CENTRAL_SONATYPE
+                )
+            )
+        }
+
+        assertNull(ex.retryAfter)
+        verify(rateLimiter, never()).applyCooldown(any())
+    }
+
+    @Test
+    fun `rate limited with invalid retry-after is treated as absent`() {
+        val rateLimiter = passthroughRateLimiter()
+        val tooMany = mockResponse(code = 429, headers = mapOf("retry-after" to "0"))
+        whenever(transport.get(any(), any())).thenReturn(tooMany)
+
+        val rateLimitedClient = TestClient(transport, rateLimiter = rateLimiter)
+        val ex = assertFailsWith<MavenRateLimitedException> {
+            rateLimitedClient.getPom(
+                MavenArtifact(
+                    "org.example",
+                    "example-artifact",
+                    "1.0.0",
+                    ScraperType.CENTRAL_SONATYPE
+                )
+            )
+        }
+
+        assertNull(ex.retryAfter)
+        verify(rateLimiter, never()).applyCooldown(any())
+    }
+
+    private fun passthroughRateLimiter(): RequestRateLimiter {
+        val rateLimiter = mock<RequestRateLimiter>()
+        whenever(rateLimiter.withRateLimitBlocking(any<() -> Any?>())).thenAnswer { invocation ->
+            invocation.getArgument<() -> Any?>(0).invoke()
+        }
+        return rateLimiter
     }
 
     private fun minimalPom(groupId: String, artifactId: String, version: String): String = """
@@ -194,12 +313,15 @@ class BaseMavenSearchClientRedirectTest {
     private class TestClient(
         transport: Transport,
         private val fallbackPrefix: String? = null,
+        rateLimiter: RequestRateLimiter = UnlimitedRateLimiter(),
+        clock: Clock = Clock.System,
     ) : BaseMavenSearchClient(
         xmlMapper = XmlMapper().apply { registerKotlinModule() },
-        rateLimiter = UnlimitedRateLimiter(),
+        rateLimiter = rateLimiter,
         logger = LoggerFactory.getLogger(TestClient::class.java),
         objectMapper = ObjectMapper(),
-        clientTransport = transport
+        clientTransport = transport,
+        clock = clock
     ) {
         override fun getContentUrlPrefix(): String {
             return "https://test/remotecontent?filepath="
@@ -210,7 +332,7 @@ class BaseMavenSearchClientRedirectTest {
         override fun searchWithThrottle(
             page: Int,
             query: Query,
-            lastUpdatedSince: Instant
+            lastUpdatedSince: java.time.Instant
         ): MavenSearchResponse {
             throw UnsupportedOperationException("Not implemented")
         }

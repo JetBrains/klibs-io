@@ -18,7 +18,7 @@ import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenPom
-import io.klibs.integration.maven.MavenRateLimitedException
+import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.PomWithReleaseDate
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.androidx.GradleMetadata

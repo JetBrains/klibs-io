@@ -18,6 +18,7 @@ kohsuke-githubApi = "1.330"
 jjwt = "0.12.6"
 
 kotlinx-coroutines = "1.10.2"
+kotlinx-datetime = "0.8.0"
 
 okhttp = "4.12.0"
 bucket4j = "8.10.1"
@@ -43,6 +44,7 @@ kotlin-semver = "3.0.0"
 kotlinx-coroutines-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm", version.ref = "kotlinx-coroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 kotlin-toolingMetadata = { module = "org.jetbrains.kotlin:kotlin-tooling-metadata", version.ref = "kotlin" }
 mappie-api = { module = "tech.mappie:mappie-api", version.ref = "mappie" }

@@ -19,7 +19,7 @@ import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.MavenPom
-import io.klibs.integration.maven.MavenRateLimitedException
+import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.MavenStaticDataProvider
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import kotlinx.coroutines.Dispatchers
