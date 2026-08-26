@@ -1,18 +1,20 @@
-package io.klibs.core.project.blacklist
+package io.klibs.app.service.impl
 
+import io.klibs.app.service.BlacklistService
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.pckg.repository.BlacklistRepository
 import io.klibs.core.project.repository.ProjectRepository
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 
 @Service
-class BlacklistService(
+class DefaultBlacklistService(
     private val blacklistRepository: BlacklistRepository,
     private val packageRepository: PackageRepository,
     private val projectRepository: ProjectRepository,
-) {
+) : BlacklistService {
     @Transactional
-    fun banByGroup(groupId: String, reason: String?): Boolean {
+    override fun banByGroup(groupId: String, reason: String?): Boolean {
         val projectIds = findProjectIdsByPackage(groupId, null)
 
         blacklistRepository.addToBannedPackages(groupId, null, reason)
@@ -25,7 +27,7 @@ class BlacklistService(
     }
 
     @Transactional
-    fun banPackage(groupId: String, artifactId: String, reason: String?): Boolean {
+    override fun banPackage(groupId: String, artifactId: String, reason: String?): Boolean {
         if (!blacklistRepository.checkPackageExists(groupId, artifactId)) {
             return false
         }
