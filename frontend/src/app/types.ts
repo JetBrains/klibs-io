@@ -301,7 +301,7 @@ const targetGroupFilterNames: Record<TargetGroupFilter, string> = {
 	ios: 'iOS',
 	android: 'Android',
 	jvm: 'JVM',
-	js: 'JavaScript',
+	js: 'JS',
 	wasm: 'Wasm',
 	other: 'Other',
 };
