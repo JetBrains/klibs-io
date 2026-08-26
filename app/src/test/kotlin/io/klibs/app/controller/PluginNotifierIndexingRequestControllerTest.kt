@@ -3,27 +3,31 @@ package io.klibs.app.controller
 import SmokeTestBase
 import io.klibs.app.api.PluginNotifierIndexingRequest
 import io.klibs.app.exceptions.UserRequestProcessingException
+import io.klibs.app.service.UserIndexingRequestService
 import io.klibs.app.service.impl.PluginNotifierRequestService
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.servlet.post
 
 class PluginNotifierIndexingRequestControllerTest : SmokeTestBase() {
 
-    @MockitoBean
+    @MockitoSpyBean
     private lateinit var pluginNotifierRequestService: PluginNotifierRequestService
+
+    @MockitoBean
+    private lateinit var userIndexingRequestService: UserIndexingRequestService
 
     @Test
     fun `accepts a valid indexing request from notifier and dispatches to the service`() {
         val payload = """
-            {"groupId": "org.example", "artifactId": "lib", "version": "1.0.0"}
+            {"groupId": "org.example", "artifactId": "lib", "version": "1.0.0-część"}
         """.trimIndent()
 
         mockMvc.post("/notify/artifacts") {
@@ -31,14 +35,15 @@ class PluginNotifierIndexingRequestControllerTest : SmokeTestBase() {
             content = payload
         }.andExpect {
             status { isOk() }
-            content { string("Indexing request has been successfully added to the klibs.io queue") }
+            content { string("The indexing request has been successfully added to the klibs.io queue. You can check the indexing status of your artifact at https://klibs.io/package/org.example/lib/1.0.0-cz%C4%99%C5%9B%C4%87/status") }
         }
 
         verify(pluginNotifierRequestService).processRequest(
             argThat<PluginNotifierIndexingRequest> {
-                groupId == "org.example" && artifactId == "lib" && version == "1.0.0"
+                groupId == "org.example" && artifactId == "lib" && version == "1.0.0-część"
             }
         )
+        verify(userIndexingRequestService).saveGAVRequest("org.example", "lib", "1.0.0-część")
     }
 
     @Test
@@ -108,8 +113,8 @@ class PluginNotifierIndexingRequestControllerTest : SmokeTestBase() {
 
     @Test
     fun `returns 400 when service throws UserRequestProcessingException`() {
-        doThrow(UserRequestProcessingException("Artifact is banned"))
-            .whenever(pluginNotifierRequestService).processRequest(any())
+        whenever(userIndexingRequestService.saveGAVRequest(any(), any(), any()))
+            .thenThrow(UserRequestProcessingException("Artifact is banned"))
 
         val payload = """
             {"groupId": "org.example", "artifactId": "lib", "version": "1.0.0"}
@@ -120,14 +125,14 @@ class PluginNotifierIndexingRequestControllerTest : SmokeTestBase() {
             content = payload
         }.andExpect {
             status { isBadRequest() }
-            content { string("Indexing request could not be processed by klibs.io: Artifact is banned") }
+            content { string("The indexing request could not be processed by klibs.io: Artifact is banned") }
         }
     }
 
     @Test
     fun `returns 500 when service throws unexpected exception`() {
-        doThrow(RuntimeException("Unexpected failure"))
-            .whenever(pluginNotifierRequestService).processRequest(any())
+        whenever(userIndexingRequestService.saveGAVRequest(any(), any(), any()))
+            .thenThrow(RuntimeException("Unexpected failure"))
 
         val payload = """
             {"groupId": "org.example", "artifactId": "lib", "version": "1.0.0"}
@@ -138,7 +143,7 @@ class PluginNotifierIndexingRequestControllerTest : SmokeTestBase() {
             content = payload
         }.andExpect {
             status { isInternalServerError() }
-            content { string("Indexing request failed due to internal klibs.io error") }
+            content { string("The indexing request failed due to an internal klibs.io error") }
         }
     }
 }

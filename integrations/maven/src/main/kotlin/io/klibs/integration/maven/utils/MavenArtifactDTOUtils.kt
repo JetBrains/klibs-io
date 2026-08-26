@@ -8,7 +8,7 @@ class MavenArtifactDTOUtils {
         private val GROUP_ID_AND_ARTIFACT_ID_REGEX = "^[A-Za-z0-9_.-]+$".toRegex()
 
         // Regex for version: Forbidding control characters, and characters manipulating URL path
-        private val VERSION_REGEX = "^[^\\p{Cntrl}/\\\\%?#&]+$".toRegex()
+        private val VERSION_REGEX = "^[^\\p{Cntrl}\\s/\\\\%?#&]+$".toRegex()
 
         /**
          * Checks if the data in MavenArtifactDTO is in valid format.
@@ -25,7 +25,7 @@ class MavenArtifactDTOUtils {
             }
 
             if (parsed.version != null && !parsed.version.matches(VERSION_REGEX)) {
-                return "Invalid Version format. Newlines, other control characters, and the following characters are not allowed: /, \\, %, ?, #, &."
+                return "Invalid Version format. Whitespace, control characters, and the following characters are not allowed: /, \\, %, ?, #, &."
             }
 
             return null

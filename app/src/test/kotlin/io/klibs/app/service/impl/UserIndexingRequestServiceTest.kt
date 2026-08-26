@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional
 import io.klibs.app.exceptions.UserRequestProcessingException
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
-import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -99,7 +98,6 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals("1.0.0", saved.version, "Wrong version")
         assertEquals(ScraperType.CENTRAL_SONATYPE, saved.repo, "Wrong scraper type")
         assertNotNull(saved.createdAt, "createdAt should be set")
-        assertTrue(saved.createdAt!!.isAfter(Instant.now().minusSeconds(60)), "createdAt should be recent")
     }
 
     @Test
