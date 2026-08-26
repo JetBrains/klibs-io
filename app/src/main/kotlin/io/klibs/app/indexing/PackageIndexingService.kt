@@ -107,7 +107,8 @@ class PackageIndexingService(
      * @return true if a request was processed, false if the queue is empty or we are rate limited.
      */
     fun processPackageQueue(): Boolean {
-        val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val indexRequest =
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         if (indexRequest == null) {
             logger.info("The package index queue is empty")
             return false
@@ -133,7 +134,12 @@ class PackageIndexingService(
                     }
 
                     Outcome.FAILED -> {
-                        indexingRequestRepository.markAsFailed(requestId, getNextAttemptTs(indexRequest.failedAttempts + 1), errorMessage)
+                        indexingRequestRepository.markAsFailed(
+                            requestId,
+                            indexingConfigurationProperties.retry.maxAttempts,
+                            getNextAttemptTs(indexRequest.failedAttempts + 1),
+                            errorMessage
+                        )
                         userRequestReportWriter.saveFailureReportIfTerminal(requestId, errorMessage)
                     }
 
@@ -302,7 +308,11 @@ class PackageIndexingService(
             Duration.between(previousGeneratedAt, Instant.now()) < indexingConfigurationProperties.description.regenTtl
         ) {
             logger.info("Skipping regeneration for $coordinates; previous description generated within TTL")
-            return ResolvedDescription(latestSavedVersion.description, wasGenerated = true, generatedAt = previousGeneratedAt)
+            return ResolvedDescription(
+                latestSavedVersion.description,
+                wasGenerated = true,
+                generatedAt = previousGeneratedAt
+            )
         }
 
         return try {
@@ -333,7 +343,7 @@ class PackageIndexingService(
         return when (failedAttempts) {
             1 -> Instant.now().plus(Duration.ofHours(3))    // 4h
             2 -> Instant.now().plus(Duration.ofHours(11))   // 12h
-            3 -> Instant.now().plus(Duration.ofHours(24*4 - 1)) // 4 days
+            3 -> Instant.now().plus(Duration.ofHours(24 * 4 - 1)) // 4 days
             else -> null
         }
     }

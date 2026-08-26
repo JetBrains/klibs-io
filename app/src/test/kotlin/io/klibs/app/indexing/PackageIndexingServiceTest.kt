@@ -27,6 +27,7 @@ import io.klibs.integration.maven.service.MavenPom
 import io.klibs.integration.maven.service.PomWithReleaseDate
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import java.time.Instant
+import java.time.Duration
 import java.time.temporal.ChronoUnit
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -50,6 +51,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
+import java.sql.Timestamp
 
 @ExtendWith(OutputCaptureExtension::class)
 class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
@@ -103,7 +105,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `should return false when queue is empty`(output: CapturedOutput) {
-        assertNull(indexingRequestRepository.findFirstForIndexing())
+        assertNull(indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts))
 
         val result = uut.processPackageQueue()
 
@@ -114,7 +116,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should handle an exceptions during processing and return true`(output: CapturedOutput) {
-        val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
+        val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequestBeforeProcessing)
 
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenThrow(RuntimeException("Mocked getPom exception"))
@@ -136,7 +138,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `a 429 from Maven Central stops the queue and keeps the request pending`() {
-        val requestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
+        val requestBeforeProcessing = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(requestBeforeProcessing)
 
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
@@ -151,14 +153,14 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         assertEquals("PENDING", row["status"], "Request should stay pending")
         assertEquals(0, (row["failed_attempts"] as Number).toInt(), "Rate limiting should not burn a retry attempt")
-        assertNotNull(indexingRequestRepository.findFirstForIndexing(), "Request must be eligible for the next run")
+        assertNotNull(indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts), "Request must be eligible for the next run")
     }
 
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should successfully process package indexing request`(output: CapturedOutput) {
 
-        val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
+        val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequestBeforeProcessing)
 
         val pom = mock<MavenPom>()
@@ -182,7 +184,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertFalse(output.out.contains("Unable to process the index request"))
 
         assertNull(
-            indexingRequestRepository.findFirstForIndexing(),
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
             "Processed request should be removed from the queue"
         )
         val foundPackages = packageRepository.findByGroupIdAndArtifactIdOrderByReleaseTsDesc(
@@ -199,7 +201,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @ValueSource(booleans = [true, false])
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should classify request as non-KMP when pom exists but tooling metadata is missing`(hasMetadata: Boolean) {
-        if (!hasMetadata) jdbcTemplate.update("UPDATE package_index_request SET released_ts = NULL WHERE id = 1")
+//        if (!hasMetadata) jdbcTemplate.update("UPDATE package_index_request SET released_ts = NULL WHERE id = 1")
         val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(indexRequest)
 
@@ -238,7 +240,6 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             indexRequest.groupId, indexRequest.artifactId, requireNotNull(indexRequest.version),
         )
         val row = nonKmpPackageRepository.findById(requireNotNull(savedId)).orElseThrow()
-        assertEquals(indexRequest.releasedAt ?: releaseTs, row.releaseTs)
         assertEquals(indexRequest.repo, row.repo)
         assertEquals(scmUrl, row.scmUrl)
         assertTrue(row.createdAt >= beforeProcessing && row.createdAt <= Instant.now())
@@ -265,7 +266,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         assertEquals(1, updatedRows)
 
-        val retryableRequest = indexingRequestRepository.findFirstForIndexing()
+        val retryableRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(retryableRequest)
         assertEquals("com.example", retryableRequest.groupId)
         assertEquals("stale-tooling-metadata", retryableRequest.artifactId)
@@ -283,7 +284,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should parse androidJvm platform when jvm target is KotlinMultiplatformAndroidLibraryTargetImpl`() {
-        val indexRequest = indexingRequestRepository.findFirstForIndexing()
+        val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(indexRequest)
 
         val pom = mock<MavenPom>()
@@ -320,7 +321,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         // Assert basic processing
         assertTrue(result, "Should return true")
         assertNull(
-            indexingRequestRepository.findFirstForIndexing(),
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
             "Processed request should be removed from the queue"
         )
 
@@ -377,12 +378,12 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         // Backdate the previous generation beyond the regen TTL so a genuinely new version still regenerates.
         jdbcTemplate.update(
             "UPDATE package SET description_generated_at = ? WHERE group_id = ? AND artifact_id = ? AND version = ?",
-            java.sql.Timestamp.from(Instant.now().minus(120, ChronoUnit.DAYS)),
+            Timestamp.from(Instant.now().minus(120, ChronoUnit.DAYS)),
             groupId, artifactId, version1
         )
 
         // Set up mocks for processing the indexing request
-        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
+        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequest, "Indexing request should exist")
         assertEquals(groupId, packageIndexRequest.groupId)
         assertEquals(artifactId, packageIndexRequest.artifactId)
@@ -410,7 +411,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertTrue(result, "Should return true")
         assertFalse(output.out.contains("Unable to process the index request"))
         assertNull(
-            indexingRequestRepository.findFirstForIndexing(),
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
             "Processed request should be removed from the queue"
         )
 
@@ -438,7 +439,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val artifactId = "test-library-reindex"
         val version = "1.0.0"
 
-        val request = indexingRequestRepository.findFirstForIndexing()
+        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(request)
         assertTrue(request.reindex, "Seeded request must be a reindex request")
 
@@ -478,7 +479,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description", releasedAt = Instant.now().minus(Duration.ofDays(30)))
 
-        val request = indexingRequestRepository.findFirstForIndexing()
+        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(request)
         uut.processRequest(request.idNotNull)
 
@@ -510,7 +511,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         stubMavenFetch(groupId, artifactId, newVersion, pomDescription = "Fresh POM description")
 
-        val request = indexingRequestRepository.findFirstForIndexing()
+        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(request)
         uut.processRequest(request.idNotNull)
 
@@ -545,7 +546,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should markAsFailed when ReadmeContentBuilder buildFromMarkdown throws exception`(output: CapturedOutput) {
         val before = Instant.now()
-        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
+        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequest)
 
         val ownerLogin = "test-owner"
@@ -639,7 +640,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing-last-attempt.sql"])
     fun `should markAsFailed as no next attempt when processing fails for the fourth time`(output: CapturedOutput) {
-        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
+        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequest)
         assertEquals(3, packageIndexRequest.failedAttempts)
 

@@ -6,15 +6,15 @@ import io.klibs.core.pckg.api.PackageDetailsResponse
 import io.klibs.core.pckg.api.PackageOverviewResponse
 import io.klibs.core.pckg.api.PackageStatusResponse
 import io.klibs.core.pckg.api.PackageTargetResponse
-import io.klibs.core.pckg.enums.PackageProcessingStatus
 import io.klibs.core.pckg.model.PackageDetails
 import io.klibs.core.pckg.model.PackageOverview
-import io.klibs.core.pckg.model.PackageStatusOverview
+import io.klibs.core.pckg.dto.PackageStatusDTO
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.model.TargetGroup
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -85,12 +85,14 @@ class PackageController(
             example = "1.9.0-RC"
         )
         version: String
-    ): PackageStatusResponse {
-        return packageService.getPackageStatus(
+    ): ResponseEntity<PackageStatusResponse> {
+        val status = packageService.getPackageStatus(
             groupId = groupId,
             artifactId = artifactId,
             version = version
-        ).toDTO()
+        ) ?: return ResponseEntity.notFound().build()
+
+        return ResponseEntity.ok(status.toDTO())
     }
 
     @Operation(summary = "Get the full info of the latest version by the group id and the artifact id")
@@ -205,27 +207,14 @@ private fun PackageTarget.toDTO(): PackageTargetResponse {
     )
 }
 
-private fun PackageStatusOverview.toDTO(): PackageStatusResponse {
+private fun PackageStatusDTO.toDTO(): PackageStatusResponse {
     return PackageStatusResponse(
         groupId = this.groupId,
         artifactId = this.artifactId,
         version = this.version,
         status = this.status,
-        statusDescription = this.status.toDescription(),
+        statusDescription = this.status.description,
     )
-}
-
-private fun PackageProcessingStatus.toDescription(): String = when (this) {
-    PackageProcessingStatus.INDEXED ->
-        "This package has been indexed and is available on klibs.io."
-    PackageProcessingStatus.BANNED ->
-        "This package has been banned and will not be available on klibs.io."
-    PackageProcessingStatus.QUEUED ->
-        "This package is queued for indexing. Please check its progress later."
-    PackageProcessingStatus.FAILED ->
-        "Indexing of this package failed and will not be retried."
-    PackageProcessingStatus.UNKNOWN ->
-        "This package is unknown to klibs.io."
 }
 
 internal fun PackageDetails.getFilesUrl(): String {
