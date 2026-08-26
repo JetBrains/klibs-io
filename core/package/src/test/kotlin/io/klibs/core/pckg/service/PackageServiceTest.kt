@@ -3,6 +3,7 @@ package io.klibs.core.pckg.service
 import io.klibs.core.pckg.entity.MavenArtifactEntity
 import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.enums.VersionType
+import io.klibs.core.pckg.repository.BannedPackagesRepository
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
@@ -33,6 +34,9 @@ class PackageServiceTest {
     private lateinit var indexingRequestRepository: IndexingRequestRepository
 
     @Mock
+    private lateinit var bannedPackagesRepository: BannedPackagesRepository
+
+    @Mock
     private lateinit var selfProvider: ObjectProvider<PackageService>
 
     private lateinit var uut: PackageService
@@ -42,6 +46,7 @@ class PackageServiceTest {
         uut = PackageService(
             packageRepository,
             packageIndexRepository,
+            bannedPackagesRepository,
             indexingRequestRepository,
             selfProvider
         )
