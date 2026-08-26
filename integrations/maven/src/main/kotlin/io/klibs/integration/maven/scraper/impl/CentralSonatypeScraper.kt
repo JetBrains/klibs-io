@@ -1,7 +1,7 @@
 package io.klibs.integration.maven.scraper.impl
 
 import io.klibs.integration.maven.MavenArtifact
-import io.klibs.integration.maven.MavenRateLimitedException
+import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.scraper.MavenCentralScraper
 import io.klibs.integration.maven.search.MavenSearchClient
