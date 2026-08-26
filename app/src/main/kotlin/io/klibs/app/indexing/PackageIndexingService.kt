@@ -142,7 +142,12 @@ class PackageIndexingService(
                     }
 
                     Outcome.FAILED -> {
-                        indexingRequestRepository.markAsFailed(requestId, getNextAttemptTs(indexRequest.failedAttempts + 1), errorMessage)
+                        indexingRequestRepository.markAsFailed(
+                            requestId,
+                            indexingConfigurationProperties.retry.maxAttempts,
+                            getNextAttemptTs(indexRequest.failedAttempts + 1),
+                            errorMessage
+                        )
                         userRequestReportWriter.saveFailureReportIfTerminal(requestId, errorMessage)
                     }
 
@@ -375,7 +380,7 @@ class PackageIndexingService(
         return when (failedAttempts) {
             1 -> Instant.now().plus(Duration.ofHours(3))    // 4h
             2 -> Instant.now().plus(Duration.ofHours(11))   // 12h
-            3 -> Instant.now().plus(Duration.ofHours(24*4 - 1)) // 4 days
+            3 -> Instant.now().plus(Duration.ofHours(24 * 4 - 1)) // 4 days
             else -> null
         }
     }

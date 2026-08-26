@@ -132,18 +132,10 @@ class PackageControllerStatusTest : BaseUnitWithDbLayerTest(){
     }
 
     @Test
-    fun `should return UNKNOWN for an unknown package`() {
-        val result = mockMvc.get("/package/org.unknown/libA/1.0.0/status")
+    fun `should return 404 for an unknown package`() {
+        mockMvc.get("/package/org.unknown/libA/1.0.0/status")
             .andExpect {
-                status { isOk() }
+                status { isNotFound() }
             }
-            .andReturn()
-
-        val response = objectMapper.readValue(
-            result.response.contentAsString,
-            object : TypeReference<PackageStatusResponse>() {}
-        )
-
-        assertEquals(PackageProcessingStatus.UNKNOWN, response.status)
     }
 }
