@@ -47,6 +47,57 @@ class PackageControllerStatusTest : BaseUnitWithDbLayerTest(){
     }
 
     @Test
+    @Sql(scripts = ["classpath:sql/PackageControllerTest/seed-banned-packages.sql"])
+    fun `should return BANNED for a request with banned group id`() {
+        val result = mockMvc.get("/package/org.banned/libA/1.0.0/status")
+            .andExpect {
+                status { isOk() }
+            }
+            .andReturn()
+
+        val response = objectMapper.readValue(
+            result.response.contentAsString,
+            object : TypeReference<PackageStatusResponse>() {}
+        )
+
+        assertEquals(PackageProcessingStatus.BANNED, response.status)
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageControllerTest/seed-banned-packages.sql"])
+    fun `should return BANNED for a request with banned group id and artifact id`() {
+        val result = mockMvc.get("/package/org.partially.banned/banned/1.0.0/status")
+            .andExpect {
+                status { isOk() }
+            }
+            .andReturn()
+
+        val response = objectMapper.readValue(
+            result.response.contentAsString,
+            object : TypeReference<PackageStatusResponse>() {}
+        )
+
+        assertEquals(PackageProcessingStatus.BANNED, response.status)
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageControllerTest/seed-banned-packages.sql"])
+    fun `should return QUEUED for a request with banned group id with different artifact id`() {
+        val result = mockMvc.get("/package/org.partially.banned/not-banned/1.0.0/status")
+            .andExpect {
+                status { isOk() }
+            }
+            .andReturn()
+
+        val response = objectMapper.readValue(
+            result.response.contentAsString,
+            object : TypeReference<PackageStatusResponse>() {}
+        )
+
+        assertEquals(PackageProcessingStatus.QUEUED, response.status)
+    }
+
+    @Test
     @Sql(scripts = ["classpath:sql/PackageControllerTest/seed-package-index-request.sql"])
     fun `should return QUEUED for a request with a next attempt`() {
         val result = mockMvc.get("/package/org.queued/libA/1.0.0/status")
