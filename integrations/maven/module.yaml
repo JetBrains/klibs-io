@@ -12,6 +12,7 @@ dependencies:
   - $libs.maven.model: exported
   - $libs.spring.webflux
   - $libs.xml.util: exported
+  - $libs.kotlinx.datetime
 
 test-dependencies:
   - $libs.mockito.kotlin

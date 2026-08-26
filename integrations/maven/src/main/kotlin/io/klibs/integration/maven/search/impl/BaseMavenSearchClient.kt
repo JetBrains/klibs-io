@@ -5,7 +5,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.MavenPom
-import io.klibs.integration.maven.MavenRateLimitedException
+import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.MavenStaticDataProvider
 import io.klibs.integration.maven.PomWithReleaseDate
 import io.klibs.integration.maven.androidx.GradleMetadata
@@ -26,8 +26,12 @@ import java.io.StringReader
 import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import java.time.Instant
-import java.time.format.DateTimeFormatter
+import kotlin.time.Instant
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaInstant
+import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.parse
 
 private const val DEFAULT_PAGE_SIZE = 200
 internal const val MAX_REDIRECTS = 3
@@ -38,7 +42,8 @@ abstract class BaseMavenSearchClient(
     protected val rateLimiter: RequestRateLimiter,
     private val logger: Logger,
     private val objectMapper: ObjectMapper,
-    protected val clientTransport: Transport = Java11HttpClientTransport()
+    protected val clientTransport: Transport = Java11HttpClientTransport(),
+    private val clock: Clock = Clock.System
 ) : MavenSearchClient, MavenStaticDataProvider {
 
     private val mavenXpp3Reader = MavenXpp3Reader()
@@ -54,7 +59,7 @@ abstract class BaseMavenSearchClient(
         return executeFetch(pomFileUrl) { response ->
             val pom =
                 mavenXpp3Reader.read(StringReader(response.body.readAllBytes().toString(StandardCharsets.UTF_8)))
-            PomWithReleaseDate(pom, getReleasedAt(response))
+            PomWithReleaseDate(pom, getReleasedAt(response).toJavaInstant())
         }
     }
 
@@ -113,7 +118,7 @@ abstract class BaseMavenSearchClient(
             val body = response.body ?: throw IllegalStateException("Missing gradle metadata body")
             val gradleMetadata = objectMapper.readValue(body, GradleMetadata::class.java)
 
-            ModuleMetadataWrapper(gradleMetadata = gradleMetadata, releasedAt = getReleasedAt(response))
+            ModuleMetadataWrapper(gradleMetadata = gradleMetadata, releasedAt = getReleasedAt(response).toJavaInstant())
         }
     }
 
@@ -196,12 +201,21 @@ abstract class BaseMavenSearchClient(
                         followRedirects(location, headers, converter, redirectCount + 1, requestExecutor)
                     }
 
-                    HTTP_TOO_MANY_REQUESTS -> throw MavenRateLimitedException(serviceUri)
+                    HTTP_TOO_MANY_REQUESTS -> {
+                        applyRequestCooldown(response, serviceUri)
+                    }
 
                     else -> throw IOException("Unexpected response: ${response.code}")
                 }
             }
         }
+    }
+
+    private fun applyRequestCooldown(response: Transport.Response, serviceUri: String): Nothing {
+        logger.warn("Rate limited by Maven Central, retrying after ${response.headers["Retry-After"]}")
+        val retryAfter = parseRetryAfter(response)
+        retryAfter?.let { rateLimiter.applyCooldown(it) }
+        throw MavenRateLimitedException.forUrl(serviceUri, retryAfter)
     }
 
     private fun validate(metadata: KotlinToolingMetadata): KotlinToolingMetadata {
@@ -239,11 +253,33 @@ abstract class BaseMavenSearchClient(
     }
 
 
+    private fun parseRetryAfter(response: Transport.Response): Instant? {
+        val value = response.headers.entries
+            .firstOrNull { it.key.equals("retry-after", ignoreCase = true) }
+            ?.value
+            ?.trim()
+            ?: return null
+        val now = clock.now()
+
+        value.toLongOrNull()?.let { seconds ->
+            return if (seconds > 0) now.plus(seconds.seconds) else null
+        }
+
+        val retryAfter = try {
+            Instant.parse(value, DateTimeComponents.Formats.RFC_1123)
+        } catch (_: Exception) {
+            return null
+        }
+
+        return retryAfter.takeIf { it > now }
+    }
+
     private fun getReleasedAt(response: Transport.Response): Instant {
         val lastModified = response.headers["last-modified"]
             ?: throw IllegalStateException("Missing last-modified header")
         val releasedAt = try {
-            DateTimeFormatter.RFC_1123_DATE_TIME.parse(lastModified, Instant::from)
+            val kotlinxInstant = Instant.parse(lastModified, DateTimeComponents.Formats.RFC_1123)
+            Instant.fromEpochMilliseconds(kotlinxInstant.toEpochMilliseconds())
         } catch (e: Exception) {
             throw IllegalStateException("Invalid last-modified date format: $lastModified", e)
         }
