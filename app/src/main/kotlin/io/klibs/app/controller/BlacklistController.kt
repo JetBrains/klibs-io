@@ -1,5 +1,6 @@
-package io.klibs.core.project.blacklist
+package io.klibs.app.controller
 
+import io.klibs.app.service.BlacklistService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag

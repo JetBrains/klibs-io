@@ -1,7 +1,8 @@
-package io.klibs.core.project.blacklist
+package io.klibs.app.controller
 
 import SmokeTestBase
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.klibs.app.service.BlacklistService
 import io.klibs.core.owner.ScmOwnerEntity
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.owner.ScmOwnerType

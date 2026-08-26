@@ -12,12 +12,12 @@ import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.enums.IndexingRequestStatus
 import io.klibs.core.pckg.enums.PackageIndexingErrorType
 import io.klibs.core.pckg.enums.VersionType
+import io.klibs.core.pckg.repository.BlacklistRepository
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.MavenCoordinateService
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
-import io.klibs.core.project.blacklist.BlacklistRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact

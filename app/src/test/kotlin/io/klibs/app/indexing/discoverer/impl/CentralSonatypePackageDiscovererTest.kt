@@ -2,7 +2,7 @@ package io.klibs.app.indexing.discoverer.impl
 
 import io.klibs.core.pckg.dto.projection.Package
 import io.klibs.core.pckg.repository.PackageRepository
-import io.klibs.core.project.blacklist.BlacklistRepository
+import io.klibs.core.pckg.repository.BlacklistRepository
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
