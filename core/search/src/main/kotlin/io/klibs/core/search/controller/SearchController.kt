@@ -85,9 +85,10 @@ class SearchController(
         @RequestParam("page", required = false, defaultValue = "1")
         @Parameter(
             description = "Page index beginning with 1 (1..N)",
-            schema = Schema(type = "integer", minimum = "1", defaultValue = "1")
+            schema = Schema(type = "integer", minimum = "1", maximum = "50", defaultValue = "1")
         )
         @Min(value = 0, message = "Page must be >= 0")
+        @Max(value = 50, message = "Page must be <= 50")
         page: Int,
 
         @RequestParam("limit", required = false, defaultValue = "20")
@@ -120,9 +121,10 @@ class SearchController(
         @RequestParam("page", required = false, defaultValue = "1")
         @Parameter(
             description = "Page index beginning with 1 (1..N)",
-            schema = Schema(type = "integer", minimum = "1", defaultValue = "1")
+            schema = Schema(type = "integer", minimum = "1", maximum = "50", defaultValue = "1")
         )
         @Min(value = 0, message = "Page must be >= 0")
+        @Max(value = 50, message = "Page must be <= 50")
         page: Int,
 
         @RequestParam("limit", required = false, defaultValue = "20")
@@ -196,9 +198,10 @@ class SearchController(
         @RequestParam("page", required = false, defaultValue = "1")
         @Parameter(
             description = "Page index beginning with 1 (1..N)",
-            schema = Schema(type = "integer", minimum = "1", defaultValue = "1")
+            schema = Schema(type = "integer", minimum = "1", maximum = "50", defaultValue = "1")
         )
         @Min(value = 0, message = "Page must be >= 0")
+        @Max(value = 50, message = "Page must be <= 50")
         page: Int,
 
         @RequestParam("limit", required = false, defaultValue = "20")
@@ -227,9 +230,10 @@ class SearchController(
         @RequestParam("page", required = false, defaultValue = "1")
         @Parameter(
             description = "Page index beginning with 1 (1..N)",
-            schema = Schema(type = "integer", minimum = "1", defaultValue = "1")
+            schema = Schema(type = "integer", minimum = "1", maximum = "50", defaultValue = "1")
         )
         @Min(value = 0, message = "Page must be >= 0")
+        @Max(value = 50, message = "Page must be <= 50")
         page: Int,
 
         @RequestParam("limit", required = false, defaultValue = "20")
