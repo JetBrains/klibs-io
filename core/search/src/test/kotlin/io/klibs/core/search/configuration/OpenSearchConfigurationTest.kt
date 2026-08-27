@@ -2,6 +2,7 @@ package io.klibs.core.search.configuration
 
 import io.klibs.core.search.configuration.properties.OpenSearchProperties
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 import org.springframework.boot.ssl.DefaultSslBundleRegistry
 import org.springframework.boot.ssl.SslBundle
@@ -32,14 +33,14 @@ class OpenSearchConfigurationTest {
     }
 
     @Test
-    fun `client is built from the opensearch ssl bundle`() {
+    fun `building client from the opensearch ssl bundle does not replace JVM default ssl context`() {
         val bundles: SslBundles = DefaultSslBundleRegistry("opensearch", pemTrustBundle(SELF_SIGNED_CERTIFICATE))
-        // The bundle path pins the cert via SSLContext.setDefault (JVM-wide); restore it afterwards.
         val previousDefault = SSLContext.getDefault()
         try {
             val client = configuration.openSearchClient(OpenSearchProperties(), mapper, bundles)
 
             assertNotNull(client)
+            assertSame(previousDefault, SSLContext.getDefault())
         } finally {
             SSLContext.setDefault(previousDefault)
         }
