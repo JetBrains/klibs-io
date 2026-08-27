@@ -8,9 +8,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
-@Component("CENTRAL_SONATYPE")
-@ConditionalOnProperty("klibs.indexing-configuration.central-sonatype.enabled", havingValue = "true")
-class CentralSonatypeSearchClient(
+@Component("GOOGLE_MAVEN_CENTRAL_MIRROR")
+@ConditionalOnProperty("klibs.indexing-configuration.google-maven-central-mirror.enabled", havingValue = "true")
+class GoogleMavenCentralMirrorSearchClient(
     xmlMapper: XmlMapper,
     mavenCentralRateLimiter: MavenCentralRateLimiter,
     objectMapper: ObjectMapper,
@@ -21,9 +21,9 @@ class CentralSonatypeSearchClient(
 ) : BaseCentralMavenSearchClient(
     xmlMapper,
     mavenCentralRateLimiter,
-    LoggerFactory.getLogger(CentralSonatypeSearchClient::class.java),
+    LoggerFactory.getLogger(GoogleMavenCentralMirrorSearchClient::class.java),
     objectMapper,
     contentEndpoint,
     contentFallbackEndpoint,
-    "last-modified"
+    "x-goog-meta-last-modified-epoch"
 )

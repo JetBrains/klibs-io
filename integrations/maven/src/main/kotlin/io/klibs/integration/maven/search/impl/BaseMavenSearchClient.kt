@@ -3,17 +3,28 @@ package io.klibs.integration.maven.search.impl
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.MavenArtifact
-import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.MavenPom
-import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.MavenStaticDataProvider
 import io.klibs.integration.maven.PomWithReleaseDate
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.ModuleMetadataWrapper
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateImpl
+import io.klibs.integration.maven.dto.MavenMetadata
+import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.request.RequestRateLimiter
 import io.klibs.integration.maven.search.MavenSearchClient
+import java.io.IOException
+import java.io.StringReader
+import java.net.HttpURLConnection
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
+import kotlin.time.toJavaInstant
+import kotlinx.datetime.format.DateTimeComponents
+import kotlinx.datetime.parseOrNull
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader
 import org.apache.maven.search.api.transport.Java11HttpClientTransport
 import org.apache.maven.search.api.transport.Transport
@@ -21,17 +32,6 @@ import org.jetbrains.kotlin.tooling.KotlinToolingMetadata
 import org.jetbrains.kotlin.tooling.KotlinToolingMetadataParsingResult
 import org.jetbrains.kotlin.tooling.parseJson
 import org.slf4j.Logger
-import java.io.IOException
-import java.io.StringReader
-import java.net.HttpURLConnection
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
-import kotlin.time.Instant
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaInstant
-import kotlinx.datetime.format.DateTimeComponents
-import kotlinx.datetime.parse
 
 private const val DEFAULT_PAGE_SIZE = 200
 internal const val MAX_REDIRECTS = 3
@@ -43,7 +43,8 @@ abstract class BaseMavenSearchClient(
     private val logger: Logger,
     private val objectMapper: ObjectMapper,
     protected val clientTransport: Transport = Java11HttpClientTransport(),
-    private val clock: Clock = Clock.System
+    private val clock: Clock = Clock.System,
+    private val lastModifiedHeader: String,
 ) : MavenSearchClient, MavenStaticDataProvider {
 
     private val mavenXpp3Reader = MavenXpp3Reader()
@@ -266,7 +267,7 @@ abstract class BaseMavenSearchClient(
         }
 
         val retryAfter = try {
-            Instant.parse(value, DateTimeComponents.Formats.RFC_1123)
+            parseRfc1123Instant(value)
         } catch (_: Exception) {
             return null
         }
@@ -274,15 +275,24 @@ abstract class BaseMavenSearchClient(
         return retryAfter.takeIf { it > now }
     }
 
-    private fun getReleasedAt(response: Transport.Response): Instant {
-        val lastModified = response.headers["last-modified"]
-            ?: throw IllegalStateException("Missing last-modified header")
-        val releasedAt = try {
-            val kotlinxInstant = Instant.parse(lastModified, DateTimeComponents.Formats.RFC_1123)
-            Instant.fromEpochMilliseconds(kotlinxInstant.toEpochMilliseconds())
+    protected open fun getReleasedAt(response: Transport.Response): Instant {
+        val lastModified = response.getHeaderValue(lastModifiedHeader)
+            ?: throw IllegalStateException("Missing release date header: expected $lastModifiedHeader")
+
+        return try {
+            parseRfc1123Instant(lastModified)
         } catch (e: Exception) {
-            throw IllegalStateException("Invalid last-modified date format: $lastModified", e)
+            throw IllegalStateException("Invalid release date format: $lastModified", e)
         }
-        return releasedAt
+    }
+
+    protected fun parseRfc1123Instant(value: String): Instant {
+
+        return Instant.parseOrNull(value, DateTimeComponents.Formats.RFC_1123)
+            ?: Instant.fromEpochMilliseconds(value.toLong())
+    }
+
+    protected fun Transport.Response.getHeaderValue(headerName: String): String? {
+        return headers.entries.firstOrNull { it.key.equals(headerName, ignoreCase = true) }?.value
     }
 }

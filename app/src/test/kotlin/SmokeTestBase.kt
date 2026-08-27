@@ -1,6 +1,10 @@
 import io.awspring.cloud.s3.S3Template
 import io.klibs.app.Application
 import io.klibs.integration.ai.AiService
+import io.klibs.core.storage.S3StorageService
+import io.klibs.integration.maven.scraper.MavenCentralScraper
+import io.klibs.integration.maven.service.MavenIndexDownloadingService
+import io.klibs.integration.maven.service.MavenIndexScannerService
 import org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
 import org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
 import org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
@@ -17,12 +21,17 @@ import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.jdbc.datasource.DriverManagerDataSource
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.context.jdbc.Sql
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase
 import org.springframework.test.web.servlet.MockMvc
 import org.testcontainers.containers.PostgreSQLContainer
 
+@ActiveProfiles("test")
 @SpringBootTest(classes = [Application::class])
 @AutoConfigureMockMvc
 @EnableAutoConfiguration(exclude = [
@@ -34,6 +43,9 @@ import org.testcontainers.containers.PostgreSQLContainer
     OpenAiModerationAutoConfiguration::class,
 ])
 @Import(SmokeTestBase.TestConfig::class)
+@TestPropertySource(properties = ["spring.sql.init.mode=NEVER"])
+@Sql(value = ["classpath:/sql/truncate.sql"], executionPhase = ExecutionPhase.BEFORE_TEST_CLASS)
+@Sql(value = ["classpath:/data.sql"], executionPhase = ExecutionPhase.BEFORE_TEST_CLASS)
 abstract class SmokeTestBase {
 
     @MockitoBean
@@ -41,6 +53,18 @@ abstract class SmokeTestBase {
 
     @MockitoBean
     private lateinit var s3Template: S3Template
+
+    @MockitoBean
+    private lateinit var s3StorageService: S3StorageService
+
+    @MockitoBean
+    private lateinit var mavenIndexDownloadingService: MavenIndexDownloadingService
+
+    @MockitoBean
+    private lateinit var mavenIndexScannerService: MavenIndexScannerService
+
+    @MockitoBean
+    private lateinit var mavenCentralScraper: MavenCentralScraper
 
     @Autowired
     protected lateinit var mockMvc: MockMvc

@@ -20,7 +20,13 @@ class GoogleMavenSearchClient(
     xmlMapper: XmlMapper,
     unlimitedRateLimiter: RequestRateLimiter,
     objectMapper: ObjectMapper
-) : BaseMavenSearchClient(xmlMapper, unlimitedRateLimiter, logger, objectMapper) {
+) : BaseMavenSearchClient(
+    xmlMapper = xmlMapper,
+    rateLimiter = unlimitedRateLimiter,
+    logger = logger,
+    objectMapper = objectMapper,
+    lastModifiedHeader = "last-modified"
+) {
 
     companion object {
         val logger = LoggerFactory.getLogger(GoogleMavenSearchClient::class.java)
@@ -42,7 +48,8 @@ class GoogleMavenSearchClient(
 
         }
 
-        val moduleMetadata = getModuleMetadata(mavenArtifact.groupId, mavenArtifact.artifactId, mavenArtifact.version) ?: return null
+        val moduleMetadata =
+            getModuleMetadata(mavenArtifact.groupId, mavenArtifact.artifactId, mavenArtifact.version) ?: return null
         return convertModuleToToolingMetadata(moduleMetadata.gradleMetadata)
     }
 

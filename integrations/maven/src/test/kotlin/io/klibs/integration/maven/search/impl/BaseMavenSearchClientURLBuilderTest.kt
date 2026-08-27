@@ -15,7 +15,8 @@ class BaseMavenSearchClientURLBuilderTest {
         rateLimiter = mock(),
         logger = mock(),
         objectMapper = mock(),
-        clientTransport = mock()
+        clientTransport = mock(),
+        lastModifiedHeader = "last-modified"
     ) {
         override fun getContentUrlPrefix(): String = "https://example.com/repo/"
 

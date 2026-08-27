@@ -35,8 +35,10 @@ klibs:
       thread-count: 2
     central-sonatype:
       enabled: false
+    google-maven-central-mirror:
+      enabled: false
     gmaven:
-      enabled: true
+      enabled: false
       s3:
         bucket-name: local-bucket
         prefix: gmaven

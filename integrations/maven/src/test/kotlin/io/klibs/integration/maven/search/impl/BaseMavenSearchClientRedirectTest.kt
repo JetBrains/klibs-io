@@ -22,7 +22,9 @@ import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaInstant
 import kotlinx.datetime.format
+import kotlinx.datetime.parse
 import org.apache.maven.search.api.request.Query
 import org.apache.maven.search.api.transport.Transport
 import org.junit.jupiter.api.BeforeEach
@@ -145,6 +147,47 @@ class BaseMavenSearchClientRedirectTest {
         val result =
             client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
         assertNull(result, "Expected null for HTTP 404 response")
+    }
+
+    @Test
+    fun `release date uses x-goog-meta-last-modified-epoch when google headers are absent`() {
+        val pom = minimalPom("org.example", "example-artifact", "1.0.0")
+        val releasedAt = "Sat, 13 Feb 2021 16:31:54 GMT"
+        val ok = mockResponse(
+            code = 200,
+            headers = mapOf("x-goog-meta-last-modified-epoch" to releasedAt),
+            body = pom,
+            addDefaultLastModifiedHeader = false
+        )
+        whenever(transport.get(any(), any())).thenReturn(ok)
+
+        val result = client.getPomWithReleaseDate(
+            MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
+        )
+
+        assertNotNull(result)
+        assertEquals(Instant.parse("2021-02-13T16:31:54Z").toJavaInstant(), result.releasedAt)
+    }
+
+    @Test
+    fun `release date prefers google mirror metadata over storage x-goog-meta-last-modified-epoch`() {
+        val pom = minimalPom("org.example", "example-artifact", "1.0.0")
+        val ok = mockResponse(
+            code = 200,
+            headers = mapOf(
+                "x-goog-meta-last-modified-epoch" to "1787534959000",
+            ),
+            body = pom,
+            addDefaultLastModifiedHeader = false
+        )
+        whenever(transport.get(any(), any())).thenReturn(ok)
+
+        val result = client.getPomWithReleaseDate(
+            MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
+        )
+
+        assertNotNull(result)
+        assertEquals(Instant.parse("2026-08-24T01:29:19Z").toJavaInstant(), result.releasedAt)
     }
 
     @Test
@@ -293,13 +336,14 @@ class BaseMavenSearchClientRedirectTest {
     private fun mockResponse(
         code: Int,
         headers: Map<String, String> = emptyMap(),
-        body: String? = null
+        body: String? = null,
+        addDefaultLastModifiedHeader: Boolean = true
     ): Transport.Response {
         val response = mock<Transport.Response>()
         whenever(response.code).thenReturn(code)
 
-        val finalHeaders = if (code == 200 && !headers.containsKey("last-modified")) {
-            headers + ("last-modified" to DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+        val finalHeaders = if (code == 200 && addDefaultLastModifiedHeader && !headers.containsKey("last-modified")) {
+            headers + ("x-goog-meta-last-modified-epoch" to DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
         } else {
             headers
         }
@@ -310,7 +354,7 @@ class BaseMavenSearchClientRedirectTest {
         return response
     }
 
-    private class TestClient(
+    private open class TestClient(
         transport: Transport,
         private val fallbackPrefix: String? = null,
         rateLimiter: RequestRateLimiter = UnlimitedRateLimiter(),
@@ -321,7 +365,8 @@ class BaseMavenSearchClientRedirectTest {
         logger = LoggerFactory.getLogger(TestClient::class.java),
         objectMapper = ObjectMapper(),
         clientTransport = transport,
-        clock = clock
+        clock = clock,
+        lastModifiedHeader = "x-goog-meta-last-modified-epoch"
     ) {
         override fun getContentUrlPrefix(): String {
             return "https://test/remotecontent?filepath="
