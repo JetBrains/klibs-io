@@ -30,115 +30,15 @@ import kotlin.test.assertTrue
 class CentralSonatypeScraperTest {
 
     private lateinit var mockCentralSonatypeClient: BaseMavenSearchClient
-    private lateinit var mockDiscoveryClient: MavenSearchClient
     private lateinit var centralSonatypeScraper: MavenCentralScraper
     private lateinit var errorChannel: Channel<Exception>
-    private val queryCaptor = argumentCaptor<Query>()
 
     @BeforeEach
     fun setUp() {
         mockCentralSonatypeClient = mock<CentralSonatypeSearchClient>()
-        mockDiscoveryClient = mock()
         centralSonatypeScraper =
-            CentralSonatypeScraper(mockDiscoveryClient, mockCentralSonatypeClient as CentralSonatypeSearchClient)
+            CentralSonatypeScraper(mockCentralSonatypeClient as CentralSonatypeSearchClient)
         errorChannel = Channel(Channel.UNLIMITED)
-    }
-
-    @Test
-    fun `test findKmpArtifacts returns artifacts from search response`() = runTest {
-        // Arrange
-        val artifactData = ArtifactData("org.example", "example-artifact", "1.0.0", Instant.ofEpochMilli(1000L))
-        val mockResponse = MavenSearchResponse(1, 1, listOf(artifactData))
-        whenever(mockDiscoveryClient.searchWithThrottle(any(), any(), any()))
-            .thenReturn(mockResponse)
-            .thenReturn(MavenSearchResponse(0, 0, emptyList()))
-
-        // Act
-        val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()
-
-        // Verify the search request contains the expected query
-        val queryCaptor = argumentCaptor<Query>()
-        verify(mockDiscoveryClient, times(2)).searchWithThrottle(any(), queryCaptor.capture(), any())
-        val query = queryCaptor.firstValue
-        assertTrue(
-            query.value.contains("l:kotlin-tooling-metadata"),
-            "Query should search for kotlin-tooling-metadata"
-        )
-
-        // Verify the result
-        assertEquals(1, result.size)
-        assertEquals("org.example", result[0].groupId)
-        assertEquals("example-artifact", result[0].artifactId)
-        assertEquals("1.0.0", result[0].version)
-        assertEquals(ScraperType.CENTRAL_SONATYPE, result[0].scraperType)
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun `test error handling when search client throws exception`() = runTest {
-        whenever(
-            mockDiscoveryClient.searchWithThrottle(
-                any(),
-                any(),
-                any()
-            )
-        ).thenThrow(RuntimeException("Test exception"))
-
-        // Act
-        val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()
-        val errors = mutableListOf<Exception>()
-        while (!errorChannel.isEmpty) {
-            errors.add(errorChannel.receive())
-        }
-
-        // Verify error handling
-        assertTrue(result.isEmpty())
-        assertTrue(errors.isNotEmpty())
-        val message = errors[0].message ?: ""
-        assertTrue(message.startsWith("Could not process request for artifacts:"))
-        assertTrue(message.contains("l:kotlin-tooling-metadata"))
-    }
-
-    @Test
-    fun `test findKmpArtifacts handles multiple pages of results`() = runTest {
-        val page1Data = listOf(
-            ArtifactData("org.example", "example-artifact1", "1.0.0", Instant.ofEpochMilli(1000L)),
-            ArtifactData("org.example", "example-artifact2", "1.0.0", Instant.ofEpochMilli(2000L))
-        )
-        val page1Response = MavenSearchResponse(4, 2, page1Data)
-
-        val page2Data = listOf(
-            ArtifactData("org.example", "example-artifact3", "1.0.0", Instant.ofEpochMilli(3000L)),
-            ArtifactData("org.example", "example-artifact4", "1.0.0", Instant.ofEpochMilli(4000L))
-        )
-        val page2Response = MavenSearchResponse(4, 2, page2Data)
-
-        whenever(mockDiscoveryClient.searchWithThrottle(any(), any(), any()))
-            .thenReturn(page1Response)
-            .thenReturn(page2Response)
-            .thenReturn(MavenSearchResponse(0, 0, emptyList()))
-
-        whenever(mockDiscoveryClient.pageSize()).thenReturn(2)
-
-        // Act
-        val result = centralSonatypeScraper.findKmpArtifacts(Instant.EPOCH, errorChannel).toList()
-
-        val pageCaptor = argumentCaptor<Int>()
-        val queryCaptor2 = argumentCaptor<Query>()
-        verify(mockDiscoveryClient, times(3)).searchWithThrottle(pageCaptor.capture(), queryCaptor2.capture(), any())
-        assertTrue(
-            pageCaptor.allValues[1] > pageCaptor.allValues[0],
-            "Second request should have higher page offset"
-        )
-
-        // Verify we got results from both pages
-        assertEquals(4, result.size, "Should have received 4 artifacts in total")
-
-        // Verify the content of the results
-        assertEquals("example-artifact1", result[0].artifactId)
-        assertEquals("example-artifact2", result[1].artifactId)
-        assertEquals("example-artifact3", result[2].artifactId)
-        assertEquals("example-artifact4", result[3].artifactId)
     }
 
     @Test

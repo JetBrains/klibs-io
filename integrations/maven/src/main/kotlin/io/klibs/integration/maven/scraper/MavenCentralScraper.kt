@@ -11,19 +11,6 @@ import java.time.Instant
  * about Kotlin Multiplatform (KMP) artifacts and their versions.
  */
 interface MavenCentralScraper {
-    /**
-     * Fetches Kotlin Multiplatform (KMP) artifacts information from Maven Central that have been updated or
-     * added since the specified timestamp. Includes functionality to report errors encountered
-     * during the discovery process.
-     *
-     * @param lastUpdatedSince The timestamp indicating the earliest update time for artifacts to be discovered.
-     * @param errorChannel A channel used to report errors encountered during the discovery process.
-     * @return A flow emitting discovered Maven artifacts.
-     */
-    suspend fun findKmpArtifacts(
-        lastUpdatedSince: Instant,
-        errorChannel: Channel<Exception>
-    ): Flow<MavenArtifact>
 
     /**
      * Fetches Kotlin Multiplatform (KMP) artifacts information from Maven Central based on already known artifacts.
