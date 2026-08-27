@@ -1,6 +1,10 @@
 import io.awspring.cloud.s3.S3Template
 import io.klibs.app.Application
 import io.klibs.integration.ai.AiService
+import io.klibs.core.storage.S3StorageService
+import io.klibs.integration.maven.scraper.MavenCentralScraper
+import io.klibs.integration.maven.service.MavenIndexDownloadingService
+import io.klibs.integration.maven.service.MavenIndexScannerService
 import org.springframework.ai.model.openai.autoconfigure.*
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -26,7 +30,7 @@ import org.testcontainers.containers.PostgreSQLContainer
     OpenAiModerationAutoConfiguration::class,
 ])
 @TestPropertySource(properties = ["spring.sql.init.mode=NEVER"])
-@Sql(value = ["classpath:sql/truncate.sql"], executionPhase = ExecutionPhase.AFTER_TEST_METHOD)
+@Sql(value = ["classpath:/sql/truncate.sql"], executionPhase = ExecutionPhase.AFTER_TEST_METHOD)
 @SqlMergeMode(value = SqlMergeMode.MergeMode.MERGE)
 @AutoConfigureMockMvc
 abstract class BaseUnitWithDbLayerTest {
@@ -36,6 +40,18 @@ abstract class BaseUnitWithDbLayerTest {
 
     @MockitoBean
     protected lateinit var s3Template: S3Template
+
+    @MockitoBean
+    private lateinit var s3StorageService: S3StorageService
+
+    @MockitoBean
+    private lateinit var mavenIndexDownloadingService: MavenIndexDownloadingService
+
+    @MockitoBean
+    private lateinit var mavenIndexScannerService: MavenIndexScannerService
+
+    @MockitoBean
+    private lateinit var mavenCentralScraper: MavenCentralScraper
 
     companion object {
         val postgresContainer: PostgreSQLContainer<Nothing> by lazy {

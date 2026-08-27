@@ -1,6 +1,11 @@
 klibs:
   indexing: false
   ai: false
+  indexing-configuration:
+    central-sonatype:
+      enabled: true
+    google-maven-central-mirror:
+      enabled: false
   integration:
     github:
       personal-access-token: test

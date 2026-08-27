@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.configuration.MavenIntegrationConfiguration
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
+import io.klibs.integration.maven.search.impl.GoogleMavenCentralMirrorSearchClient
 import io.klibs.integration.maven.search.impl.GoogleMavenSearchClient
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -55,6 +56,8 @@ class MavenStaticDataProviderTest {
                 // scraper was removed, but type should still be supported, because discovered packages have it
                 ScraperType.SEARCH_MAVEN -> true
                 ScraperType.GOOGLE_MAVEN -> providers.entries.find { it.key == repo.name && it.value is GoogleMavenSearchClient }
+                ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR ->
+                    providers.entries.find { it.key == repo.name && it.value is GoogleMavenCentralMirrorSearchClient }
                 ScraperType.CENTRAL_SONATYPE -> providers.entries.find { it.key == repo.name && it.value is CentralSonatypeSearchClient }
             }
             assertNotNull(providerBean, "No provider found for repository ${repo.name}")

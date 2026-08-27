@@ -120,6 +120,8 @@ klibs:
       regen-ttl: ${KLIBS_DESCRIPTION_REGEN_TTL:90d}
     central-sonatype:
       enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE:false}
+    google-maven-central-mirror:
+      enabled: ${KLIBS_ENABLE_INDEXING_GOOGLE_MAVEN_CENTRAL_MIRROR:false}
     gmaven:
       enabled: ${KLIBS_ENABLE_INDEXING_GMAVEN:false}
       s3:

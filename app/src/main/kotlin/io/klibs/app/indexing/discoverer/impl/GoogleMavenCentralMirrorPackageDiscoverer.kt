@@ -9,18 +9,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 @Component
-@ConditionalOnProperty("klibs.indexing-configuration.central-sonatype.enabled", havingValue = "true")
-class CentralSonatypePackageDiscoverer(
+@ConditionalOnProperty("klibs.indexing-configuration.google-maven-central-mirror.enabled", havingValue = "true")
+class GoogleMavenCentralMirrorPackageDiscoverer(
     mavenIndexDownloadingService: MavenIndexDownloadingService,
     mavenIndexScannerService: MavenIndexScannerService,
-    centralSonatypeScraper: MavenCentralScraper,
+    googleMavenCentralMirrorScraper: MavenCentralScraper,
     mavenCentralLogRepository: MavenCentralLogRepository,
     packageRepository: PackageRepository,
 ) : BaseMavenCentralPackageDiscoverer(
     mavenIndexDownloadingService = mavenIndexDownloadingService,
     mavenIndexScannerService = mavenIndexScannerService,
-    mavenCentralScraper = centralSonatypeScraper,
+    mavenCentralScraper = googleMavenCentralMirrorScraper,
     mavenCentralLogRepository = mavenCentralLogRepository,
     packageRepository = packageRepository,
-    sourceName = "Central sonatype",
+    sourceName = "Google Maven Central mirror",
 )
