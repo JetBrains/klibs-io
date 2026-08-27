@@ -6,22 +6,21 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.apache.lucene.index.Term
 import org.apache.lucene.search.BooleanClause
+import org.apache.lucene.search.BooleanQuery
 import org.apache.lucene.search.TermQuery
-import org.apache.lucene.search.TermRangeQuery
-import org.apache.maven.index.*
+import org.apache.maven.index.Indexer
+import org.apache.maven.index.IteratorSearchRequest
 import org.apache.maven.index.context.IndexingContext
-import  org.apache.lucene.search.BooleanQuery
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Service
 import java.time.Instant
 
 /**
  * Service for scanning the local Maven index for artifacts.
  */
-@Service
-class MavenIndexScannerService(
+abstract class MavenIndexScannerService(
     private val indexer: Indexer,
     private val indexingContextManager: MavenIndexingContextManager,
+    private val scraperType: ScraperType,
 ) {
     private val logger = LoggerFactory.getLogger(MavenIndexScannerService::class.java)
 
@@ -36,8 +35,7 @@ class MavenIndexScannerService(
 
         try {
             indexingContextManager.useCentralContext("maven-central-scan-context") { context ->
-
-                val request = createSearchRequestForKMPPackages( context)
+                val request = createSearchRequestForKMPPackages(context)
 
                 val resultSet = indexer.searchIterator(request)
 
@@ -48,7 +46,7 @@ class MavenIndexScannerService(
                                 groupId = artifactInfo.groupId,
                                 artifactId = artifactInfo.artifactId,
                                 version = artifactInfo.version,
-                                scraperType = ScraperType.CENTRAL_SONATYPE,
+                                scraperType = scraperType,
                                 releasedAt = Instant.ofEpochMilli(artifactInfo.lastModified)
                             )
                         )

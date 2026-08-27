@@ -40,10 +40,11 @@ class MavenIndexScannerServiceTest {
     private lateinit var iteratorResultSet: IteratorResultSet
 
     private lateinit var uut: MavenIndexScannerService
+    private lateinit var properties: MavenIntegrationProperties
 
     @BeforeEach
     fun setup() {
-        val properties = MavenIntegrationProperties(
+        properties = MavenIntegrationProperties(
             central = MavenIntegrationProperties.Central(
                 rateLimitCapacity = 100,
                 rateLimitRefillAmount = 10,
@@ -56,14 +57,13 @@ class MavenIndexScannerServiceTest {
             )
         )
         indexingContextManager = MavenIndexingContextManager(properties, indexer, emptyList())
-        uut = MavenIndexScannerService(indexer, indexingContextManager)
+        uut = CentralSonatypeMavenIndexScannerService(indexer, indexingContextManager)
     }
 
     @Test
     fun `should scan and emit MavenArtifact objects`(): Unit = runBlocking {
         // Given
         val from = Instant.parse("2023-01-01T00:00:00Z")
-        val to = Instant.parse("2023-01-02T00:00:00Z")
 
         whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
             .thenReturn(indexingContext)
@@ -96,11 +96,32 @@ class MavenIndexScannerServiceTest {
     }
 
     @Test
+    fun `should use mirror scraper type`(): Unit = runBlocking {
+        uut = GoogleMavenCentralMirrorIndexScannerService(indexer, indexingContextManager)
+
+        whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
+            .thenReturn(indexingContext)
+
+        val artifactInfo = ArtifactInfo().apply {
+            groupId = "io.klibs"
+            artifactId = "test-artifact"
+            version = "1.0.0"
+            lastModified = Instant.parse("2023-01-01T00:00:00Z").toEpochMilli()
+        }
+
+        whenever(indexer.searchIterator(any())).thenReturn(iteratorSearchResponse)
+        whenever(iteratorSearchResponse.iterator()).thenReturn(iteratorResultSet)
+        whenever(iteratorResultSet.hasNext()).thenReturn(true, false)
+        whenever(iteratorResultSet.next()).thenReturn(artifactInfo)
+
+        val result = uut.scanForNewKMPArtifacts().toList()
+
+        assertEquals(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR, result.single().scraperType)
+    }
+
+    @Test
     fun `should handle empty search results`(): Unit = runBlocking {
         // Given
-        val from = Instant.parse("2023-01-01T00:00:00Z")
-        val to = Instant.parse("2023-01-02T00:00:00Z")
-
         whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
             .thenReturn(indexingContext)
 
@@ -118,9 +139,6 @@ class MavenIndexScannerServiceTest {
     @Test
     fun `should handle exceptions during scanning`(): Unit = runBlocking {
         // Given
-        val from = Instant.parse("2023-01-01T00:00:00Z")
-        val to = Instant.parse("2023-01-02T00:00:00Z")
-
         whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
             .thenReturn(indexingContext)
 

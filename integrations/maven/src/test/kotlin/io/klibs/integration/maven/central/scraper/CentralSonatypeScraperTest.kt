@@ -4,40 +4,37 @@ import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.scraper.MavenCentralScraper
 import io.klibs.integration.maven.scraper.impl.CentralSonatypeScraper
-import io.klibs.integration.maven.search.ArtifactData
-import io.klibs.integration.maven.search.MavenSearchClient
-import io.klibs.integration.maven.search.MavenSearchResponse
-import io.klibs.integration.maven.search.impl.BaseMavenSearchClient
+import io.klibs.integration.maven.scraper.impl.GoogleMavenCentralMirrorScraper
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
+import io.klibs.integration.maven.search.impl.GoogleMavenCentralMirrorSearchClient
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
-import org.apache.maven.search.api.request.Query
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class CentralSonatypeScraperTest {
 
-    private lateinit var mockCentralSonatypeClient: BaseMavenSearchClient
+    private lateinit var mockCentralSonatypeClient: CentralSonatypeSearchClient
+    private lateinit var mockGoogleMirrorClient: GoogleMavenCentralMirrorSearchClient
     private lateinit var centralSonatypeScraper: MavenCentralScraper
+    private lateinit var googleMirrorScraper: MavenCentralScraper
     private lateinit var errorChannel: Channel<Exception>
 
     @BeforeEach
     fun setUp() {
         mockCentralSonatypeClient = mock<CentralSonatypeSearchClient>()
-        centralSonatypeScraper =
-            CentralSonatypeScraper(mockCentralSonatypeClient as CentralSonatypeSearchClient)
+        mockGoogleMirrorClient = mock<GoogleMavenCentralMirrorSearchClient>()
+        centralSonatypeScraper = CentralSonatypeScraper(mockCentralSonatypeClient)
+        googleMirrorScraper = GoogleMavenCentralMirrorScraper(mockGoogleMirrorClient)
         errorChannel = Channel(Channel.UNLIMITED)
     }
 
@@ -122,6 +119,28 @@ class CentralSonatypeScraperTest {
 
         // Verify
         assertEquals(0, result.size, "Should return empty list when metadata is null")
+    }
+
+    @Test
+    fun `test findNewVersions uses mirror scraper type`() = runTest {
+        val knownArtifacts = mapOf("org.example:example-artifact" to setOf("1.0.0"))
+        val metadata = MavenMetadata(
+            groupId = "org.example",
+            artifactId = "example-artifact",
+            versioning = MavenMetadata.Versioning(
+                latest = "1.1.0",
+                release = "1.1.0",
+                versions = listOf("1.0.0", "1.1.0"),
+                lastUpdated = null
+            )
+        )
+
+        whenever(mockGoogleMirrorClient.getMavenMetadata("org.example", "example-artifact"))
+            .thenReturn(metadata)
+
+        val result = googleMirrorScraper.findNewVersions(knownArtifacts, errorChannel).toList()
+
+        assertEquals(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR, result.single().scraperType)
     }
 
     @Test

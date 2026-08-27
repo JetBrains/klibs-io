@@ -27,7 +27,7 @@ class ProjectIndexTagsFormationTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(
         value = [
-            "classpath:sql/ProjectIndexTagsFormationTest/tag_origin_preference.sql"
+            "classpath:/sql/ProjectIndexTagsFormationTest/tag_origin_preference.sql"
         ]
     )
     fun `project_index tags should prefer user over github over AI`() {
