@@ -30,13 +30,11 @@ import java.time.Instant
 class CentralSonatypePackageDiscoverer(
     private val mavenIndexDownloadingService: MavenIndexDownloadingService,
     private val mavenIndexScannerService: MavenIndexScannerService,
-    private val mavenIndexingContextManager: MavenIndexingContextManager,
     private val centralSonatypeScraper: MavenCentralScraper,
     private val mavenCentralLogRepository: MavenCentralLogRepository,
     private val packageRepository: PackageRepository,
 ) : PackageDiscoverer {
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun discover(errorChannel: Channel<Exception>): Flow<MavenArtifact> {
         var newIndexTs: Instant? = null
         try {
