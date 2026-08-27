@@ -1,20 +1,16 @@
 package io.klibs.integration.maven.scraper.impl
 
 import io.klibs.integration.maven.MavenArtifact
-import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.ScraperType
+import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.scraper.MavenCentralScraper
-import io.klibs.integration.maven.search.MavenSearchClient
 import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
-import io.klibs.integration.maven.search.paginateSearch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import org.apache.maven.search.api.request.Query
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
-import java.time.Instant
 
 @Component
 @ConditionalOnProperty(
@@ -23,47 +19,9 @@ import java.time.Instant
     matchIfMissing = false
 )
 class CentralSonatypeScraper(
-    private val discoveryCentralSonatypeSearchClient: MavenSearchClient,
     private val centralSonatypeSearchClient: CentralSonatypeSearchClient
 ) : MavenCentralScraper {
     override val scraperType: ScraperType = ScraperType.CENTRAL_SONATYPE
-
-    private fun createScrapeQuery(): Query {
-        return Query.query("l:kotlin-tooling-metadata")
-    }
-
-    override suspend fun findKmpArtifacts(
-        lastUpdatedSince: Instant,
-        errorChannel: Channel<Exception>
-    ): Flow<MavenArtifact> = flow {
-        val query = createScrapeQuery()
-        executeFindKmpArtifactsQuery(discoveryCentralSonatypeSearchClient, query, lastUpdatedSince, errorChannel)
-    }
-
-    private suspend fun FlowCollector<MavenArtifact>.executeFindKmpArtifactsQuery(
-        client: MavenSearchClient,
-        query: Query,
-        lastUpdatedSince: Instant,
-        errorChannel: Channel<Exception>
-    ) {
-        runCatching {
-            client.paginateSearch(query, lastUpdatedSince).forEach {
-                emit(
-                    MavenArtifact(
-                        it.groupId,
-                        it.artifactId,
-                        it.version,
-                        scraperType,
-                        it.releasedAt
-                    )
-                )
-            }
-        }.onFailure { exception ->
-            errorChannel.send(
-                Exception("Could not process request for artifacts: $query", exception)
-            )
-        }
-    }
 
     override suspend fun findNewVersions(
         knownArtifacts: Map<String, Set<String>>,
