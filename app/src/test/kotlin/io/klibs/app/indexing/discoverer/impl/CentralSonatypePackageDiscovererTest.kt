@@ -38,9 +38,6 @@ internal class CentralSonatypePackageDiscovererTest {
     lateinit var mavenIndexScannerService: MavenIndexScannerService
 
     @MockitoBean
-    lateinit var mavenIndexingContextManager: MavenIndexingContextManager
-
-    @MockitoBean
     lateinit var centralSonatypeScraper: MavenCentralScraper
 
     @MockitoBean
@@ -60,7 +57,6 @@ internal class CentralSonatypePackageDiscovererTest {
         discoverer = CentralSonatypePackageDiscoverer(
             mavenIndexDownloadingService,
             mavenIndexScannerService,
-            mavenIndexingContextManager,
             centralSonatypeScraper,
             mavenCentralLogRepository,
             packageRepository
