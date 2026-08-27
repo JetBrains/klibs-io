@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 export async function generateMetadata(): Promise<Metadata> {
     const projectsCount = await getProjectsCount();
     const title = `Kotlin Multiplatform Libraries (KMP) – Explore ${projectsCount}+ | Klibs.io`;
-    const description = 'AI-powered search for Kotlin Multiplatform libraries (KMP). Discover 2200+ tools, frameworks, and community libraries for building cross-platform apps with Kotlin Multiplatform.';
+    const description = `AI-powered search for Kotlin Multiplatform libraries (KMP). Discover ${projectsCount}+ tools, frameworks, and community libraries for building cross-platform apps with Kotlin Multiplatform.`;
 
     return {
         title: { absolute: title },
