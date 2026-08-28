@@ -49,7 +49,6 @@ class MavenIndexScannerServiceTest {
                 rateLimitCapacity = 100,
                 rateLimitRefillAmount = 10,
                 rateLimitRefillPeriodSec = 1,
-                discoveryEndpoint = "http://localhost",
                 indexEndpoint = "http://localhost",
                 indexDir = "build/tmp/maven-index",
                 contentEndpoint = "http://localhost/content/",
