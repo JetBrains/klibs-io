@@ -38,8 +38,8 @@ data class IndexingRequestEntity(
     @Column(name = "version")
     val version: String?,
 
-    @Column(name = "next_attempt_ts")
-    val nextAttemptAt: Instant?  = Instant.now(),
+    @Column(name = "next_attempt_ts", nullable = false)
+    val nextAttemptAt: Instant = Instant.EPOCH,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "scraper_type", nullable = false)

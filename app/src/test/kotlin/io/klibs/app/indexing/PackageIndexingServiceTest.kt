@@ -38,6 +38,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
+import java.sql.Timestamp
 import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -528,7 +529,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals("Mocked buildFromMarkdown exception", updatedRequest["last_error_message"], "last_error_message should store correct error message")
         assertNotNull(updatedRequest["failed_ts"], "failed_ts should be set")
 
-        val nextAttemptTs = (updatedRequest["next_attempt_ts"] as java.sql.Timestamp).toInstant()
+        val nextAttemptTs = (updatedRequest["next_attempt_ts"] as Timestamp).toInstant()
         assertTrue(
             nextAttemptTs.isAfter(before.plus(Duration.ofHours(3))),
             "next_attempt_ts should be at least 3h from beginning of the test"
@@ -618,11 +619,19 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val updatedRequest = jdbcTemplate.queryForMap(
             "SELECT status, failed_attempts, last_error_message, next_attempt_ts, failed_ts FROM package_index_request WHERE id = ${packageIndexRequest.idNotNull}"
         )
-        assertEquals("PENDING", updatedRequest["status"], "status should be set to PENDING")
+        assertEquals("FAILED", updatedRequest["status"], "status should be set to FAILED")
         assertEquals(4, (updatedRequest["failed_attempts"] as Number).toInt(), "Failed attempts should be incremented")
-        assertEquals("Mocked buildFromMarkdown exception", updatedRequest["last_error_message"], "last_error_message should store correct error message")
+        assertEquals(
+            "Mocked buildFromMarkdown exception",
+            updatedRequest["last_error_message"],
+            "last_error_message should store correct error message"
+        )
         assertNotNull(updatedRequest["failed_ts"], "failed_ts should be set")
-        assertNull(updatedRequest["next_attempt_ts"], "next_attempt_ts should be null")
+        val nextAttemptTs = (updatedRequest["next_attempt_ts"] as Timestamp).toInstant()
+        assertTrue(
+            nextAttemptTs.isAfter(Instant.now().plus(Duration.ofDays(365 * 100))),
+            "next_attempt_ts should be set to infinity"
+        )
     }
 
     @Test
