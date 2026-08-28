@@ -18,6 +18,14 @@ object OpenSearchQueryBuilder {
     /** Search-time analyzer declared in settings.json; emits alias tokens only. */
     private const val TOOL_ALIAS_ANALYZER = "tool_alias"
 
+    /** Partial-match subfields declared in project-mappings.json: token prefixes and token tails. */
+    private const val PREFIX_SUBFIELD = "prefix"
+    private const val SUFFIX_SUBFIELD = "suffix"
+
+    /** Query lengths a partial clause can serve; mirrors `min_gram`/`max_gram` in settings.json. */
+    const val MIN_PARTIAL_LENGTH = 3
+    const val MAX_PARTIAL_LENGTH = 18
+
     // Multiplier for the bm25 score for each matching item.
     // - Score is higher if readme is present.
     // - Stars and dependent_count are both accounted for with `log`
@@ -52,6 +60,18 @@ object OpenSearchQueryBuilder {
             .query(FieldValue.of(text))
             .analyzer(TOOL_ALIAS_ANALYZER)
             .boost(boost.toFloat())
+            .build()
+            .toQuery()
+
+    fun tokenPrefix(field: String, text: String, boost: Float): Query = partial(PREFIX_SUBFIELD, field, text, boost)
+
+    fun tokenSuffix(field: String, text: String, boost: Float): Query = partial(SUFFIX_SUBFIELD, field, text, boost)
+
+    private fun partial(subfield: String, field: String, text: String, boost: Float): Query =
+        MatchQuery.Builder()
+            .field("$field.$subfield")
+            .query(FieldValue.of(text))
+            .boost(boost)
             .build()
             .toQuery()
 

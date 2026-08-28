@@ -64,17 +64,32 @@ class ProjectSearchRepositoryOpenSearch(
             add(match(ProjectFields.TAGS, query, 8))
             add(match(ProjectFields.PROJECT_DESCRIPTION, query, 5))
             add(match(ProjectFields.REPO_DESCRIPTION, query, 5))
+
             add(fuzzy(ProjectFields.NAME, query, 2))
             add(fuzzy(ProjectFields.ARTIFACT_IDS, query, 2))
-            add(phrasePrefix(ProjectFields.NAME, query, 3))
+
             add(phrasePrefix(ProjectFields.OWNER_LOGIN, query, 3))
-            add(phrasePrefix(ProjectFields.ARTIFACT_IDS, query, 2))
             add(phrasePrefix(ProjectFields.GROUP_IDS, query, 2))
+
             add(toolAlias(ProjectFields.NAME, query, 8))
             add(toolAlias(ProjectFields.OWNER_LOGIN, query, 8))
-            if (multiWord) {
-                add(phrase(ProjectFields.NAME, query, 6))
-                add(phrase(ProjectFields.ARTIFACT_IDS, query, 4))
+            // Ngram clauses only where the indexed grams can serve the query: a single word, no
+            // shorter than the smallest gram and no longer than the largest.
+            val partialLengths = OpenSearchQueryBuilder.MIN_PARTIAL_LENGTH..OpenSearchQueryBuilder.MAX_PARTIAL_LENGTH
+            if (!multiWord && query.length in partialLengths) {
+                add(tokenPrefix(ProjectFields.NAME, query, PREFIX_BOOST))
+                add(tokenPrefix(ProjectFields.ARTIFACT_IDS, query, PREFIX_BOOST))
+                add(tokenSuffix(ProjectFields.NAME, query, SUFFIX_BOOST))
+                add(tokenSuffix(ProjectFields.ARTIFACT_IDS, query, SUFFIX_BOOST))
+            } else {
+                // A one-term phrase is the same query as `match` above, so only a multi-word query
+                // gains anything here — otherwise the term would score twice, at a higher boost.
+                if (multiWord) {
+                    add(phrase(ProjectFields.NAME, query, 6))
+                    add(phrase(ProjectFields.ARTIFACT_IDS, query, 4))
+                }
+                add(phrasePrefix(ProjectFields.NAME, query, 3))
+                add(phrasePrefix(ProjectFields.ARTIFACT_IDS, query, 2))
             }
         }
     }
@@ -118,6 +133,10 @@ class ProjectSearchRepositoryOpenSearch(
     )
 
     private companion object {
+        /** People type the start of a name far more often than its end. */
+        private const val PREFIX_BOOST = 4.0f
+        private const val SUFFIX_BOOST = 1.0f
+
         private val EXCLUDED_SOURCE_FIELDS = listOf(
             ProjectFields.PACKAGES,
             ProjectFields.PROJECT_DESCRIPTION,

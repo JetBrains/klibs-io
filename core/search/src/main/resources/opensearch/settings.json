@@ -19,7 +19,9 @@
           "jackson => kotlinx.serialization"
         ]
       },
-      "only_aliases": { "type": "keep_types", "types": ["SYNONYM"] }
+      "only_aliases": { "type": "keep_types", "types": ["SYNONYM"] },
+      "partial_edge_ngram": { "type": "edge_ngram", "min_gram": 3, "max_gram": 18 },
+      "reverse_chars": { "type": "reverse" }
     },
     "analyzer": {
       "code_split": { "type": "custom", "tokenizer": "code_tokenizer", "filter": ["lowercase"] },
@@ -27,6 +29,16 @@
         "type": "custom",
         "tokenizer": "standard",
         "filter": ["lowercase", "tool_alias_synonyms", "only_aliases"]
+      },
+      "token_prefix": {
+        "type": "custom",
+        "tokenizer": "code_tokenizer",
+        "filter": ["lowercase", "partial_edge_ngram"]
+      },
+      "token_suffix": {
+        "type": "custom",
+        "tokenizer": "code_tokenizer",
+        "filter": ["lowercase", "reverse_chars", "partial_edge_ngram", "reverse_chars"]
       }
     }
   }
