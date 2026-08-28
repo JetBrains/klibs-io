@@ -24,7 +24,7 @@ class UserRequestReportRepositoryTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `findFirstForReporting returns oldest report still within its retry budget`() {
         val issue = issueRepository.save(issue())
-        reportRepository.save(report(issue, failedAttempts = 2))
+        reportRepository.save(report(issue, failedAttempts = 4))
         val oldestEligible = reportRepository.save(report(issue, failedAttempts = 0))
         reportRepository.save(report(issue, failedAttempts = 0))
 

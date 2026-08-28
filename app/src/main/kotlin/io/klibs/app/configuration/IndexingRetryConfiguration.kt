@@ -10,5 +10,5 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @ConfigurationProperties(prefix = "klibs.indexing-configuration.retry")
 class IndexingRetryConfiguration {
-    var maxAttempts: Int = 2
+    var maxAttempts: Int = 4
 }
