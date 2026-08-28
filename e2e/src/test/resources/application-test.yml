@@ -9,6 +9,8 @@ klibs:
       enabled: false
     fill-version-type:
       enabled: false
+    search-index-sync:
+      enabled: false
 
 spring:
   sql:
