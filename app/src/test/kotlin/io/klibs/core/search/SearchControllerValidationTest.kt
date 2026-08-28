@@ -106,4 +106,17 @@ class SearchControllerValidationTest : SmokeTestBase() {
             status { isOk() }
         }
     }
+
+    @Test
+    @DisplayName("Should return 400 Bad Request when page is 0 in POST request")
+    fun testPageBelowFirstInPostRequest() {
+        mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(SearchProjectsRequest())
+            param("page", "0")
+            param("limit", "10")
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
 }

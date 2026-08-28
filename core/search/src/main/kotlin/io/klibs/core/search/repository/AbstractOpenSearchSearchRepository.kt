@@ -39,6 +39,13 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
         extraFilters: List<Query> = emptyList(),
         popularityScored: Boolean = false,
     ): List<T> {
+        require(page >= 1) { "Page must be >= 1, but was $page" }
+        require(limit >= 1) { "Limit must be >= 1, but was $limit" }
+        val from = limit * (page - 1)
+        require(from + limit <= OS_MAX_RESULT_WINDOW) {
+            "page * limit must not exceed $OS_MAX_RESULT_WINDOW, but page=$page and limit=$limit request ${from + limit}"
+        }
+
         val isQueryPresent = !query.isNullOrBlank()
         val trimmed = query?.trim().orEmpty()
         val filters = OpenSearchQueryBuilder.commonFilters(platforms, targetGroupFilters, ownerLogin) + extraFilters
@@ -54,7 +61,7 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
             client.search({ b ->
                 b.index(spec.alias)
                     .query(finalQuery)
-                    .from(limit * (page - 1))
+                    .from(from)
                     .size(limit)
                     // drop the search-only fields from the response
                     .source { s -> s.filter { f -> f.excludes(excludedSourceFields) } }
@@ -63,6 +70,11 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
         }
 
         return response.hits().hits().mapNotNull { it.source()?.let(::toResult) }
+    }
+
+    companion object {
+        /** Mirrors the OpenSearch default `index.max_result_window` */
+        private const val OS_MAX_RESULT_WINDOW = 10_000
     }
 }
 
