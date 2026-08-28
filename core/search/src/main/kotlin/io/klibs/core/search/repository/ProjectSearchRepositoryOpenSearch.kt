@@ -70,6 +70,8 @@ class ProjectSearchRepositoryOpenSearch(
             add(phrasePrefix(ProjectFields.OWNER_LOGIN, query, 3))
             add(phrasePrefix(ProjectFields.ARTIFACT_IDS, query, 2))
             add(phrasePrefix(ProjectFields.GROUP_IDS, query, 2))
+            add(toolAlias(ProjectFields.NAME, query, 8))
+            add(toolAlias(ProjectFields.OWNER_LOGIN, query, 8))
             if (multiWord) {
                 add(phrase(ProjectFields.NAME, query, 6))
                 add(phrase(ProjectFields.ARTIFACT_IDS, query, 4))
