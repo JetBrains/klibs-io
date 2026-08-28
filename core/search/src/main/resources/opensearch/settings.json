@@ -3,6 +3,31 @@
   "number_of_replicas": 0,
   "analysis": {
     "tokenizer": { "code_tokenizer": { "type": "pattern", "pattern": "[^a-zA-Z0-9]+" } },
-    "analyzer": { "code_split": { "type": "custom", "tokenizer": "code_tokenizer", "filter": ["lowercase"] } }
+    "filter": {
+      "tool_alias_synonyms": {
+        "type": "synonym_graph",
+        "synonyms": [
+          "hilt => koin, kodein",
+          "dagger => koin, kodein",
+          "glide => coil",
+          "picasso => coil",
+          "retrofit => ktorfit, ktor",
+          "room alternative => sqldelight",
+          "exposed => sqldelight",
+          "gson => kotlinx.serialization",
+          "moshi => kotlinx.serialization",
+          "jackson => kotlinx.serialization"
+        ]
+      },
+      "only_aliases": { "type": "keep_types", "types": ["SYNONYM"] }
+    },
+    "analyzer": {
+      "code_split": { "type": "custom", "tokenizer": "code_tokenizer", "filter": ["lowercase"] },
+      "tool_alias": {
+        "type": "custom",
+        "tokenizer": "standard",
+        "filter": ["lowercase", "tool_alias_synonyms", "only_aliases"]
+      }
+    }
   }
 }

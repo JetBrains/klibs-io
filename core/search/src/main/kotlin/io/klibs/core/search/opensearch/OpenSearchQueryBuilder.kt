@@ -15,6 +15,9 @@ import org.opensearch.client.opensearch._types.query_dsl.TermsQueryField
 
 object OpenSearchQueryBuilder {
 
+    /** Search-time analyzer declared in settings.json; emits alias tokens only. */
+    private const val TOOL_ALIAS_ANALYZER = "tool_alias"
+
     // Multiplier for the bm25 score for each matching item.
     // - Score is higher if readme is present.
     // - Stars and dependent_count are both accounted for with `log`
@@ -36,6 +39,18 @@ object OpenSearchQueryBuilder {
         MatchQuery.Builder()
             .field(field)
             .query(FieldValue.of(text))
+            .boost(boost.toFloat())
+            .build()
+            .toQuery()
+
+    // Curated tool aliases from settings.json: "Hilt" -> koin/kodein, "Room alternative" -> sqldelight.
+    // The `tool_alias` analyzer drops everything except SYNONYM tokens, so a query naming no tool
+    // produces no terms at all and this clause contributes nothing — plain queries rank as before.
+    fun toolAlias(field: String, text: String, boost: Int): Query =
+        MatchQuery.Builder()
+            .field(field)
+            .query(FieldValue.of(text))
+            .analyzer(TOOL_ALIAS_ANALYZER)
             .boost(boost.toFloat())
             .build()
             .toQuery()
