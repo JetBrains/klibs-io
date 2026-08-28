@@ -34,6 +34,8 @@ class PackageSearchRepositoryFallback(
         openSearch.find(query, platforms, targetGroupFilters, ownerLogin, sortBy, page, limit)
     } catch (e: UnsupportedOperationException) {
         throw e
+    } catch (e: IllegalArgumentException) {
+        throw e
     } catch (e: Exception) {
         metrics.recordFallback(packageIndexSpec)
         log.warn("OpenSearch package search failed, falling back to PostgreSQL FTS (sort={})", sortBy, e)

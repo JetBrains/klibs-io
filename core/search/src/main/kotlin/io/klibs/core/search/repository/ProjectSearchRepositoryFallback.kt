@@ -39,6 +39,8 @@ class ProjectSearchRepositoryFallback(
     } catch (e: UnsupportedOperationException) {
         // rethrow if deliberately skipped (i.e. oss health sort parameter)
         throw e
+    } catch (e: IllegalArgumentException) {
+        throw e
     } catch (e: Exception) {
         metrics.recordFallback(projectIndexSpec)
         log.warn("OpenSearch project search failed, falling back to PostgreSQL FTS (sort={})", sortBy, e)
