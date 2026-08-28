@@ -23,7 +23,6 @@ class MavenCentralRateLimiterTest {
                 rateLimitCapacity = 1000,
                 rateLimitRefillAmount = 1000,
                 rateLimitRefillPeriodSec = 1,
-                discoveryEndpoint = "https://discovery",
                 indexEndpoint = "https://index",
                 indexDir = "/tmp",
                 contentEndpoint = "https://content",
