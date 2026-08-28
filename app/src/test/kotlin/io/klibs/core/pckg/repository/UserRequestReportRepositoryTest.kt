@@ -16,7 +16,7 @@ import kotlin.test.assertNull
 class UserRequestReportRepositoryTest : BaseUnitWithDbLayerTest() {
 
     private companion object {
-        const val MAX_ATTEMPTS = 2
+        const val MAX_ATTEMPTS = 4
     }
 
     @Autowired
