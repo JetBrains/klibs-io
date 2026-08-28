@@ -9,8 +9,11 @@ databaseChangeLog:
               - column:
                   name: next_attempt_ts
                   type: timestamptz
+                  defaultValue: "-infinity"
+                  constraints:
+                      nullable: false
         - sql:
-            sql: UPDATE package_index_request SET next_attempt_ts = CURRENT_TIMESTAMP WHERE failed_attempts < 2;
+            sql: UPDATE package_index_request SET status = 'FAILED' WHERE failed_attempts >= 2;
 
   - changeSet:
       id: Add package_index_request_next_attempt_ts_idx to package_index_request
