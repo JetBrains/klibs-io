@@ -5,9 +5,22 @@
     "owner_type": { "type": "keyword" },
     "owner_login": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
     "repo_name": { "type": "text" },
-    "name": { "type": "text" },
+    "name": {
+      "type": "text",
+      "fields": {
+        "prefix": { "type": "text", "analyzer": "token_prefix", "search_analyzer": "code_split" },
+        "suffix": { "type": "text", "analyzer": "token_suffix", "search_analyzer": "code_split" }
+      }
+    },
     "group_ids": { "type": "text", "analyzer": "code_split" },
-    "artifact_ids": { "type": "text", "analyzer": "code_split" },
+    "artifact_ids": {
+      "type": "text",
+      "analyzer": "code_split",
+      "fields": {
+        "prefix": { "type": "text", "analyzer": "token_prefix", "search_analyzer": "code_split" },
+        "suffix": { "type": "text", "analyzer": "token_suffix", "search_analyzer": "code_split" }
+      }
+    },
     "repo_description": { "type": "text" },
     "project_description": { "type": "text" },
     "platforms": { "type": "keyword" },
