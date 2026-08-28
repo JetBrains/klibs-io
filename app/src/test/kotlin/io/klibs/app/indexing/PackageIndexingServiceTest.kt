@@ -382,8 +382,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
 
         // Set up mocks for processing the indexing request
-        val packageIndexRequest =
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(packageIndexRequest, "Indexing request should exist")
         assertEquals(groupId, packageIndexRequest.groupId)
         assertEquals(artifactId, packageIndexRequest.artifactId)
@@ -411,7 +410,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertTrue(result, "Should return true")
         assertFalse(output.out.contains("Unable to process the index request"))
         assertNull(
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
+            indexingRequestRepository.findFirstForIndexing(),
             "Processed request should be removed from the queue"
         )
 
@@ -439,7 +438,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val artifactId = "test-library-reindex"
         val version = "1.0.0"
 
-        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val request = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(request)
         assertTrue(request.reindex, "Seeded request must be a reindex request")
 
@@ -479,7 +478,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description", releasedAt = Instant.now().minus(Duration.ofDays(30)))
 
-        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val request = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(request)
         uut.processRequest(request.idNotNull)
 
@@ -511,7 +510,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         stubMavenFetch(groupId, artifactId, newVersion, pomDescription = "Fresh POM description")
 
-        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val request = indexingRequestRepository.findFirstForIndexing()
         assertNotNull(request)
         uut.processRequest(request.idNotNull)
 
@@ -625,7 +624,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals("Mocked buildFromMarkdown exception", updatedRequest["last_error_message"], "last_error_message should store correct error message")
         assertNotNull(updatedRequest["failed_ts"], "failed_ts should be set")
 
-        val nextAttemptTs = (updatedRequest["next_attempt_ts"] as java.sql.Timestamp).toInstant()
+        val nextAttemptTs = (updatedRequest["next_attempt_ts"] as Timestamp).toInstant()
         assertTrue(
             nextAttemptTs.isAfter(before.plus(Duration.ofHours(3))),
             "next_attempt_ts should be at least 3h from beginning of the test"
@@ -715,11 +714,19 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val updatedRequest = jdbcTemplate.queryForMap(
             "SELECT status, failed_attempts, last_error_message, next_attempt_ts, failed_ts FROM package_index_request WHERE id = ${packageIndexRequest.idNotNull}"
         )
-        assertEquals("PENDING", updatedRequest["status"], "status should be set to PENDING")
+        assertEquals("FAILED", updatedRequest["status"], "status should be set to FAILED")
         assertEquals(4, (updatedRequest["failed_attempts"] as Number).toInt(), "Failed attempts should be incremented")
-        assertEquals("Mocked buildFromMarkdown exception", updatedRequest["last_error_message"], "last_error_message should store correct error message")
+        assertEquals(
+            "Mocked buildFromMarkdown exception",
+            updatedRequest["last_error_message"],
+            "last_error_message should store correct error message"
+        )
         assertNotNull(updatedRequest["failed_ts"], "failed_ts should be set")
-        assertNull(updatedRequest["next_attempt_ts"], "next_attempt_ts should be null")
+        val nextAttemptTs = (updatedRequest["next_attempt_ts"] as Timestamp).toInstant()
+        assertTrue(
+            nextAttemptTs.isAfter(Instant.now().plus(Duration.ofDays(365 * 100))),
+            "next_attempt_ts should be set to infinity"
+        )
     }
 
     @Test

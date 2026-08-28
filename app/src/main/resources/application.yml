@@ -113,7 +113,7 @@ klibs:
     executor:
       thread-count: 2
     retry:
-      max-attempts: ${KLIBS_INDEXING_MAX_ATTEMPTS:2}
+      max-attempts: ${KLIBS_INDEXING_MAX_ATTEMPTS:4}
     reporting:
       index-defer: ${KLIBS_REPORTING_INDEX_DEFER:10m}
     description:
