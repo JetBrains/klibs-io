@@ -17,15 +17,16 @@ object OpenSearchQueryBuilder {
 
     // Multiplier for the bm25 score for each matching item.
     // - Score is higher if readme is present.
-    // - Stars are accounted for with `log`
-    // - Dependent_count is accounted for with `log`
-    // - Stars have 2.5x more weight than Dependent_count
+    // - Stars and dependent_count are both accounted for with `log`
+    // - Dependent_count outweighs stars ~2.3x: bm25 favours short names, so a one-word toy project
+    //   named after the query used to beat the established library. Coefficients are tuned against
+    //   the search-eval headline (KTL-4925) — moving them moves that score.
 
     private const val POPULARITY_SCRIPT =
         "double d = doc['${ProjectFields.HAS_README}'].value ? 1.0 : 0.7; " +
                 "return 1 + (" +
-                "Math.log(doc['${ProjectFields.STARS}'].value + 1) * 0.5 + " +
-                "Math.log(doc['${ProjectFields.DEPENDENT_COUNT}'].value + 1) * 0.2" +
+                "Math.log(doc['${ProjectFields.STARS}'].value + 1) * 0.7 + " +
+                "Math.log(doc['${ProjectFields.DEPENDENT_COUNT}'].value + 1) * 1.6" +
                 ") * d;"
 
     // Word-bag match: OR over the query terms, order-insensitive, and a doc matching only some of
