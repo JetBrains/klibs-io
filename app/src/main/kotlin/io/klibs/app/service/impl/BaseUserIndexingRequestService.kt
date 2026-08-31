@@ -10,15 +10,11 @@ import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.core.project.blacklist.BlacklistRepository
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
-import io.klibs.integration.maven.search.ArtifactData
 import io.klibs.integration.maven.search.impl.BaseCentralMavenSearchClient
-import io.klibs.integration.maven.search.paginateSearch
-import org.apache.maven.search.api.request.BooleanQuery
-import org.apache.maven.search.api.request.Query
+import java.util.*
+import kotlin.jvm.optionals.getOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
-import kotlin.jvm.optionals.getOrNull
 
 internal abstract class BaseUserIndexingRequestService(
     private val centralSearchClient: BaseCentralMavenSearchClient,

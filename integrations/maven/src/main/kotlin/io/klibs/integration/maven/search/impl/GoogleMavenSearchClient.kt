@@ -7,11 +7,8 @@ import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
 import io.klibs.integration.maven.request.RequestRateLimiter
-import io.klibs.integration.maven.search.MavenSearchResponse
-import org.apache.maven.search.api.request.Query
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import java.time.Instant
 
 const val GOOGLE_MAVEN_URL = "https://dl.google.com/dl/android/maven2/"
 
@@ -30,10 +27,6 @@ class GoogleMavenSearchClient(
 
     companion object {
         val logger = LoggerFactory.getLogger(GoogleMavenSearchClient::class.java)
-    }
-
-    override fun searchWithThrottle(page: Int, query: Query, lastUpdatedSince: Instant): MavenSearchResponse {
-        throw UnsupportedOperationException("Google Maven does not support searching API.")
     }
 
     override fun getContentUrlPrefix(): String {
