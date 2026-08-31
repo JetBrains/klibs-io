@@ -1,12 +1,9 @@
 package io.klibs.integration.maven.search.impl
 
-import io.klibs.integration.maven.search.MavenSearchResponse
-import org.apache.maven.search.api.request.Query
-import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
 
 class BaseMavenSearchClientURLBuilderTest {
 
@@ -20,13 +17,6 @@ class BaseMavenSearchClientURLBuilderTest {
     ) {
         override fun getContentUrlPrefix(): String = "https://example.com/repo/"
 
-        override fun searchWithThrottle(
-            page: Int,
-            query: Query,
-            lastUpdatedSince: Instant
-        ): MavenSearchResponse {
-            throw UnsupportedOperationException("Not implemented")
-        }
     }
 
     @Test
