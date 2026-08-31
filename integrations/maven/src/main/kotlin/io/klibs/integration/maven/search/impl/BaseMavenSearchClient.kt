@@ -13,7 +13,6 @@ import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateImpl
 import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.request.RequestRateLimiter
-import io.klibs.integration.maven.search.MavenSearchClient
 import java.io.IOException
 import java.io.StringReader
 import java.net.HttpURLConnection
@@ -33,7 +32,6 @@ import org.jetbrains.kotlin.tooling.KotlinToolingMetadataParsingResult
 import org.jetbrains.kotlin.tooling.parseJson
 import org.slf4j.Logger
 
-private const val DEFAULT_PAGE_SIZE = 200
 internal const val MAX_REDIRECTS = 3
 private const val HTTP_TOO_MANY_REQUESTS = 429 // not in HttpURLConnection constants
 
@@ -42,14 +40,12 @@ abstract class BaseMavenSearchClient(
     protected val rateLimiter: RequestRateLimiter,
     private val logger: Logger,
     private val objectMapper: ObjectMapper,
-    protected val clientTransport: Transport = Java11HttpClientTransport(),
+    private val clientTransport: Transport = Java11HttpClientTransport(),
     private val clock: Clock = Clock.System,
     private val lastModifiedHeader: String,
-) : MavenSearchClient, MavenStaticDataProvider {
+) :  MavenStaticDataProvider {
 
     private val mavenXpp3Reader = MavenXpp3Reader()
-
-    override fun pageSize(): Int = DEFAULT_PAGE_SIZE
 
     override fun getPom(mavenArtifact: MavenArtifact): MavenPom? {
         return getPomWithReleaseDate(mavenArtifact)?.pom

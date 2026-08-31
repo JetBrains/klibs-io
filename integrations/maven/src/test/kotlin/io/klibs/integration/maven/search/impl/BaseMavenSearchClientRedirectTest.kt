@@ -8,7 +8,6 @@ import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.request.RequestRateLimiter
 import io.klibs.integration.maven.request.impl.UnlimitedRateLimiter
-import io.klibs.integration.maven.search.MavenSearchResponse
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import java.time.ZoneOffset
@@ -20,12 +19,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Clock
-import kotlin.time.Instant
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 import kotlin.time.toJavaInstant
 import kotlinx.datetime.format
-import kotlinx.datetime.parse
-import org.apache.maven.search.api.request.Query
 import org.apache.maven.search.api.transport.Transport
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -373,13 +370,5 @@ class BaseMavenSearchClientRedirectTest {
         }
 
         override fun getContentFallbackUrlPrefix(): String? = fallbackPrefix
-
-        override fun searchWithThrottle(
-            page: Int,
-            query: Query,
-            lastUpdatedSince: java.time.Instant
-        ): MavenSearchResponse {
-            throw UnsupportedOperationException("Not implemented")
-        }
     }
 }
