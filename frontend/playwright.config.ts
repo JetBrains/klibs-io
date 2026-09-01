@@ -1,4 +1,4 @@
-import {defineConfig, devices, ReporterDescription} from '@playwright/test';
+import {defineConfig, devices} from '@playwright/test';
 
 /**
  * Read environment variables from file.
@@ -11,17 +11,6 @@ import {defineConfig, devices, ReporterDescription} from '@playwright/test';
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
-const isDevelopment = !process.env.CI && !process.env.PROD;
-
-const reporter: ReporterDescription[] = isDevelopment ? [['list']] : [
-  ['html', { open: 'never' }],
-  ['playwright-teamcity-reporter', {
-    'testMetadataArtifacts': 'test-results',
-    logConfig: false
-  }]
-];
-
-
 export default defineConfig({
   testDir: './e2e-tests',
   /* Run tests in files in parallel */
@@ -33,7 +22,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter,
+  reporter: process.env.CI ? 'dot' : 'list',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
