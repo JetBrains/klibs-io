@@ -89,6 +89,21 @@
     color: var(--link-blue);
 }
 
+.packageVersionLink::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+.packageVersionLink:focus-visible::after {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+}
+
+.packageVersionLinkCurrent {
+    color: inherit;
+}
+
 .packageReleaseDate {
     white-space: nowrap;
     display: flex;
@@ -108,10 +123,6 @@
     }
 }
 
-.tableRowLink {
-    display: contents;
-}
-
 .versionHistoryWrapperMobile {
     display: none;
 }
@@ -129,6 +140,8 @@
 }
 
 .platformsAndTargetsCell {
+    position: relative;
+    z-index: 1;
     padding-right: 8px !important;
 }
 
@@ -219,4 +232,3 @@
         /*padding-right: 8px !important;*/
     }
 }
-

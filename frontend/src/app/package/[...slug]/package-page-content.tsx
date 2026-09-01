@@ -330,25 +330,20 @@ function VersionHistoryTable({isMobile, packageVersions, version, packageName}: 
 
                     <tbody className={styles.tableBody}>
                     {packageVersions?.map(packageVersion =>
-                        <Link
-                            href={`/package/${packageVersion.groupId}/${packageVersion.artifactId}/${packageVersion.version}`}
-                            className={styles.tableRowLink}
-                            key={`${packageVersion.id}-${packageVersion.version}`}
-                            onClick={() => {trackEvent(GAEvent.PACKAGE_VERSION_LINK_CLICK, {eventCategory: packageName, eventLabel: packageVersion.version})}}
-                        >
-                            <tr className={cn("align-middle", styles.tableRow, textCn("rs-text-3", {hardness: "hard"}))}>
+                            <tr key={`${packageVersion.id}-${packageVersion.version}`}
+                                className={cn("align-middle", styles.tableRow, textCn("rs-text-3", {hardness: "hard"}))}>
                                 {/*Package version*/}
                                 <td className={cn("padding-left-medium", styles.tableCell, styles.versionCell)}>
-                                    {version != packageVersion.version ? (
-                                        <Link
-                                            href={`/package/${packageVersion.groupId}/${packageVersion.artifactId}/${packageVersion.version}`}
-                                            className={styles.packageVersionLink}
-                                        >
-                                            {packageVersion.version}
-                                        </Link>
-                                    ) : (
-                                        <span>{packageVersion.version}</span>
-                                    )}
+                                    <Link
+                                        href={`/package/${packageVersion.groupId}/${packageVersion.artifactId}/${packageVersion.version}`}
+                                        className={cn(styles.packageVersionLink, {
+                                            [styles.packageVersionLinkCurrent]: version == packageVersion.version,
+                                        })}
+                                        aria-current={version == packageVersion.version ? 'page' : undefined}
+                                        onClick={() => {trackEvent(GAEvent.PACKAGE_VERSION_LINK_CLICK, {eventCategory: packageName, eventLabel: packageVersion.version})}}
+                                    >
+                                        {packageVersion.version}
+                                    </Link>
                                 </td>
 
                                 {/* Release date */}
@@ -379,10 +374,7 @@ function VersionHistoryTable({isMobile, packageVersions, version, packageName}: 
                                     </div>
 
                                 </td>
-
-
                             </tr>
-                        </Link>
                     )}
                     </tbody>
                 </table>
