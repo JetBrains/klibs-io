@@ -92,7 +92,7 @@
       "weight": 1.24945,
       "graded": true,
       "expected": [
-        "square/okio"
+        "lysine-dev/okio"
       ],
       "pass": {
         "type": "rank_le",
@@ -198,8 +198,8 @@
       }
     },
     {
-      "id": "A15",
-      "cls": "A",
+      "id": "M16",
+      "cls": "M",
       "query": "QR code generator",
       "weight": 1.0,
       "graded": false,
@@ -215,7 +215,7 @@
       "id": "B1",
       "cls": "B",
       "query": "chart",
-      "weight": 1.4584,
+      "weight": 1.61405,
       "graded": true,
       "expected": [
         "patrykandpatrick/vico",
@@ -409,6 +409,10 @@
         "ismai117/KScan",
         "alexzhirkevich/qrose"
       ],
+      "also": [
+        "g0dkar/qrcode-kotlin",
+        "kalinjul/easyqrscan"
+      ],
       "pass": {
         "type": "precision_at",
         "k": 5,
@@ -476,7 +480,7 @@
       "id": "B15",
       "cls": "B",
       "query": "map",
-      "weight": 1.50105,
+      "weight": 1.68655,
       "graded": true,
       "expected": [
         "software-mansion/kmp-maps",
@@ -648,8 +652,8 @@
       }
     },
     {
-      "id": "C6",
-      "cls": "C",
+      "id": "M13",
+      "cls": "M",
       "query": "live activity",
       "weight": 1.0,
       "graded": false,
@@ -676,8 +680,8 @@
       }
     },
     {
-      "id": "C8",
-      "cls": "C",
+      "id": "M14",
+      "cls": "M",
       "query": "local notifications",
       "weight": 1.0,
       "graded": false,
@@ -691,8 +695,8 @@
       }
     },
     {
-      "id": "C9",
-      "cls": "C",
+      "id": "M15",
+      "cls": "M",
       "query": "rich text editor",
       "weight": 1.0,
       "graded": false,
@@ -811,23 +815,6 @@
       "pass": {
         "type": "all_support_platform",
         "k": 10
-      }
-    },
-    {
-      "id": "M1",
-      "cls": "M",
-      "query": "dependency injection",
-      "weight": 1.0,
-      "graded": true,
-      "expected": [
-        "InsertKoinIO/koin",
-        "kosi-libs/Kodein",
-        "evant/kotlin-inject"
-      ],
-      "pass": {
-        "type": "precision_at",
-        "k": 5,
-        "min": 0.6
       }
     },
     {
@@ -1004,29 +991,6 @@
       "pass": {
         "type": "rank_le",
         "k": 5
-      }
-    },
-    {
-      "id": "B21",
-      "cls": "B",
-      "query": "charts",
-      "weight": 1.15565,
-      "graded": true,
-      "expected": [
-        "patrykandpatrick/vico",
-        "KoalaPlot/koalaplot-core",
-        "ehsannarmani/ComposeCharts"
-      ],
-      "also": [
-        "thechance101/aay-chart",
-        "hi-manshu/charty",
-        "netguru/compose-multiplatform-charts",
-        "hdcharts/charts"
-      ],
-      "pass": {
-        "type": "precision_at",
-        "k": 5,
-        "min": 0.4
       }
     },
     {
@@ -1363,8 +1327,8 @@
       }
     },
     {
-      "id": "B45",
-      "cls": "B",
+      "id": "E16",
+      "cls": "E",
       "query": "icons",
       "weight": 1.24735,
       "graded": true,
@@ -1386,22 +1350,6 @@
         "ktorio/ktor",
         "kittinunf/fuel",
         "Foso/Ktorfit"
-      ],
-      "pass": {
-        "type": "any_in_top",
-        "k": 5
-      }
-    },
-    {
-      "id": "B47",
-      "cls": "B",
-      "query": "navi",
-      "weight": 1.2324,
-      "graded": true,
-      "expected": [
-        "adrielcafe/voyager",
-        "androidx/navigation",
-        "androidx/navigation3"
       ],
       "pass": {
         "type": "any_in_top",
@@ -1466,25 +1414,10 @@
       }
     },
     {
-      "id": "B52",
-      "cls": "B",
-      "query": "maps",
-      "weight": 1.1855,
-      "graded": true,
-      "expected": [
-        "software-mansion/kmp-maps",
-        "maplibre/maplibre-compose"
-      ],
-      "pass": {
-        "type": "any_in_top",
-        "k": 5
-      }
-    },
-    {
-      "id": "B53",
-      "cls": "B",
+      "id": "E17",
+      "cls": "E",
       "query": "nav",
-      "weight": 1.2068,
+      "weight": 1.6247,
       "graded": true,
       "expected": [
         "adrielcafe/voyager",
@@ -1524,22 +1457,6 @@
       "graded": true,
       "expected": [
         "JetBrains/compose-multiplatform"
-      ],
-      "pass": {
-        "type": "any_in_top",
-        "k": 5
-      }
-    },
-    {
-      "id": "B56",
-      "cls": "B",
-      "query": "naviga",
-      "weight": 1.1855,
-      "graded": true,
-      "expected": [
-        "adrielcafe/voyager",
-        "androidx/navigation",
-        "androidx/navigation3"
       ],
       "pass": {
         "type": "any_in_top",
@@ -1695,6 +1612,81 @@
       "pass": {
         "type": "rank_le",
         "k": 3
+      }
+    },
+    {
+      "id": "E10",
+      "cls": "E",
+      "query": "serial",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "Kotlin/kotlinx.serialization"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 5
+      }
+    },
+    {
+      "id": "E11",
+      "cls": "E",
+      "query": "fit",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "Foso/Ktorfit"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 5
+      }
+    },
+    {
+      "id": "E13",
+      "cls": "E",
+      "query": "delight",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "sqldelight/sqldelight"
+      ],
+      "pass": {
+        "type": "rank_le",
+        "k": 5
+      }
+    },
+    {
+      "id": "B63",
+      "cls": "B",
+      "query": "mvi",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "respawn-llc/FlowMVI",
+        "orbit-mvi/orbit-mvi",
+        "arkivanov/MVIKotlin"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 5,
+        "min": 0.4
+      }
+    },
+    {
+      "id": "B62",
+      "cls": "B",
+      "query": "input-mask",
+      "weight": 1.0,
+      "graded": false,
+      "expected": [
+        "3moly/compose-input-mask",
+        "skeptick/input-mask-compose"
+      ],
+      "pass": {
+        "type": "precision_at",
+        "k": 2,
+        "min": 1.0
       }
     }
   ]
