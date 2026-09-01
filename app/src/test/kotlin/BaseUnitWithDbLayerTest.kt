@@ -2,7 +2,7 @@ import io.awspring.cloud.s3.S3Template
 import io.klibs.app.Application
 import io.klibs.integration.ai.AiService
 import io.klibs.core.storage.S3StorageService
-import io.klibs.integration.maven.scraper.MavenCentralScraper
+import io.klibs.integration.maven.service.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
 import org.springframework.ai.model.openai.autoconfigure.*
@@ -47,10 +47,10 @@ abstract class BaseUnitWithDbLayerTest {
     @MockitoBean
     private lateinit var mavenIndexDownloadingService: MavenIndexDownloadingService
 
-    @MockitoBean
+    @MockitoBean(name = "centralSonatypeMavenIndexScannerService")
     private lateinit var mavenIndexScannerService: MavenIndexScannerService
 
-    @MockitoBean
+    @MockitoBean(name = "centralSonatypeScraper")
     private lateinit var mavenCentralScraper: MavenCentralScraper
 
     companion object {

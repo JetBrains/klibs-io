@@ -1,11 +1,4 @@
 klibs:
-  indexing: false
-  indexing-configuration:
-    central-sonatype:
-      enabled: true
-    gmaven:
-      enabled: true
-  ai: false
   integration:
     maven:
       central:

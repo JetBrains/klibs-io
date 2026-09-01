@@ -1,14 +1,14 @@
 package io.klibs.app.indexing
 
-import io.klibs.app.configuration.properties.PackageDescriptionProperties
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.indexing.discoverer.PackageDiscoverer
 import io.klibs.app.service.UserRequestReportWriter
 import io.klibs.app.util.normalizeGitHubLink
 import io.klibs.app.util.toIndexRequest
+import io.klibs.core.pckg.dto.MavenCoordinatesDTO
 import io.klibs.core.pckg.dto.PackageDTO
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.enums.IndexingRequestStatus
-import io.klibs.core.pckg.dto.MavenCoordinatesDTO
 import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
@@ -18,10 +18,12 @@ import io.klibs.core.project.ProjectEntity
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
-import io.klibs.integration.maven.MavenPom
-import io.klibs.integration.maven.exception.MavenRateLimitedException
-import io.klibs.integration.maven.MavenStaticDataProvider
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
+import io.klibs.integration.maven.exception.MavenRateLimitedException
+import io.klibs.integration.maven.service.MavenPom
+import io.klibs.integration.maven.service.MavenStaticDataProvider
+import java.time.Duration
+import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -36,13 +38,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Duration
-import java.time.Instant
 
 @Service
 class PackageIndexingService(
     private val discoverers: List<PackageDiscoverer>,
-    private val providers: Map<String, MavenStaticDataProvider>,
+    private val providers: List<MavenStaticDataProvider>,
     private val gitHubIndexingService: GitHubIndexingService,
     private val projectIndexingService: ProjectIndexingService,
     private val pomIndexingService: PomIndexingService,
@@ -54,7 +54,7 @@ class PackageIndexingService(
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
     private val mavenArtifactService: MavenArtifactService,
-    private val packageDescriptionProperties: PackageDescriptionProperties,
+    private val indexingConfigurationProperties: IndexingConfigurationProperties,
     private val selfProvider: ObjectProvider<PackageIndexingService>
 ) {
 
@@ -106,7 +106,7 @@ class PackageIndexingService(
      * @return true if a request was processed, false if the queue is empty or we are rate limited.
      */
     fun processPackageQueue(): Boolean {
-        val indexRequest = indexingRequestRepository.findFirstForIndexing()
+        val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         if (indexRequest == null) {
             logger.info("The package index queue is empty")
             return false
@@ -166,7 +166,7 @@ class PackageIndexingService(
         var mavenArtifact = indexRequest.getMavenArtifact()
 
         logger.trace("Getting pom of {}", mavenArtifact)
-        val provider: MavenStaticDataProvider = providers[mavenArtifact.scraperType.name]
+        val provider: MavenStaticDataProvider = providers.firstOrNull { it.scraperType == mavenArtifact.scraperType }
             ?: throw IllegalArgumentException("Unknown repository id ${mavenArtifact.scraperType.name}")
 
         val (pom, releasedAt) =
@@ -291,7 +291,7 @@ class PackageIndexingService(
         // instead of paying for another web-search regeneration.
         val previousGeneratedAt = latestSavedVersion.descriptionGeneratedAt
         if (previousGeneratedAt != null &&
-            Duration.between(previousGeneratedAt, Instant.now()) < packageDescriptionProperties.regenTtl
+            Duration.between(previousGeneratedAt, Instant.now()) < indexingConfigurationProperties.description.regenTtl
         ) {
             logger.info("Skipping regeneration for $coordinates; previous description generated within TTL")
             return ResolvedDescription(latestSavedVersion.description, wasGenerated = true, generatedAt = previousGeneratedAt)

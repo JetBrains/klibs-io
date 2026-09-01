@@ -6,13 +6,12 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.exception.MavenRateLimitedException
-import io.klibs.integration.maven.request.RequestRateLimiter
-import io.klibs.integration.maven.request.impl.UnlimitedRateLimiter
+import io.klibs.integration.maven.request.impl.MavenCentralRateLimiter
+import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
+import io.klibs.integration.maven.service.impl.MAX_REDIRECTS
+import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -32,12 +31,12 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.slf4j.LoggerFactory
 
-class BaseMavenSearchClientRedirectTest {
+class BaseMavenStaticDataProviderRedirectTest {
 
     private lateinit var transport: Transport
-    private lateinit var client: TestClient
+    private lateinit var sonatypeClient: SonatypeCentralStaticDataProvider
+    private lateinit var googleMirrorClient: GoogleMavenCentralMirrorStaticDataProvider
 
     private val mockedNow = Instant.parse("2026-08-31T12:00:00Z")
     private val mockedClock = object : Clock {
@@ -47,7 +46,8 @@ class BaseMavenSearchClientRedirectTest {
     @BeforeEach
     fun setup() {
         transport = mock()
-        client = TestClient(transport)
+        sonatypeClient = createSonatypeClient(transport)
+        googleMirrorClient = createGoogleMirrorClient(transport)
     }
 
     @Test
@@ -57,13 +57,13 @@ class BaseMavenSearchClientRedirectTest {
             code = 301,
             headers = mapOf("location" to "https://example.com/redirected")
         )
-        val ok = mockResponse(
+        val ok = mockSonatypeOkResponse(
             code = 200,
             body = pom
         )
         whenever(transport.get(any(), any())).thenReturn(redirect, ok)
 
-        val result = client.getPom(
+        val result = sonatypeClient.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
         )
 
@@ -82,15 +82,14 @@ class BaseMavenSearchClientRedirectTest {
                 headers = mapOf("location" to "https://example.com/redirect/$idx")
             )
         }
-        val ok = mockResponse(code = 200, body = pom)
-        // enqueue 5 redirects then OK
+        val ok = mockSonatypeOkResponse(code = 200, body = pom)
         whenever(transport.get(any(), any())).thenReturn(
             redirects[0],
             *redirects.subList(1, redirects.size).toTypedArray(),
             ok
         )
 
-        val result = client.getPom(
+        val result = sonatypeClient.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
         )
 
@@ -110,7 +109,9 @@ class BaseMavenSearchClientRedirectTest {
         )
 
         val ex = assertFailsWith<IllegalStateException> {
-            client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
+            sonatypeClient.getPom(
+                MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
+            )
         }
         assertNotNull(ex.cause, "Expected underlying IOException as cause")
         assertTrue(ex.cause!!.message!!.contains("Too many redirects"))
@@ -122,7 +123,9 @@ class BaseMavenSearchClientRedirectTest {
         whenever(transport.get(any(), any())).thenReturn(redirect)
 
         assertFailsWith<IllegalArgumentException> {
-            client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
+            sonatypeClient.getPom(
+                MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
+            )
         }
     }
 
@@ -132,7 +135,9 @@ class BaseMavenSearchClientRedirectTest {
         whenever(transport.get(any(), any())).thenReturn(serverError)
 
         assertFailsWith<IllegalStateException> {
-            client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
+            sonatypeClient.getPom(
+                MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
+            )
         }
     }
 
@@ -141,24 +146,25 @@ class BaseMavenSearchClientRedirectTest {
         val notFound = mockResponse(code = 404)
         whenever(transport.get(any(), any())).thenReturn(notFound)
 
-        val result =
-            client.getPom(MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE))
+        val result = sonatypeClient.getPom(
+            MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
+        )
         assertNull(result, "Expected null for HTTP 404 response")
     }
 
     @Test
-    fun `release date uses x-goog-meta-last-modified-epoch when google headers are absent`() {
+    fun `release date uses last-modified for sonatype`() {
         val pom = minimalPom("org.example", "example-artifact", "1.0.0")
         val releasedAt = "Sat, 13 Feb 2021 16:31:54 GMT"
-        val ok = mockResponse(
+        val ok = mockSonatypeOkResponse(
             code = 200,
-            headers = mapOf("x-goog-meta-last-modified-epoch" to releasedAt),
+            headers = mapOf("last-modified" to releasedAt),
             body = pom,
             addDefaultLastModifiedHeader = false
         )
         whenever(transport.get(any(), any())).thenReturn(ok)
 
-        val result = client.getPomWithReleaseDate(
+        val result = sonatypeClient.getPomWithReleaseDate(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
         )
 
@@ -169,7 +175,7 @@ class BaseMavenSearchClientRedirectTest {
     @Test
     fun `release date prefers google mirror metadata over storage x-goog-meta-last-modified-epoch`() {
         val pom = minimalPom("org.example", "example-artifact", "1.0.0")
-        val ok = mockResponse(
+        val ok = mockGoogleMirrorOkResponse(
             code = 200,
             headers = mapOf(
                 "x-goog-meta-last-modified-epoch" to "1787534959000",
@@ -179,7 +185,7 @@ class BaseMavenSearchClientRedirectTest {
         )
         whenever(transport.get(any(), any())).thenReturn(ok)
 
-        val result = client.getPomWithReleaseDate(
+        val result = googleMirrorClient.getPomWithReleaseDate(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
         )
 
@@ -191,10 +197,10 @@ class BaseMavenSearchClientRedirectTest {
     fun `pom 404 on primary falls back to upstream and returns the pom`() {
         val pom = minimalPom("org.example", "example-artifact", "1.0.0")
         val primary404 = mockResponse(code = 404)
-        val upstreamOk = mockResponse(code = 200, body = pom)
+        val upstreamOk = mockSonatypeOkResponse(code = 200, body = pom)
         whenever(transport.get(any(), any())).thenReturn(primary404, upstreamOk)
 
-        val fallbackClient = TestClient(transport, fallbackPrefix = "https://upstream/maven2/")
+        val fallbackClient = createSonatypeClient(transport, fallbackPrefix = "https://upstream/maven2/")
         val result = fallbackClient.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
         )
@@ -209,7 +215,7 @@ class BaseMavenSearchClientRedirectTest {
         val fallback404 = mockResponse(code = 404)
         whenever(transport.get(any(), any())).thenReturn(primary404, fallback404)
 
-        val fallbackClient = TestClient(transport, fallbackPrefix = "https://upstream/maven2/")
+        val fallbackClient = createSonatypeClient(transport, fallbackPrefix = "https://upstream/maven2/")
         val result = fallbackClient.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
         )
@@ -223,7 +229,7 @@ class BaseMavenSearchClientRedirectTest {
         val tooMany = mockResponse(code = 429, headers = mapOf("retry-after" to "120"))
         whenever(transport.get(any(), any())).thenReturn(tooMany)
 
-        val rateLimitedClient = TestClient(transport, rateLimiter = rateLimiter, clock = mockedClock)
+        val rateLimitedClient = createSonatypeClient(transport, rateLimiter = rateLimiter, clock = mockedClock)
         val ex = assertFailsWith<MavenRateLimitedException> {
             rateLimitedClient.getPom(
                 MavenArtifact(
@@ -250,7 +256,7 @@ class BaseMavenSearchClientRedirectTest {
         val tooManyRequestsResponse = mockResponse(code = 429, headers = mapOf("retry-after" to retryAfterHeader))
         whenever(transport.get(any(), any())).thenReturn(tooManyRequestsResponse)
 
-        val uut = TestClient(transport, rateLimiter = rateLimiter, clock = mockedClock)
+        val uut = createSonatypeClient(transport, rateLimiter = rateLimiter, clock = mockedClock)
         val ex = assertFailsWith<MavenRateLimitedException> {
             uut.getPom(
                 MavenArtifact(
@@ -272,7 +278,7 @@ class BaseMavenSearchClientRedirectTest {
         val tooMany = mockResponse(code = 429)
         whenever(transport.get(any(), any())).thenReturn(tooMany)
 
-        val rateLimitedClient = TestClient(transport, rateLimiter = rateLimiter)
+        val rateLimitedClient = createSonatypeClient(transport, rateLimiter = rateLimiter)
         val ex = assertFailsWith<MavenRateLimitedException> {
             rateLimitedClient.getPom(
                 MavenArtifact(
@@ -294,7 +300,7 @@ class BaseMavenSearchClientRedirectTest {
         val tooMany = mockResponse(code = 429, headers = mapOf("retry-after" to "0"))
         whenever(transport.get(any(), any())).thenReturn(tooMany)
 
-        val rateLimitedClient = TestClient(transport, rateLimiter = rateLimiter)
+        val rateLimitedClient = createSonatypeClient(transport, rateLimiter = rateLimiter)
         val ex = assertFailsWith<MavenRateLimitedException> {
             rateLimitedClient.getPom(
                 MavenArtifact(
@@ -310,12 +316,45 @@ class BaseMavenSearchClientRedirectTest {
         verify(rateLimiter, never()).applyCooldown(any())
     }
 
-    private fun passthroughRateLimiter(): RequestRateLimiter {
-        val rateLimiter = mock<RequestRateLimiter>()
+    private fun passthroughRateLimiter(): MavenCentralRateLimiter {
+        val rateLimiter = mock<MavenCentralRateLimiter>()
         whenever(rateLimiter.withRateLimitBlocking(any<() -> Any?>())).thenAnswer { invocation ->
             invocation.getArgument<() -> Any?>(0).invoke()
         }
         return rateLimiter
+    }
+
+    private fun createSonatypeClient(
+        transport: Transport,
+        fallbackPrefix: String = SONATYPE_CONTENT_PREFIX,
+        rateLimiter: MavenCentralRateLimiter = passthroughRateLimiter(),
+        clock: Clock = Clock.System,
+    ): SonatypeCentralStaticDataProvider {
+        return SonatypeCentralStaticDataProvider(
+            xmlMapper = XmlMapper().apply { registerKotlinModule() },
+            mavenCentralRateLimiter = rateLimiter,
+            objectMapper = ObjectMapper().registerKotlinModule(),
+            contentEndpoint = SONATYPE_CONTENT_PREFIX,
+            contentFallbackEndpoint = fallbackPrefix,
+            clientTransport = transport,
+            clock = clock,
+        )
+    }
+
+    private fun createGoogleMirrorClient(
+        transport: Transport,
+        rateLimiter: MavenCentralRateLimiter = passthroughRateLimiter(),
+        clock: Clock = Clock.System,
+    ): GoogleMavenCentralMirrorStaticDataProvider {
+        return GoogleMavenCentralMirrorStaticDataProvider(
+            xmlMapper = XmlMapper().apply { registerKotlinModule() },
+            mavenCentralRateLimiter = rateLimiter,
+            objectMapper = ObjectMapper().registerKotlinModule(),
+            contentEndpoint = GOOGLE_MIRROR_CONTENT_PREFIX,
+            contentFallbackEndpoint = GOOGLE_MIRROR_CONTENT_PREFIX,
+            clientTransport = transport,
+            clock = clock,
+        )
     }
 
     private fun minimalPom(groupId: String, artifactId: String, version: String): String = """
@@ -334,13 +373,19 @@ class BaseMavenSearchClientRedirectTest {
         code: Int,
         headers: Map<String, String> = emptyMap(),
         body: String? = null,
-        addDefaultLastModifiedHeader: Boolean = true
+        addDefaultLastModifiedHeader: Boolean = false,
+        defaultLastModifiedHeaderName: String? = null,
+        defaultLastModifiedHeaderValue: String = DEFAULT_RFC_1123_LAST_MODIFIED,
     ): Transport.Response {
         val response = mock<Transport.Response>()
         whenever(response.code).thenReturn(code)
 
-        val finalHeaders = if (code == 200 && addDefaultLastModifiedHeader && !headers.containsKey("last-modified")) {
-            headers + ("x-goog-meta-last-modified-epoch" to DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+        val shouldAddDefaultLastModified =
+            code == 200 && addDefaultLastModifiedHeader && defaultLastModifiedHeaderName != null &&
+                !headers.containsKey(defaultLastModifiedHeaderName)
+
+        val finalHeaders = if (shouldAddDefaultLastModified) {
+            headers + (defaultLastModifiedHeaderName to defaultLastModifiedHeaderValue)
         } else {
             headers
         }
@@ -351,24 +396,41 @@ class BaseMavenSearchClientRedirectTest {
         return response
     }
 
-    private open class TestClient(
-        transport: Transport,
-        private val fallbackPrefix: String? = null,
-        rateLimiter: RequestRateLimiter = UnlimitedRateLimiter(),
-        clock: Clock = Clock.System,
-    ) : BaseMavenSearchClient(
-        xmlMapper = XmlMapper().apply { registerKotlinModule() },
-        rateLimiter = rateLimiter,
-        logger = LoggerFactory.getLogger(TestClient::class.java),
-        objectMapper = ObjectMapper(),
-        clientTransport = transport,
-        clock = clock,
-        lastModifiedHeader = "x-goog-meta-last-modified-epoch"
-    ) {
-        override fun getContentUrlPrefix(): String {
-            return "https://test/remotecontent?filepath="
-        }
+    private fun mockSonatypeOkResponse(
+        code: Int = 200,
+        headers: Map<String, String> = emptyMap(),
+        body: String? = null,
+        addDefaultLastModifiedHeader: Boolean = true,
+    ): Transport.Response {
+        return mockResponse(
+            code = code,
+            headers = headers,
+            body = body,
+            addDefaultLastModifiedHeader = addDefaultLastModifiedHeader,
+            defaultLastModifiedHeaderName = "last-modified",
+        )
+    }
 
-        override fun getContentFallbackUrlPrefix(): String? = fallbackPrefix
+    private fun mockGoogleMirrorOkResponse(
+        code: Int = 200,
+        headers: Map<String, String> = emptyMap(),
+        body: String? = null,
+        addDefaultLastModifiedHeader: Boolean = true,
+    ): Transport.Response {
+        return mockResponse(
+            code = code,
+            headers = headers,
+            body = body,
+            addDefaultLastModifiedHeader = addDefaultLastModifiedHeader,
+            defaultLastModifiedHeaderName = "x-goog-meta-last-modified-epoch",
+            defaultLastModifiedHeaderValue = DEFAULT_GOOGLE_LAST_MODIFIED_EPOCH,
+        )
+    }
+
+    companion object {
+        private const val SONATYPE_CONTENT_PREFIX = "https://test/remotecontent?filepath="
+        private const val GOOGLE_MIRROR_CONTENT_PREFIX = "https://mirror/remotecontent?filepath="
+        private const val DEFAULT_RFC_1123_LAST_MODIFIED = "Mon, 31 Aug 2026 12:00:00 GMT"
+        private const val DEFAULT_GOOGLE_LAST_MODIFIED_EPOCH = "1788177600000"
     }
 }

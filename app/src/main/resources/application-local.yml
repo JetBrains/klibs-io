@@ -35,6 +35,7 @@ klibs:
       thread-count: 2
     central-sonatype:
       enabled: false
+      type: GOOGLE_MIRROR
     google-maven-central-mirror:
       enabled: false
     gmaven:

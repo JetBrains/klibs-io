@@ -1,10 +1,9 @@
-package io.klibs.integration.maven.scraper
+package io.klibs.integration.maven.service
 
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import java.time.Instant
 
 /**
  * Interface for scrapers used to interact with Maven Central repositories to discover and fetch metadata

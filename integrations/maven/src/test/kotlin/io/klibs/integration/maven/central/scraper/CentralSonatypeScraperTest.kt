@@ -2,18 +2,17 @@ package io.klibs.integration.maven.central.scraper
 
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.dto.MavenMetadata
-import io.klibs.integration.maven.scraper.MavenCentralScraper
-import io.klibs.integration.maven.scraper.impl.CentralSonatypeScraper
-import io.klibs.integration.maven.scraper.impl.GoogleMavenCentralMirrorScraper
-import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
-import io.klibs.integration.maven.search.impl.GoogleMavenCentralMirrorSearchClient
+import io.klibs.integration.maven.service.MavenCentralScraper
+import io.klibs.integration.maven.service.impl.CentralSonatypeScraper
+import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorScraper
+import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
+import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import kotlin.test.assertEquals
@@ -23,16 +22,16 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class CentralSonatypeScraperTest {
 
-    private lateinit var mockCentralSonatypeClient: CentralSonatypeSearchClient
-    private lateinit var mockGoogleMirrorClient: GoogleMavenCentralMirrorSearchClient
+    private lateinit var mockCentralSonatypeClient: SonatypeCentralStaticDataProvider
+    private lateinit var mockGoogleMirrorClient: GoogleMavenCentralMirrorStaticDataProvider
     private lateinit var centralSonatypeScraper: MavenCentralScraper
     private lateinit var googleMirrorScraper: MavenCentralScraper
     private lateinit var errorChannel: Channel<Exception>
 
     @BeforeEach
     fun setUp() {
-        mockCentralSonatypeClient = mock<CentralSonatypeSearchClient>()
-        mockGoogleMirrorClient = mock<GoogleMavenCentralMirrorSearchClient>()
+        mockCentralSonatypeClient = mock<SonatypeCentralStaticDataProvider>()
+        mockGoogleMirrorClient = mock<GoogleMavenCentralMirrorStaticDataProvider>()
         centralSonatypeScraper = CentralSonatypeScraper(mockCentralSonatypeClient)
         googleMirrorScraper = GoogleMavenCentralMirrorScraper(mockGoogleMirrorClient)
         errorChannel = Channel(Channel.UNLIMITED)
