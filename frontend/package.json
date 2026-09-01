@@ -13,6 +13,8 @@
     "prepare": "husky",
     "pw:check": "playwright --version",
     "pw:install": "playwright install --with-deps",
+    "test:component": "vitest run",
+    "test:component:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"
@@ -51,12 +53,17 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.9",
-    "typescript": "^5"
+    "jsdom": "^25.0.1",
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   },
   "optionalDependencies": {
     "husky": "^9.1.7"

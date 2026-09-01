@@ -77,9 +77,22 @@ docker build -t klibs.io .
 docker run -p 3000:3000 klibs.io
 ```
 
+## Unit and Component Testing with Vitest
+
+Use Vitest and React Testing Library for component rendering, links, keyboard interactions, filters, and other
+deterministic UI behavior. Tests are colocated with the source and named `*.test.ts` or `*.test.tsx`.
+
+```bash
+# Run once
+npm run test:component
+
+# Watch for changes
+npm run test:component:watch
+```
+
 ## End-to-End Testing with Playwright
 
-This project is configured with Playwright for E2E tests.
+Playwright is reserved for complete user journeys that cross component, routing, or backend boundaries.
 
 Scripts:
 - Install browsers and dependencies (first run or CI):
@@ -100,9 +113,9 @@ Scripts:
   ```
 
 Notes:
-- Tests live in the `tests/` folder and are configured via `playwright.config.ts`.
+- User journeys live in the `e2e-tests/` folder and are configured via `playwright.config.ts`.
 - Artifacts are written to `test-results/` and the HTML report to `playwright-report/` (both are git-ignored).
-- The current tests target public URLs (e.g., klibs.io, demo.playwright.dev). If you want to run against a local server, set `use.baseURL` or enable `webServer` in `playwright.config.ts`.
+- Start the frontend locally before running Playwright. Set `PROD=1` to run against `https://klibs.io/` instead.
 
 ## 6. Running Linter and Formatter (Optional)
 
