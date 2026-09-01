@@ -17,11 +17,6 @@ import {Button} from "@rescui/button";
 
 import {DropdownMenu} from "@rescui/dropdown-menu";
 
-import {ProjectSearchResults} from "@/app/types";
-
-import {searchProjects} from "@/app/api";
-
-
 import {SidebarMenuHeader} from '@jetbrains/kotlin-web-site-ui/out/components/sidebar-menu';
 import {Sidebar} from '@jetbrains/kotlin-web-site-ui/out/components/sidebar';
 
@@ -32,7 +27,6 @@ import {KotlinEcosystemDropdown} from "@/app/ui/kotlin-ecosystem-dropdown/kotlin
 import {KotlinEcosystemMobileMenu} from "@/app/ui/kotlin-ecosystem-dropdown/kotlin-ecosystem-mobile-menu";
 
 import {trackEvent, GAEvent} from "@/app/analytics";
-import {useDebouncedCallback} from "@/app/hooks/use-debounced-callback";
 
 const ISSUES_LINK = "https://github.com/JetBrains/klibs-io-issue-management/issues/new/choose"
 
@@ -48,33 +42,11 @@ export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const toggleIsOpen = () => setIsOpen(s => !s);
 
-    // Suggestions. For now we're using search query with limit
     const [searchQuery, setSearchQuery] = useState("");
-    const [searchSuggestions, setSearchSuggestions] = useState<ProjectSearchResults[] | null>(null)
-
-    const fetchSuggestions = useDebouncedCallback(async (value: string) => {
-        const result = await searchProjects({query: value, limit: 5, page: 1});
-        setSearchSuggestions(result);
-    }, 200);
-
-    const handleNavbarSearchInput = useCallback((value: string) => {
-        setSearchQuery(value);
-        if (value) {
-            fetchSuggestions(value);
-        } else {
-            fetchSuggestions.cancel();
-            setSearchSuggestions(null);
-        }
-    }, [fetchSuggestions])
 
     const onEnter = useCallback((inputValue: string) => {
-        fetchSuggestions.cancel();
         router.push(`/?query=${encodeURIComponent(inputValue)}`);
-    }, [router, fetchSuggestions]);
-
-    const handleSuggestionsClose = useCallback(() => {
-        setSearchSuggestions(null);
-    }, [])
+    }, [router]);
 
     const [mobileMenuVisible, setMobileMenuVisible] = useState<boolean>(false);
     const [kotlinEcosystemMobileMenuVisible, setKotlinEcosystemMobileMenuVisible] = useState<boolean>(false);
@@ -217,10 +189,8 @@ export default function Navbar() {
                                 {/*Search input*/}
                                 <SearchField
                                     onEnter={onEnter}
-                                    onChange={handleNavbarSearchInput}
+                                    onChange={setSearchQuery}
                                     value={searchQuery}
-                                    suggestionsList={searchSuggestions}
-                                    suggestionsClose={handleSuggestionsClose}
                                     className={cn("d-none d-md-flex mr-16", styles.searchWrapper)}
                                 />
                                 {/*Desktop Trigger*/}

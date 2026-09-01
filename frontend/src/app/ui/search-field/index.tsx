@@ -3,8 +3,6 @@ import { SearchIcon } from "@rescui/icons";
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 import cn from "classnames";
-import { ProjectSearchResults } from "@/app/types";
-// import SearchSuggestionsList from "@/app/ui/search-suggestions/search-suggestions";
 import { Tag, presets } from '@rescui/tag';
 import { CloseIcon } from '@rescui/icons';
 
@@ -16,8 +14,6 @@ interface SearchFieldProps {
 	onEnter?: (value: string) => void;
 	className?: string;
 	autofocus?: boolean;
-	suggestionsList?: ProjectSearchResults[] | null
-	suggestionsClose?: () => void;
 	compact?: boolean;
 	selectedCategory?: string | null;
 	onCategoryReset?: () => void;
@@ -32,7 +28,7 @@ export interface SearchFieldHandle {
 // Fully controlled: the text lives in the parent, so several instances
 // (main and compact bar) always show the same query and none of it is
 // lost when one of them unmounts. Debouncing is up to the caller.
-const SearchField = forwardRef<SearchFieldHandle, SearchFieldProps>(function SearchField({ value, onChange, onEnter, className, autofocus, suggestionsList, suggestionsClose, compact, selectedCategory, onCategoryReset, onClear, projectsCount }, ref) {
+const SearchField = forwardRef<SearchFieldHandle, SearchFieldProps>(function SearchField({ value, onChange, onEnter, className, autofocus, compact, selectedCategory, onCategoryReset, onClear, projectsCount }, ref) {
 	const [isFocused, setFocused] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const inputValue = value;
@@ -107,9 +103,6 @@ const SearchField = forwardRef<SearchFieldHandle, SearchFieldProps>(function Sea
 		if (inputValue !== "") {
 			onChange("");
 		}
-		if (suggestionsList) {
-			suggestionsClose?.();
-		}
 		onClear?.();
 		setFocus();
 	}
@@ -175,10 +168,6 @@ const SearchField = forwardRef<SearchFieldHandle, SearchFieldProps>(function Sea
 					Clear <Tag {...presets['outline-dark']}>Esc</Tag>
 				</div>
 			)}
-
-			{/*Suggestion list hidden until fixed*/}
-			{/*Also, seams like it is a bit broken in FF*/}
-			{/*{!!suggestionsList?.length && inputValue.length > 1 && <SearchSuggestionsList list={suggestionsList} onEnter={onEnter} suggestionsClose={suggestionsClose} />}*/}
 
 		</div>
 
