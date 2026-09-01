@@ -1,4 +1,4 @@
-package io.klibs.app.config
+package io.klibs.app.configuration
 
 import io.klibs.app.util.BackoffProvider
 import io.micrometer.core.instrument.MeterRegistry

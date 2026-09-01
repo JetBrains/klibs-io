@@ -8,7 +8,7 @@ import io.klibs.core.pckg.model.PackageDeveloper
 import io.klibs.core.pckg.model.PackageLicense
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.MavenArtifactService
-import io.klibs.integration.maven.MavenPom
+import io.klibs.integration.maven.service.MavenPom
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

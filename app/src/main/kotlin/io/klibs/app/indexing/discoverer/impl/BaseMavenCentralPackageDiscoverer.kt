@@ -6,7 +6,7 @@ import io.klibs.app.indexing.discoverer.createArtifactCoordinates
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
-import io.klibs.integration.maven.scraper.MavenCentralScraper
+import io.klibs.integration.maven.service.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
 import kotlinx.coroutines.Dispatchers

@@ -24,7 +24,7 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
         SELECT req.*
         FROM package_index_request req
         WHERE req.status = 'PENDING'
-          AND req.failed_attempts < :#{@indexingRetryConfiguration.maxAttempts}
+          AND req.failed_attempts < :maxAttempts
           AND NOT EXISTS (
               SELECT 1
               FROM banned_packages bp
@@ -34,7 +34,7 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
         ORDER BY req.released_ts DESC NULLS FIRST
         LIMIT 1
     """, nativeQuery = true)
-    fun findFirstForIndexing(): IndexingRequestEntity?
+    fun findFirstForIndexing(@Param("maxAttempts") maxAttempts: Int): IndexingRequestEntity?
 
     @Modifying
     @Transactional(propagation = Propagation.REQUIRES_NEW)

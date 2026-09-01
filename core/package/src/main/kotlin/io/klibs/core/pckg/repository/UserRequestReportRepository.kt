@@ -16,12 +16,16 @@ interface UserRequestReportRepository : CrudRepository<UserRequestReportEntity, 
         """
             SELECT report
             FROM UserRequestReportEntity report
-            WHERE report.failedAttempts < :#{@indexingRetryConfiguration.maxAttempts}
+            WHERE report.failedAttempts < :maxAttempts
               AND (report.nextAttemptTs IS NULL OR report.nextAttemptTs <= :before)
             ORDER BY report.id
         """
     )
-    fun findFirstForReportingBefore(@Param("before") before: Instant, limit: Limit): UserRequestReportEntity?
+    fun findFirstForReportingBefore(
+        @Param("before") before: Instant,
+        @Param("maxAttempts") maxAttempts: Int,
+        limit: Limit
+    ): UserRequestReportEntity?
 
     @Modifying
     @Transactional(propagation = Propagation.REQUIRES_NEW)

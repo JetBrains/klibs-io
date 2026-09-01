@@ -1,6 +1,6 @@
 package io.klibs.app.service.impl
 
-import io.klibs.app.configuration.UserRequestReportingConfiguration
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.dto.UserRequestReport
 import io.klibs.app.service.UserIssueNotifier
 import io.klibs.app.service.UserRequestReportQueue
@@ -11,9 +11,9 @@ import io.klibs.core.pckg.enums.UserRequestIndexingStatus
 import io.klibs.core.pckg.enums.UserRequestProcessingStatus
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
+import kotlin.jvm.optionals.getOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import kotlin.jvm.optionals.getOrNull
 
 @Service
 class DefaultUserRequestReportingService(
@@ -21,7 +21,7 @@ class DefaultUserRequestReportingService(
     private val userRequestIssueRepository: UserRequestIssueRepository,
     private val userIssueNotifier: UserIssueNotifier,
     private val packageIndexRepository: PackageIndexRepository,
-    private val reportingConfiguration: UserRequestReportingConfiguration,
+    private val indexingConfigurationProperties: IndexingConfigurationProperties,
 ) : UserRequestReportingService {
 
     override fun processReportsQueue(): Boolean {
@@ -72,9 +72,9 @@ class DefaultUserRequestReportingService(
                 } else {
                     logger.trace(
                         "Package ${report.groupId}:${report.artifactId} not indexed yet; " +
-                            "deferring report ${report.reportId} for ${reportingConfiguration.indexDefer}"
+                                "deferring report ${report.reportId} for ${indexingConfigurationProperties.reporting.indexDefer}"
                     )
-                    userRequestReportQueue.deferFor(report, reportingConfiguration.indexDefer)
+                    userRequestReportQueue.deferFor(report, indexingConfigurationProperties.reporting.indexDefer)
                 }
             }
 

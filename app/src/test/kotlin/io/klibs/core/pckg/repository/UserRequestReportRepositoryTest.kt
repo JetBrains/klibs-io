@@ -15,6 +15,10 @@ import kotlin.test.assertNull
 
 class UserRequestReportRepositoryTest : BaseUnitWithDbLayerTest() {
 
+    private companion object {
+        const val MAX_ATTEMPTS = 2
+    }
+
     @Autowired
     private lateinit var reportRepository: UserRequestReportRepository
 
@@ -24,11 +28,11 @@ class UserRequestReportRepositoryTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `findFirstForReporting returns oldest report still within its retry budget`() {
         val issue = issueRepository.save(issue())
-        reportRepository.save(report(issue, failedAttempts = 2))
+        reportRepository.save(report(issue, failedAttempts = MAX_ATTEMPTS))
         val oldestEligible = reportRepository.save(report(issue, failedAttempts = 0))
         reportRepository.save(report(issue, failedAttempts = 0))
 
-        val found = reportRepository.findFirstForReportingBefore(Instant.now(), Limit.of(1))
+        val found = reportRepository.findFirstForReportingBefore(Instant.now(), MAX_ATTEMPTS, Limit.of(1))
 
         assertNotNull(found)
         assertEquals(oldestEligible.id, found.id, "Oldest report within retry budget should be returned")
@@ -41,12 +45,15 @@ class UserRequestReportRepositoryTest : BaseUnitWithDbLayerTest() {
 
         reportRepository.deferUntil(requireNotNull(report.id), Instant.now().plus(1, ChronoUnit.HOURS))
         assertNull(
-            reportRepository.findFirstForReportingBefore(Instant.now(), Limit.of(1)),
+            reportRepository.findFirstForReportingBefore(Instant.now(), MAX_ATTEMPTS, Limit.of(1)),
             "A report deferred into the future must be skipped"
         )
 
         reportRepository.deferUntil(requireNotNull(report.id), Instant.now().minus(1, ChronoUnit.MINUTES))
-        assertEquals(report.id, reportRepository.findFirstForReportingBefore(Instant.now(), Limit.of(1))?.id)
+        assertEquals(
+            report.id,
+            reportRepository.findFirstForReportingBefore(Instant.now(), MAX_ATTEMPTS, Limit.of(1))?.id
+        )
     }
 
     @Test
