@@ -73,6 +73,9 @@ klibs:
         index-dir: ${KLIBS_MAVEN_INDEX_CACHE_DIR:${user.dir}/cache/maven-index}
         content-endpoint: ${KLIBS_MAVEN_CONTENT_ENDPOINT:https://repo1.maven.org/maven2/}
         content-fallback-endpoint: ${KLIBS_MAVEN_CONTENT_FALLBACK_ENDPOINT:https://search.maven.org/remotecontent?filepath=}
+      google-maven-central-mirror:
+        content-endpoint: ${KLIBS_GOOGLE_MAVEN_CENTRAL_MIRROR_CONTENT_ENDPOINT:https://maven-central.storage-download.googleapis.com/maven2/}
+        content-fallback-endpoint: ${KLIBS_GOOGLE_MAVEN_CENTRAL_MIRROR_CONTENT_FALLBACK_ENDPOINT:https://search.maven.org/remotecontent?filepath=}
     github:
       personal-access-token: ${KLIBS_GITHUB_TOKEN:}
       app:
@@ -119,8 +122,7 @@ klibs:
       regen-ttl: ${KLIBS_DESCRIPTION_REGEN_TTL:90d}
     central-sonatype:
       enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE:false}
-    google-maven-central-mirror:
-      enabled: ${KLIBS_ENABLE_INDEXING_GOOGLE_MAVEN_CENTRAL_MIRROR:false}
+      type: ${KLIBS_CENTRAL_SONATYPE_TYPE:ORIGIN}
     gmaven:
       enabled: ${KLIBS_ENABLE_INDEXING_GMAVEN:false}
       s3:

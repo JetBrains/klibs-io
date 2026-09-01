@@ -6,12 +6,14 @@ import io.klibs.core.pckg.entity.UserRequestIssueEntity
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
+import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
 import io.klibs.integration.maven.dto.MavenMetadata
-import io.klibs.integration.maven.search.impl.BaseCentralMavenSearchClient
+import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
@@ -26,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional
 class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
-    private lateinit var uut: BaseUserIndexingRequestService
+    private lateinit var uut: CentralSonatypeUserIndexingRequestService
 
     @Autowired
     private lateinit var indexingRequestRepository: IndexingRequestRepository
@@ -38,7 +40,12 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
     private lateinit var userRequestIssueRepository: UserRequestIssueRepository
 
     @MockitoBean
-    private lateinit var centralSonatypeSearchClient: BaseCentralMavenSearchClient
+    private lateinit var centralSonatypeSearchClient: SonatypeCentralStaticDataProvider
+
+    @BeforeEach
+    fun setUp() {
+        whenever(centralSonatypeSearchClient.scraperType).thenReturn(ScraperType.CENTRAL_SONATYPE)
+    }
 
     // Tests for specific artifact with given version
 
@@ -136,6 +143,7 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
                     MavenMetadata.Versioning(versions = listOf("1.0.0", "2.0.0", "3.0.0"))
                 )
             )
+        whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
         fulfillRequest(version = null)
 
         val saved1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "lib", "1.0.0")
@@ -160,6 +168,7 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
                     MavenMetadata.Versioning(versions = listOf("1.0.0", "2.0.0", "3.0.0"))
                 )
             )
+        whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
         fulfillRequest(version = null)
 
@@ -184,6 +193,7 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
                     MavenMetadata.Versioning(versions = listOf("1.0.0", "2.0.0"))
                 )
             )
+        whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
 
 
         val exception = assertThrows<UserRequestProcessingException> {
@@ -214,11 +224,42 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
                     MavenMetadata.Versioning(versions = listOf("1.0.0", "2.0.0"))
                 )
             )
+        whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
         val exception = assertThrows<UserRequestProcessingException> {
             fulfillRequest(groupId = "com.banned", artifactId = "libX", version = null)
         }
 
         assertEquals("All artifacts from this request are already indexed, queued or banned", exception.reason)
+    }
+
+    @Test
+    fun `should save index requests only for kotlin multiplatform artifacts`() {
+        whenever(centralSonatypeSearchClient.getMavenMetadata(eq("com.example"), eq("lib")))
+            .thenReturn(
+                MavenMetadata(
+                    "com.example",
+                    "lib",
+                    MavenMetadata.Versioning(versions = listOf("1.0.0", "2.0.0", "3.0.0"))
+                )
+            )
+        whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any()))
+            .thenAnswer { invocation ->
+                val artifact = invocation.getArgument<MavenArtifact>(0)
+                when (artifact.version) {
+                    "2.0.0" -> null
+                    else -> mock<KotlinToolingMetadataDelegateStubImpl>()
+                }
+            }
+
+        fulfillRequest(version = null)
+
+        val saved1 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "lib", "1.0.0")
+        val saved2 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "lib", "2.0.0")
+        val saved3 = indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "lib", "3.0.0")
+
+        assertTrue(saved1 != null, "First KMP artifact should be saved")
+        assertEquals(null, saved2, "Non-KMP artifact should not be saved")
+        assertTrue(saved3 != null, "Third KMP artifact should be saved")
     }
 
     private fun fulfillRequest(

@@ -1,11 +1,11 @@
-package io.klibs.integration.maven.search.impl
+package io.klibs.integration.maven.service.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.MavenArtifact
-import io.klibs.integration.maven.MavenPom
-import io.klibs.integration.maven.MavenStaticDataProvider
-import io.klibs.integration.maven.PomWithReleaseDate
+import io.klibs.integration.maven.service.MavenPom
+import io.klibs.integration.maven.service.MavenStaticDataProvider
+import io.klibs.integration.maven.service.PomWithReleaseDate
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.ModuleMetadataWrapper
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
@@ -35,7 +35,7 @@ import org.slf4j.Logger
 internal const val MAX_REDIRECTS = 3
 private const val HTTP_TOO_MANY_REQUESTS = 429 // not in HttpURLConnection constants
 
-abstract class BaseMavenSearchClient(
+abstract class BaseMavenStaticDataProvider(
     private val xmlMapper: XmlMapper,
     protected val rateLimiter: RequestRateLimiter,
     private val logger: Logger,
@@ -121,6 +121,7 @@ abstract class BaseMavenSearchClient(
 
     protected abstract fun getContentUrlPrefix(): String
 
+    protected abstract fun parseReleasedAt(value: String): Instant
     /**
      * URL prefix to retry content fetches against when [getContentUrlPrefix] returns 404. Returning `null`
      * (the default) disables the fallback.
@@ -139,6 +140,51 @@ abstract class BaseMavenSearchClient(
             logger.error("Unsuccessful transport request", e)
             throw IllegalStateException(e)
         }
+    }
+
+    protected fun getReleasedAt(response: Transport.Response): Instant {
+        val lastModified = response.getHeaderValue(lastModifiedHeader)
+            ?: throw IllegalStateException("Missing release date header: expected $lastModifiedHeader")
+
+        return try {
+            parseReleasedAt(lastModified)
+        } catch (e: Exception) {
+            throw IllegalStateException("Invalid release date format: $lastModified", e)
+        }
+    }
+
+    protected fun parseRfc1123Instant(value: String): Instant {
+        return requireNotNull(Instant.parseOrNull(value, DateTimeComponents.Formats.RFC_1123)) {
+            "Expected RFC 1123 date value"
+        }
+    }
+
+    protected fun parseEpochMillisecondsInstant(value: String): Instant {
+        return Instant.fromEpochMilliseconds(value.toLong())
+    }
+
+    internal fun getRemoteFileUrl(
+        groupId: String,
+        artifactId: String,
+        version: String,
+        fileName: String
+    ): String {
+        require(fileName.startsWith("-") || fileName.startsWith(".")) {
+            "fileName must begin with - or ."
+        }
+
+        // Use URLEncoder to mitigate potential malicious special characters
+        fun String.urlEncode() = URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
+
+        val encodedGroupId = groupId.split(".").joinToString("/") { it.urlEncode() }
+        val encodedArtifactId = artifactId.urlEncode()
+        val encodedVersion = version.urlEncode()
+        val encodedFileName = fileName.urlEncode()
+
+        val fileDir = "$encodedGroupId/$encodedArtifactId/$encodedVersion"
+        val fullFileName = "$encodedArtifactId-$encodedVersion$encodedFileName"
+
+        return "${getContentUrlPrefix()}$fileDir/$fullFileName"
     }
 
     private fun <R> executeFetch(
@@ -208,13 +254,6 @@ abstract class BaseMavenSearchClient(
         }
     }
 
-    private fun applyRequestCooldown(response: Transport.Response, serviceUri: String): Nothing {
-        logger.warn("Rate limited by Maven Central, retrying after ${response.headers["Retry-After"]}")
-        val retryAfter = parseRetryAfter(response)
-        retryAfter?.let { rateLimiter.applyCooldown(it) }
-        throw MavenRateLimitedException.forUrl(serviceUri, retryAfter)
-    }
-
     private fun validate(metadata: KotlinToolingMetadata): KotlinToolingMetadata {
         require(!metadata.projectSettings.isKPMEnabled) { // hardcoded to false in KGP
             "isKPMEnabled is no longer hardcoded to false, changes needed"
@@ -225,30 +264,16 @@ abstract class BaseMavenSearchClient(
         return metadata
     }
 
-    internal fun getRemoteFileUrl(
-        groupId: String,
-        artifactId: String,
-        version: String,
-        fileName: String
-    ): String {
-        require(fileName.startsWith("-") || fileName.startsWith(".")) {
-            "fileName must begin with - or ."
-        }
-
-        // Use URLEncoder to mitigate potential malicious special characters
-        fun String.urlEncode() = URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
-
-        val encodedGroupId = groupId.split(".").joinToString("/") { it.urlEncode() }
-        val encodedArtifactId = artifactId.urlEncode()
-        val encodedVersion = version.urlEncode()
-        val encodedFileName = fileName.urlEncode()
-
-        val fileDir = "$encodedGroupId/$encodedArtifactId/$encodedVersion"
-        val fullFileName = "$encodedArtifactId-$encodedVersion$encodedFileName"
-
-        return "${getContentUrlPrefix()}$fileDir/$fullFileName"
+    private fun Transport.Response.getHeaderValue(headerName: String): String? {
+        return headers.entries.firstOrNull { it.key.equals(headerName, ignoreCase = true) }?.value
     }
 
+    private fun applyRequestCooldown(response: Transport.Response, serviceUri: String): Nothing {
+        logger.warn("Rate limited by Maven Central, retrying after ${response.headers["Retry-After"]}")
+        val retryAfter = parseRetryAfter(response)
+        retryAfter?.let { rateLimiter.applyCooldown(it) }
+        throw MavenRateLimitedException.forUrl(serviceUri, retryAfter)
+    }
 
     private fun parseRetryAfter(response: Transport.Response): Instant? {
         val value = response.headers.entries
@@ -269,26 +294,5 @@ abstract class BaseMavenSearchClient(
         }
 
         return retryAfter.takeIf { it > now }
-    }
-
-    protected open fun getReleasedAt(response: Transport.Response): Instant {
-        val lastModified = response.getHeaderValue(lastModifiedHeader)
-            ?: throw IllegalStateException("Missing release date header: expected $lastModifiedHeader")
-
-        return try {
-            parseRfc1123Instant(lastModified)
-        } catch (e: Exception) {
-            throw IllegalStateException("Invalid release date format: $lastModified", e)
-        }
-    }
-
-    protected fun parseRfc1123Instant(value: String): Instant {
-
-        return Instant.parseOrNull(value, DateTimeComponents.Formats.RFC_1123)
-            ?: Instant.fromEpochMilliseconds(value.toLong())
-    }
-
-    protected fun Transport.Response.getHeaderValue(headerName: String): String? {
-        return headers.entries.firstOrNull { it.key.equals(headerName, ignoreCase = true) }?.value
     }
 }

@@ -1,23 +1,27 @@
 package io.klibs.app.indexing.discoverer.impl
 
-import io.klibs.app.configuration.properties.GoogleMavenCacheConfigurationProperties
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.service.impl.S3GoogleMavenCacheService
 import io.klibs.core.storage.S3StorageService
-import org.junit.jupiter.api.Test
-import org.mockito.kotlin.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 class GoogleMavenCacheServiceTest {
 
     @Test
     fun `S3GoogleMavenCacheService should read and write from S3`() {
         val s3StorageService: S3StorageService = mock()
-        val properties = GoogleMavenCacheConfigurationProperties(
-            s3 = GoogleMavenCacheConfigurationProperties.S3Properties(
-                bucketName = "test-bucket",
-                prefix = "gmaven"
+        val properties = IndexingConfigurationProperties(
+            gmaven = IndexingConfigurationProperties.GoogleMavenProperties(
+                s3 = IndexingConfigurationProperties.GoogleMavenProperties.S3Properties(
+                    bucketName = "test-bucket",
+                    prefix = "gmaven"
+                )
             )
         )
         val service = S3GoogleMavenCacheService(properties, s3StorageService)

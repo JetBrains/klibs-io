@@ -1,17 +1,17 @@
-package io.klibs.integration.maven.scraper.impl
+package io.klibs.integration.maven.service.impl
 
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.exception.MavenRateLimitedException
-import io.klibs.integration.maven.scraper.MavenCentralScraper
-import io.klibs.integration.maven.search.impl.BaseCentralMavenSearchClient
+import io.klibs.integration.maven.service.MavenCentralScraper
+import kotlin.collections.iterator
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.slf4j.LoggerFactory
 
 abstract class BaseMavenCentralScraper(
-    private val searchClient: BaseCentralMavenSearchClient,
+    private val searchClient: BaseMavenCentralStaticDataProvider,
     final override val scraperType: ScraperType,
 ) : MavenCentralScraper {
 

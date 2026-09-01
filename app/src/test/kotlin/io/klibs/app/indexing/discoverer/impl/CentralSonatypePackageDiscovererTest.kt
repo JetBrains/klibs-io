@@ -5,7 +5,7 @@ import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
-import io.klibs.integration.maven.scraper.MavenCentralScraper
+import io.klibs.integration.maven.service.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
 import kotlinx.coroutines.channels.Channel
@@ -33,10 +33,10 @@ internal class CentralSonatypePackageDiscovererTest {
     @MockitoBean
     lateinit var mavenIndexDownloadingService: MavenIndexDownloadingService
 
-    @MockitoBean
+    @MockitoBean(name = "centralSonatypeMavenIndexScannerService")
     lateinit var mavenIndexScannerService: MavenIndexScannerService
 
-    @MockitoBean
+    @MockitoBean(name = "centralSonatypeScraper")
     lateinit var centralSonatypeScraper: MavenCentralScraper
 
     @MockitoBean

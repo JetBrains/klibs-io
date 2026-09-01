@@ -1,5 +1,6 @@
 package io.klibs.app.indexing.discoverer.impl
 
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.indexing.discoverer.PackageDiscoverer
 import io.klibs.app.service.GoogleMavenCacheService
 import io.klibs.integration.maven.MavenArtifact
@@ -7,8 +8,8 @@ import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.androidx.GoogleMavenMasterIndexMetadata
 import io.klibs.integration.maven.androidx.GoogleMavenMasterIndexMetadata.Element
 import io.klibs.integration.maven.androidx.ModuleMetadataWrapper
-import io.klibs.integration.maven.search.impl.GOOGLE_MAVEN_URL
-import io.klibs.integration.maven.search.impl.GoogleMavenSearchClient
+import io.klibs.integration.maven.service.impl.GOOGLE_MAVEN_URL
+import io.klibs.integration.maven.service.impl.GoogleMavenStaticDataProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -31,14 +32,14 @@ import java.net.URI
 
 @Component
 @ConditionalOnProperty(
-    name = ["klibs.indexing-configuration.gmaven.enabled"],
+    name = [IndexingConfigurationProperties.GMAVEN_ENABLED],
     havingValue = "true",
     matchIfMissing = false
 )
 @ConditionalOnBean(GoogleMavenCacheService::class)
 class GoogleMavenPackageDiscoverer(
     private val webClient: WebClient,
-    private val googleMavenSearchClient: GoogleMavenSearchClient,
+    private val googleMavenSearchClient: GoogleMavenStaticDataProvider,
     private val cacheService: GoogleMavenCacheService
 ) : PackageDiscoverer {
     companion object {
