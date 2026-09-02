@@ -1,5 +1,6 @@
 plugins {
     `kotlin-dsl`
+    id("maven-publish")
 }
 
 group = "io.klibs.notifier"
@@ -20,11 +21,20 @@ dependencies {
 
 gradlePlugin {
     plugins {
-        create("klibsIoNotifier") {
+        create("klibs-io-notifier") {
             id = "io.klibs.notifier"
             implementationClass = "io.klibs.notifier.KlibsIoNotifierPlugin"
             displayName = "Klibs.io Notifier"
             description = "Notifies klibs.io about artifacts published to Maven Central"
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "localRepo"
+            url = layout.buildDirectory.dir("local-repo").get().asFile.toURI()
         }
     }
 }
