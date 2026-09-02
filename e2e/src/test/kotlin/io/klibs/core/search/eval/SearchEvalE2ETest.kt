@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -40,6 +41,7 @@ import org.springframework.test.web.servlet.MockMvc
 @ActiveProfiles("test")
 @SpringBootTest(classes = [Application::class])
 @AutoConfigureMockMvc
+@Import(SearchEvalOpenSearchConfig::class)
 @EnableAutoConfiguration(exclude = [
     OpenAiChatAutoConfiguration::class,
     OpenAiAudioTranscriptionAutoConfiguration::class,
@@ -117,21 +119,13 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
         private val OS_PROJECT_INDEX = env("SEARCH_EVAL_OS_PROJECT_INDEX", "project-eval")
         private val OS_PACKAGE_INDEX = env("SEARCH_EVAL_OS_PACKAGE_INDEX", "package-eval")
 
-        private fun osUri() = SearchEvalOpenSearchContainer.uriOrDefault(System.getenv("SEARCH_EVAL_OS_URI"))
-
         @JvmStatic
         @DynamicPropertySource
         fun properties(registry: DynamicPropertyRegistry) {
             registry.add("spring.datasource.url") { env("SEARCH_EVAL_DB_URL", "jdbc:postgresql://localhost:5432/klibs") }
             registry.add("spring.datasource.username") { env("SEARCH_EVAL_DB_USER", "klibs") }
             registry.add("spring.datasource.password") { env("SEARCH_EVAL_DB_PASSWORD", "klibs") }
-            // Drive the production search path through OpenSearch (eval-specific indices, wiped+refilled).
             registry.add("klibs.search.opensearch.enabled") { "true" }
-            // Lazy on purpose: resolving this is what starts the container, so a skipped tier starts none.
-            registry.add("klibs.search.opensearch.uri") { osUri() }
-            registry.add("klibs.search.opensearch.trust-all-certificates") { "true" }
-            registry.add("klibs.search.opensearch.username") { SearchEvalOpenSearchContainer.USERNAME }
-            registry.add("klibs.search.opensearch.password") { SearchEvalOpenSearchContainer.PASSWORD }
             registry.add("klibs.search.opensearch.project-index") { OS_PROJECT_INDEX }
             registry.add("klibs.search.opensearch.package-index") { OS_PACKAGE_INDEX }
             // Corpus is a prod-copy; never seed the `test` profile's data.sql fixtures.
