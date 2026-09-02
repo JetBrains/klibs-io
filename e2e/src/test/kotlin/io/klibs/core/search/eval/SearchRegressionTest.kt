@@ -39,7 +39,7 @@ import org.springframework.test.web.servlet.MockMvc
 @ActiveProfiles("test")
 @SpringBootTest(classes = [Application::class])
 @AutoConfigureMockMvc
-@Import(FrozenSnapshotPostgresConfig::class)
+@Import(FrozenSnapshotPostgresConfig::class, SearchEvalOpenSearchConfig::class)
 @EnableAutoConfiguration(exclude = [
     OpenAiChatAutoConfiguration::class,
     OpenAiAudioTranscriptionAutoConfiguration::class,
@@ -133,12 +133,7 @@ class SearchRegressionTest : SearchEvalTestBase() {
         fun properties(registry: DynamicPropertyRegistry) {
             // Datasource is wired from the @ServiceConnection container; only app-level props here.
             registry.add("spring.sql.init.mode") { "never" }
-            // The floor must measure the production search path, so the tier runs on OpenSearch.
             registry.add("klibs.search.opensearch.enabled") { "true" }
-            registry.add("klibs.search.opensearch.uri") { SearchEvalOpenSearchContainer.uri() }
-            registry.add("klibs.search.opensearch.username") { SearchEvalOpenSearchContainer.USERNAME }
-            registry.add("klibs.search.opensearch.password") { SearchEvalOpenSearchContainer.PASSWORD }
-            registry.add("klibs.search.opensearch.trust-all-certificates") { "true" }
             registry.add("klibs.search.opensearch.project-index") { "project-regression" }
             registry.add("klibs.search.opensearch.package-index") { "package-regression" }
             registry.add("klibs.readme.s3.bucket-name") { "test-bucket" }
