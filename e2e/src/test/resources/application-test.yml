@@ -9,6 +9,7 @@ klibs:
       enabled: false
     fill-version-type:
       enabled: false
+    # off: the eval tests build the index themselves via indexer.sync
     search-index-sync:
       enabled: false
 
