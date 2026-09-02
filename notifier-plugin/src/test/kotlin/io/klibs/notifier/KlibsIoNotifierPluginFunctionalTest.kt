@@ -14,6 +14,11 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 class KlibsIoNotifierPluginFunctionalTest {
@@ -145,6 +150,44 @@ class KlibsIoNotifierPluginFunctionalTest {
             """{"groupId":"com.example","artifactId":"test-artifact","version":"1.2.3"}""",
             receivedBody,
         )
+    }
+
+    @Test
+    @Timeout(120, unit = TimeUnit.SECONDS)
+    fun `notifies klibs on the latest published vanniktech version`() {
+        val latestVersion = latestVanniktechVersion()
+        writeProject(
+            extraBuildScript = disablePublishDependencies,
+            vanniktechVersion = latestVersion,
+        )
+
+        val result = runner("publishToMavenCentral").build()
+
+        assertEquals(
+            TaskOutcome.SUCCESS,
+            result.task(":notifyKlibsIo")?.outcome,
+            "klibs-io-notifier is not compatible with the latest vanniktech release $latestVersion",
+        )
+        assertEquals(
+            """{"groupId":"com.example","artifactId":"test-artifact","version":"1.2.3"}""",
+            receivedBody,
+        )
+    }
+
+    private fun latestVanniktechVersion(): String {
+        val metadataUrl =
+            "https://repo1.maven.org/maven2/com/vanniktech/gradle-maven-publish-plugin/maven-metadata.xml"
+        val request = HttpRequest.newBuilder(URI.create(metadataUrl))
+            .timeout(Duration.ofSeconds(20))
+            .GET()
+            .build()
+        val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build()
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+        check(response.statusCode() == 200) {
+            "Failed to fetch vanniktech maven-metadata.xml: HTTP ${response.statusCode()}"
+        }
+        return Regex("<release>(.+?)</release>").find(response.body())?.groupValues?.get(1)
+            ?: error("Could not find <release> in vanniktech maven-metadata.xml")
     }
 
     @Test
