@@ -18,6 +18,7 @@ import CategoryResults from "@/app/ui/category-results";
 import Container from "@/app/ui/container";
 
 import FocusManager from '@rescui/focus-manager';
+import {useDebouncedCallback} from "@/app/hooks/use-debounced-callback";
 
 interface PageContentProps {
     categories: Category[];
@@ -46,10 +47,13 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
         ? categories.find(c => toCategorySlug(c.name) === categorySlug)
         : null;
 
-    // Category search state (separate from main search) - initialize from URL
+    // Category search state (separate from main search) - initialize from URL.
+    // categorySearchQuery is the live input text; appliedCategoryQuery is its
+    // debounced version that drives fetching and the URL
     const [categorySearchQuery, setCategorySearchQuery] = useState<string>(
         () => selectedCategory ? (searchParams.get("query") || "") : ""
     );
+    const [appliedCategoryQuery, setAppliedCategoryQuery] = useState<string>(categorySearchQuery);
 
     // Redirect to home if category slug is invalid. This is up to discussion how to handle this scenario
     useEffect(() => {
@@ -58,16 +62,9 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
         }
     }, [categorySlug, selectedCategory, router]);
 
-    // Reset category search query when leaving category view
-    useEffect(() => {
-        if (!selectedCategory) {
-            setCategorySearchQuery("");
-        }
-    }, [selectedCategory]);
-
     const showCategoriesView = !hasActiveFilters(filters) && !categorySlug;
 
-    const updateURLFromState = (state: SearchParams) => {
+    const updateURLFromState = (state: SearchParams, options?: { scroll?: boolean }) => {
         const newSearchParams = new URLSearchParams();
         if (state.mode === 'packages') newSearchParams.set('mode', state.mode);
         if (state.query) newSearchParams.set('query', state.query);
@@ -80,7 +77,10 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
         if (state.tags && state.tags.length > 0) {
             state.tags.forEach((tag) => newSearchParams.append('tags', tag));
         }
-        router.push(`/?${newSearchParams.toString()}`);
+        // Typing passes scroll: false — scroll-to-top would unmount the
+        // compact sticky filter and steal focus from its input mid-typing.
+        // Sort/tag/platform/mode changes keep the default scroll-to-top.
+        router.push(`/?${newSearchParams.toString()}`, { scroll: options?.scroll ?? true });
     };
 
     const updateCategoryURL = (query: string) => {
@@ -89,23 +89,49 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
         if (query) {
             newSearchParams.set('query', query);
         }
-        router.push(`/?${newSearchParams.toString()}`);
+        router.push(`/?${newSearchParams.toString()}`, { scroll: false });
     };
 
+    const applyCategorySearchNow = (query: string) => {
+        setAppliedCategoryQuery(query);
+        updateCategoryURL(query);
+    };
+
+    const applyCategorySearch = useDebouncedCallback(applyCategorySearchNow, 200);
+
     const handleCategoryReset = () => {
+        applyCategorySearch.cancel();
         setCategorySearchQuery("");
+        setAppliedCategoryQuery("");
         router.push('/');
     };
 
     const handleCategorySearch = (query: string) => {
         setCategorySearchQuery(query);
-        updateCategoryURL(query);
+        applyCategorySearch(query);
+    };
+
+    const handleCategorySearchEnter = (query: string) => {
+        applyCategorySearch.cancel();
+        setCategorySearchQuery(query);
+        applyCategorySearchNow(query);
     };
 
     const handleCategorySearchClear = () => {
+        applyCategorySearch.cancel();
         setCategorySearchQuery("");
+        setAppliedCategoryQuery("");
         updateCategoryURL("");
     };
+
+    // Reset category search query when leaving category view
+    useEffect(() => {
+        if (!selectedCategory) {
+            applyCategorySearch.cancel();
+            setCategorySearchQuery("");
+            setAppliedCategoryQuery("");
+        }
+    }, [selectedCategory, applyCategorySearch]);
 
     return (
         <>
@@ -118,13 +144,14 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
                 onCategoryReset={handleCategoryReset}
                 categorySearchQuery={categorySearchQuery}
                 onCategorySearch={handleCategorySearch}
+                onCategorySearchEnter={handleCategorySearchEnter}
                 onCategorySearchClear={handleCategorySearchClear}
                 projectsCount={projectsCount}
             />
 
             <Container mode={"container"} className="padding-top-small padding-bottom-large">
                 {selectedCategory ? (
-                    <CategoryResults category={selectedCategory} searchQuery={categorySearchQuery} />
+                    <CategoryResults category={selectedCategory} searchQuery={appliedCategoryQuery} />
                 ) : showCategoriesView ? (
                     <CategoriesView categoryWithProjects={categoryWithProjects} />
                 ) : (

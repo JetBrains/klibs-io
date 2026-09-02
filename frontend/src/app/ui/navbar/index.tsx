@@ -17,11 +17,6 @@ import {Button} from "@rescui/button";
 
 import {DropdownMenu} from "@rescui/dropdown-menu";
 
-import {ProjectSearchResults} from "@/app/types";
-
-import {searchProjects} from "@/app/api";
-
-
 import {SidebarMenuHeader} from '@jetbrains/kotlin-web-site-ui/out/components/sidebar-menu';
 import {Sidebar} from '@jetbrains/kotlin-web-site-ui/out/components/sidebar';
 
@@ -43,25 +38,15 @@ export default function Navbar() {
     const isSearchPage = pathname === '/search';
     const router = useRouter();
 
-    const onEnter = useCallback((inputValue: string) => {
-        router.push(`/?query=${encodeURIComponent(inputValue)}`);
-    }, [router]);
-
     // Dropdown menu constants
     const [isOpen, setIsOpen] = useState(false);
     const toggleIsOpen = () => setIsOpen(s => !s);
 
-    // Suggestions. For now we're using search query with limit
-    const [searchSuggestions, setSearchSuggestions] = useState<ProjectSearchResults[] | null>(null)
+    const [searchQuery, setSearchQuery] = useState("");
 
-    const handleNavbarSearchInput = useCallback(async (value: string) => {
-        const result = await searchProjects({query: value, limit: 5, page: 1});
-        setSearchSuggestions(result);
-    }, [])
-
-    const handleSuggestionsClose = useCallback(() => {
-        setSearchSuggestions(null);
-    }, [])
+    const onEnter = useCallback((inputValue: string) => {
+        router.push(`/?query=${encodeURIComponent(inputValue)}`);
+    }, [router]);
 
     const [mobileMenuVisible, setMobileMenuVisible] = useState<boolean>(false);
     const [kotlinEcosystemMobileMenuVisible, setKotlinEcosystemMobileMenuVisible] = useState<boolean>(false);
@@ -204,10 +189,8 @@ export default function Navbar() {
                                 {/*Search input*/}
                                 <SearchField
                                     onEnter={onEnter}
-                                    onChange={handleNavbarSearchInput}
-                                    value={""}
-                                    suggestionsList={searchSuggestions}
-                                    suggestionsClose={handleSuggestionsClose}
+                                    onChange={setSearchQuery}
+                                    value={searchQuery}
                                     className={cn("d-none d-md-flex mr-16", styles.searchWrapper)}
                                 />
                                 {/*Desktop Trigger*/}
