@@ -79,10 +79,26 @@ class GitHubIndexingService(
                 repoToUpdate.name
             )
         if (ghRepo == null) {
-            // TODO disable indexing at all, remove / hide the project
-            scmRepositoryRepository.setUpdatedAt(repoToUpdate.idNotNull, Instant.now()).also { require(it) }
+            val now = Instant.now()
+            scmRepositoryRepository.setUpdatedAt(repoToUpdate.idNotNull, now).also { require(it) }
+            scmRepositoryRepository.markUnreachable(repoToUpdate.idNotNull, now)
             logger.warn("Unable to find the GH repository for update: $repoToUpdate. Skipping it.")
-            return repoToUpdate.copy(updatedAtTs = Instant.now())
+
+            // TODO KTL-2057 hide the projects on this repo once it stays unreachable past the threshold
+            return repoToUpdate.copy(
+                updatedAtTs = now,
+                unreachableSince = repoToUpdate.unreachableSince ?: now
+            )
+        }
+
+        if (repoToUpdate.unreachableSince != null) {
+            logger.info(
+                "GH repository {}/{} is reachable again, clearing unreachable_since={}",
+                repoToUpdate.ownerLogin,
+                repoToUpdate.name,
+                repoToUpdate.unreachableSince
+            )
+            scmRepositoryRepository.clearUnreachable(repoToUpdate.idNotNull)
         }
 
         val ownerId = updateRepositoryOwnerIfChanged(repoToUpdate, ghRepo)

@@ -21,7 +21,11 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
@@ -101,9 +105,10 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
-    fun `updateRepo - github repo not found updates timestamp only`() {
+    fun `updateRepo - github repo not found stamps unreachable since`() {
         val before = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
         initVars(before)
+        assertNull(before.unreachableSince)
 
         whenever(gitHubIntegration.getRepository(repoNativeId)).thenReturn(null)
         whenever(gitHubIntegration.getRepository(before.ownerLogin, before.name)).thenReturn(null)
@@ -117,8 +122,51 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
         val after = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
 
         assertTrue(after.updatedAtTs.isAfter(before.updatedAtTs))
-        val beforeUpdated = before.copy(updatedAtTs = after.updatedAtTs)
+        assertNotNull(after.unreachableSince)
+        val beforeUpdated = before.copy(updatedAtTs = after.updatedAtTs, unreachableSince = after.unreachableSince)
         assertEquals(beforeUpdated, after)
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
+    fun `updateRepo - repeatedly unreachable repo keeps the first unreachable since`() {
+        val before = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        initVars(before)
+
+        val firstUnreachableAt = Instant.now().minus(3, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS)
+        assertTrue(scmRepositoryRepository.markUnreachable(before.idNotNull, firstUnreachableAt))
+        val stamped = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+
+        whenever(gitHubIntegration.getRepository(repoNativeId)).thenReturn(null)
+        whenever(gitHubIntegration.getRepository(before.ownerLogin, before.name)).thenReturn(null)
+
+        uut.updateRepo(stamped)
+
+        val after = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        assertEquals(firstUnreachableAt, after.unreachableSince)
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
+    fun `updateRepo - reachable again clears unreachable since`() {
+        val repoBefore = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        val readmeMetadataBefore = requireNotNull(readmeMetadataRepository.findByScmRepoId(repoBefore.idNotNull))
+        initVars(repoBefore)
+
+        assertTrue(scmRepositoryRepository.markUnreachable(repoBefore.idNotNull, Instant.now().minus(3, ChronoUnit.DAYS)))
+        val stamped = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        assertNotNull(stamped.unreachableSince)
+
+        whenever(gitHubIntegration.getRepository(repoNativeId)).thenReturn(ghRepoBefore)
+        whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(ghLicenseBefore)
+        whenever(
+            gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, readmeMetadataBefore.lastSyncedAt)
+        ).thenReturn(ReadmeFetchResult.NotModified)
+
+        uut.updateRepo(stamped)
+
+        val after = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        assertNull(after.unreachableSince)
     }
 
     @Test
