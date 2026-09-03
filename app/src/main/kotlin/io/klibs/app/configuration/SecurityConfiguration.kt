@@ -77,6 +77,7 @@ class SecurityConfiguration(
 
                 if (environment.matchesProfiles("prod")) {
                     authorize("/blacklist/**", hasRole("ADMIN"))
+                    authorize("/project-visibility/**", hasRole("ADMIN"))
                     // All other actuator endpoints require the "actuator" role in prod
                     // (the metrics/prometheus endpoints above remain permitAll for Prometheus scraping).
                     authorize("/actuator/**", hasRole("actuator"))
@@ -87,6 +88,7 @@ class SecurityConfiguration(
                     authorize(HttpMethod.DELETE, "/tags/allowed/**", hasRole("ADMIN"))
                 } else {
                     authorize("/blacklist/**", permitAll)
+                    authorize("/project-visibility/**", permitAll)
                     authorize("/actuator/**", permitAll)
                     authorize("/api-docs/**", permitAll)
                     authorize(HttpMethod.PATCH, "/content/**", permitAll)
