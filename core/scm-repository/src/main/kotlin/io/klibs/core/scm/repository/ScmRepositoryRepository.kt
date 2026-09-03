@@ -10,6 +10,10 @@ interface ScmRepositoryRepository {
 
     fun setUpdatedAt(id: Int, updatedAt: Instant): Boolean
 
+    fun markUnreachable(id: Int, at: Instant): Boolean
+
+    fun clearUnreachable(id: Int): Boolean
+
     fun findById(id: Int): ScmRepositoryEntity?
 
     fun findByNativeId(nativeId: Long): ScmRepositoryEntity?

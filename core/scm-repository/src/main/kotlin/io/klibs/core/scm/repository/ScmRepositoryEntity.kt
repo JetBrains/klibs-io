@@ -39,6 +39,9 @@ data class ScmRepositoryEntity(
     val hasWiki: Boolean,
     val archived: Boolean,
     val archivedAt: Instant? = null,
+
+    val unreachableSince: Instant? = null,
+
     val hasReadme: Boolean,
 
     /**
