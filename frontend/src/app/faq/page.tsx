@@ -14,6 +14,8 @@ import cn from "classnames";
 
 const SUBMIT_ISSUE_URL =
     "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=question&projects=&template=question.md&title=";
+const NOTIFIER_GRADLE_PLUGIN_URL =
+    "https://github.com/JetBrains/klibs-io/blob/master/notifier-plugin/README.md";
 const REQUEST_INDEXING_URL =
     "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=index-request&projects=&template=index_request.yml";
 const POM_EXAMPLE_URL =
@@ -100,7 +102,7 @@ export default function Faq() {
                         </p>
 
                         <p>
-                            If you prefer not to wait for the automatic sync, you can <a href={REQUEST_INDEXING_URL} target="_blank" className={"link-secondary"}>
+                            If you prefer not to wait for the automatic sync, you can add the <a href={NOTIFIER_GRADLE_PLUGIN_URL} target="_blank" className={"link-secondary"}>klibs-io-notifier</a> Gradle plugin to your project, or <a href={REQUEST_INDEXING_URL} target="_blank" className={"link-secondary"}>
                                 submit an indexing request</a>.
                         </p>
 
@@ -111,6 +113,11 @@ export default function Faq() {
                             an issue</a>.
                         </p>
                     </div>
+
+                    <h4>How can I check if my project is queued for indexing?</h4>
+                    <p>
+                        You can check the indexing status of any artifact at <code>https://klibs.io/package/GROUP_ID/ARTIFACT_ID/VERSION/status</code>, by replacing <code>GROUP_ID</code>, <code>ARTIFACT_ID</code>, and <code>VERSION</code> with the corresponding values from the project.
+                    </p>
 
                     <h4>How are libraries selected or ranked on klibs.io?</h4>
                     <p>
