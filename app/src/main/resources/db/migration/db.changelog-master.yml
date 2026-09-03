@@ -175,5 +175,3 @@ databaseChangeLog:
       file: db/migration/2026-Q2/2026-06-12_package_index_add_dependent_count.yml
   - include:
       file: db/migration/2026-Q3/2026-07-08_remove-featured-category.yml
-  - include:
-      file: db/migration/2026-Q3/2026-08-18_create_suspicious_package_pair_candidate_table.yml
