@@ -31,3 +31,4 @@ FROM latest l
   JOIN scm_repo ON project.scm_repo_id = scm_repo.id
   JOIN scm_owner owner ON scm_repo.owner_id = owner.id
   LEFT JOIN tgt ON tgt.package_id = l.latest_package_id
+WHERE NOT EXISTS (SELECT 1 FROM project_hidden ph WHERE ph.project_id = project.id)
