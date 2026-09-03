@@ -225,6 +225,13 @@ class ProjectRepositoryJdbc(
             .getOrNull()
     }
 
+    override fun findIdsByScmRepoId(scmRepoId: Int): List<Int> {
+        return jdbcClient.sql("SELECT id FROM project WHERE scm_repo_id = :scmRepoId")
+            .param("scmRepoId", scmRepoId)
+            .query { rs, _ -> rs.getInt("id") }
+            .list()
+    }
+
     override fun findProjectsByPackages(
         groupId: String,
         artifactId: String?
