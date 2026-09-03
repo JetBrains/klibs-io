@@ -22,22 +22,33 @@ object OpenSearchQueryBuilder {
     private const val PREFIX_SUBFIELD = "prefix"
     private const val SUFFIX_SUBFIELD = "suffix"
 
+    /** English-stemmed and delimiter-split subfields declared in project-mappings.json. */
+    const val ENGLISH_SUBFIELD = "en"
+    const val SPLIT_SUBFIELD = "split"
+
     /** Query lengths a partial clause can serve; mirrors `min_gram`/`max_gram` in settings.json. */
     const val MIN_PARTIAL_LENGTH = 3
     const val MAX_PARTIAL_LENGTH = 18
 
     // Multiplier for the bm25 score for each matching item.
     // - Score is higher if readme is present.
-    // - Stars and dependent_count are both accounted for with `log`
-    // - Dependent_count outweighs stars ~2.3x: bm25 favours short names, so a one-word toy project
-    //   named after the query used to beat the established library. Coefficients are tuned against
-    //   the search-eval headline (KTL-4925) — moving them moves that score.
+    // - Each popularity signal is passed through a saturation curve `x / (x + pivot)`: diminishing
+    //   like log, but bounded in [0,1), so a weight below is that signal's real maximum share.
+    // - A pivot scores half its weight and places the range the curve can still tell apart — most
+    //   resolution below it, flat well above. log spent its own on 5 vs 50 stars.
+    private const val STARS_PIVOT = 300.0
+    private const val DEPENDENTS_PIVOT = 3.0
+
+    private const val STARS_WEIGHT = 3.0
+    private const val DEPENDENTS_WEIGHT = 4.0
 
     private const val POPULARITY_SCRIPT =
         "double d = doc['${ProjectFields.HAS_README}'].value ? 1.0 : 0.7; " +
+                "double s = doc['${ProjectFields.STARS}'].value; " +
+                "double p = doc['${ProjectFields.DEPENDENT_COUNT}'].value; " +
                 "return 1 + (" +
-                "Math.log(doc['${ProjectFields.STARS}'].value + 1) * 0.7 + " +
-                "Math.log(doc['${ProjectFields.DEPENDENT_COUNT}'].value + 1) * 1.6" +
+                "$STARS_WEIGHT * (s / (s + $STARS_PIVOT)) + " +
+                "$DEPENDENTS_WEIGHT * (p / (p + $DEPENDENTS_PIVOT))" +
                 ") * d;"
 
     // Word-bag match: OR over the query terms, order-insensitive, and a doc matching only some of
@@ -67,6 +78,12 @@ object OpenSearchQueryBuilder {
 
     fun tokenSuffix(field: String, text: String, boost: Float): Query = partial(SUFFIX_SUBFIELD, field, text, boost)
 
+    /** The English-stemmed form of [field]: `charts` and `charting` both reachable from `chart`. */
+    fun english(field: String, text: String, boost: Float): Query = partial(ENGLISH_SUBFIELD, field, text, boost)
+
+    /** The delimiter- and camelCase-split form of [field]: `ComposeCharts` -> `compose` + `charts`. */
+    fun split(field: String, text: String, boost: Float): Query = partial(SPLIT_SUBFIELD, field, text, boost)
+
     private fun partial(subfield: String, field: String, text: String, boost: Float): Query =
         MatchQuery.Builder()
             .field("$field.$subfield")
@@ -75,12 +92,13 @@ object OpenSearchQueryBuilder {
             .build()
             .toQuery()
 
-    // Same as `match` plus typo tolerance: edit distance up to 2 per term.
     fun fuzzy(field: String, text: String, boost: Int): Query =
         MatchQuery.Builder()
             .field(field)
             .query(FieldValue.of(text))
-            .fuzziness("2")
+            // scales the allowed-edits to term length
+            .fuzziness("AUTO")
+            .prefixLength(1)
             .boost(boost.toFloat())
             .build()
             .toQuery()
@@ -124,6 +142,12 @@ object OpenSearchQueryBuilder {
             .build()
             .toQuery()
     }
+
+    // Best-of instead of sum-of: useful if working with alternative readings of the same evidence
+    fun bestOf(alternatives: List<Query>, tieBreaker: Float): Query =
+        alternatives.singleOrNull() ?: Query.of { q ->
+            q.disMax { d -> d.queries(alternatives).tieBreaker(tieBreaker) }
+        }
 
     fun bool(shoulds: List<Query>, filters: List<Query>): Query =
         Query.of { q ->
