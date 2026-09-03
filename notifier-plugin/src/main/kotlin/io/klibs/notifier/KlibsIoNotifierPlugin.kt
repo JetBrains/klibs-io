@@ -4,14 +4,16 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 
 /**
- * Registers the `notifyKlibs` task that notifies klibs.io about a freshly published KMP artifact.
+ * Registers the `notifyKlibsIo` task that notifies klibs.io about a published KMP artifact.
  *
- * The task is not meant to be invoked directly: it is wired as a finalizer of the publishing task
- * and runs automatically only when that publishing task has completed successfully. If the task
- * fails (or is not executed), `notifyKlibs` is skipped. For this reason the task is hidden from the
- * task list (no group) and should not be run on its own.
+ * The task supports two modes:
+ * - Automatic: it is wired as a finalizer of the publishing task and runs only when that task has
+ *   completed successfully. If the publishing task fails (or is not executed), it is skipped.
+ * - Explicit: when invoked directly (e.g. `./gradlew notifyKlibsIo`) it runs regardless of whether
+ *   a publishing task ran, so it can be triggered on demand.
  *
  * Note: with the vanniktech plugin, the actual upload to Maven Central happens in the plugin's own
  * build service at the very end of the build — after notifyKlibsIo has already run. If that upload
@@ -22,24 +24,29 @@ class KlibsIoNotifierPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         val extension = project.extensions.create("klibsIoNotifier", KlibsIoNotifierExtension::class.java)
-        extension.apiBaseUrl.convention("https://klibs.io")
+        extension.apiUrl.convention("https://klibs.io/notify/artifacts")
+        extension.publishTaskName.convention("publishKotlinMultiplatformPublicationToMavenCentralRepository")
 
         project.afterEvaluate {
-            if (!plugins.hasPlugin("com.vanniktech.maven.publish") ||
+            if (!plugins.hasPlugin(MavenPublishPlugin::class.java) ||
                 !plugins.hasPlugin("org.jetbrains.kotlin.multiplatform")
             ) {
                 logger.warn(
-                    "Cannot notify klibs.io: klibs-io-notifier currently only supports publishing KMP libraries via com.vanniktech.maven.publish"
+                    "klibs-io-notifier is inactive: it needs the Kotlin Multiplatform plugin and a publishing " +
+                        "plugin based on Gradle's maven-publish (such as com.vanniktech.maven.publish). " +
+                        "No notification will be sent."
                 )
             }
         }
 
-        project.plugins.withId("com.vanniktech.maven.publish") {
+        project.plugins.withType(MavenPublishPlugin::class.java) {
             project.plugins.withId("org.jetbrains.kotlin.multiplatform") {
 
                 val notifyTask = project.tasks.register("notifyKlibsIo", KlibsIoNotifierTask::class.java) {
-                    apiBaseUrl.convention(extension.apiBaseUrl)
-                    group = null
+                    apiUrl.convention(extension.apiUrl)
+                    publishTaskScheduled.convention(false)
+                    group = "publishing"
+                    description = "Notifies klibs.io about artifacts published to Maven Central."
                 }
 
                 val publishing = project.extensions.getByType(PublishingExtension::class.java)
@@ -61,15 +68,17 @@ class KlibsIoNotifierPlugin : Plugin<Project> {
                         if (hasToolingMetadata) KmpPublicationState.OK else KmpPublicationState.MISSING_TOOLING_METADATA
                     }.orElse(KmpPublicationState.MISSING_PUBLICATION)
 
-                val publishTaskNames = setOf(
-                    "publishToMavenCentral",
-                    "publishAndReleaseToMavenCentral",
-                    "publishKotlinMultiplatformPublicationToMavenCentralRepository",
-                )
-                project.tasks.matching { it.name in publishTaskNames }.configureEach {
+                val publishTaskName = extension.publishTaskName.get()
+
+                project.tasks.matching { it.name == publishTaskName }.configureEach {
                     usesService(tracker)
                     doLast { tracker.get().markPublished() }
                     finalizedBy(notifyTask)
+                }
+
+                project.gradle.taskGraph.whenReady {
+                    val isPublishScheduled = allTasks.any { it.name == publishTaskName }
+                    notifyTask.get().publishTaskScheduled.set(isPublishScheduled)
                 }
 
                 notifyTask.configure {
@@ -79,8 +88,8 @@ class KlibsIoNotifierPlugin : Plugin<Project> {
 
                     usesService(tracker)
 
-                    onlyIf("runs after a successful publishing task") {
-                        tracker.get().published
+                    onlyIf("runs when called directly or after a successful publish") {
+                        !publishTaskScheduled.get() || tracker.get().published
                     }
                     onlyIf("the KMP publication with kotlin-tooling-metadata.json exists") { task ->
                         when (publicationState.get()) {
@@ -102,8 +111,6 @@ class KlibsIoNotifierPlugin : Plugin<Project> {
                     }
                 }
             }
-
-
         }
     }
 }

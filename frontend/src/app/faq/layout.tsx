@@ -37,8 +37,16 @@ const faqSchema = {
                     "At least one artifact is multiplatform – must have kotlin-tooling-metadata.json. " +
                     "At least one artifact's POM contains a valid link to the GitHub repository, either under \"url\" or \"scm.url\" example. " +
                     "All projects fulfilling the criteria are added automatically within one month (it is a frequency of maven central public index update). If your project is already presented in the klibs.io, then new versions should appear the next day after they are published to Maven Central. " +
-                    "If you prefer not to wait for the automatic sync, you can submit an indexing request. " +
+                    "If you prefer not to wait for the automatic sync, you can add the klibs-io-notifier Gradle plugin to your project, or submit an indexing request. " +
                     "If you believe your project satisfies all criteria, yet it's still not available, or new versions are not appearing, please submit an issue."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How can I check if my project is queued for indexing?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "You can check the indexing status of any artifact at https://klibs.io/package/GROUP_ID/ARTIFACT_ID/VERSION/status, by replacing GROUP_ID, ARTIFACT_ID, and VERSION with the corresponding values from the project."
             }
         },
         {
