@@ -56,41 +56,60 @@ class ProjectSearchRepositoryOpenSearch(
 
     override fun shouldClauses(query: String): List<Query> = buildList {
         val multiWord = query.contains(' ')
+        val partialLengths = OpenSearchQueryBuilder.MIN_PARTIAL_LENGTH..OpenSearchQueryBuilder.MAX_PARTIAL_LENGTH
+        val shouldSplitToNgram = !multiWord && query.length in partialLengths
+
         with(OpenSearchQueryBuilder) {
+            // Tier 1 — an exact term in an identity field, or a curated alias for one.
             add(match(ProjectFields.OWNER_LOGIN, query, 4))
             add(match(ProjectFields.NAME, query, 4))
             add(match(ProjectFields.GROUP_IDS, query, 4))
             add(match(ProjectFields.ARTIFACT_IDS, query, 4))
+            add(toolAlias(ProjectFields.NAME, query, 8))
+            add(toolAlias(ProjectFields.OWNER_LOGIN, query, 8))
+            if (multiWord) {
+                add(phrase(ProjectFields.NAME, query, 6))
+                add(phrase(ProjectFields.ARTIFACT_IDS, query, 4))
+            }
+
+            // Tier 2 — the start of an identity field: a partly-typed query
+            if (shouldSplitToNgram) {
+                add(tokenPrefix(ProjectFields.NAME, query, PREFIX_BOOST))
+                add(tokenPrefix(ProjectFields.ARTIFACT_IDS, query, PREFIX_BOOST))
+            } else {
+                // A one-term phrase is the same query as `match` above, so only a query too long or
+                // too multi-word for the ngrams gains anything from the phrase-prefix form.
+                add(phrasePrefix(ProjectFields.NAME, query, 3))
+                add(phrasePrefix(ProjectFields.ARTIFACT_IDS, query, 2))
+                add(phrasePrefix(ProjectFields.OWNER_LOGIN, query, 3))
+                add(phrasePrefix(ProjectFields.GROUP_IDS, query, 2))
+            }
+
+            // Tier 3 — approximate readings of the same name, best-of rather than summed.
+            add(bestOf(approximateNameClauses(query, shouldSplitToNgram), TIE_BREAKER))
+
+            // Other fields
             add(match(ProjectFields.TAGS, query, 8))
             add(match(ProjectFields.PROJECT_DESCRIPTION, query, 5))
             add(match(ProjectFields.REPO_DESCRIPTION, query, 5))
+            add(english(ProjectFields.TAGS, query, 8 * STEMMED_SHARE))
+            add(english(ProjectFields.PROJECT_DESCRIPTION, query, 5 * STEMMED_SHARE))
+            add(english(ProjectFields.REPO_DESCRIPTION, query, 5 * STEMMED_SHARE))
+        }
+    }
 
+    private fun approximateNameClauses(query: String, shouldSplitToNgram: Boolean): List<Query> = buildList {
+        with(OpenSearchQueryBuilder) {
             add(fuzzy(ProjectFields.NAME, query, 2))
             add(fuzzy(ProjectFields.ARTIFACT_IDS, query, 2))
-
-            add(phrasePrefix(ProjectFields.OWNER_LOGIN, query, 3))
-            add(phrasePrefix(ProjectFields.GROUP_IDS, query, 2))
-
-            add(toolAlias(ProjectFields.NAME, query, 8))
-            add(toolAlias(ProjectFields.OWNER_LOGIN, query, 8))
-            // Ngram clauses only where the indexed grams can serve the query: a single word, no
-            // shorter than the smallest gram and no longer than the largest.
-            val partialLengths = OpenSearchQueryBuilder.MIN_PARTIAL_LENGTH..OpenSearchQueryBuilder.MAX_PARTIAL_LENGTH
-            if (!multiWord && query.length in partialLengths) {
-                add(tokenPrefix(ProjectFields.NAME, query, PREFIX_BOOST))
-                add(tokenPrefix(ProjectFields.ARTIFACT_IDS, query, PREFIX_BOOST))
+            if (shouldSplitToNgram) {
                 add(tokenSuffix(ProjectFields.NAME, query, SUFFIX_BOOST))
                 add(tokenSuffix(ProjectFields.ARTIFACT_IDS, query, SUFFIX_BOOST))
-            } else {
-                // A one-term phrase is the same query as `match` above, so only a multi-word query
-                // gains anything here — otherwise the term would score twice, at a higher boost.
-                if (multiWord) {
-                    add(phrase(ProjectFields.NAME, query, 6))
-                    add(phrase(ProjectFields.ARTIFACT_IDS, query, 4))
-                }
-                add(phrasePrefix(ProjectFields.NAME, query, 3))
-                add(phrasePrefix(ProjectFields.ARTIFACT_IDS, query, 2))
             }
+            // `ComposeCharts` is one token to every other analyzer, so the query `charts` cannot
+            // reach it at all without the delimiter split.
+            add(split(ProjectFields.NAME, query, 4f))
+            add(english(ProjectFields.NAME, query, 2f))
         }
     }
 
@@ -136,6 +155,12 @@ class ProjectSearchRepositoryOpenSearch(
         /** People type the start of a name far more often than its end. */
         private const val PREFIX_BOOST = 4.0f
         private const val SUFFIX_BOOST = 1.0f
+
+        /** How much a losing alternative still contributes in tier 3. */
+        private const val TIE_BREAKER = 0.2f
+
+        /** A stemmed match is worth this share of the exact-form match on the same field. */
+        private const val STEMMED_SHARE = 0.3f
 
         private val EXCLUDED_SOURCE_FIELDS = listOf(
             ProjectFields.PACKAGES,

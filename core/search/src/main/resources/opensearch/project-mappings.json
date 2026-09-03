@@ -9,7 +9,9 @@
       "type": "text",
       "fields": {
         "prefix": { "type": "text", "analyzer": "token_prefix", "search_analyzer": "code_split" },
-        "suffix": { "type": "text", "analyzer": "token_suffix", "search_analyzer": "code_split" }
+        "suffix": { "type": "text", "analyzer": "token_suffix", "search_analyzer": "code_split" },
+        "split": { "type": "text", "analyzer": "name_split" },
+        "en": { "type": "text", "analyzer": "text_english" }
       }
     },
     "group_ids": { "type": "text", "analyzer": "code_split" },
@@ -21,10 +23,22 @@
         "suffix": { "type": "text", "analyzer": "token_suffix", "search_analyzer": "code_split" }
       }
     },
-    "repo_description": { "type": "text" },
-    "project_description": { "type": "text" },
+    "repo_description": {
+      "type": "text",
+      "fields": { "en": { "type": "text", "analyzer": "text_english" } }
+    },
+    "project_description": {
+      "type": "text",
+      "fields": { "en": { "type": "text", "analyzer": "text_english" } }
+    },
     "platforms": { "type": "keyword" },
-    "tags": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+    "tags": {
+      "type": "text",
+      "fields": {
+        "keyword": { "type": "keyword" },
+        "en": { "type": "text", "analyzer": "text_english" }
+      }
+    },
     "markers": { "type": "keyword" },
     "targets": { "type": "keyword" },
     "stars": { "type": "integer" },
