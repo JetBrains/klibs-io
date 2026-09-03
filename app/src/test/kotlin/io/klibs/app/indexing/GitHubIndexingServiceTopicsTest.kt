@@ -33,6 +33,7 @@ class GitHubIndexingServiceTopicsTest {
     private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mock()
     private val ownerBackoffProvider: BackoffProvider = mock()
     private val projectService: ProjectService = mock()
+    private val unreachableRepoHidingService: UnreachableRepoHidingService = mock()
     private val readmeReprocessPeriodDays: Long = 7
 
     private fun uut() = GitHubIndexingService(
@@ -45,6 +46,7 @@ class GitHubIndexingServiceTopicsTest {
         projectRepository = projectRepository,
         ownerBackoffProvider = ownerBackoffProvider,
         projectService = projectService,
+        unreachableRepoHidingService = unreachableRepoHidingService,
         readmeReprocessPeriodDays = readmeReprocessPeriodDays
     )
 
