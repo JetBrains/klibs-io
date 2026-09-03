@@ -1,5 +1,6 @@
-import '@rescui/typography/lib/font-jb-sans-auto.css';
 import '@/app/globals.css';
+import 'bootstrap/dist/css/bootstrap.css';
+import '@rescui/typography/lib/font-jb-sans-auto.css';
 
 import { disableAutoSnapshot, takeSnapshot } from '@uiverify/vitest';
 import { render } from 'vitest-browser-react';
