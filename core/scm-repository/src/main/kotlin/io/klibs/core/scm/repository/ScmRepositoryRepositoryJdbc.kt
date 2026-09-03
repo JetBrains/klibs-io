@@ -189,6 +189,20 @@ class ScmRepositoryRepositoryJdbc(
             .update() > 0
     }
 
+    override fun unreachableShare(): Double {
+        val sql = """
+            SELECT CASE
+                       WHEN count(*) = 0 THEN 0
+                       ELSE count(unreachable_since)::float8 / count(*)
+                   END
+            FROM scm_repo
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .query(Double::class.java)
+            .single()
+    }
+
     override fun findById(id: Int): ScmRepositoryEntity? {
         val sql = """
             SELECT repo.id,
