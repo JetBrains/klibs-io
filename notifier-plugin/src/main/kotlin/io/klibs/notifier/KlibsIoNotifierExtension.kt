@@ -3,5 +3,6 @@ package io.klibs.notifier
 import org.gradle.api.provider.Property
 
 interface KlibsIoNotifierExtension {
-    val apiBaseUrl: Property<String>
+    val apiUrl: Property<String>
+    val publishTaskName: Property<String>
 }

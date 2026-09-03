@@ -3,7 +3,7 @@
 A service to search and discover Kotlin Multiplatform libraries.
 It aggregates data from Maven Central and GitHub, enriched with AI-powered metadata generation.
 
-The repository contains both the backend (this README) and the web frontend (see [Frontend](frontend/README.md)).
+The repository contains both the backend (this README) and the web frontend (see [frontend](frontend/README.md)), as well as the klibs-io-notifier Gradle plugin (see [notifier-plugin](notifier-plugin/README.md)).
 
 ## Build & Run
 
