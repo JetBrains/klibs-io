@@ -17,11 +17,14 @@ import java.time.Duration
 abstract class KlibsIoNotifierTask : DefaultTask() {
 
     @get:Input
-    abstract val apiBaseUrl: Property<String>
+    abstract val apiUrl: Property<String>
 
     @get:Input
     @get:Optional
     internal abstract val artifact: Property<ArtifactCoordinates>
+
+    @get:Input
+    internal abstract val publishTaskScheduled: Property<Boolean>
 
     @TaskAction
     fun notifyKlibs() {
@@ -34,7 +37,7 @@ abstract class KlibsIoNotifierTask : DefaultTask() {
 
     private fun sendNotification() {
         val coordinates = artifact.get()
-        val url = "${apiBaseUrl.get()}/notify/artifacts"
+        val url = apiUrl.get()
         val body = JsonOutput.toJson(
             mapOf(
                 "groupId" to coordinates.groupId,
