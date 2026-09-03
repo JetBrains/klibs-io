@@ -11,7 +11,17 @@ export default defineConfig({
     },
     optimizeDeps: {
         exclude: ['next/image', 'next/link'],
-        include: ['@rescui/card', '@rescui/typography', 'react/jsx-dev-runtime'],
+        // Declared explicitly so a run never triggers a mid-test re-optimize + page reload.
+        include: [
+            '@rescui/card',
+            '@rescui/icons',
+            '@rescui/tag',
+            '@rescui/typography',
+            'classnames',
+            'react',
+            'react/jsx-dev-runtime',
+            'vitest-browser-react',
+        ],
     },
     resolve: {
         alias: {
