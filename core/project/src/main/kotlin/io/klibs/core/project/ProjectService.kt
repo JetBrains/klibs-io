@@ -8,6 +8,7 @@ import io.klibs.core.project.entity.Marker
 import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.MarkerRepository
+import io.klibs.core.project.repository.ProjectHiddenRepository
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.SitemapProjectEntry
@@ -34,6 +35,7 @@ class ProjectService(
     private val projectTagRepository: ProjectTagRepository,
     private val allowedProjectTagsRepository: AllowedProjectTagsRepository,
     private val scmRepoHealthComponentsRepository: ScmRepoHealthComponentsRepository,
+    private val projectHiddenRepository: ProjectHiddenRepository,
 ) {
     @Transactional(readOnly = true)
     fun getProjectDetailsByName(ownerLogin: String, projectName: String): ProjectDetails? {
@@ -53,6 +55,10 @@ class ProjectService(
     }
 
     private fun buildProjectDetails(projectEntity: ProjectEntity): ProjectDetails? {
+        if (projectHiddenRepository.existsById(projectEntity.idNotNull)) {
+            return null
+        }
+
         val scmRepositoryEntity = requireNotNull(scmRepositoryRepository.findById(projectEntity.scmRepoId)) {
             "Unable to find the corresponding scm repository for an existing project: $projectEntity"
         }
@@ -74,15 +80,18 @@ class ProjectService(
         )
     }
 
+    /**
+     * @return null when there is no such project or it is hidden, so that the caller can answer "not found"
+     */
     @Transactional(readOnly = true)
-    fun getLatestProjectPackages(ownerLogin: String, projectName: String): List<PackageOverview> {
-        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return emptyList()
+    fun getLatestProjectPackages(ownerLogin: String, projectName: String): List<PackageOverview>? {
+        val projectEntity = findVisibleProject(ownerLogin, projectName) ?: return null
         return packageService.getLatestPackagesByProjectId(projectEntity.idNotNull)
     }
 
     @Transactional(readOnly = true)
     fun getProjectReadmeMd(ownerLogin: String, projectName: String): String? {
-        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
+        val projectEntity = findVisibleProject(ownerLogin, projectName) ?: return null
         return readmeService.readReadmeMd(
             ReadmeService.ProjectInfo(
                 projectEntity.idNotNull,
@@ -95,7 +104,7 @@ class ProjectService(
 
     @Transactional(readOnly = true)
     fun getProjectReadmeHtml(ownerLogin: String, projectName: String): String? {
-        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
+        val projectEntity = findVisibleProject(ownerLogin, projectName) ?: return null
         return readmeService.readReadmeHtml(
             ReadmeService.ProjectInfo(
                 projectEntity.idNotNull,
@@ -104,6 +113,14 @@ class ProjectService(
                 ownerLogin
             )
         )
+    }
+
+    /**
+     * A hidden project is not served on any read path, so it must not be looked up on one either.
+     */
+    private fun findVisibleProject(ownerLogin: String, projectName: String): ProjectEntity? {
+        val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
+        return projectEntity.takeUnless { projectHiddenRepository.existsById(it.idNotNull) }
     }
 
     @Transactional(readOnly = true)
