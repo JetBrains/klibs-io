@@ -37,6 +37,7 @@ export default defineConfig({
                     name: 'visual',
                     browser: {
                         enabled: true,
+                        headless: true,
                         provider: playwright(),
                         instances: [{ browser: 'chromium' }],
                     },
