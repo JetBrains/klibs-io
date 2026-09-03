@@ -22,6 +22,9 @@ interface ProjectRepository {
 
     fun findByScmRepoId(scmRepoId: Int): ProjectEntity?
 
+    /** Ids of every project backed by an SCM repository; a repository can back several projects. */
+    fun findIdsByScmRepoId(scmRepoId: Int): List<Int>
+
     fun findByNameAndScmRepoId(name: String, scmRepoId: Int): ProjectEntity?
 
     fun findByNameAndOwnerLogin(name: String, ownerLogin: String): ProjectEntity?
