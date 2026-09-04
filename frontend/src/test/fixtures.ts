@@ -3,6 +3,7 @@ import {
     OwnerOrganization,
     PackageDetails,
     PackageOverview,
+    PackageSearchResults,
     ProjectDetails,
     ProjectSearchResults,
 } from '@/app/types';
@@ -42,6 +43,23 @@ export const projectDetails = (overrides: Partial<ProjectDetails> = {}): Project
     archived: false,
     archivedAtMillis: null,
     updatedAtMillis: 1_700_000_000_000,
+    ...overrides,
+});
+
+export const packageSearchResult = (
+    overrides: Partial<PackageSearchResults> = {},
+): PackageSearchResults => ({
+    id: 1,
+    groupId: 'io.arrow-kt',
+    artifactId: 'arrow-core',
+    description: 'Functional companion to Kotlin standard library',
+    scmLink: 'https://github.com/arrow-kt/arrow',
+    ownerType: 'organization',
+    ownerLogin: 'arrow-kt',
+    licenseName: 'Apache-2.0',
+    latestVersion: '2.0.0',
+    releaseTsMillis: 1_700_000_000_000,
+    targetGroups: { JVM: ['11', '17'] },
     ...overrides,
 });
 
