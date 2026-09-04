@@ -20,8 +20,12 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
                  SELECT group_id, artifact_id, version, scraper_type FROM package
                  UNION ALL
                  SELECT group_id, artifact_id, version, scraper_type FROM package_index_request
+                 UNION ALL
+                 SELECT ma.group_id, ma.artifact_id, ma.version, NULL AS scraper_type
+                 FROM non_kmp_packages nkp
+                 JOIN maven_artifact ma ON ma.id = nkp.maven_artifact_id
              ) AS combined
-        WHERE scraper_type != 'GOOGLE_MAVEN'
+        WHERE combined.scraper_type IS DISTINCT FROM 'GOOGLE_MAVEN'
         GROUP BY combined.group_id, combined.artifact_id;
         """,
         nativeQuery = true)

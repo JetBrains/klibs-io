@@ -197,6 +197,110 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
+    fun `should classify request as non-KMP when pom exists but tooling metadata is missing`() {
+        val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        assertNotNull(indexRequest)
+
+        val pom = mock<MavenPom>()
+        whenever(pom.groupId).thenReturn(indexRequest.groupId)
+        whenever(pom.artifactId).thenReturn(indexRequest.artifactId)
+        whenever(pom.version).thenReturn(indexRequest.version)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
+            .thenReturn(PomWithReleaseDate(pom, Instant.now()))
+        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any()))
+            .thenAnswer { null }
+
+        val result = uut.processPackageQueue()
+
+        assertTrue(result, "Should return true when a request is classified")
+        assertEquals(
+            0,
+            jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM package_index_request WHERE id = ?",
+                Int::class.java,
+                indexRequest.idNotNull,
+            ),
+            "Classified request should be removed from the queue",
+        )
+        assertNull(
+            packageRepository.findByGroupIdAndArtifactIdAndVersion(
+                indexRequest.groupId,
+                indexRequest.artifactId,
+                requireNotNull(indexRequest.version),
+            ),
+            "Non-KMP artifacts must not create package rows",
+        )
+        assertEquals(
+            1,
+            jdbcTemplate.queryForObject(
+                """
+                    SELECT COUNT(*)
+                    FROM non_kmp_packages nkp
+                    JOIN maven_artifact ma ON ma.id = nkp.maven_artifact_id
+                    WHERE ma.group_id = ?
+                      AND ma.artifact_id = ?
+                      AND ma.version = ?
+                """.trimIndent(),
+                Int::class.java,
+                indexRequest.groupId,
+                indexRequest.artifactId,
+                requireNotNull(indexRequest.version),
+            ),
+            "Artifact should be saved as non-KMP exactly once",
+        )
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-queued-non-kmp-artifact.sql"])
+    fun `should remove repeating queued requests for artifacts already classified as non-KMP`() {
+        val removed = indexingRequestRepository.removeRepeating()
+
+        assertEquals(1, removed)
+        assertEquals(
+            0,
+            jdbcTemplate.queryForObject("SELECT COUNT(*) FROM package_index_request", Int::class.java),
+            "Duplicate queued requests for known non-KMP artifacts should be deleted",
+        )
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-failed-tooling-metadata-request.sql"])
+    fun `should make historical tooling metadata failures retryable after reset`() {
+        assertNull(
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
+            "Historical tooling metadata failures should not be retryable before reset",
+        )
+
+        val updatedRows = jdbcTemplate.update(
+            """
+                UPDATE package_index_request
+                SET status = 'PENDING',
+                    failed_attempts = 0,
+                    failed_ts = NULL,
+                    last_error_message = NULL
+                WHERE last_error_message LIKE 'Unable to find tooling metadata for %'
+            """.trimIndent()
+        )
+
+        assertEquals(1, updatedRows)
+
+        val retryableRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        assertNotNull(retryableRequest)
+        assertEquals("com.example", retryableRequest.groupId)
+        assertEquals("stale-tooling-metadata", retryableRequest.artifactId)
+        assertEquals("1.0.0", retryableRequest.version)
+
+        val resetRow = jdbcTemplate.queryForMap(
+            "SELECT status, failed_attempts, failed_ts, last_error_message FROM package_index_request WHERE id = 9201"
+        )
+        assertEquals("PENDING", resetRow["status"])
+        assertEquals(0, (resetRow["failed_attempts"] as Number).toInt())
+        assertNull(resetRow["failed_ts"])
+        assertNull(resetRow["last_error_message"])
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should parse androidJvm platform when jvm target is KotlinMultiplatformAndroidLibraryTargetImpl`() {
         val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(indexRequest)

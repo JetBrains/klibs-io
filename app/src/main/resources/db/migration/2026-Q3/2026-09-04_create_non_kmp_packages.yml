@@ -1,0 +1,104 @@
+databaseChangeLog:
+  - changeSet:
+      id: create non_kmp_packages table
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: non_kmp_packages
+      changes:
+        - createTable:
+            tableName: non_kmp_packages
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_non_kmp_packages
+              - column:
+                  name: maven_artifact_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: add unique index on non_kmp_packages maven_artifact_id
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            indexExists:
+              tableName: non_kmp_packages
+              indexName: uindex_non_kmp_packages_maven_artifact_id
+      changes:
+        - createIndex:
+            tableName: non_kmp_packages
+            indexName: uindex_non_kmp_packages_maven_artifact_id
+            unique: true
+            columns:
+              - column:
+                  name: maven_artifact_id
+
+  - changeSet:
+      id: create non_kmp_packages sequence
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            sequenceExists:
+              sequenceName: non_kmp_packages_id_seq
+      changes:
+        - sql:
+            sql: |
+              CREATE SEQUENCE non_kmp_packages_id_seq
+                  AS BIGINT
+                  INCREMENT BY 50
+                  START WITH 1;
+
+  - changeSet:
+      id: add non_kmp_packages.maven_artifact_id foreign key
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            foreignKeyConstraintExists:
+              foreignKeyName: fk_non_kmp_packages_maven_artifact_id
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_non_kmp_packages_maven_artifact_id
+            baseTableName: non_kmp_packages
+            baseColumnNames: maven_artifact_id
+            referencedTableName: maven_artifact
+            referencedColumnNames: id
+
+  - changeSet:
+      id: reset tooling metadata package index request failures
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: package_index_request
+        - columnExists:
+            tableName: package_index_request
+            columnName: status
+        - columnExists:
+            tableName: package_index_request
+            columnName: failed_attempts
+        - columnExists:
+            tableName: package_index_request
+            columnName: failed_ts
+        - columnExists:
+            tableName: package_index_request
+            columnName: last_error_message
+      changes:
+        - sql:
+            sql: |
+              UPDATE package_index_request
+              SET status = 'PENDING',
+                  failed_attempts = 0,
+                  failed_ts = NULL,
+                  last_error_message = NULL
+              WHERE last_error_message LIKE 'Unable to find tooling metadata for %';

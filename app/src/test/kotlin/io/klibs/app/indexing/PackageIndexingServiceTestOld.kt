@@ -7,6 +7,7 @@ import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.MavenArtifactService
+import io.klibs.core.pckg.service.NonKmpPackageService
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
@@ -43,6 +44,7 @@ class PackageIndexingServiceTestOld {
     private val packageService: PackageService = mock()
     private val packageRepository: PackageRepository = mock()
     private val mavenArtifactService: MavenArtifactService = mock()
+    private val nonKmpPackageService: NonKmpPackageService = mock()
     private val transactionTemplate: TransactionTemplate = mock()
     private val selfProvider: ObjectProvider<PackageIndexingService> = mock()
 
@@ -65,6 +67,7 @@ class PackageIndexingServiceTestOld {
             packageService,
             packageRepository,
             mavenArtifactService,
+            nonKmpPackageService,
             IndexingConfigurationProperties(),
             selfProvider
         )
