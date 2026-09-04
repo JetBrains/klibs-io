@@ -124,13 +124,14 @@ for (const [source, names] of bySource) console.log([source, ...names].join(" ")
     fi
 }
 
-# UI Verify resolves baselines from commit ancestry, and agents diff against master.
-deepen_git_history() {
+# 'uiverify check' confirms no baseline commit on a shallow clone (it bails on
+# --is-shallow-repository, so deepening does not help), and 'git diff master...' has no merge
+# base at depth 1. Costs ~1s and ~1.5MB on this repo.
+unshallow_git_clone() {
     if [ "$(git -C "$REPO_ROOT" rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
-        log "deepening the shallow clone"
+        log "unshallowing the clone"
         git -C "$REPO_ROOT" fetch --quiet --unshallow ||
-            git -C "$REPO_ROOT" fetch --quiet --deepen=200 ||
-            warn "could not deepen the clone, diffs against master may be unavailable"
+            warn "could not unshallow, 'uiverify check' will confirm 0 baseline commits and diffs against master will fail"
     fi
     git -C "$REPO_ROOT" fetch --quiet origin master || warn "could not fetch origin/master"
 }
@@ -172,6 +173,6 @@ setup_env_file
 install_node_deps
 install_browser
 install_skills
-deepen_git_history
+unshallow_git_clone
 warm_uiverify_cli
 summary
