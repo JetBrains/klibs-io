@@ -1,6 +1,5 @@
 package io.klibs.app.service.impl
 
-import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.exceptions.UserRequestProcessingException
 import io.klibs.app.service.UserIndexingRequestService
 import io.klibs.app.util.toIndexRequest
@@ -14,7 +13,6 @@ import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
