@@ -133,7 +133,6 @@ unshallow_git_clone() {
         git -C "$REPO_ROOT" fetch --quiet --unshallow ||
             warn "could not unshallow, 'uiverify check' will confirm 0 baseline commits and diffs against master will fail"
     fi
-    git -C "$REPO_ROOT" fetch --quiet origin master || warn "could not fetch origin/master"
 }
 
 warm_uiverify_cli() {
