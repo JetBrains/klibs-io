@@ -47,5 +47,6 @@ Pick the cheapest level that proves the behavior:
 
 ## Guardrails
 
-- Never push; never delete branches.
+- Never delete branches.
+- Never push to the main branch.
 - Keep diffs minimal and localized. No drive-by refactors, renames, or reformatting.
