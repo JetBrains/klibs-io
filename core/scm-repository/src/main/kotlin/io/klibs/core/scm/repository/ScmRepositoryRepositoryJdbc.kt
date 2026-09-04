@@ -164,6 +164,45 @@ class ScmRepositoryRepositoryJdbc(
             .update() > 0
     }
 
+    override fun markUnreachable(id: Int, at: Instant): Boolean {
+        val sql = """
+            UPDATE scm_repo
+            SET unreachable_since = :at
+            WHERE id = :id AND unreachable_since IS NULL
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("id", id)
+            .param("at", Timestamp.from(at))
+            .update() > 0
+    }
+
+    override fun clearUnreachable(id: Int): Boolean {
+        val sql = """
+            UPDATE scm_repo
+            SET unreachable_since = NULL
+            WHERE id = :id AND unreachable_since IS NOT NULL
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("id", id)
+            .update() > 0
+    }
+
+    override fun unreachableShare(): Double {
+        val sql = """
+            SELECT CASE
+                       WHEN count(*) = 0 THEN 0
+                       ELSE count(unreachable_since)::float8 / count(*)
+                   END
+            FROM scm_repo
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .query(Double::class.java)
+            .single()
+    }
+
     override fun findById(id: Int): ScmRepositoryEntity? {
         val sql = """
             SELECT repo.id,
@@ -181,6 +220,7 @@ class ScmRepositoryRepositoryJdbc(
                    repo.has_wiki,
                    repo.archived,
                    repo.archived_at,
+                   repo.unreachable_since,
                    repo.has_readme,
                    repo.license_key,
                    repo.license_name,
@@ -217,6 +257,7 @@ class ScmRepositoryRepositoryJdbc(
                    repo.has_wiki,
                    repo.archived,
                    repo.archived_at,
+                   repo.unreachable_since,
                    repo.has_readme,
                    repo.license_key,
                    repo.license_name,
@@ -253,6 +294,7 @@ class ScmRepositoryRepositoryJdbc(
                    repo.has_wiki,
                    repo.archived,
                    repo.archived_at,
+                   repo.unreachable_since,
                    repo.has_readme,
                    repo.license_key,
                    repo.license_name,
@@ -308,6 +350,7 @@ class ScmRepositoryRepositoryJdbc(
                    repo.has_wiki,
                    repo.archived,
                    repo.archived_at,
+                   repo.unreachable_since,
                    repo.has_readme,
                    repo.license_key,
                    repo.license_name,
@@ -349,6 +392,7 @@ class ScmRepositoryRepositoryJdbc(
                 hasWiki = rs.getBoolean("has_wiki"),
                 archived = rs.getBoolean("archived"),
                 archivedAt = rs.getTimestamp("archived_at")?.toInstant(),
+                unreachableSince = rs.getTimestamp("unreachable_since")?.toInstant(),
                 hasReadme = rs.getBoolean("has_readme"),
                 licenseKey = rs.getString("license_key"),
                 licenseName = rs.getString("license_name"),

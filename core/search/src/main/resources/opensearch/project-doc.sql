@@ -70,3 +70,4 @@ FROM project
   LEFT JOIN markers_info ON markers_info.project_id = project.id
   LEFT JOIN tags_info ON tags_info.project_id = project.id
   LEFT JOIN scm_repo_health_components health ON health.scm_repo_id = repo.id
+WHERE NOT EXISTS (SELECT 1 FROM project_hidden ph WHERE ph.project_id = project.id)

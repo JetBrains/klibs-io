@@ -10,6 +10,15 @@ interface ScmRepositoryRepository {
 
     fun setUpdatedAt(id: Int, updatedAt: Instant): Boolean
 
+    fun markUnreachable(id: Int, at: Instant): Boolean
+
+    fun clearUnreachable(id: Int): Boolean
+
+    /**
+     * Share of repositories currently marked unreachable, in `0.0..1.0`.
+     */
+    fun unreachableShare(): Double
+
     fun findById(id: Int): ScmRepositoryEntity?
 
     fun findByNativeId(nativeId: Long): ScmRepositoryEntity?

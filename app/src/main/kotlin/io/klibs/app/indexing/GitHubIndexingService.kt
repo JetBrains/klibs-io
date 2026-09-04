@@ -41,6 +41,7 @@ class GitHubIndexingService(
     @Qualifier("ownerBackoffProvider")
     private val ownerBackoffProvider: BackoffProvider,
     private val projectService: ProjectService,
+    private val unreachableRepoHidingService: UnreachableRepoHidingService,
 
     @Value("\${klibs.readme.reprocess-period-days}")
     private val readmeReprocessPeriodDays: Long
@@ -79,10 +80,28 @@ class GitHubIndexingService(
                 repoToUpdate.name
             )
         if (ghRepo == null) {
-            // TODO disable indexing at all, remove / hide the project
-            scmRepositoryRepository.setUpdatedAt(repoToUpdate.idNotNull, Instant.now()).also { require(it) }
+            val now = Instant.now()
+            scmRepositoryRepository.setUpdatedAt(repoToUpdate.idNotNull, now).also { require(it) }
+            scmRepositoryRepository.markUnreachable(repoToUpdate.idNotNull, now)
             logger.warn("Unable to find the GH repository for update: $repoToUpdate. Skipping it.")
-            return repoToUpdate.copy(updatedAtTs = Instant.now())
+
+            val unreachableRepo = repoToUpdate.copy(
+                updatedAtTs = now,
+                unreachableSince = repoToUpdate.unreachableSince ?: now
+            )
+            unreachableRepoHidingService.hideIfUnreachableTooLong(unreachableRepo)
+            return unreachableRepo
+        }
+
+        if (repoToUpdate.unreachableSince != null) {
+            logger.info(
+                "GH repository {}/{} is reachable again, clearing unreachable_since={}",
+                repoToUpdate.ownerLogin,
+                repoToUpdate.name,
+                repoToUpdate.unreachableSince
+            )
+            scmRepositoryRepository.clearUnreachable(repoToUpdate.idNotNull)
+            unreachableRepoHidingService.unhide(repoToUpdate)
         }
 
         val ownerId = updateRepositoryOwnerIfChanged(repoToUpdate, ghRepo)

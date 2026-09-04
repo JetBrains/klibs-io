@@ -88,6 +88,9 @@ klibs:
         request-cache-path: ${KLIBS_CACHE_DIR_REQUESTS:${user.dir}/cache/request-cache}
         request-cache-size-mb: ${KLIBS_CACHE_DIR_REQUEST_SIZE_MB:10}
       update-repos-per-iteration: ${KLIBS_UPDATE_GITHUB_REPOS_PER_ITERATION:3}
+      repo-unreachable-hide-after: ${KLIBS_REPO_UNREACHABLE_HIDE_AFTER:7d}
+      # Refuse to hide anything while more than this share of the corpus is unreachable: that is a systemic failure.
+      repo-unreachable-max-corpus-share: ${KLIBS_REPO_UNREACHABLE_MAX_CORPUS_SHARE:0.25}
       index-requests:
         repository: ${KLIBS_GITHUB_REPOSITORY:}
         request-label: ${KLIBS_GITHUB_REQUEST_LABEL:index-request}

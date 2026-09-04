@@ -225,6 +225,13 @@ class ProjectRepositoryJdbc(
             .getOrNull()
     }
 
+    override fun findIdsByScmRepoId(scmRepoId: Int): List<Int> {
+        return jdbcClient.sql("SELECT id FROM project WHERE scm_repo_id = :scmRepoId")
+            .param("scmRepoId", scmRepoId)
+            .query { rs, _ -> rs.getInt("id") }
+            .list()
+    }
+
     override fun findProjectsByPackages(
         groupId: String,
         artifactId: String?
@@ -391,6 +398,7 @@ class ProjectRepositoryJdbc(
             FROM project p
             JOIN scm_repo sr ON sr.id = p.scm_repo_id
             JOIN scm_owner ON p.owner_id = scm_owner.id
+            WHERE NOT EXISTS (SELECT 1 FROM project_hidden ph WHERE ph.project_id = p.id)
             ORDER BY p.id
         """.trimIndent()
 
