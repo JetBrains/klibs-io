@@ -185,3 +185,5 @@ databaseChangeLog:
       file: db/migration/2026-Q3/2026-09-03_add_project_visibility.yml
   - include:
       file: db/migration/2026-Q3/2026-09-03_indices_exclude_hidden_projects.yml
+  - include:
+      file: db/migration/2026-Q3/2026-09-04_create_non_kmp_packages.yml

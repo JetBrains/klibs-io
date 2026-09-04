@@ -48,22 +48,6 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
     """, nativeQuery = true)
     fun markAsFailed(@Param("id") id: Long, @Param("errorMessage") errorMessage: String?)
 
-    @Modifying
-    @Transactional
-    @Query(value = """
-        DELETE
-        FROM package_index_request req
-        WHERE req.reindex = false
-          AND EXISTS (
-              SELECT true
-              FROM package p
-              WHERE req.group_id = p.group_id
-                AND req.artifact_id = p.artifact_id
-                AND req.version = p.version
-          )
-    """, nativeQuery = true)
-    fun removeRepeating(): Int
-
     fun findByGroupIdAndArtifactIdAndVersion(
         groupId: String,
         artifactId: String,
