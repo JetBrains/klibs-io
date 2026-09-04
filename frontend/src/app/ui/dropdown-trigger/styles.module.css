@@ -1,7 +1,10 @@
 .dropdownTriggerWrapper {
     background: none;
-    border: 1px solid var(--w50);
-    border-left: 0;
+    /* Not `border: 1px solid var(--w50)` + `border-left: 0`: a var() shorthand that a longhand
+       overrides serializes to empty longhands in CSSOM, dropping the border from visual snapshots. */
+    border-style: solid;
+    border-width: 1px 1px 1px 0;
+    border-color: var(--w50);
     padding: 12px 14px 12px 16px;
     height: 52px;
     display: flex;
