@@ -13,6 +13,7 @@ import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.service.MavenArtifactService
+import io.klibs.core.pckg.service.NonKmpPackageService
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.scm.repository.ScmRepositoryEntity
@@ -54,6 +55,7 @@ class PackageIndexingService(
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
     private val mavenArtifactService: MavenArtifactService,
+    private val nonKmpPackageService: NonKmpPackageService,
     private val indexingConfigurationProperties: IndexingConfigurationProperties,
     private val selfProvider: ObjectProvider<PackageIndexingService>
 ) {
@@ -82,8 +84,7 @@ class PackageIndexingService(
                                     if (newArtifacts.isNotEmpty()) {
                                         val indexRequests = newArtifacts.map { it.toIndexRequest() }
                                         val insertedRequests = indexingRequestRepository.saveAll(indexRequests).count()
-                                        val removedRepeating = indexingRequestRepository.removeRepeating()
-                                        logger.debug("Queued up ${insertedRequests - removedRepeating} newArtifacts")
+                                        logger.debug("Queued up $insertedRequests newArtifacts")
                                     }
                                 }
                         }
@@ -189,9 +190,16 @@ class PackageIndexingService(
             )
         }
 
+        val mavenCoordinates = MavenCoordinatesDTO(pom.groupId, pom.artifactId, pom.version)
+
         logger.trace("Getting tooling metadata for {}", mavenArtifact)
         val toolingMetadata = provider.getKotlinToolingMetadata(mavenArtifact)
-            ?: error("Unable to find tooling metadata for $mavenArtifact")
+        if (toolingMetadata == null) {
+            logger.debug("Unable to find tooling metadata for {}, classifying it as non-KMP", mavenArtifact)
+            val mavenArtifactDto = mavenArtifactService.resolveOrCreate(mavenCoordinates)
+            nonKmpPackageService.saveIfAbsent(mavenArtifactDto)
+            return
+        }
 
         logger.trace("Persisting the package for {}", indexRequest)
         val packageDto = constructPackage(mavenArtifact, pom, toolingMetadata, project, indexRequest.reindex)
@@ -200,9 +208,7 @@ class PackageIndexingService(
                 ?: error("Unable to update a non-existing artifact: $mavenArtifact")
             updated.id
         } else {
-            val mavenArtifactDto = mavenArtifactService.resolveOrCreate(
-                MavenCoordinatesDTO(pom.groupId, pom.artifactId, pom.version)
-            )
+            val mavenArtifactDto = mavenArtifactService.resolveOrCreate(mavenCoordinates)
             packageRepository.save(packageDto.toEntity(mavenArtifactDto)).id
         }
 

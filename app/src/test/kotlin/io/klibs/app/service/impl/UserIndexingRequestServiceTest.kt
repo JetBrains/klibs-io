@@ -87,6 +87,7 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals("Artifact com.example:lib:1.0.0 is already indexed or queued", exception.reason)
     }
 
+
     @Test
     fun `should save index request for valid specific version`() {
         whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())

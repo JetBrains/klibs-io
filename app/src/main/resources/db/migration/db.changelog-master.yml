@@ -181,3 +181,5 @@ databaseChangeLog:
       file: db/migration/2026-Q3/2026-07-09_add_description_generated_at_to_package.yml
   - include:
       file: db/migration/2026-Q3/2026-07-13_add_archive_fields_to_scm_repo.yml
+  - include:
+      file: db/migration/2026-Q3/2026-09-04_create_non_kmp_packages.yml
