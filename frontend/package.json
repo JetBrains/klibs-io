@@ -15,8 +15,9 @@
     "pw:install": "playwright install --with-deps",
     "test:component": "vitest run --project unit",
     "test:component:watch": "vitest --project unit",
-    "test:visual": "vitest run --project visual",
-    "test:visual:watch": "vitest --project visual",
+    "test:visual": "npm run uiverify:clean && vitest run --project visual",
+    "test:visual:watch": "npm run uiverify:clean && vitest --project visual",
+    "uiverify:clean": "node -e \"require('fs').rmSync('uiverify-archive',{recursive:true,force:true})\"",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"
