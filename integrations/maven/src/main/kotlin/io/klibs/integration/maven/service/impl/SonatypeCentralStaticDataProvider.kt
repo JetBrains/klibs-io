@@ -19,8 +19,6 @@ class SonatypeCentralStaticDataProvider(
     objectMapper: ObjectMapper,
     @Value("\${klibs.integration.maven.central.content-endpoint}")
     contentEndpoint: String,
-    @Value("\${klibs.integration.maven.central.content-fallback-endpoint}")
-    contentFallbackEndpoint: String,
     clientTransport: Transport = Java11HttpClientTransport(),
     clock: Clock = Clock.System,
 ) : BaseMavenCentralStaticDataProvider(
@@ -29,7 +27,6 @@ class SonatypeCentralStaticDataProvider(
     LoggerFactory.getLogger(SonatypeCentralStaticDataProvider::class.java),
     objectMapper,
     contentEndpoint,
-    contentFallbackEndpoint,
     "last-modified",
     clientTransport,
     clock

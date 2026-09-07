@@ -19,7 +19,6 @@ class MavenMetricsTest {
                 indexEndpoint = "http://localhost/index",
                 indexDir = "/tmp/maven-index",
                 contentEndpoint = "http://localhost/content/",
-                contentFallbackEndpoint = "http://localhost/fallback/"
             )
         )
         

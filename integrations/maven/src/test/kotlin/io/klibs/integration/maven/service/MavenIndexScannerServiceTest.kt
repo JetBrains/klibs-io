@@ -52,7 +52,6 @@ class MavenIndexScannerServiceTest {
                 indexEndpoint = "http://localhost",
                 indexDir = "build/tmp/maven-index",
                 contentEndpoint = "http://localhost/content/",
-                contentFallbackEndpoint = "http://localhost/fallback/"
             )
         )
         indexingContextManager = MavenIndexingContextManager(properties, indexer, emptyList())

@@ -194,28 +194,12 @@ class BaseMavenStaticDataProviderRedirectTest {
     }
 
     @Test
-    fun `pom 404 on primary falls back to upstream and returns the pom`() {
-        val pom = minimalPom("org.example", "example-artifact", "1.0.0")
-        val primary404 = mockResponse(code = 404)
-        val upstreamOk = mockSonatypeOkResponse(code = 200, body = pom)
-        whenever(transport.get(any(), any())).thenReturn(primary404, upstreamOk)
-
-        val fallbackClient = createSonatypeClient(transport, fallbackPrefix = "https://upstream/maven2/")
-        val result = fallbackClient.getPom(
-            MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
-        )
-
-        assertNotNull(result, "Expected POM via fallback after primary 404")
-        assertEquals("example-artifact", result.artifactId)
-    }
-
-    @Test
-    fun `pom 404 on both primary and fallback returns null`() {
+    fun `pom on 404 returns null`() {
         val primary404 = mockResponse(code = 404)
         val fallback404 = mockResponse(code = 404)
         whenever(transport.get(any(), any())).thenReturn(primary404, fallback404)
 
-        val fallbackClient = createSonatypeClient(transport, fallbackPrefix = "https://upstream/maven2/")
+        val fallbackClient = createSonatypeClient(transport)
         val result = fallbackClient.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
         )
@@ -326,7 +310,6 @@ class BaseMavenStaticDataProviderRedirectTest {
 
     private fun createSonatypeClient(
         transport: Transport,
-        fallbackPrefix: String = SONATYPE_CONTENT_PREFIX,
         rateLimiter: MavenCentralRateLimiter = passthroughRateLimiter(),
         clock: Clock = Clock.System,
     ): SonatypeCentralStaticDataProvider {
@@ -335,7 +318,6 @@ class BaseMavenStaticDataProviderRedirectTest {
             mavenCentralRateLimiter = rateLimiter,
             objectMapper = ObjectMapper().registerKotlinModule(),
             contentEndpoint = SONATYPE_CONTENT_PREFIX,
-            contentFallbackEndpoint = fallbackPrefix,
             clientTransport = transport,
             clock = clock,
         )
@@ -351,7 +333,6 @@ class BaseMavenStaticDataProviderRedirectTest {
             mavenCentralRateLimiter = rateLimiter,
             objectMapper = ObjectMapper().registerKotlinModule(),
             contentEndpoint = GOOGLE_MIRROR_CONTENT_PREFIX,
-            contentFallbackEndpoint = GOOGLE_MIRROR_CONTENT_PREFIX,
             clientTransport = transport,
             clock = clock,
         )
