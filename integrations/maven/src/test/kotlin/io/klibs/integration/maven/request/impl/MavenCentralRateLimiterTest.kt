@@ -26,7 +26,6 @@ class MavenCentralRateLimiterTest {
                 indexEndpoint = "https://index",
                 indexDir = "/tmp",
                 contentEndpoint = "https://content",
-                contentFallbackEndpoint = "https://fallback",
             )
         )
         return MavenCentralRateLimiter(properties, SimpleMeterRegistry(), clock)

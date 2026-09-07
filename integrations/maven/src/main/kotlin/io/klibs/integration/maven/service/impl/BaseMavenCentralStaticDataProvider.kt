@@ -14,7 +14,6 @@ abstract class BaseMavenCentralStaticDataProvider(
     logger: Logger,
     objectMapper: ObjectMapper,
     private val contentEndpoint: String,
-    private val contentFallbackEndpoint: String,
     lastModifiedHeader: String,
     clientTransport: Transport = Java11HttpClientTransport(),
     clock: Clock = Clock.System,
@@ -29,7 +28,5 @@ abstract class BaseMavenCentralStaticDataProvider(
 ) {
 
     override fun getContentUrlPrefix(): String = contentEndpoint
-
-    override fun getContentFallbackUrlPrefix(): String = contentFallbackEndpoint
 
 }

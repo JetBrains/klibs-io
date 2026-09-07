@@ -18,8 +18,6 @@ class GoogleMavenCentralMirrorStaticDataProvider(
     objectMapper: ObjectMapper,
     @Value("\${klibs.integration.maven.google-maven-central-mirror.content-endpoint}")
     contentEndpoint: String,
-    @Value("\${klibs.integration.maven.google-maven-central-mirror.content-fallback-endpoint}")
-    contentFallbackEndpoint: String,
     clientTransport: Transport = Java11HttpClientTransport(),
     clock: Clock = Clock.System,
 ) : BaseMavenCentralStaticDataProvider(
@@ -28,7 +26,6 @@ class GoogleMavenCentralMirrorStaticDataProvider(
     LoggerFactory.getLogger(GoogleMavenCentralMirrorStaticDataProvider::class.java),
     objectMapper,
     contentEndpoint,
-    contentFallbackEndpoint,
     "x-goog-meta-last-modified-epoch",
     clientTransport,
     clock
