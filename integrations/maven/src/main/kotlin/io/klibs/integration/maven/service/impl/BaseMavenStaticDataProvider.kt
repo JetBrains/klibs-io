@@ -18,6 +18,8 @@ import java.io.StringReader
 import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
+import java.util.Properties
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -43,7 +45,7 @@ abstract class BaseMavenStaticDataProvider(
     private val clientTransport: Transport = Java11HttpClientTransport(),
     private val clock: Clock = Clock.System,
     private val lastModifiedHeader: String,
-) :  MavenStaticDataProvider {
+) : MavenStaticDataProvider {
 
     private val mavenXpp3Reader = MavenXpp3Reader()
 
@@ -120,6 +122,24 @@ abstract class BaseMavenStaticDataProvider(
     }
 
     protected abstract fun getContentUrlPrefix(): String
+
+    fun fetchRemoteIndexTimestamp(): java.time.Instant? {
+        val remoteIndexPropertiesUrl =
+            "${getContentUrlPrefix().trimEnd('/')}/.index/nexus-maven-repository-index.properties"
+
+        return try {
+            val indexTimestamp = executeFetch(remoteIndexPropertiesUrl) { response ->
+                val props = Properties()
+                props.load(response.body)
+                props.getProperty("nexus.index.timestamp")
+            } ?: return null
+
+            SimpleDateFormat("yyyyMMddHHmmss.SSS Z").parse(indexTimestamp).toInstant()
+        } catch (e: Exception) {
+            logger.error("Could not fetch remote index timestamp", e)
+            null
+        }
+    }
 
     protected abstract fun parseReleasedAt(value: String): Instant
 

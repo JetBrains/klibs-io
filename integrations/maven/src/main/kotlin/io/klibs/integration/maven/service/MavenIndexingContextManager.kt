@@ -46,7 +46,7 @@ class MavenIndexingContextManager(
             "central",
             indexDir,
             indexDir,
-            properties.central.indexEndpoint,
+            properties.central.contentEndpoint,
             null,
             true,
             true,

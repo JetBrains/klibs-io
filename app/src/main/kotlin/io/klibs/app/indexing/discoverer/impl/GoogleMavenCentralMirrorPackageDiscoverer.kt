@@ -6,6 +6,7 @@ import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.service.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
+import io.klibs.integration.maven.service.impl.BaseMavenCentralStaticDataProvider
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
@@ -18,11 +19,13 @@ class GoogleMavenCentralMirrorPackageDiscoverer(
     googleMavenCentralMirrorScraper: MavenCentralScraper,
     mavenCentralLogRepository: MavenCentralLogRepository,
     packageRepository: PackageRepository,
+    googleMavenCentralMirrorStaticDataProvider: BaseMavenCentralStaticDataProvider,
 ) : BaseMavenCentralPackageDiscoverer(
     mavenIndexDownloadingService = mavenIndexDownloadingService,
     mavenIndexScannerService = googleMavenCentralMirrorIndexScannerService,
     mavenCentralScraper = googleMavenCentralMirrorScraper,
     mavenCentralLogRepository = mavenCentralLogRepository,
     packageRepository = packageRepository,
+    fetchRemoteIndexTimestamp = googleMavenCentralMirrorStaticDataProvider::fetchRemoteIndexTimestamp,
     sourceName = "Google Maven Central mirror",
 )

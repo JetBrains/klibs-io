@@ -10,7 +10,6 @@ data class MavenIntegrationProperties(
         val rateLimitCapacity: Long,
         val rateLimitRefillAmount: Long,
         val rateLimitRefillPeriodSec: Long,
-        val indexEndpoint: String,
         val indexDir: String,
         val contentEndpoint: String,
     )
