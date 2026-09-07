@@ -9,6 +9,7 @@ import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.service.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
+import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -20,7 +21,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
-import java.time.Instant
 
 abstract class BaseMavenCentralPackageDiscoverer(
     private val mavenIndexDownloadingService: MavenIndexDownloadingService,
@@ -28,6 +28,7 @@ abstract class BaseMavenCentralPackageDiscoverer(
     private val mavenCentralScraper: MavenCentralScraper,
     private val mavenCentralLogRepository: MavenCentralLogRepository,
     private val packageRepository: PackageRepository,
+    private val fetchRemoteIndexTimestamp: () -> Instant?,
     private val sourceName: String,
 ) : PackageDiscoverer {
 
@@ -38,7 +39,10 @@ abstract class BaseMavenCentralPackageDiscoverer(
                 mavenCentralLogRepository.retrieveMavenIndexTimestamp()
             }
 
-            newIndexTs = mavenIndexDownloadingService.downloadIndexIfNewer(localIndexTimestamp)
+            newIndexTs = mavenIndexDownloadingService.downloadIndexIfNewer(
+                localIndexTimestamp = localIndexTimestamp,
+                fetchRemoteIndexTimestamp = fetchRemoteIndexTimestamp,
+            )
         } catch (e: Exception) {
             errorChannel.send(Exception("Failed to download Maven index", e))
         }
