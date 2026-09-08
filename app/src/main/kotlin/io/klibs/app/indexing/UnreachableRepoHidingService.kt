@@ -1,9 +1,8 @@
 package io.klibs.app.indexing
 
-import io.klibs.core.project.visibility.ProjectVisibilityService
+import io.klibs.core.project.service.ProjectVisibilityService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.integration.github.GitHubIntegration
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
@@ -14,16 +13,12 @@ import java.time.Instant
 
 @Service
 class UnreachableRepoHidingService(
-    private val gitHubIntegration: GitHubIntegration,
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val projectVisibilityService: ProjectVisibilityService,
     private val registry: MeterRegistry,
 
     @Value("\${klibs.integration.github.repo-unreachable-hide-after}")
-    private val hideAfter: Duration,
-
-    @Value("\${klibs.integration.github.repo-unreachable-max-corpus-share}")
-    private val maxUnreachableCorpusShare: Double
+    private val hideAfter: Duration
 ) {
 
     init {
@@ -39,10 +34,6 @@ class UnreachableRepoHidingService(
         val unreachableSince = repo.unreachableSince ?: return
         val unreachableFor = Duration.between(unreachableSince, Instant.now())
         if (unreachableFor < hideAfter) {
-            return
-        }
-
-        if (!gitHubIsReachable() || !unreachableShareIsPlausible()) {
             return
         }
 
@@ -69,28 +60,6 @@ class UnreachableRepoHidingService(
         if (unhidden > 0) {
             logger.info("Un-hid {} project(s) of {}/{}", unhidden, repo.ownerLogin, repo.name)
         }
-    }
-
-    /**
-     * Never hide while blind: a broken GitHub path cannot tell a gone repository from an unanswered request.
-     * `/rate_limit` costs no quota and fails on a rejected credential or an unreachable API.
-     */
-    private fun gitHubIsReachable(): Boolean =
-        runCatching { gitHubIntegration.getRateLimitInfo() }
-            .onFailure { logger.error("Refusing to hide projects: the GitHub API did not answer", it) }
-            .isSuccess
-
-    private fun unreachableShareIsPlausible(): Boolean {
-        val share = scmRepositoryRepository.unreachableShare()
-        if (share > maxUnreachableCorpusShare) {
-            logger.error(
-                "Refusing to hide projects: {}% of the repositories are unreachable, the limit is {}%",
-                share * 100,
-                maxUnreachableCorpusShare * 100
-            )
-            return false
-        }
-        return true
     }
 
     private fun unreachableShareOrNaN(): Double =

@@ -14,6 +14,7 @@ import io.klibs.integration.github.model.GitHubLicense
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.ReadmeFetchResult
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.DisplayName
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -21,13 +22,10 @@ import org.springframework.test.context.jdbc.Sql
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-/**
- * Runs on the configured corpus-share limit. Every test seeds seven extra reachable repositories, so one
- * unreachable repository is a small share of the corpus and marking several of them trips the guard.
- */
 class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
@@ -142,12 +140,44 @@ class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
     )
     fun `an unanswering GitHub API blocks hiding`() {
         val repo = unreachableFor(Duration.ofDays(8))
-        whenever(gitHubIntegration.getRateLimitInfo()).thenThrow(RuntimeException("401 Bad credentials"))
+        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenThrow(RuntimeException("401 Bad credentials"))
+
+        assertFailsWith<RuntimeException> { uut.updateRepo(repo) }
+
+        assertNull(projectHiddenRepository.findByProjectId(PROJECT_ID))
+        assertEquals(repo.unreachableSince, scmRepositoryRepository.findById(repo.idNotNull)?.unreachableSince)
+    }
+
+    @Test
+    @Sql(scripts = [
+        "classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql",
+        "classpath:sql/UnreachableRepoHidingTest/insert-reachable-repositories.sql"
+    ])
+    fun `failed name lookup does not hide a repository missing by id`() {
+        val repo = unreachableFor(Duration.ofDays(8))
+        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(null)
+        whenever(gitHubIntegration.getRepository(repo.ownerLogin, repo.name))
+            .thenThrow(RuntimeException("503 Service unavailable"))
+
+        assertFailsWith<RuntimeException> { uut.updateRepo(repo) }
+
+        assertNull(projectHiddenRepository.findByProjectId(PROJECT_ID))
+        assertEquals(repo.unreachableSince, scmRepositoryRepository.findById(repo.idNotNull)?.unreachableSince)
+    }
+
+    @Test
+    @Sql(scripts = [
+        "classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql",
+        "classpath:sql/UnreachableRepoHidingTest/insert-reachable-repositories.sql"
+    ])
+    fun `confirmed missing repository is hidden without a separate health probe`() {
+        val repo = unreachableFor(Duration.ofDays(8))
         repoNotFoundOnGitHub(repo)
+        whenever(gitHubIntegration.getRateLimitInfo()).thenThrow(RuntimeException("Health probe unavailable"))
 
         uut.updateRepo(repo)
 
-        assertNull(projectHiddenRepository.findByProjectId(PROJECT_ID))
+        assertEquals(HideOrigin.AUTO, projectHiddenRepository.findByProjectId(PROJECT_ID)?.origin)
     }
 
     @Test
@@ -157,6 +187,7 @@ class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
             "classpath:sql/UnreachableRepoHidingTest/insert-reachable-repositories.sql"
         ]
     )
+    @DisplayName("A large share of unreachable repositories does not block hiding")
     fun `too large a share of unreachable repositories blocks hiding`() {
         val repo = unreachableFor(Duration.ofDays(8))
         unreachableFillerRepositories(count = 3)
@@ -165,7 +196,7 @@ class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
 
         uut.updateRepo(repo)
 
-        assertNull(projectHiddenRepository.findByProjectId(PROJECT_ID))
+        assertEquals(HideOrigin.AUTO, projectHiddenRepository.findByProjectId(PROJECT_ID)?.origin)
     }
 
     private fun unreachableFor(duration: Duration): ScmRepositoryEntity {

@@ -1,7 +1,7 @@
 package io.klibs.core.project.controller
 
-import io.klibs.core.project.visibility.ProjectVisibilityChange
-import io.klibs.core.project.visibility.ProjectVisibilityService
+import io.klibs.core.project.enums.ProjectVisibilityChange
+import io.klibs.core.project.service.ProjectVisibilityService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -29,7 +29,10 @@ class ProjectVisibilityController(
         ownerLogin: String,
 
         @RequestParam(name = "projectName")
-        @Parameter(description = "Name of the project (same as the scm/github repo name)", example = "kotlinx.coroutines")
+        @Parameter(
+            description = "Name of the project (same as the scm/github repo name)",
+            example = "kotlinx.coroutines"
+        )
         projectName: String,
 
         @RequestParam(name = "reason", required = false)
@@ -46,6 +49,7 @@ class ProjectVisibilityController(
             ProjectVisibilityChange.CHANGED -> ResponseEntity.ok("Project $ownerLogin/$projectName is now hidden")
             ProjectVisibilityChange.ALREADY_IN_THAT_STATE ->
                 ResponseEntity.ok("Project $ownerLogin/$projectName was already hidden")
+
             ProjectVisibilityChange.PROJECT_NOT_FOUND -> ResponseEntity.notFound().build()
         }
     }
@@ -61,7 +65,10 @@ class ProjectVisibilityController(
         ownerLogin: String,
 
         @RequestParam(name = "projectName")
-        @Parameter(description = "Name of the project (same as the scm/github repo name)", example = "kotlinx.coroutines")
+        @Parameter(
+            description = "Name of the project (same as the scm/github repo name)",
+            example = "kotlinx.coroutines"
+        )
         projectName: String
     ): ResponseEntity<String> {
         val change = projectVisibilityService.unhideManual(ownerLogin = ownerLogin, projectName = projectName)
@@ -70,6 +77,7 @@ class ProjectVisibilityController(
             ProjectVisibilityChange.CHANGED -> ResponseEntity.ok("Project $ownerLogin/$projectName is served again")
             ProjectVisibilityChange.ALREADY_IN_THAT_STATE ->
                 ResponseEntity.ok("Project $ownerLogin/$projectName was not hidden")
+
             ProjectVisibilityChange.PROJECT_NOT_FOUND -> ResponseEntity.notFound().build()
         }
     }
