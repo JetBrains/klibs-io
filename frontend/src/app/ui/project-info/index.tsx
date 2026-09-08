@@ -8,7 +8,7 @@ import tableStyles from "@/app/ui/targets-table/styles.module.css";
 import FeaturedLabel from "@/app/ui/featured-label";
 import {trackEvent, GAEvent} from "@/app/analytics";
 import {Tooltip, TooltipPlacement} from "@rescui/tooltip";
-import {InfoOutlineIcon} from "@rescui/icons";
+import {GitHubIcon, InfoOutlineIcon} from "@rescui/icons";
 
 const DEPENDENTS_HINT = "The number of other libraries in the klibs.io catalog that depend on this project.";
 
@@ -132,7 +132,18 @@ export function ProjectInfo({projectOverview}: {projectOverview: ProjectDetails}
                 {projectOverview && hasAnyLink(projectOverview) &&
                     <>
                       {projectOverview.linkHomepage && <Link href={projectOverview.linkHomepage} target="_blank" onClick={() => {trackEvent(GAEvent.PROJECT_INFO_LINK_CLICK, {eventCategory: projectOverview.name, eventLabel: 'Homepage'})}}>Homepage</Link>}
-                      {projectOverview.linkScm && <Link href={projectOverview.linkScm} target="_blank" onClick={() => {trackEvent(GAEvent.PROJECT_INFO_LINK_CLICK, {eventCategory: projectOverview.name, eventLabel: 'Github repository'})}}>GitHub repository</Link>}
+                      {projectOverview.linkScm &&
+                          <Link className={styles.repositoryLink} href={projectOverview.linkScm} target="_blank"
+                                onClick={() => {
+                                    trackEvent(GAEvent.PROJECT_INFO_LINK_CLICK, {
+                                        eventCategory: projectOverview.name,
+                                        eventLabel: 'Github repository',
+                                    });
+                                }}>
+                              <GitHubIcon size="xs" aria-hidden/>
+                              GitHub repository
+                          </Link>
+                      }
                       {projectOverview.linkGitHubPages && <Link href={projectOverview.linkGitHubPages} target="_blank" onClick={() => {trackEvent(GAEvent.PROJECT_INFO_LINK_CLICK, {eventCategory: projectOverview.name, eventLabel: 'Github pages'})}}>GitHub pages</Link>}
                       {projectOverview.linkWiki && <Link href={projectOverview.linkWiki} target="_blank" onClick={() => {trackEvent(GAEvent.PROJECT_INFO_LINK_CLICK, {eventCategory: projectOverview.name, eventLabel: 'Wiki Page'})}}>Wiki page</Link>}
                     </>

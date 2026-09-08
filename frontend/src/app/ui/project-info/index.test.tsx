@@ -6,6 +6,7 @@ import { projectDetails } from '@/test/fixtures';
 import { ProjectInfo } from './index';
 
 vi.mock('@rescui/icons', () => ({
+    GitHubIcon: () => <svg data-testid="github-icon" />,
     InfoOutlineIcon: () => null,
 }));
 
@@ -34,6 +35,13 @@ vi.mock('@/app/analytics', () => ({
 }));
 
 describe('ProjectInfo', () => {
+    test('shows a GitHub icon in the repository link', () => {
+        render(<ProjectInfo projectOverview={projectDetails()} />);
+
+        expect(screen.getByRole('link', { name: 'GitHub repository' }))
+            .toContainElement(screen.getByTestId('github-icon'));
+    });
+
     test('builds the owner link and renders classification labels', () => {
         render(<ProjectInfo projectOverview={projectDetails({ markers: ['FEATURED', 'GRANT_WINNER_2025'] })} />);
 
