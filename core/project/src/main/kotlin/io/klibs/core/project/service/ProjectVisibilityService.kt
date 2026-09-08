@@ -1,15 +1,16 @@
-package io.klibs.core.project.visibility
+package io.klibs.core.project.service
 
 import io.klibs.core.project.enums.HideOrigin
+import io.klibs.core.project.enums.ProjectVisibilityChange
 import io.klibs.core.project.repository.ProjectHiddenRepository
 import io.klibs.core.project.repository.ProjectRepository
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
+import java.time.Instant
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 
 /**
  * Hides and un-hides projects, the single writer of `project_hidden`.
