@@ -1,4 +1,4 @@
-package io.klibs.core.project.visibility
+package io.klibs.core.project.enums
 
 /**
  * Outcome of a manual visibility change.
