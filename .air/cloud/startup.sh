@@ -1,21 +1,15 @@
 #!/usr/bin/env bash
-# Workspace setup for air.jetbrains.cloud, run by Air as FLEET_WORKSPACE_SETUP_SCRIPT.
-#
-# Workspace variables:
-#   ENV               frontend environment profile: test (default) | features | production | local
-#   UIVERIFY_API_KEY  UI Verify project key, read by .mcp.json and by `uiverify check`/`upload`
-#
-# Best-effort by design: only a broken checkout or a failed `npm ci` aborts the setup, so a
-# workspace still opens when the image or the network blocks a step. The final summary says what
-# is usable and what is not.
+# Workspace setup for air.jetbrains.cloud (FLEET_WORKSPACE_SETUP_SCRIPT).
+#   ENV               frontend env profile: test (default) | features | production | local
+#   UIVERIFY_API_KEY  UI Verify project key, read by .mcp.json and by `uiverify check`
+# Only a broken checkout or a failed `npm ci` aborts; every other step warns and continues.
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-FRONTEND="$REPO_ROOT/frontend"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+FRONTEND="$ROOT/frontend"
 ENV_NAME="${ENV:-test}"
 SKILLS_CLI="skills@1.5.23"
-UIVERIFY_CLI="uiverify@1.4.0"
 BROWSER_OK=0
 
 log() { printf '[air-setup] %s\n' "$*"; }
@@ -25,153 +19,102 @@ fail() {
     exit 1
 }
 
-preflight() {
-    [ -f "$FRONTEND/package-lock.json" ] || fail "no frontend/package-lock.json in $REPO_ROOT"
-    if [ -n "${UIVERIFY_API_KEY:-}" ]; then
-        log "UIVERIFY_API_KEY is set"
-    else
-        warn "UIVERIFY_API_KEY is not set: the uiverify MCP server and 'uiverify check' cannot authenticate"
-    fi
-}
-
 # ENV picks one of the committed frontend/.env.* profiles; .env.local is git-ignored.
 setup_env_file() {
-    local src
+    local src="$FRONTEND/.env.$ENV_NAME"
     case "$ENV_NAME" in
-        test | features | production) src="$FRONTEND/.env.$ENV_NAME" ;;
+        test | features | production) ;;
         local | example) src="$FRONTEND/.env.example" ;;
         *)
-            warn "unknown ENV='$ENV_NAME', falling back to 'test'"
-            ENV_NAME=test
-            src="$FRONTEND/.env.test"
+            warn "unknown ENV='$ENV_NAME', using 'test'"
+            ENV_NAME=test src="$FRONTEND/.env.test"
             ;;
     esac
-    [ -f "$src" ] || fail "missing ${src#"$REPO_ROOT/"}"
+    [ -f "$src" ] || fail "missing ${src#"$ROOT/"}"
     cp "$src" "$FRONTEND/.env.local"
-    log "ENV=$ENV_NAME -> frontend/.env.local ($(grep -m1 '^NEXT_PUBLIC_API_URL=' "$src" || echo 'no NEXT_PUBLIC_API_URL'))"
+    log "ENV=$ENV_NAME -> frontend/.env.local ($(grep -m1 NEXT_PUBLIC_API_URL "$src"))"
 }
 
-# The marker keeps repeated runs cheap; it lives inside the git-ignored node_modules.
+# The marker keeps repeat runs cheap; it lives in the git-ignored node_modules.
 install_node_deps() {
     local hash marker
-    hash="$(md5sum "$FRONTEND/package-lock.json" | cut -d' ' -f1)"
+    hash="$(md5sum "$FRONTEND/package-lock.json" | cut -d' ' -f1)" || fail "no frontend/package-lock.json"
     marker="$FRONTEND/node_modules/.air-npm-ci"
     if [ -f "$marker" ] && [ "$(cat "$marker")" = "$hash" ]; then
-        log "npm dependencies already match package-lock.json, skipping npm ci"
+        log "npm dependencies up to date"
         return
     fi
-    log "installing npm dependencies (npm ci)"
+    log "installing npm dependencies"
     (cd "$FRONTEND" && npm ci) || fail "npm ci failed"
-    printf '%s\n' "$hash" >"$marker"
+    echo "$hash" >"$marker"
 }
 
 install_browser() {
-    local -a install=(npx playwright install chromium)
-    if [ "$(id -u)" -eq 0 ] || sudo -n true 2>/dev/null; then
-        install=(npx playwright install --with-deps chromium)
-    else
-        warn "no root access: installing the Chromium binary only, its OS packages (libnss3, libgbm1, libasound2, ...) cannot be added here"
+    local -a cmd=(npx playwright install --with-deps chromium)
+    if [ "$(id -u)" -ne 0 ] && ! sudo -n true 2>/dev/null; then
+        cmd=(npx playwright install chromium)
+        warn "no root: installing the Chromium binary only, its OS packages (libnss3, libgbm1, ...) cannot be added"
     fi
     log "installing Playwright Chromium"
-    if ! (cd "$FRONTEND" && "${install[@]}"); then
+    (cd "$FRONTEND" && "${cmd[@]}") || {
         warn "Chromium install failed, cdn.playwright.dev must be reachable"
         return
-    fi
-    if (cd "$FRONTEND" && node -e 'require("playwright").chromium.launch({args:["--no-sandbox"]}).then(b => b.close())') >/dev/null 2>&1; then
+    }
+    if (cd "$FRONTEND" && node -e 'require("playwright").chromium.launch({args:["--no-sandbox"]}).then(b=>b.close())') 2>/dev/null; then
         BROWSER_OK=1
-        log "Chromium launches"
     else
-        warn "Chromium is installed but does not launch, its OS packages are probably missing"
+        warn "Chromium does not launch, its OS packages are missing"
     fi
 }
 
-# skills-lock.json stays the single source of truth for which skills a workspace gets.
+# skills-lock.json is the source of truth for which skills a workspace gets.
 install_skills() {
-    local lock="$REPO_ROOT/skills-lock.json"
-    if [ ! -f "$lock" ]; then
-        log "no skills-lock.json, skipping agent skills"
-        return
-    fi
-    local name
+    local lock="$ROOT/skills-lock.json" name
     local -a entry args expected=() missing=()
+    [ -f "$lock" ] || return 0
     while read -r -a entry; do
-        [ "${#entry[@]}" -gt 1 ] || continue
         args=()
         for name in "${entry[@]:1}"; do args+=(--skill "$name"); done
         expected+=("${entry[@]:1}")
         log "installing skills from ${entry[0]}: ${entry[*]:1}"
-        (cd "$REPO_ROOT" && npx -y "$SKILLS_CLI" add "${entry[0]}" "${args[@]}" --agent claude-code --agent junie --yes) ||
+        (cd "$ROOT" && npx -y "$SKILLS_CLI" add "${entry[0]}" "${args[@]}" -a claude-code -a junie -y) ||
             warn "could not install skills from ${entry[0]}"
     done < <(node -e '
-const fs = require("node:fs");
-const lock = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-const bySource = new Map();
-for (const [name, entry] of Object.entries(lock.skills || {})) {
-    const source = entry.sourceType && entry.sourceType !== "github" ? entry.sourceUrl : entry.source;
-    if (!source) continue;
-    if (!bySource.has(source)) bySource.set(source, []);
-    bySource.get(source).push(name);
-}
-for (const [source, names] of bySource) console.log([source, ...names].join(" "));
+const skills = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).skills || {};
+const bySource = {};
+for (const [name, e] of Object.entries(skills)) (bySource[e.sourceUrl || e.source] ??= []).push(name);
+for (const [source, names] of Object.entries(bySource)) console.log(source, ...names);
 ' "$lock")
 
-    # The CLI skips unknown skill names and still exits 0, so check what actually landed.
+    # The CLI skips unknown names and still exits 0, so check what landed.
     for name in ${expected[@]+"${expected[@]}"}; do
-        [ -d "$REPO_ROOT/.agents/skills/$name" ] || missing+=("$name")
+        [ -d "$ROOT/.agents/skills/$name" ] || missing+=("$name")
     done
-    if [ "${#missing[@]}" -gt 0 ]; then
-        warn "not installed, renamed or removed upstream: ${missing[*]} (update skills-lock.json)"
-    fi
+    [ "${#missing[@]}" -eq 0 ] || warn "not installed, renamed upstream? ${missing[*]} - update skills-lock.json"
 }
 
-# 'uiverify check' confirms no baseline commit on a shallow clone (it bails on
-# --is-shallow-repository, so deepening does not help), and 'git diff master...' has no merge
-# base at depth 1. Costs ~1s and ~1.5MB on this repo.
-unshallow_git_clone() {
-    if [ "$(git -C "$REPO_ROOT" rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
-        log "unshallowing the clone"
-        git -C "$REPO_ROOT" fetch --quiet --unshallow ||
-            warn "could not unshallow, 'uiverify check' will confirm 0 baseline commits and diffs against master will fail"
-    fi
+# Only a full unshallow clears --is-shallow-repository, which 'uiverify check' needs to confirm
+# a baseline commit. Costs ~1s and ~1.5MB here.
+unshallow_clone() {
+    [ "$(git -C "$ROOT" rev-parse --is-shallow-repository 2>/dev/null)" = true ] || return 0
+    log "unshallowing the clone"
+    git -C "$ROOT" fetch --quiet --unshallow || warn "could not unshallow, 'uiverify check' will confirm 0 baselines"
 }
 
-warm_uiverify_cli() {
-    log "pre-fetching $UIVERIFY_CLI into the npx cache"
-    npx -y "$UIVERIFY_CLI" --help >/dev/null 2>&1 || warn "could not pre-fetch $UIVERIFY_CLI"
+report() {
+    local key=MISSING visual="unavailable, Chromium cannot run here"
+    [ -z "${UIVERIFY_API_KEY:-}" ] || key=set
+    [ "$BROWSER_OK" -eq 0 ] || visual=ready
+    log "ENV=$ENV_NAME | UIVERIFY_API_KEY=$key | visual tests: $visual"
+    log "run: cd frontend && npm run test:component | npm run test:visual | npm run dev"
+    [ "$(curl -s -m 8 -o /dev/null -w '%{http_code}' https://uiverify.ai/api/mcp || true)" != 000 ] ||
+        warn "uiverify.ai unreachable, allowlist it in the workspace egress policy or UI Verify only works in CI"
 }
 
-reachable() {
-    local status
-    status="$(curl -s -m 8 -o /dev/null -w '%{http_code}' "$1" 2>/dev/null || true)"
-    case "$status" in
-        "" | 000) return 1 ;;
-        *) return 0 ;;
-    esac
-}
-
-summary() {
-    local -a blocked=()
-    reachable https://uiverify.ai/api/mcp || blocked+=(uiverify.ai)
-    reachable https://cdn.playwright.dev/ || blocked+=(cdn.playwright.dev)
-
-    log "--- summary ---"
-    log "ENV profile      : $ENV_NAME (frontend/.env.local)"
-    log "npm dependencies : installed"
-    log "UIVERIFY_API_KEY : $([ -n "${UIVERIFY_API_KEY:-}" ] && echo set || echo MISSING)"
-    log "visual tests     : $([ "$BROWSER_OK" -eq 1 ] && echo 'ready' || echo 'unavailable, Chromium cannot run here')"
-    log "ready to run     : cd frontend && npm run test:component | npm run test:visual | npm run dev"
-    if [ "${#blocked[@]}" -gt 0 ]; then
-        warn "blocked by the workspace egress policy: ${blocked[*]}"
-        warn "ask the Air workspace admins to allowlist those hosts, otherwise visual snapshotting and UI Verify triage only work in CI"
-    fi
-}
-
-log "setting up $REPO_ROOT for air.jetbrains.cloud"
-preflight
+log "preparing $ROOT for air.jetbrains.cloud"
 setup_env_file
 install_node_deps
 install_browser
 install_skills
-unshallow_git_clone
-warm_uiverify_cli
-summary
+unshallow_clone
+report
