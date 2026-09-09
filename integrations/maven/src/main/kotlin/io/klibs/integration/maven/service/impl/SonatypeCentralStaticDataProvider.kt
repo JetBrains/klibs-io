@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.request.impl.MavenCentralRateLimiter
-import kotlin.time.Instant
 import kotlin.time.Clock
 import org.apache.maven.search.api.transport.Java11HttpClientTransport
 import org.apache.maven.search.api.transport.Transport
@@ -27,12 +26,9 @@ class SonatypeCentralStaticDataProvider(
     LoggerFactory.getLogger(SonatypeCentralStaticDataProvider::class.java),
     objectMapper,
     contentEndpoint,
-    "last-modified",
     clientTransport,
     clock
 ) {
     override val scraperType: ScraperType
         get() = ScraperType.CENTRAL_SONATYPE
-
-    override fun parseReleasedAt(value: String): Instant = parseRfc1123Instant(value)
 }
