@@ -6,9 +6,27 @@ import io.klibs.integration.maven.androidx.ModuleMetadataWrapper
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.dto.MavenMetadata
 import java.time.Instant
+import org.apache.maven.model.Dependency
+import org.apache.maven.model.License
 import org.apache.maven.model.Model
+import org.apache.maven.model.Scm
 
-typealias MavenPom = Model
+class MavenPom(private val model: Model) {
+
+    val groupId: String
+        get() = model.groupId ?: model.parent?.groupId ?: error("No groupId found for ${scm?.url}")
+
+    val version: String
+        get() = model.version ?: model.parent?.version ?: error("No version found for ${scm?.url}")
+
+    val artifactId: String get() = model.artifactId ?: error("No artifactId found for ${scm?.url}")
+    val description: String? get() = model.description
+    val url: String? get() = model.url
+    val scm: Scm? get() = model.scm
+    val developers get() = model.developers ?: emptyList()
+    val licenses: List<License> get() = model.licenses ?: emptyList()
+    val dependencies: List<Dependency> get() = model.dependencies ?: emptyList()
+}
 
 data class PomWithReleaseDate(val pom: MavenPom, val releasedAt: Instant)
 

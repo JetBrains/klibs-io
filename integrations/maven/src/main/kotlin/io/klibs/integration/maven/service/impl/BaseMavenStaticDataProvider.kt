@@ -58,7 +58,7 @@ abstract class BaseMavenStaticDataProvider(
         return executeFetch(pomFileUrl) { response ->
             val pom =
                 mavenXpp3Reader.read(StringReader(response.body.readAllBytes().toString(StandardCharsets.UTF_8)))
-            PomWithReleaseDate(pom, getReleasedAt(response).toJavaInstant())
+            PomWithReleaseDate(MavenPom(pom), getReleasedAt(response).toJavaInstant())
         }
     }
 
