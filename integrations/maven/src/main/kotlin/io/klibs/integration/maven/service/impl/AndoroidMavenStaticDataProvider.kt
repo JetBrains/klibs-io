@@ -8,10 +8,6 @@ import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
 import io.klibs.integration.maven.request.RequestRateLimiter
-import java.time.format.DateTimeFormatter
-import kotlin.time.Instant
-import java.time.ZonedDateTime
-import kotlin.time.toKotlinInstant
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
@@ -27,7 +23,6 @@ class GoogleMavenStaticDataProvider(
     rateLimiter = unlimitedRateLimiter,
     logger = logger,
     objectMapper = objectMapper,
-    lastModifiedHeader = "last-modified"
 ) {
     override fun getContentUrlPrefix(): String {
         return GOOGLE_MAVEN_URL
@@ -48,8 +43,6 @@ class GoogleMavenStaticDataProvider(
             getModuleMetadata(mavenArtifact.groupId, mavenArtifact.artifactId, mavenArtifact.version) ?: return null
         return convertModuleToToolingMetadata(moduleMetadata.gradleMetadata)
     }
-
-    override fun parseReleasedAt(value: String): Instant = parseRfc1123Instant(value)
 
     private fun convertModuleToToolingMetadata(metadata: GradleMetadata): KotlinToolingMetadataDelegate {
         return KotlinToolingMetadataDelegateStubImpl(metadata)
