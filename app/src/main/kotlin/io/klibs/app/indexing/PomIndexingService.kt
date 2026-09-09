@@ -40,7 +40,7 @@ class PomIndexingService(
     }
 
     fun extractDevelopers(pom: MavenPom): List<PackageDeveloper> {
-        val developers = pom.developers ?: return emptyList()
+        val developers = pom.developers
         return developers.mapNotNull { dev ->
             val name = (dev.name ?: dev.organization)
                 ?.takeIf { it.isNotBlank() }
@@ -54,7 +54,7 @@ class PomIndexingService(
     }
 
     fun extractLicenses(pom: MavenPom): List<PackageLicense> {
-        val licenses = pom.licenses ?: return emptyList()
+        val licenses = pom.licenses
         return licenses.mapNotNull { license ->
             val name = license.name?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
             PackageLicense(
@@ -89,7 +89,7 @@ class PomIndexingService(
 
     private fun MavenPom.extractDependencies(): Set<MavenCoordinatesDTO> =
         dependencies
-            ?.asSequence()
+            .asSequence()
             ?.mapNotNull { dep ->
                 val group = dep.groupId?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
                 val artifact = dep.artifactId?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
