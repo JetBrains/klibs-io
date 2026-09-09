@@ -16,10 +16,9 @@ class BaseMavenStaticDataProviderURLBuilderTest {
         logger = mock(),
         objectMapper = mock(),
         clientTransport = mock(),
-        lastModifiedHeader = "last-modified"
     ) {
         override fun getContentUrlPrefix(): String = "https://example.com/repo/"
-        override fun parseReleasedAt(value: String): Instant {
+        override fun parseReleasedAt(value: Map<String, String>): Instant {
             TODO("Not yet implemented")
         }
 
