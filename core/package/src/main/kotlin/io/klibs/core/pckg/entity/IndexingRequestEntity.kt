@@ -69,4 +69,6 @@ data class IndexingRequestEntity(
     val userRequestIssue: UserRequestIssueEntity? = null,
 ) {
     val idNotNull: Long get() = requireNotNull(id)
+
+    fun gav(): String = "$groupId:$artifactId:$version"
 }
