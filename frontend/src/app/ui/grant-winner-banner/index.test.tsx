@@ -10,14 +10,6 @@ vi.mock('@rescui/button', () => ({
     ),
 }));
 
-vi.mock('@rescui/typography', () => ({
-    textCn: () => '',
-}));
-
-vi.mock('next/image', () => ({
-    default: ({ alt }: { alt: string }) => <span aria-label={alt} />,
-}));
-
 vi.mock('./background-squares', () => ({
     BackgroundSquares: () => null,
 }));

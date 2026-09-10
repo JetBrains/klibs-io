@@ -18,14 +18,6 @@ vi.mock('@rescui/icons', () => ({
     MoreIcon: () => <>Menu</>,
 }));
 
-vi.mock('@rescui/typography', () => ({
-    textCn: () => '',
-}));
-
-vi.mock('next/image', () => ({
-    default: ({ alt }: { alt: string }) => <span aria-label={alt} />,
-}));
-
 vi.mock('react-remove-scroll-bar', () => ({
     RemoveScrollBar: () => null,
 }));
