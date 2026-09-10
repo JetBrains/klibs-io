@@ -1,23 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { ReactNode } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 
 import Faq from './page';
 
-vi.mock('next/image', () => ({
-    default: ({ alt }: { alt: string }) => <span aria-label={alt} />,
-}));
-
 vi.mock('@rescui/icons', () => ({
     SlackIcon: () => null,
-}));
-
-vi.mock('@rescui/typography', () => ({
-    textCn: () => '',
-}));
-
-vi.mock('@/app/ui/container', () => ({
-    default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
 describe('FAQ page', () => {

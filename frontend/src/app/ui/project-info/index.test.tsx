@@ -13,10 +13,6 @@ vi.mock('@rescui/tooltip', () => ({
     Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('@rescui/typography', () => ({
-    textCn: () => '',
-}));
-
 vi.mock('@/app/ui/time-ago', () => ({
     default: ({ timestamp }: { timestamp: number }) => <>{timestamp}</>,
 }));
