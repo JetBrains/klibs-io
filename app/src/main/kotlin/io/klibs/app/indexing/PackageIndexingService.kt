@@ -137,8 +137,9 @@ class PackageIndexingService(
                         userRequestReportWriter.saveFailureReportIfTerminal(requestId, errorMessage)
                     }
 
-                    // Leave the request untouched so a rate limit does not burn a retry attempt.
-                    Outcome.RATE_LIMITED -> Unit
+                    // Reset only the status so a rate limit does not burn a retry attempt.
+                    Outcome.RATE_LIMITED ->
+                        indexingRequestRepository.updateStatus(requestId, IndexingRequestStatus.PENDING)
                 }
             } catch (ex: Exception) {
                 logger.error("Error during finalizing index request with id=$requestId: ${ex.message}", ex)
@@ -160,7 +161,7 @@ class PackageIndexingService(
         } else {
             logger.error("Multi-version indexing requests are not supported")
         }
-        logger.debug("Processed an indexing request for {}", indexRequest)
+        logger.debug("Processed an indexing request for {}", indexRequest.gav())
     }
 
     private fun indexArtifact(indexRequest: IndexingRequestEntity) {

@@ -131,6 +131,11 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             Int::class.java
         )
         assertEquals(1, failedAttempts, "Failed attempts should be incremented")
+        val status = jdbcTemplate.queryForObject(
+            "SELECT status FROM package_index_request WHERE id = ${packageIndexRequestBeforeProcessing.idNotNull}",
+            String::class.java
+        )
+        assertEquals("PENDING", status, "Status should remain PENDING after failure")
         assertContains(output.out, "Mocked getPom exception")
     }
 
@@ -700,6 +705,50 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             userRequestReportRepository.findAll().toList().isEmpty(),
             "No report should be saved until retries are exhausted"
         )
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
+    fun `processPackageQueue processes request directly without IN_PROCESS status transition`() {
+        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        assertNotNull(request)
+        assertEquals("PENDING", request.status.name)
+
+        val pom = mock<MavenPom>()
+        whenever(pom.groupId).thenReturn(request.groupId)
+        whenever(pom.artifactId).thenReturn(request.artifactId)
+        whenever(pom.version).thenReturn(request.version)
+        val kotlinToolingMetadata = mock<GradleMetadata>()
+        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(PomWithReleaseDate(pom, Instant.now()))
+        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+
+        val processed = uut.processPackageQueue()
+        assertTrue(processed)
+
+        assertNull(indexingRequestRepository.findById(request.idNotNull).orElse(null))
+    }
+
+    @Test
+    fun `findFirstForIndexing only selects requests with PENDING status`() {
+        jdbcTemplate.update(
+            """
+            INSERT INTO package_index_request (id, group_id, artifact_id, version, released_ts, scraper_type, status, failed_attempts)
+            VALUES (999, 'com.example', 'legacy-in-process', '1.0.0', NOW(), 'CENTRAL_SONATYPE', 'IN_PROCESS', 0)
+            """
+        )
+        try {
+            val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+            assertNull(request, "IN_PROCESS requests should not be selected for indexing")
+
+            jdbcTemplate.update("UPDATE package_index_request SET status = 'PENDING' WHERE id = 999")
+            val pendingRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+            assertNotNull(pendingRequest, "PENDING requests must be eligible for indexing")
+            assertEquals(999L, pendingRequest.id)
+        } finally {
+            jdbcTemplate.update("DELETE FROM package_index_request WHERE id = 999")
+        }
     }
 
     private fun saveUserOriginatedRequest(failedAttempts: Int): UserRequestIssueEntity {

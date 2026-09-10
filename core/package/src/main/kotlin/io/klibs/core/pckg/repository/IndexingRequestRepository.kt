@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 
 interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long> {
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Query(value = """
         UPDATE package_index_request
         SET status = :#{#newStatus.name()}

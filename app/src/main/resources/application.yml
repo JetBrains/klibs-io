@@ -105,6 +105,7 @@ klibs:
   scheduling:
     process-indexing-queue:
       enabled: ${PROCESS_INDEXING_QUEUE_ENABLED:true}
+      fixed-rate: ${PROCESS_INDEXING_QUEUE_FIXED_RATE:30m}
     fill-version-type:
       enabled: ${FILL_VERSION_TYPE_ENABLED:true}
     search-index-sync:
