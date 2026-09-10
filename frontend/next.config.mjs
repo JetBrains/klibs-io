@@ -6,6 +6,10 @@ const nextConfig = {
 				source: '/sitemap.xml',
 				destination: `${process.env.NEXT_PUBLIC_API_URL}/sitemap.xml`,
 			},
+			{
+				source: '/package/:groupId/:artifactId/:version/status',
+				destination: `${process.env.NEXT_PUBLIC_API_URL}/package/:groupId/:artifactId/:version/status`,
+			},
 		];
 	},
 	images: {

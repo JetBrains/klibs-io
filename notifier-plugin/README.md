@@ -3,7 +3,7 @@
 The `klibs-io-notifier` plugin notifies [klibs.io](https://klibs.io) when a Kotlin Multiplatform library has been published to Maven Central. It sends the library's Maven coordinates to klibs.io so the library can be indexed without waiting for the regular Maven Central scan.
 
 > [!NOTE]
-> The plugin is intended for open-source Kotlin Multiplatform projects that use the [Vanniktech Gradle Maven Publish Plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/).
+> The plugin is intended for open-source Kotlin Multiplatform projects. It was designed for projects that use the [Vanniktech Gradle Maven Publish Plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/), but it works with any publishing plugin based on Gradle's `maven-publish` after additional configuration (see. [publishTaskName](#publishtaskname)).
 
 ## Table of Contents
 
@@ -14,18 +14,20 @@ The `klibs-io-notifier` plugin notifies [klibs.io](https://klibs.io) when a Kotl
   - [Configure plugin resolution](#2-configure-plugin-resolution)
   - [Apply the plugin](#3-apply-the-plugin)
   - [Publish the library](#4-publish-the-library)
-  - [Check the indexing status](#5-optional-check-the-indexing-status-of-your-library)
+  - [(optional) Run klibs-io-notifier only](#5-optional-run-klibs-io-notifier-only)
+  - [(optional) Check the indexing status](#6-optional-check-the-indexing-status-of-your-library)
 - [Configuration](#configuration)
-  - [apiBaseUrl](#apibaseurl)
+  - [apiUrl](#apiurl)
+  - [publishTaskName](#publishtaskname)
 - [How it works](#how-it-works)
-- 
+
 ## Prerequisites
 
 To use the klibs-io-notifier plugin in your project, it needs to:
 
 - be a Kotlin Multiplatform library
 - use Gradle (Kotlin Toolchain support coming soon) 
-- use the `com.vanniktech.maven.publish` plugin for publishing to Maven Central
+- publish to Maven Central with a plugin based on Gradle's `maven-publish` (i.e. one that applies `MavenPublishPlugin`), such as `com.vanniktech.maven.publish`
 
 <!-- TODO: KTL-4938 update information about Kotlin Toolchain-->
 
@@ -47,7 +49,7 @@ Make sure your library is properly configured for publishing to Maven Central. Y
 
 For your library to be listed on klibs.io, it must meet the [klibs.io criteria](https://klibs.io/faq#how-do-i-add-a-project). Make sure that:
 * Your project is open source and is available on GitHub
-* At least one artifact's POM contains a valid link to the GitHub repository, either under `url` or `scm.url` ([see example](https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0.pom))
+* At least one artifact's POM contains a valid link to the GitHub repository, either under `url` or `scm.url` (see [example](https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0.pom))
 
 ### 2. Configure plugin resolution
 
@@ -78,7 +80,9 @@ plugins {
 ```
 
 ### 4. Publish the library
-After a successful publishing task, the klibs-io-notifier automatically sends a notification. There is no separate command to run it. You just need to run one of the publishing tasks as usual.
+After a successful publishing task, the klibs-io-notifier automatically sends a notification — you just need to run one of the publishing tasks as usual.
+
+The example below uses Vanniktech Gradle Maven Publish Plugin:
 
 #### Manual release mode
 
@@ -102,7 +106,15 @@ Optionally, you can use the publishing task with the auto-release mode, by [adju
 > [!CAUTION]
 > Artifacts released to Maven Central cannot be deleted or modified ([read more](https://central.sonatype.org/faq/can-i-change-a-component/)). Before publishing your project in auto-release mode, make sure everything is fully tested and the artifacts are exactly as you intend them to be.
 
-### 5. (optional) Check the indexing status of your library
+### 5. (optional) Run klibs-io-notifier only
+
+You can also run the notifier manually:
+
+```
+./gradlew notifyKlibsIo
+```
+
+### 6. (optional) Check the indexing status of your library
 
 After successfully notifying klibs.io, you can check the indexing status of your artifact at `https://klibs.io/package/<GROUP_ID>/<ARTIFACT_ID>/<VERSION>/status`.
 
@@ -110,29 +122,38 @@ After successfully notifying klibs.io, you can check the indexing status of your
 
 The plugin exposes the following settings through the `klibsIoNotifier` extension.
 
-| Setting             | Description                                                                                     | Default |
-|---------------------|-------------------------------------------------------------------------------------------------| --- |
-| [apiBaseUrl](#apiBaseUrl) | Base URL of the klibs.io notification receiver. The plugin appends it with `/notify/artifacts`. | `https://klibs.io` |
+| Setting                             | Description                                         | Default                                                        |
+|-------------------------------------|-----------------------------------------------------|----------------------------------------------------------------|
+| [apiUrl](#apiurl)                   | URL of the klibs.io notification receiver           | `https://klibs.io/notify/artifacts`                            |
+| [publishTaskName](#publishtaskname) | Name of the publishing task the notifier hooks into | `publishKotlinMultiplatformPublicationToMavenCentralRepository` |
 
-### apiBaseUrl
+### apiUrl
 
-By default, all notifications are sent to the `https://klibs.io`. If you need to use a different URL, you can configure the `klibsIoNotifier` extension:
+By default, all notifications are sent to the `https://klibs.io/notify/artifacts`. If you need to use a different URL, you can configure the `klibsIoNotifier` extension:
 
 ```kotlin
 klibsIoNotifier {
-    apiBaseUrl.set("https://your-url")
+    apiUrl.set("https://your-url")
 }
 ```
 
-The plugin appends `/notify/artifacts` to the `apiBaseUrl`. Do not include that path in the setting.
+### publishTaskName
+
+The notifier works out of the box with the Vanniktech plugin. For other plugins you need to configure the `publishTaskName`. Set its value to the name of a Gradle task that you use to publish your library to Maven Central:
+
+```kotlin
+klibsIoNotifier {
+    publishTaskName.set("yourPublishingTaskName")
+}
+```
 
 ## How it works
 
-When one of the supported Maven Central publishing tasks completes successfully, the klibs-io-notifier:
+When one of the supported Maven Central publishing tasks completes successfully, or when called explicitly, the klibs-io-notifier:
 
 1. reads the `groupId`, `artifactId`, and `version` from the `kotlinMultiplatform` publication
 2. verifies that the publication contains `kotlin-tooling-metadata.json`
-3. sends the coordinates to `POST <apiBaseUrl>/notify/artifacts`.
+3. sends the coordinates to the configured [apiUrl](#apiurl) (`POST https://klibs.io/notify/artifacts` by default).
 
 Example of a request body:
 
@@ -144,17 +165,17 @@ Example of a request body:
 }
 ```
 
-The supported publishing tasks are:
+The supported publishing tasks by default are:
 
 - `publishToMavenCentral`
 - `publishAndReleaseToMavenCentral`
 - `publishKotlinMultiplatformPublicationToMavenCentralRepository` - the task that runs as part of `./gradlew publish`, etc.
 
-The notification task is registered as `notifyKlibsIo` and is run automatically as a finalizer of supported publishing tasks.
+The notification task is registered as `notifyKlibsIo` and runs automatically as a finalizer of the hooked publishing task. You can also run it directly (`./gradlew notifyKlibsIo`) to notify klibs.io on demand.
 
 Notification failures are logged as warnings and do not fail the publishing build. This includes network errors and non-2xx responses from klibs.io.
 
-With the Vanniktech plugin, the final Maven Central upload runs at the end of a gradle build, after the notification has been sent to klibs.io. A successful notification therefore means that the publishing task reached its successful completion point. It does not guarantee that the artifact is already visible in Maven Central.
+With the Vanniktech plugin, the final Maven Central upload runs at the end of a Gradle build, after the notification has been sent to klibs.io. A successful notification therefore means that the publishing task reached its successful completion point. It does not guarantee that the artifact is already visible in Maven Central.
 
 ### Processing of notifications on klibs.io
 
