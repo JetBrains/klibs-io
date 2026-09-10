@@ -9,7 +9,6 @@ import { test } from 'vitest';
 import { packageOverview } from '@/test/fixtures';
 import TargetsTable from './index';
 
-// Spans every platform color and gives Kotlin/Native two groups, so the row radii show up too.
 test('targets table across all platforms', async () => {
     disableAutoSnapshot();
 

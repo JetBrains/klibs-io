@@ -1,0 +1,38 @@
+name: UI Verify Auto-Rerun
+
+# UI Verify posts its verdict as a commit status `UI Verify: <slug>`. When every diff is
+# accepted it flips that status to success; this workflow catches the `status` event and
+# re-runs the failed visual job so the gated Actions check turns green with no manual click.
+# NOTE: `status` triggers only fire from the copy of this file on the DEFAULT branch — merge
+# it to main first, or it won't run on PRs.
+
+on: status
+
+permissions:
+  actions: write
+
+jobs:
+  rerun:
+    if: >
+      startsWith(github.event.context, 'UI Verify:') &&
+      github.event.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rerun the accepted project's failed visual workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.sha }}
+          STATUS_CONTEXT: ${{ github.event.context }}
+        run: |
+          set -euo pipefail
+          slug="${STATUS_CONTEXT#UI Verify: }"
+          case "$slug" in
+            <klibs-io-slug>) workflow=ui-verify.yaml ;;
+            *) echo "No workflow mapped for project '$slug'; nothing to re-run."; exit 0 ;;
+          esac
+          run_ids=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow" \
+            --commit "$HEAD_SHA" --status failure --json databaseId --jq '.[].databaseId')
+          [ -z "$run_ids" ] && { echo "No failed $workflow run for $HEAD_SHA"; exit 0; }
+          for run_id in $run_ids; do
+            gh run rerun "$run_id" --failed --repo "$GITHUB_REPOSITORY"
+          done
