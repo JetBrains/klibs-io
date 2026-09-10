@@ -10,15 +10,11 @@ vi.mock('@rescui/icons', () => ({
     GlobusIcon: () => null, KotlinIcon: () => null, RocketIcon: () => null, TeamIcon: () => null,
 }));
 vi.mock('@rescui/table', () => ({ tableCn: () => '' }));
-vi.mock('@rescui/typography', () => ({ textCn: () => '' }));
 vi.mock('@rescui/tab-list', () => ({
     Tab: ({ children }: { children: ReactNode }) => <button>{children}</button>,
     TabList: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 vi.mock('@/app/ui/breadcrumb', () => ({ PackageBreadcrumbs: () => null }));
-vi.mock('@/app/ui/container', () => ({
-    default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-}));
 vi.mock('@/app/ui/package-importer', () => ({ PackageImportCode: () => null }));
 vi.mock('@/app/ui/package-importer-dropdown', () => ({ PackageImporterDropdown: () => null }));
 vi.mock('@/app/ui/side-popup', () => ({ default: ({ target }: { target: ReactNode }) => <>{target}</> }));

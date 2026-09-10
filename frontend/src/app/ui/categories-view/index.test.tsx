@@ -24,14 +24,6 @@ vi.mock('@rescui/icons', () => ({
     ArrowRightIcon: () => null,
 }));
 
-vi.mock('@rescui/typography', () => ({
-    textCn: () => '',
-}));
-
-vi.mock('@/app/ui/container', () => ({
-    default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-}));
-
 vi.mock('@/app/ui/project-card', () => ({
     default: ({ featuredProject }: { featuredProject: ProjectSearchResults }) => (
         <a href={`/project/${featuredProject.ownerLogin}/${featuredProject.name}`}>{featuredProject.name}</a>

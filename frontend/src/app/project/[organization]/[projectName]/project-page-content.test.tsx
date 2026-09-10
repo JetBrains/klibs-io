@@ -6,7 +6,6 @@ import { projectDetails } from '@/test/fixtures';
 import Project from './project-page-content';
 
 vi.mock('@rescui/card', () => ({ cardCn: () => '' }));
-vi.mock('@rescui/typography', () => ({ textCn: () => '' }));
 vi.mock('@rescui/tab-list', () => ({
     Tab: ({ children }: { children: ReactNode }) => <button>{children}</button>,
     TabList: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -14,9 +13,6 @@ vi.mock('@rescui/tab-list', () => ({
 }));
 
 vi.mock('@/app/ui/breadcrumb', () => ({ ProjectBreadcrumb: () => null }));
-vi.mock('@/app/ui/container', () => ({
-    default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-}));
 vi.mock('@/app/ui/package-importer-dropdown', () => ({ PackageImporterDropdown: () => null }));
 vi.mock('@/app/ui/project-info', () => ({ ProjectInfo: () => null }));
 vi.mock('@/app/ui/side-popup', () => ({

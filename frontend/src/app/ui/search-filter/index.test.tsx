@@ -50,16 +50,8 @@ vi.mock('@rescui/icons', () => ({
     ProjectsIcon: () => null,
 }));
 
-vi.mock('@rescui/typography', () => ({
-    textCn: () => '',
-}));
-
 vi.mock('@jetbrains/kotlin-web-site-ui/out/components/sidebar-menu', () => ({
     SidebarMenuHeader: ({ children }: { children: ReactNode }) => <>{children}</>,
-}));
-
-vi.mock('@/app/ui/container', () => ({
-    default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
 vi.mock('@/app/ui/sidebar-mobile/sidebar-mobile', () => ({

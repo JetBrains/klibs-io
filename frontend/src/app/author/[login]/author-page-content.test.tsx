@@ -1,19 +1,8 @@
 import { render, screen } from '@testing-library/react';
-import { ReactNode } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 
 import { author } from '@/test/fixtures';
 import Author from './author-page-content';
-
-vi.mock('next/image', () => ({
-    default: ({ alt }: { alt: string }) => <span aria-label={alt} />,
-}));
-
-vi.mock('@/app/ui/container', () => ({
-    default: ({ children, dataTestId }: { children: ReactNode; dataTestId?: string }) => (
-        <div data-testid={dataTestId}>{children}</div>
-    ),
-}));
 
 vi.mock('@/app/ui/project-card', () => ({
     default: () => null,
