@@ -8,7 +8,6 @@ import io.klibs.app.util.toIndexRequest
 import io.klibs.core.pckg.dto.MavenCoordinatesDTO
 import io.klibs.core.pckg.dto.PackageDTO
 import io.klibs.core.pckg.entity.IndexingRequestEntity
-import io.klibs.core.pckg.enums.IndexingRequestStatus
 import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
@@ -116,7 +115,7 @@ class PackageIndexingService(
         var outcome = Outcome.FAILED
         var errorMessage: String? = null
         try {
-            selfProvider.getObject().processRequest(requestId)
+            selfProvider.getObject().processRequest(indexRequest)
             outcome = Outcome.SUCCESS
         } catch (e: MavenRateLimitedException) {
             outcome = Outcome.RATE_LIMITED
@@ -150,10 +149,7 @@ class PackageIndexingService(
     private enum class Outcome { SUCCESS, FAILED, RATE_LIMITED }
 
     @Transactional
-    internal fun processRequest(idToProcess: Long) {
-        val indexRequest =
-            indexingRequestRepository.updateStatus(idToProcess, IndexingRequestStatus.IN_PROCESS) ?: return
-
+    internal fun processRequest(indexRequest: IndexingRequestEntity) {
         val isIndividualArtifact = indexRequest.version != null
         if (isIndividualArtifact) {
             indexArtifact(indexRequest)
