@@ -40,9 +40,7 @@ export default defineConfig({
         env: {
             TZ: 'UTC',
         },
-        environment: 'jsdom',
-        include: ['src/**/*.test.{ts,tsx}'],
-        setupFiles: ['./src/test/setup.ts'],
+        // Keep per-project: `extends: true` concatenates arrays, so root globs/setup leak into every project.
         projects: [
             {
                 extends: true,
