@@ -2,6 +2,7 @@ package io.klibs.app.indexing.discoverer.impl
 
 import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.project.blacklist.BlacklistRepository
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.service.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
@@ -20,12 +21,14 @@ class GoogleMavenCentralMirrorPackageDiscoverer(
     mavenCentralLogRepository: MavenCentralLogRepository,
     packageRepository: PackageRepository,
     googleMavenCentralMirrorStaticDataProvider: BaseMavenCentralStaticDataProvider,
+    blacklistRepository: BlacklistRepository,
 ) : BaseMavenCentralPackageDiscoverer(
     mavenIndexDownloadingService = mavenIndexDownloadingService,
     mavenIndexScannerService = googleMavenCentralMirrorIndexScannerService,
     mavenCentralScraper = googleMavenCentralMirrorScraper,
     mavenCentralLogRepository = mavenCentralLogRepository,
     packageRepository = packageRepository,
+    blacklistRepository = blacklistRepository,
     fetchRemoteIndexTimestamp = googleMavenCentralMirrorStaticDataProvider::fetchRemoteIndexTimestamp,
     sourceName = "Google Maven Central mirror",
 )

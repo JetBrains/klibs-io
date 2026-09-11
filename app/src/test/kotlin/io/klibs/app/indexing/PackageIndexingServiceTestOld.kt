@@ -66,6 +66,7 @@ class PackageIndexingServiceTestOld {
             userRequestReportWriter,
             packageService,
             packageRepository,
+            mock(),
             mavenArtifactService,
             nonKmpPackageService,
             IndexingConfigurationProperties(),

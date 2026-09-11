@@ -15,4 +15,7 @@ interface UserRequestReportWriter {
      * No-op for requests not originating from a user issue.
      */
     fun saveFailureReportIfTerminal(indexRequestId: Long, errorMessage: String?)
+
+    /** Records an immediate FAILURE for a user-originated request, regardless of retries. */
+    fun saveFailureReport(indexRequestId: Long, errorMessage: String?)
 }

@@ -4,6 +4,7 @@ import io.klibs.app.indexing.discoverer.PackageDiscoverer
 import io.klibs.app.indexing.discoverer.collectAllKnownMavenCentralPackages
 import io.klibs.app.indexing.discoverer.createArtifactCoordinates
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.project.blacklist.BlacklistRepository
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.service.MavenCentralScraper
@@ -16,6 +17,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.chunked
+import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onCompletion
@@ -28,6 +30,7 @@ abstract class BaseMavenCentralPackageDiscoverer(
     private val mavenCentralScraper: MavenCentralScraper,
     private val mavenCentralLogRepository: MavenCentralLogRepository,
     private val packageRepository: PackageRepository,
+    private val blacklistRepository: BlacklistRepository,
     private val fetchRemoteIndexTimestamp: () -> Instant?,
     private val sourceName: String,
 ) : PackageDiscoverer {
@@ -62,6 +65,7 @@ abstract class BaseMavenCentralPackageDiscoverer(
 
         return mavenIndexScannerService
             .scanForNewKMPArtifacts()
+            .filterNot { blacklistRepository.checkPackageBanned(it.groupId, it.artifactId) }
             .chunked(100)
             .flatMapConcat { foundArtifactsBatch ->
                 collectUnknownArtifacts(foundArtifactsBatch, existingPackages).asFlow()
@@ -77,6 +81,10 @@ abstract class BaseMavenCentralPackageDiscoverer(
 
     private suspend fun updateKnown(errorChannel: Channel<Exception>): Flow<MavenArtifact> {
         val existingPackages = collectAllKnownMavenCentralPackages(packageRepository)
+            .filterKeys { coordinates ->
+                val (groupId, artifactId) = coordinates.split(':', limit = 2)
+                !blacklistRepository.checkPackageBanned(groupId, artifactId)
+            }
 
         return mavenCentralScraper
             .findNewVersions(existingPackages, errorChannel)
