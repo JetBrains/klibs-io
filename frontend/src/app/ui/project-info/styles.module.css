@@ -44,6 +44,12 @@
     gap: 8px;
 }
 
+.repositoryLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .featuredLabelBlock {
     display: grid;
     gap: 4px;
