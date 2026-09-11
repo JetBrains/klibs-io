@@ -16,6 +16,7 @@ import io.klibs.core.pckg.service.MavenArtifactService
 import io.klibs.core.pckg.service.NonKmpPackageService
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
+import io.klibs.core.project.blacklist.BlacklistRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
@@ -54,6 +55,7 @@ class PackageIndexingService(
     private val userRequestReportWriter: UserRequestReportWriter,
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
+    private val blacklistRepository: BlacklistRepository,
     private val mavenArtifactService: MavenArtifactService,
     private val nonKmpPackageService: NonKmpPackageService,
     private val indexingConfigurationProperties: IndexingConfigurationProperties,
@@ -116,8 +118,13 @@ class PackageIndexingService(
         var outcome = Outcome.FAILED
         var errorMessage: String? = null
         try {
-            selfProvider.getObject().processRequest(requestId)
-            outcome = Outcome.SUCCESS
+            if (blacklistRepository.checkPackageBanned(indexRequest.groupId, indexRequest.artifactId)) {
+                errorMessage = "Artifact ${indexRequest.groupId}:${indexRequest.artifactId} is banned"
+                outcome = Outcome.BANNED
+            } else {
+                selfProvider.getObject().processRequest(indexRequest)
+                outcome = Outcome.SUCCESS
+            }
         } catch (e: MavenRateLimitedException) {
             outcome = Outcome.RATE_LIMITED
             logger.warn("Stopping the indexing queue, request id=$requestId stays pending: ${e.message}")
@@ -127,6 +134,7 @@ class PackageIndexingService(
         } finally {
             try {
                 when (outcome) {
+                    Outcome.BANNED -> selfProvider.getObject().discardBannedRequest(requestId, errorMessage)
                     Outcome.SUCCESS -> {
                         userRequestReportWriter.saveSuccessReport(requestId)
                         indexingRequestRepository.deleteById(requestId)
@@ -148,12 +156,19 @@ class PackageIndexingService(
         return outcome != Outcome.RATE_LIMITED
     }
 
-    private enum class Outcome { SUCCESS, FAILED, RATE_LIMITED }
+    private enum class Outcome { SUCCESS, FAILED, RATE_LIMITED, BANNED }
 
     @Transactional
-    internal fun processRequest(idToProcess: Long) {
+    internal fun discardBannedRequest(requestId: Long, errorMessage: String?) {
+        logger.warn("Discarding banned request with id=$requestId. ${errorMessage ?: ""}")
+        userRequestReportWriter.saveFailureReport(requestId, errorMessage)
+        indexingRequestRepository.deleteById(requestId)
+    }
+
+    @Transactional
+    internal fun processRequest(indexRequest: IndexingRequestEntity) {
         val indexRequest =
-            indexingRequestRepository.updateStatus(idToProcess, IndexingRequestStatus.IN_PROCESS) ?: return
+            indexingRequestRepository.updateStatus(indexRequest.idNotNull, IndexingRequestStatus.IN_PROCESS) ?: return
 
         val isIndividualArtifact = indexRequest.version != null
         if (isIndividualArtifact) {

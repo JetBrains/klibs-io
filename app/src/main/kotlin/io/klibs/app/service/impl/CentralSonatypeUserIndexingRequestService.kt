@@ -58,10 +58,13 @@ class CentralSonatypeUserIndexingRequestService(
             return listOf(resolveSpecificVersion(groupId, artifactId, version))
         }
 
+        if (isBanned(groupId, artifactId)) {
+            throw UserRequestProcessingException("Artifact $groupId:$artifactId is banned")
+        }
+
         val foundPackages = searchForPackages(groupId, artifactId)
 
         val artifactsToSave = foundPackages
-            .filterNot { isBanned(it) }
             .filterNot { isAlreadyIndexedOrQueued(it) }
 
         if (artifactsToSave.isEmpty()) throw UserRequestProcessingException("All artifacts from this request are already indexed, queued or banned")
@@ -89,7 +92,7 @@ class CentralSonatypeUserIndexingRequestService(
 
     private fun resolveSpecificVersion(groupId: String, artifactId: String, version: String): MavenArtifact {
         val artifact = MavenArtifact(groupId, artifactId, version, centralSearchClient.scraperType)
-        if (isBanned(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is banned")
+        if (isBanned(groupId, artifactId)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is banned")
         if (isAlreadyIndexedOrQueued(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is already indexed or queued")
 
         centralSearchClient.getKotlinToolingMetadata(artifact)
@@ -101,9 +104,9 @@ class CentralSonatypeUserIndexingRequestService(
         return artifact
     }
 
-    private fun isBanned(artifact: MavenArtifact): Boolean =
-        blacklistRepository.checkPackageBanned(artifact.groupId, artifact.artifactId).also { banned ->
-            if (banned) logger.debug("Banned: ${artifact.groupId}:${artifact.artifactId}, skipping")
+    private fun isBanned(groupId: String, artifactId: String): Boolean =
+        blacklistRepository.checkPackageBanned(groupId, artifactId).also { banned ->
+            if (banned) logger.debug("Banned: ${groupId}:${artifactId}, skipping")
         }
 
     private fun isAlreadyIndexedOrQueued(artifact: MavenArtifact): Boolean =
