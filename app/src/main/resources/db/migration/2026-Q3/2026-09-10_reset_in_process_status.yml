@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: reset legacy in_process status in package_index_request
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - update:
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: status
+                  value: 'PENDING'
+            where: status = 'IN_PROCESS'

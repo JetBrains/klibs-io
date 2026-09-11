@@ -187,3 +187,5 @@ databaseChangeLog:
       file: db/migration/2026-Q3/2026-09-03_indices_exclude_hidden_projects.yml
   - include:
       file: db/migration/2026-Q3/2026-09-04_create_non_kmp_packages.yml
+  - include:
+      file: db/migration/2026-Q3/2026-09-10_reset_in_process_status.yml

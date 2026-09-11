@@ -1,26 +1,56 @@
 package io.klibs.app.job
 
+import io.klibs.app.configuration.properties.ProcessPackageIndexingQueueProperties
+import io.klibs.app.configuration.properties.ProcessPackageIndexingQueueProperties.Companion.PROCESS_PACKAGE_INDEXING_QUEUE_PREFIX
 import io.klibs.app.indexing.PackageIndexingService
 import net.javacrumbs.shedlock.core.LockAssert
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
+import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import java.util.concurrent.TimeUnit
 
 @Component
 @ConditionalOnProperty(
-    value = ["klibs.scheduling.process-indexing-queue.enabled"],
+    value = ["$PROCESS_PACKAGE_INDEXING_QUEUE_PREFIX.enabled"],
     havingValue = "true",
 )
-class ProcessPackageIndexRequestJob(val packageIndexingService: PackageIndexingService) {
+class ProcessPackageIndexRequestJob(
+    private val packageIndexingService: PackageIndexingService,
+    private val properties: ProcessPackageIndexingQueueProperties = ProcessPackageIndexingQueueProperties(),
+) {
+    internal var timeProvider: () -> Long = { System.currentTimeMillis() }
 
-    @Scheduled(initialDelay = 0, fixedRate = 4, timeUnit = TimeUnit.HOURS)
-    @SchedulerLock(name = "processPackageIndexRequestsLock", lockAtMostFor = "4h")
+    @Scheduled(
+        initialDelay = 0,
+        fixedRateString = "\${$PROCESS_PACKAGE_INDEXING_QUEUE_PREFIX.fixed-rate:30m}",
+    )
+    @SchedulerLock(
+        name = "processPackageIndexRequestsLock",
+        lockAtMostFor = "\${$PROCESS_PACKAGE_INDEXING_QUEUE_PREFIX.fixed-rate:30m}",
+    )
     fun processPackageIndexRequests() {
         LockAssert.assertLocked()
-        while (packageIndexingService.processPackageQueue()) {
+        processPackageIndexQueue()
+    }
 
+    internal fun processPackageIndexQueue(
+        deadline: Long = timeProvider() + properties.deadline.toMillis(),
+    ): Int {
+        logger.info("Processing package index queue")
+        var itemsProcessed = 0
+        while (timeProvider() < deadline) {
+            val processed = packageIndexingService.processPackageQueue()
+            if (!processed) {
+                break
+            }
+            itemsProcessed++
         }
+        logger.info("Processed $itemsProcessed requests from package index queue")
+        return itemsProcessed
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(ProcessPackageIndexRequestJob::class.java)
     }
 }
