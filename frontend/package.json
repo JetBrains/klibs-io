@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@jetbrains/kotlin-web-site-ui": "^4.14.2",
-    "@next/third-parties": "^14.2.9",
+    "@next/third-parties": "^16.3.5",
     "@rescui/button": "^0.16.4",
     "@rescui/card": "^0.10.8",
     "@rescui/checkbox": "^0.8.4",
@@ -43,16 +43,16 @@
     "classnames": "^2.5.1",
     "date-fns": "^4.0.0-beta.1",
     "github-markdown-css": "^5.8.1",
-    "next": "^14.2.12",
+    "next": "^16.3.5",
     "react": "^18",
     "react-bootstrap": "^2.10.4",
     "react-dom": "^18",
     "react-remove-scroll-bar": "^2.3.8",
-    "sharp": "^0.33.5",
+    "sharp": "^0.35.4",
     "shiki": "^4.3.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0",
+    "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.6",
@@ -60,10 +60,10 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
-    "eslint-config-next": "14.2.9",
+    "eslint-config-next": "16.3.5",
     "jsdom": "^25.0.1",
     "typescript": "^5",
-    "vitest": "^2.1.9"
+    "vitest": "^3.2.6"
   },
   "optionalDependencies": {
     "husky": "^9.1.7"
