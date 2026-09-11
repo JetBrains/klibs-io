@@ -338,7 +338,6 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         val row = nonKmpPackageRepository.findById(requireNotNull(savedId)).orElseThrow()
         assertEquals(PackageIndexingErrorType.MISSING_TOOLING_METADATA, row.errorType)
-        assertEquals(indexRequest.releasedAt ?: releaseTs, row.releaseTs)
         assertEquals(indexRequest.repo, row.repo)
         assertEquals(scmUrl, row.scmUrl)
         assertTrue(row.createdAt >= beforeProcessing && row.createdAt <= Instant.now())

@@ -17,7 +17,6 @@ class NonKmpPackageService(
     @Transactional
     fun save(
         mavenArtifact: MavenArtifactDTO,
-        releaseTs: Instant,
         repo: ScraperType,
         scmUrl: String?,
         errorType: PackageIndexingErrorType,
@@ -25,7 +24,6 @@ class NonKmpPackageService(
         nonKmpPackageRepository.save(
             NonKmpPackageEntity(
                 mavenArtifact = mavenArtifact.toEntityRef(),
-                releaseTs = releaseTs,
                 repo = repo,
                 scmUrl = scmUrl,
                 errorType = errorType,
