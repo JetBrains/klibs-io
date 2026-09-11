@@ -122,3 +122,24 @@ databaseChangeLog:
                   last_error_message = NULL,
                   scraper_type = 'GOOGLE_MAVEN_CENTRAL_MIRROR'
               WHERE last_error_message LIKE 'Unable to find tooling metadata for %';
+
+  - changeSet:
+      id: add non_kmp_packages error type
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: rejected_maven_coordinate
+              columnName: error_type
+      changes:
+        - addColumn:
+            tableName: non_kmp_packages
+            columns:
+              - column:
+                  name: error_type
+                  type: TEXT
+        - addNotNullConstraint:
+            tableName: non_kmp_packages
+            columnName: error_type
+            columnDataType: TEXT
