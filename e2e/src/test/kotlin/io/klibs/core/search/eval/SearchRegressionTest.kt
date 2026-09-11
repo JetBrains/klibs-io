@@ -2,6 +2,8 @@ package io.klibs.core.search.eval
 
 import io.awspring.cloud.s3.S3Template
 import io.klibs.app.Application
+import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
+import io.klibs.core.search.opensearch.OpenSearchIndexer
 import io.klibs.core.search.service.SearchService
 import io.klibs.integration.ai.AiService
 import org.junit.jupiter.api.BeforeAll
@@ -13,7 +15,9 @@ import org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfigura
 import org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
 import org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
 import org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
+import org.opensearch.client.opensearch.OpenSearchClient
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
@@ -35,7 +39,7 @@ import org.springframework.test.web.servlet.MockMvc
 @ActiveProfiles("test")
 @SpringBootTest(classes = [Application::class])
 @AutoConfigureMockMvc
-@Import(FrozenSnapshotPostgresConfig::class)
+@Import(FrozenSnapshotPostgresConfig::class, SearchEvalOpenSearchConfig::class)
 @EnableAutoConfiguration(exclude = [
     OpenAiChatAutoConfiguration::class,
     OpenAiAudioTranscriptionAutoConfiguration::class,
@@ -58,6 +62,19 @@ class SearchRegressionTest : SearchEvalTestBase() {
 
     @Autowired
     private lateinit var searchService: SearchService
+
+    @Autowired
+    private lateinit var indexer: OpenSearchIndexer
+
+    @Autowired
+    private lateinit var indexSpecs: List<OpenSearchIndexSpec>
+
+    @Autowired
+    @Qualifier("projectIndexSpec")
+    private lateinit var projectSpec: OpenSearchIndexSpec
+
+    @Autowired
+    private lateinit var openSearchClient: OpenSearchClient
 
     override val tier = "regression"
     override val isRecording get() = overwriteFloor
@@ -82,7 +99,16 @@ class SearchRegressionTest : SearchEvalTestBase() {
     }
 
     @BeforeAll
-    fun refreshViews() = searchService.refreshSearchViews()
+    fun buildSearchIndices() {
+        searchService.refreshSearchViews()
+        indexSpecs.forEach { indexer.sync(it) }
+
+        val indexed = openSearchClient.count { it.index(projectSpec.alias) }.count()
+        check(indexed > 0) {
+            "OpenSearch project alias '${projectSpec.alias}' is empty after sync — is the frozen snapshot restored?"
+        }
+        log.info("OpenSearch project alias '{}' has {} docs", projectSpec.alias, indexed)
+    }
 
     @BeforeAll
     fun checkSnapshotMatchesFloor() {
@@ -107,6 +133,9 @@ class SearchRegressionTest : SearchEvalTestBase() {
         fun properties(registry: DynamicPropertyRegistry) {
             // Datasource is wired from the @ServiceConnection container; only app-level props here.
             registry.add("spring.sql.init.mode") { "never" }
+            registry.add("klibs.search.opensearch.enabled") { "true" }
+            registry.add("klibs.search.opensearch.project-index") { "project-regression" }
+            registry.add("klibs.search.opensearch.package-index") { "package-regression" }
             registry.add("klibs.readme.s3.bucket-name") { "test-bucket" }
             registry.add("klibs.readme.s3.prefix") { "readme" }
             registry.add("klibs.integration.github.cache.request-cache-path") { "build/tmp/gh-req-cache" }

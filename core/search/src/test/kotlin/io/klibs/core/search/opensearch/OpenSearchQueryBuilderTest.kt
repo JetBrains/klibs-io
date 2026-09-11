@@ -28,11 +28,6 @@ class OpenSearchQueryBuilderTest {
     }
 
     @Test
-    fun `fuzzy sets fuzziness`() {
-        assertTrue(json(OpenSearchQueryBuilder.fuzzy("artifact_ids", "ktr", 2)).contains("\"fuzziness\":\"2\""))
-    }
-
-    @Test
     fun `bool with shoulds sets minimum_should_match and filter`() {
         val out = json(
             OpenSearchQueryBuilder.bool(

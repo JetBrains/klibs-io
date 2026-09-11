@@ -1,6 +1,6 @@
 package io.klibs.app.service.impl
 
-import io.klibs.app.configuration.IndexingRetryConfiguration
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.service.UserRequestReportWriter
 import io.klibs.core.pckg.entity.UserRequestReportEntity
 import io.klibs.core.pckg.enums.UserRequestIndexingStatus
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 class DatabaseUserRequestReportWriter(
     private val indexingRequestRepository: IndexingRequestRepository,
     private val userRequestReportRepository: UserRequestReportRepository,
-    private val indexingRetryConfiguration: IndexingRetryConfiguration,
+    private val indexingConfigurationProperties: IndexingConfigurationProperties,
 ) : UserRequestReportWriter {
 
     @Transactional
@@ -40,7 +40,7 @@ class DatabaseUserRequestReportWriter(
     override fun saveFailureReportIfTerminal(indexRequestId: Long, errorMessage: String?) {
         val indexRequest = indexingRequestRepository.findById(indexRequestId).orElse(null) ?: return
         val issue = indexRequest.userRequestIssue ?: return
-        if (indexRequest.failedAttempts < indexingRetryConfiguration.maxAttempts) return
+        if (indexRequest.failedAttempts < indexingConfigurationProperties.retry.maxAttempts) return
         val version = indexRequest.version ?: return
         userRequestReportRepository.save(
             UserRequestReportEntity(

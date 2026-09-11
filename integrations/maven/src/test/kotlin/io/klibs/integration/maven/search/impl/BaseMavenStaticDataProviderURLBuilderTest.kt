@@ -1,31 +1,31 @@
 package io.klibs.integration.maven.search.impl
 
-import io.klibs.integration.maven.search.MavenSearchResponse
-import org.apache.maven.search.api.request.Query
-import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import java.time.Instant
+import io.klibs.integration.maven.ScraperType
+import io.klibs.integration.maven.service.impl.BaseMavenStaticDataProvider
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.time.Instant
+import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mock
 
-class BaseMavenSearchClientURLBuilderTest {
+class BaseMavenStaticDataProviderURLBuilderTest {
 
-    private val client = object : BaseMavenSearchClient(
+    private val client = object : BaseMavenStaticDataProvider(
         xmlMapper = mock(),
         rateLimiter = mock(),
         logger = mock(),
         objectMapper = mock(),
-        clientTransport = mock()
+        clientTransport = mock(),
+        lastModifiedHeader = "last-modified"
     ) {
         override fun getContentUrlPrefix(): String = "https://example.com/repo/"
-
-        override fun searchWithThrottle(
-            page: Int,
-            query: Query,
-            lastUpdatedSince: Instant
-        ): MavenSearchResponse {
-            throw UnsupportedOperationException("Not implemented")
+        override fun parseReleasedAt(value: String): Instant {
+            TODO("Not yet implemented")
         }
+
+        override val scraperType: ScraperType
+            get() = TODO("Not yet implemented")
+
     }
 
     @Test

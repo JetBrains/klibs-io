@@ -1,6 +1,7 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.entity.UserRequestIssueEntity
 import io.klibs.core.pckg.enums.UserRequestIndexingStatus
@@ -9,7 +10,6 @@ import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.core.pckg.repository.UserRequestReportRepository
-import io.klibs.app.configuration.IndexingRetryConfiguration
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.integration.ai.PackageDescriptionGenerator
@@ -17,15 +17,24 @@ import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
-import io.klibs.integration.maven.MavenPom
-import io.klibs.integration.maven.exception.MavenRateLimitedException
-import io.klibs.integration.maven.PomWithReleaseDate
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.Variant
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
-import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
+import io.klibs.integration.maven.exception.MavenRateLimitedException
+import io.klibs.integration.maven.service.MavenPom
+import io.klibs.integration.maven.service.PomWithReleaseDate
+import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.apache.maven.model.Scm
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
@@ -38,14 +47,6 @@ import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-import kotlin.test.assertContains
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 @ExtendWith(OutputCaptureExtension::class)
 class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
@@ -75,10 +76,10 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     private lateinit var userRequestReportRepository: UserRequestReportRepository
 
     @Autowired
-    private lateinit var indexingRetryConfiguration: IndexingRetryConfiguration
+    private lateinit var indexingConfigurationProperties: IndexingConfigurationProperties
 
     @MockitoBean
-    private lateinit var mavenStaticDataProvider: CentralSonatypeSearchClient
+    private lateinit var mavenStaticDataProvider: SonatypeCentralStaticDataProvider
 
     @MockitoBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
@@ -89,9 +90,14 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @MockitoBean
     private lateinit var readmeContentBuilder: ReadmeContentBuilder
 
+    @BeforeEach
+    fun setUp() {
+        whenever(mavenStaticDataProvider.scraperType).thenReturn(ScraperType.CENTRAL_SONATYPE)
+    }
+
     @Test
     fun `should return false when queue is empty`(output: CapturedOutput) {
-        assertNull(indexingRequestRepository.findFirstForIndexing())
+        assertNull(indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts))
 
         val result = uut.processPackageQueue()
 
@@ -102,7 +108,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should handle an exceptions during processing and return true`(output: CapturedOutput) {
-        val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
+        val packageIndexRequestBeforeProcessing =
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequestBeforeProcessing)
 
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenThrow(RuntimeException("Mocked getPom exception"))
@@ -124,7 +131,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `a 429 from Maven Central stops the queue and keeps the request pending`() {
-        val requestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
+        val requestBeforeProcessing =
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(requestBeforeProcessing)
 
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
@@ -139,14 +147,18 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         assertEquals("PENDING", row["status"], "Request should stay pending")
         assertEquals(0, (row["failed_attempts"] as Number).toInt(), "Rate limiting should not burn a retry attempt")
-        assertNotNull(indexingRequestRepository.findFirstForIndexing(), "Request must be eligible for the next run")
+        assertNotNull(
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
+            "Request must be eligible for the next run"
+        )
     }
 
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should successfully process package indexing request`(output: CapturedOutput) {
 
-        val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing()
+        val packageIndexRequestBeforeProcessing =
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequestBeforeProcessing)
 
         val pom = mock<MavenPom>()
@@ -159,7 +171,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
             PomWithReleaseDate(
                 pom,
-                java.time.Instant.now()
+                Instant.now()
             )
         )
         whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
@@ -170,7 +182,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertFalse(output.out.contains("Unable to process the index request"))
 
         assertNull(
-            indexingRequestRepository.findFirstForIndexing(),
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
             "Processed request should be removed from the queue"
         )
         val foundPackages = packageRepository.findByGroupIdAndArtifactIdOrderByReleaseTsDesc(
@@ -186,7 +198,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should parse androidJvm platform when jvm target is KotlinMultiplatformAndroidLibraryTargetImpl`() {
-        val indexRequest = indexingRequestRepository.findFirstForIndexing()
+        val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(indexRequest)
 
         val pom = mock<MavenPom>()
@@ -212,7 +224,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
             PomWithReleaseDate(
                 pom,
-                java.time.Instant.now()
+                Instant.now()
             )
         )
         whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
@@ -223,7 +235,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         // Assert basic processing
         assertTrue(result, "Should return true")
         assertNull(
-            indexingRequestRepository.findFirstForIndexing(),
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
             "Processed request should be removed from the queue"
         )
 
@@ -285,7 +297,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
 
         // Set up mocks for processing the indexing request
-        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
+        val packageIndexRequest =
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequest, "Indexing request should exist")
         assertEquals(groupId, packageIndexRequest.groupId)
         assertEquals(artifactId, packageIndexRequest.artifactId)
@@ -301,7 +314,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
             PomWithReleaseDate(
                 pom,
-                java.time.Instant.now()
+                Instant.now()
             )
         )
         whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
@@ -313,7 +326,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertTrue(result, "Should return true")
         assertFalse(output.out.contains("Unable to process the index request"))
         assertNull(
-            indexingRequestRepository.findFirstForIndexing(),
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
             "Processed request should be removed from the queue"
         )
 
@@ -341,7 +354,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val artifactId = "test-library-reindex"
         val version = "1.0.0"
 
-        val request = indexingRequestRepository.findFirstForIndexing()
+        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(request)
         assertTrue(request.reindex, "Seeded request must be a reindex request")
 
@@ -381,7 +394,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description")
 
-        val request = indexingRequestRepository.findFirstForIndexing()
+        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(request)
         uut.processRequest(request.idNotNull)
 
@@ -413,7 +426,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         stubMavenFetch(groupId, artifactId, newVersion, pomDescription = "Fresh POM description")
 
-        val request = indexingRequestRepository.findFirstForIndexing()
+        val request = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(request)
         uut.processRequest(request.idNotNull)
 
@@ -447,7 +460,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should markAsFailed when ReadmeContentBuilder buildFromMarkdown throws exception`(output: CapturedOutput) {
-        val packageIndexRequest = indexingRequestRepository.findFirstForIndexing()
+        val packageIndexRequest =
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequest)
 
         val ownerLogin = "test-owner"
@@ -561,7 +575,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `should save FAILURE report when a user-originated request fails terminally`() {
-        val issue = saveUserOriginatedRequest(failedAttempts = indexingRetryConfiguration.maxAttempts - 1)
+        val issue = saveUserOriginatedRequest(failedAttempts = indexingConfigurationProperties.retry.maxAttempts - 1)
         whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
             .thenThrow(RuntimeException("Mocked getPom exception"))
 

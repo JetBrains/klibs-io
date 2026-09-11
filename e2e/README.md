@@ -4,11 +4,16 @@ Two tiers, two bounds:
 
 | tier | bound | corpus | engine | runs | expectation |
 |------|-------|--------|--------|------|-------------|
-| **Regression** | lower — "search can't get worse than this" | **frozen prod snapshot** (Testcontainers) | Postgres FTS | manual today; the tier meant for CI | floor cases **all green** |
-| **Eval** | upper — "we strive for 100%" | **live prod-copy** (external DB) | OpenSearch (KTL-4711) | manual, by whoever changes search | some **red** = the signal |
+| **Regression** | lower — "search can't get worse than this" | **frozen prod snapshot** (Testcontainers) | OpenSearch (Testcontainers) | manual today; the tier meant for CI | floor cases **all green** |
+| **Eval** | upper — "we strive for 100%" | **live prod-copy** (external DB) | OpenSearch (Testcontainers) | manual, by whoever changes search | some **red** = the signal |
 
 Both are excluded from the regular `./kotlin test` run — each needs Docker and a corpus, and is enabled
 explicitly by the commands below.
+
+Both drive the production search path through OpenSearch, on the same image pinned in code, so their
+headlines are comparable on a shared corpus. Neither uses the `docker compose` instance by default: its
+data volume persists and its version is pinned elsewhere, so leftover indices and image drift would move
+the numbers silently. The eval tier can opt into it for debugging — see below.
 
 ## Who can run this
 
@@ -33,8 +38,10 @@ assume that layout and are run from the root of this repository:
 
 Needs Docker and the snapshot file at `e2e/build/search-eval/frozen.pgdump`.
 
-Stays on Postgres FTS — it sets no `klibs.search.opensearch.*` properties, so the OS gate is off and
-no OpenSearch instance is needed.
+Two containers, both started by the run: Postgres restored from the snapshot, and an empty OpenSearch
+filled from it into `project-regression` / `package-regression`. The floor gates the production search
+path, so the OpenSearch instance is pinned in code with no override — a floor measured on someone's
+local cluster would not be a floor.
 
 ### Run the tier
 
@@ -84,25 +91,60 @@ needs prod access (VPN and kubectl). Then download it and update the floor:
 ## Eval tier — the aspirational target
 
 Drives the production search path through **OpenSearch**, against eval-only indices (`project-eval`,
-`package-eval`) that the run wipes and refills itself — the `@BeforeAll` calls `refreshSearchViews()`,
-which rebuilds both the Postgres mat views and the OS indices from the DB via `OpenSearchTempPopulator`.
-So the corpus is always whatever the DB holds right now; no manual indexing step.
+`package-eval`) that the run wipes and refills itself — the `@BeforeAll` calls `OpenSearchIndexer.sync`
+for each index spec, rebuilding both from the DB. So the corpus is always whatever the DB holds right
+now; no manual indexing step. Unlike the regression tier it does not refresh the Postgres mat views, so
+the DB must already have them populated.
 
-Needs a local prod-copy database. Seeding it needs VPN and cluster access, and the script for it
-(`copy_prod_db_to_local.sh`) also lives in the infrastructure repository:
+The DB is the only external dependency; OpenSearch is provided either way below.
+
+### Seed the corpus DB
+
+Once, and again whenever the corpus should move to fresher data. Needs VPN and cluster access; the
+script lives in the infrastructure repository:
 
 ```bash
-docker compose up -d opensearch   # must be up on :9200
 ../klibs-io-infrastructure/database/copy_prod_db_to_local.sh -K klibs-prod -C klibs-postgres -L klibs -D klibs
+```
+
+Override the connection with `SEARCH_EVAL_DB_URL` / `_USER` / `_PASSWORD` (defaults:
+`jdbc:postgresql://localhost:5432/klibs`, user and password `klibs`).
+
+If the DB is empty the run fails fast — the test asserts the project index is non-empty before scoring
+anything.
+
+### Run with OpenSearch in a test container — the default
+
+Nothing to start; the run brings up its own OpenSearch, pinned to the same image as the regression tier,
+and throws it away at the end.
+
+```bash
 ./kotlin test -m e2e --include-classes '*SearchEvalE2ETest' --jvm-args '-Dsearch.eval.tier=eval'
 ```
 
-If OpenSearch is down or the DB is empty the run fails fast: `refreshSearchViews()` swallows exceptions,
-so the test asserts the project index is non-empty before scoring anything.
+Use this for any number you intend to quote or compare — against an earlier eval run, or against the
+regression tier's headline on the same corpus.
 
-Overridable via env: `SEARCH_EVAL_OS_URI` (default `https://localhost:9200`),
-`SEARCH_EVAL_OS_PROJECT_INDEX` (`project-eval`), `SEARCH_EVAL_OS_PACKAGE_INDEX` (`package-eval`),
-plus `SEARCH_EVAL_DB_URL` / `_USER` / `_PASSWORD` for the corpus DB.
+### Run against the persistent OpenSearch — for debugging a case
+
+The container dies with the JVM, which is awkward mid-tuning: `_analyze` and `_explain` are how you find
+out *why* a case ranks where it does. `SEARCH_EVAL_OS_URI` points the tier at the `docker compose`
+instance instead, whose indices outlive the run.
+
+```bash
+docker compose up -d opensearch
+SEARCH_EVAL_OS_URI=https://localhost:9200 \
+  ./kotlin test -m e2e --include-classes '*SearchEvalE2ETest' --jvm-args '-Dsearch.eval.tier=eval'
+```
+
+```bash
+# afterwards, against the alias the run logged.
+# Credentials are the local demo pair in docker-compose.yml.
+curl -sk -u '<user>:<password>' -H 'Content-Type: application/json' \
+  'https://localhost:9200/<project-eval-alias>/_analyze' -d '{"analyzer":"tool_alias","text":"hilt"}'
+```
+
+### Reading the result
 
 Compare runs only against each other on the **same** corpus — the headline is a function of the DB
 contents, so a re-copied prod DB moves it independently of any search change.

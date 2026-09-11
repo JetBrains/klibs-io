@@ -15,17 +15,40 @@ import org.opensearch.client.opensearch._types.query_dsl.TermsQueryField
 
 object OpenSearchQueryBuilder {
 
+    /** Search-time analyzer declared in settings.json; emits alias tokens only. */
+    private const val TOOL_ALIAS_ANALYZER = "tool_alias"
+
+    /** Partial-match subfields declared in project-mappings.json: token prefixes and token tails. */
+    private const val PREFIX_SUBFIELD = "prefix"
+    private const val SUFFIX_SUBFIELD = "suffix"
+
+    /** English-stemmed and delimiter-split subfields declared in project-mappings.json. */
+    const val ENGLISH_SUBFIELD = "en"
+    const val SPLIT_SUBFIELD = "split"
+
+    /** Query lengths a partial clause can serve; mirrors `min_gram`/`max_gram` in settings.json. */
+    const val MIN_PARTIAL_LENGTH = 3
+    const val MAX_PARTIAL_LENGTH = 18
+
     // Multiplier for the bm25 score for each matching item.
     // - Score is higher if readme is present.
-    // - Stars are accounted for with `log`
-    // - Dependent_count is accounted for with `log`
-    // - Stars have 2.5x more weight than Dependent_count
+    // - Each popularity signal is passed through a saturation curve `x / (x + pivot)`: diminishing
+    //   like log, but bounded in [0,1), so a weight below is that signal's real maximum share.
+    // - A pivot scores half its weight and places the range the curve can still tell apart — most
+    //   resolution below it, flat well above. log spent its own on 5 vs 50 stars.
+    private const val STARS_PIVOT = 300.0
+    private const val DEPENDENTS_PIVOT = 3.0
+
+    private const val STARS_WEIGHT = 3.0
+    private const val DEPENDENTS_WEIGHT = 4.0
 
     private const val POPULARITY_SCRIPT =
         "double d = doc['${ProjectFields.HAS_README}'].value ? 1.0 : 0.7; " +
+                "double s = doc['${ProjectFields.STARS}'].value; " +
+                "double p = doc['${ProjectFields.DEPENDENT_COUNT}'].value; " +
                 "return 1 + (" +
-                "Math.log(doc['${ProjectFields.STARS}'].value + 1) * 0.5 + " +
-                "Math.log(doc['${ProjectFields.DEPENDENT_COUNT}'].value + 1) * 0.2" +
+                "$STARS_WEIGHT * (s / (s + $STARS_PIVOT)) + " +
+                "$DEPENDENTS_WEIGHT * (p / (p + $DEPENDENTS_PIVOT))" +
                 ") * d;"
 
     // Word-bag match: OR over the query terms, order-insensitive, and a doc matching only some of
@@ -39,12 +62,43 @@ object OpenSearchQueryBuilder {
             .build()
             .toQuery()
 
-    // Same as `match` plus typo tolerance: edit distance up to 2 per term.
+    // Curated tool aliases from settings.json: "Hilt" -> koin/kodein, "Room alternative" -> sqldelight.
+    // The `tool_alias` analyzer drops everything except SYNONYM tokens, so a query naming no tool
+    // produces no terms at all and this clause contributes nothing — plain queries rank as before.
+    fun toolAlias(field: String, text: String, boost: Int): Query =
+        MatchQuery.Builder()
+            .field(field)
+            .query(FieldValue.of(text))
+            .analyzer(TOOL_ALIAS_ANALYZER)
+            .boost(boost.toFloat())
+            .build()
+            .toQuery()
+
+    fun tokenPrefix(field: String, text: String, boost: Float): Query = partial(PREFIX_SUBFIELD, field, text, boost)
+
+    fun tokenSuffix(field: String, text: String, boost: Float): Query = partial(SUFFIX_SUBFIELD, field, text, boost)
+
+    /** The English-stemmed form of [field]: `charts` and `charting` both reachable from `chart`. */
+    fun english(field: String, text: String, boost: Float): Query = partial(ENGLISH_SUBFIELD, field, text, boost)
+
+    /** The delimiter- and camelCase-split form of [field]: `ComposeCharts` -> `compose` + `charts`. */
+    fun split(field: String, text: String, boost: Float): Query = partial(SPLIT_SUBFIELD, field, text, boost)
+
+    private fun partial(subfield: String, field: String, text: String, boost: Float): Query =
+        MatchQuery.Builder()
+            .field("$field.$subfield")
+            .query(FieldValue.of(text))
+            .boost(boost)
+            .build()
+            .toQuery()
+
     fun fuzzy(field: String, text: String, boost: Int): Query =
         MatchQuery.Builder()
             .field(field)
             .query(FieldValue.of(text))
-            .fuzziness("2")
+            // scales the allowed-edits to term length
+            .fuzziness("AUTO")
+            .prefixLength(1)
             .boost(boost.toFloat())
             .build()
             .toQuery()
@@ -88,6 +142,12 @@ object OpenSearchQueryBuilder {
             .build()
             .toQuery()
     }
+
+    // Best-of instead of sum-of: useful if working with alternative readings of the same evidence
+    fun bestOf(alternatives: List<Query>, tieBreaker: Float): Query =
+        alternatives.singleOrNull() ?: Query.of { q ->
+            q.disMax { d -> d.queries(alternatives).tieBreaker(tieBreaker) }
+        }
 
     fun bool(shoulds: List<Query>, filters: List<Query>): Query =
         Query.of { q ->

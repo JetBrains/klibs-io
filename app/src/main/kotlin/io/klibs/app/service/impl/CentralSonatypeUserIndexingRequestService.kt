@@ -1,5 +1,6 @@
 package io.klibs.app.service.impl
 
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.exceptions.UserRequestProcessingException
 import io.klibs.app.service.UserIndexingRequestService
 import io.klibs.app.util.toIndexRequest
@@ -9,21 +10,18 @@ import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.core.project.blacklist.BlacklistRepository
 import io.klibs.integration.maven.MavenArtifact
-import io.klibs.integration.maven.ScraperType
-import io.klibs.integration.maven.search.ArtifactData
-import io.klibs.integration.maven.search.impl.CentralSonatypeSearchClient
-import io.klibs.integration.maven.search.paginateSearch
-import org.apache.maven.search.api.request.BooleanQuery
-import org.apache.maven.search.api.request.Query
-import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
+import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
-internal class DefaultUserIndexingRequestService(
-    private val centralSonatypeSearchClient: CentralSonatypeSearchClient,
+class CentralSonatypeUserIndexingRequestService(
+    // User requests should go through real Maven Central
+    private val centralSearchClient: SonatypeCentralStaticDataProvider,
     private val indexingRequestRepository: IndexingRequestRepository,
     private val packageRepository: PackageRepository,
     private val userRequestIssueRepository: UserRequestIssueRepository,
@@ -35,12 +33,17 @@ internal class DefaultUserIndexingRequestService(
         val userRequestIssue = userRequestIssueRepository.findById(userRequestId).getOrNull()
             ?: throw UserRequestProcessingException("User request not found")
 
-        fulfillRequest(userRequestIssue.groupId, userRequestIssue.artifactId, userRequestIssue.version, userRequestIssue)
+        fulfillRequest(
+            userRequestIssue.groupId,
+            userRequestIssue.artifactId,
+            userRequestIssue.version,
+            userRequestIssue
+        )
     }
 
-    internal fun fulfillRequest(
+    private fun fulfillRequest(
         groupId: String,
-        artifactId: String?,
+        artifactId: String,
         version: String?,
         issue: UserRequestIssueEntity? = null,
     ) {
@@ -50,30 +53,16 @@ internal class DefaultUserIndexingRequestService(
 
     private fun discoverArtifacts(
         groupId: String,
-        artifactId: String?,
+        artifactId: String,
         version: String?,
     ): List<MavenArtifact> {
-        if (artifactId != null && version != null) {
+        if (version != null) {
             return listOf(resolveSpecificVersion(groupId, artifactId, version))
         }
 
-        if (version != null) {
-            logger.warn("Version is specified but artifactId is not. Ignoring version.")
-        }
+        val foundPackages = searchForPackages(groupId, artifactId)
 
-        val query = buildKmpQuery(groupId, artifactId)
-        val searchResult = paginateSearch(query)
-
-        if (searchResult.isEmpty()) {
-            throw UserRequestProcessingException(
-                "No Kotlin Multiplatform artifacts found for $groupId${
-                    artifactId?.let { ":$it" }.orEmpty()
-                }"
-            )
-        }
-
-        val artifactsToSave = searchResult
-            .map { it.toMavenArtifact() }
+        val artifactsToSave = foundPackages
             .filterNot { isBanned(it) }
             .filterNot { isAlreadyIndexedOrQueued(it) }
 
@@ -82,12 +71,30 @@ internal class DefaultUserIndexingRequestService(
         return artifactsToSave
     }
 
+    private fun searchForPackages(
+        groupId: String,
+        artifactId: String
+    ): List<MavenArtifact> {
+        val mavenMetadata = centralSearchClient.getMavenMetadata(groupId, artifactId)
+        return mavenMetadata
+            ?.versioning?.versions
+            ?.map { MavenArtifact(groupId, artifactId, it, centralSearchClient.scraperType) }
+            ?.filter { artifact ->
+                centralSearchClient.getKotlinToolingMetadata(artifact) != null
+            }
+            ?: throw UserRequestProcessingException(
+                "No Kotlin Multiplatform artifacts found for $groupId${
+                    artifactId.let { ":$it" }
+                }"
+            )
+    }
+
     private fun resolveSpecificVersion(groupId: String, artifactId: String, version: String): MavenArtifact {
-        val artifact = MavenArtifact(groupId, artifactId, version, ScraperType.CENTRAL_SONATYPE)
+        val artifact = MavenArtifact(groupId, artifactId, version, centralSearchClient.scraperType)
         if (isBanned(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is banned")
         if (isAlreadyIndexedOrQueued(artifact)) throw UserRequestProcessingException("Artifact $groupId:$artifactId:$version is already indexed or queued")
 
-        centralSonatypeSearchClient.getKotlinToolingMetadata(artifact)
+        centralSearchClient.getKotlinToolingMetadata(artifact)
             ?: throw UserRequestProcessingException(
                 "Artifact $groupId:$artifactId:$version is not a valid Kotlin Multiplatform library " +
                         "(kotlin-tooling-metadata.json not found)"
@@ -122,25 +129,6 @@ internal class DefaultUserIndexingRequestService(
             }
         }
 
-    private fun buildKmpQuery(groupId: String, artifactId: String?): Query {
-        var query = BooleanQuery.and(
-            Query.query("g:$groupId"),
-            Query.query("l:kotlin-tooling-metadata")
-        )
-        if (artifactId != null) {
-            query = BooleanQuery.and(query, Query.query("a:$artifactId"))
-        }
-        return query
-    }
-
-    private fun paginateSearch(query: Query): List<ArtifactData> =
-        try {
-            centralSonatypeSearchClient.paginateSearch(query).toList()
-        } catch (e: Exception) {
-            logger.error("Central Sonatype search failed: ${e.message}", e)
-            throw UserRequestProcessingException("Maven Central is temporarily unavailable.")
-        }
-
     private fun saveUserRequests(mavenArtifacts: List<MavenArtifact>, issue: UserRequestIssueEntity? = null) {
         val requests = mavenArtifacts.map { it.toIndexRequest(userRequestIssue = issue) }
 
@@ -155,15 +143,7 @@ internal class DefaultUserIndexingRequestService(
         }
     }
 
-    private fun ArtifactData.toMavenArtifact() = MavenArtifact(
-        groupId = groupId,
-        artifactId = artifactId,
-        version = version,
-        scraperType = ScraperType.CENTRAL_SONATYPE,
-        releasedAt = releasedAt,
-    )
-
     companion object {
-        private val logger = LoggerFactory.getLogger(DefaultUserIndexingRequestService::class.java)
+        private val logger = LoggerFactory.getLogger(CentralSonatypeUserIndexingRequestService::class.java)
     }
 }

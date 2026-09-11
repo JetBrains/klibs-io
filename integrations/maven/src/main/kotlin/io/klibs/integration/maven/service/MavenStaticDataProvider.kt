@@ -1,15 +1,21 @@
-package io.klibs.integration.maven
+package io.klibs.integration.maven.service
 
+import io.klibs.integration.maven.MavenArtifact
+import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.androidx.ModuleMetadataWrapper
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegate
 import io.klibs.integration.maven.dto.MavenMetadata
 import java.time.Instant
+import org.apache.maven.model.Model
 
-typealias MavenPom = org.apache.maven.model.Model
+typealias MavenPom = Model
 
 data class PomWithReleaseDate(val pom: MavenPom, val releasedAt: Instant)
 
 interface MavenStaticDataProvider {
+
+    val scraperType: ScraperType
+
     fun getPom(mavenArtifact: MavenArtifact): MavenPom?
 
     fun getPomWithReleaseDate(mavenArtifact: MavenArtifact): PomWithReleaseDate?
