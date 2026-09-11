@@ -1,5 +1,7 @@
 package io.klibs.core.pckg.entity
 
+import io.klibs.core.pckg.enums.PackageIndexingErrorType
+
 import io.klibs.integration.maven.ScraperType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -37,6 +39,10 @@ data class NonKmpPackageEntity(
 
     @Column(name = "scm_url")
     val scmUrl: String?,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "error_type", nullable = false)
+    val errorType: PackageIndexingErrorType,
 
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: Instant = Instant.now(),

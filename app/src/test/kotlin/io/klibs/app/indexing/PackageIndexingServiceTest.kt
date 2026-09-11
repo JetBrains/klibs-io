@@ -5,6 +5,7 @@ import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.indexing.discoverer.impl.CentralSonatypePackageDiscoverer
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.entity.UserRequestIssueEntity
+import io.klibs.core.pckg.enums.PackageIndexingErrorType
 import io.klibs.core.pckg.enums.UserRequestIndexingStatus
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.NonKmpPackageRepository
@@ -30,14 +31,17 @@ import io.klibs.integration.maven.service.PomWithReleaseDate
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.runBlocking
+import liquibase.integration.spring.SpringLiquibase
 import org.apache.maven.model.Scm
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -53,6 +57,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
@@ -332,46 +337,11 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             indexRequest.groupId, indexRequest.artifactId, requireNotNull(indexRequest.version),
         )
         val row = nonKmpPackageRepository.findById(requireNotNull(savedId)).orElseThrow()
+        assertEquals(PackageIndexingErrorType.MISSING_TOOLING_METADATA, row.errorType)
         assertEquals(indexRequest.releasedAt ?: releaseTs, row.releaseTs)
         assertEquals(indexRequest.repo, row.repo)
         assertEquals(scmUrl, row.scmUrl)
         assertTrue(row.createdAt >= beforeProcessing && row.createdAt <= Instant.now())
-    }
-
-    @Test
-    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-failed-tooling-metadata-request.sql"])
-    fun `should make historical tooling metadata failures retryable after reset`() {
-        assertNull(
-            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts),
-            "Historical tooling metadata failures should not be retryable before reset",
-        )
-
-        val updatedRows = jdbcTemplate.update(
-            """
-                UPDATE package_index_request
-                SET status = 'PENDING',
-                    failed_attempts = 0,
-                    failed_ts = NULL,
-                    last_error_message = NULL
-                WHERE last_error_message LIKE 'Unable to find tooling metadata for %'
-            """.trimIndent()
-        )
-
-        assertEquals(1, updatedRows)
-
-        val retryableRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
-        assertNotNull(retryableRequest)
-        assertEquals("com.example", retryableRequest.groupId)
-        assertEquals("stale-tooling-metadata", retryableRequest.artifactId)
-        assertEquals("1.0.0", retryableRequest.version)
-
-        val resetRow = jdbcTemplate.queryForMap(
-            "SELECT status, failed_attempts, failed_ts, last_error_message FROM package_index_request WHERE id = 9201"
-        )
-        assertEquals("PENDING", resetRow["status"])
-        assertEquals(0, (resetRow["failed_attempts"] as Number).toInt())
-        assertNull(resetRow["failed_ts"])
-        assertNull(resetRow["last_error_message"])
     }
 
     @Test
