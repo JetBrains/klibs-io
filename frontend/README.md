@@ -90,6 +90,19 @@ npm run test:component
 npm run test:component:watch
 ```
 
+## Visual Testing with UI Verify
+
+Visual regression tests run in a real Chromium browser and are named `*.visual.test.tsx`. They are a separate Vitest
+project, so `test:component` does not run them.
+
+```bash
+# Run once (requires npm run pw:install)
+npm run test:visual
+
+# Watch for changes
+npm run test:visual:watch
+```
+
 ## End-to-End Testing with Playwright
 
 Playwright is reserved for complete user journeys that cross component, routing, or backend boundaries.
