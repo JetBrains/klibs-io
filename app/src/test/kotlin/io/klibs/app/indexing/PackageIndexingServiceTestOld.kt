@@ -68,7 +68,7 @@ class PackageIndexingServiceTestOld {
             packageRepository,
             mock(),
             mavenArtifactService,
-            nonKmpPackageService,
+            mock<PackageIndexingErrorHandler>(),
             IndexingConfigurationProperties(),
             selfProvider
         )
