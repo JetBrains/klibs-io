@@ -133,7 +133,21 @@ databaseChangeLog:
               - column:
                   name: error_type
                   type: TEXT
+        - update:
+            tableName: non_kmp_packages
+            columns:
+              - column:
+                  name: error_type
+                  value: MISSING_TOOLING_METADATA
         - addNotNullConstraint:
             tableName: non_kmp_packages
             columnName: error_type
             columnDataType: TEXT
+
+  - changeSet:
+      id: delete release ts column from non_kmp_packages
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - dropColumn:
+            tableName: non_kmp_packages
+            columnName: release_ts
