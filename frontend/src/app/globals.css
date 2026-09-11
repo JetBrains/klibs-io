@@ -172,10 +172,6 @@ html {
   display: flex;
 }
 
-.organization-links .bi {
-  font-size: 1.4rem;
-}
-
 .organization-links .nav-link .text {
   font-size: 0.85rem;
 }

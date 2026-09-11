@@ -1,11 +1,9 @@
 import '@rescui/typography/lib/font-jb-sans-auto.css';
 import 'bootstrap/dist/css/bootstrap.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
 import '@/app/globals.css';
 
 import { render } from 'vitest-browser-react';
 import { test, vi } from 'vitest';
-import bootstrapIconsFont from 'bootstrap-icons/font/fonts/bootstrap-icons.woff2?inline';
 
 import { author } from '@/test/fixtures';
 import Author from './author-page-content';
@@ -31,20 +29,9 @@ vi.mock('next/image', () => ({
 
 test('author profile with contact details', async () => {
     await render(
-        <>
-            <style>{`
-                @font-face {
-                    font-family: 'bootstrap-icons-inline';
-                    src: url('${bootstrapIconsFont}') format('woff2');
-                }
-                .bi::before {
-                    font-family: 'bootstrap-icons-inline' !important;
-                }
-            `}</style>
-            <Author
-                initialAuthor={author({ avatarUrl: 'deterministic-avatar' })}
-                initialProjects={[]}
-            />
-        </>,
+        <Author
+            initialAuthor={author({ avatarUrl: 'deterministic-avatar' })}
+            initialProjects={[]}
+        />,
     );
 });

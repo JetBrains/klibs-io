@@ -5,6 +5,7 @@ import {OwnerOrganization, ProjectSearchResults} from "@/app/types";
 import Image from "next/image";
 import ProjectCard from "@/app/ui/project-card";
 import Container from "@/app/ui/container";
+import {EmailIcon, ExternalIcon, GitHubIcon, TwitterIcon} from "@rescui/icons";
 
 interface OrganizationPageContentProps {
     initialOrganization: OwnerOrganization;
@@ -54,7 +55,7 @@ export default function Organization({initialOrganization, initialProjects}: Org
                                        target="_blank"
                                        data-testid="organization-homepage-link"
                                        href={organization.homepage}>
-                                        <i className="bi bi-box-arrow-up-right"></i>
+                                        <ExternalIcon size={'xs'}/>
                                         <span className="text">{organization.homepage}</span>
                                     </a>
                                 </li>
@@ -66,7 +67,7 @@ export default function Organization({initialOrganization, initialProjects}: Org
                                         target="_blank"
                                         data-testid="organization-twitter-link"
                                         href={`https://x.com/${organization.twitterHandle}`}>
-                                        <i className="bi bi-twitter-x"></i>
+                                        <TwitterIcon size={'xs'}/>
                                         <span className="text">{organization.twitterHandle}</span>
                                     </a>
                                 </li>
@@ -77,7 +78,7 @@ export default function Organization({initialOrganization, initialProjects}: Org
                                        target="_blank"
                                        data-testid="organization-github-login"
                                        href={`https://github.com/${organization.login}`}>
-                                        <i className="bi bi-github"></i>
+                                        <GitHubIcon size={'xs'}/>
                                         <span className="text">{organization.login}</span>
                                     </a>
                                 </li>
@@ -88,7 +89,7 @@ export default function Organization({initialOrganization, initialProjects}: Org
                                        target="_blank"
                                        data-testid="organization-email-link"
                                        href={`mailto:${organization.email}`}>
-                                        <i className="bi bi-envelope"></i>
+                                        <EmailIcon size={'xs'}/>
                                         <span className="text">{organization.email}</span>
                                     </a>
                                 </li>
