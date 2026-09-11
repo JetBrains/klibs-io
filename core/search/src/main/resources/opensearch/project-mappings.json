@@ -5,13 +5,40 @@
     "owner_type": { "type": "keyword" },
     "owner_login": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
     "repo_name": { "type": "text" },
-    "name": { "type": "text" },
+    "name": {
+      "type": "text",
+      "fields": {
+        "prefix": { "type": "text", "analyzer": "token_prefix", "search_analyzer": "code_split" },
+        "suffix": { "type": "text", "analyzer": "token_suffix", "search_analyzer": "code_split" },
+        "split": { "type": "text", "analyzer": "name_split" },
+        "en": { "type": "text", "analyzer": "text_english" }
+      }
+    },
     "group_ids": { "type": "text", "analyzer": "code_split" },
-    "artifact_ids": { "type": "text", "analyzer": "code_split" },
-    "repo_description": { "type": "text" },
-    "project_description": { "type": "text" },
+    "artifact_ids": {
+      "type": "text",
+      "analyzer": "code_split",
+      "fields": {
+        "prefix": { "type": "text", "analyzer": "token_prefix", "search_analyzer": "code_split" },
+        "suffix": { "type": "text", "analyzer": "token_suffix", "search_analyzer": "code_split" }
+      }
+    },
+    "repo_description": {
+      "type": "text",
+      "fields": { "en": { "type": "text", "analyzer": "text_english" } }
+    },
+    "project_description": {
+      "type": "text",
+      "fields": { "en": { "type": "text", "analyzer": "text_english" } }
+    },
     "platforms": { "type": "keyword" },
-    "tags": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+    "tags": {
+      "type": "text",
+      "fields": {
+        "keyword": { "type": "keyword" },
+        "en": { "type": "text", "analyzer": "text_english" }
+      }
+    },
     "markers": { "type": "keyword" },
     "targets": { "type": "keyword" },
     "stars": { "type": "integer" },

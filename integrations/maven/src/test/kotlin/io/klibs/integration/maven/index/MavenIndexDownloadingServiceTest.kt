@@ -1,6 +1,5 @@
 package io.klibs.integration.maven.index
 
-import io.klibs.integration.maven.MavenIntegrationProperties
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexingContextManager
 import kotlinx.coroutines.runBlocking
@@ -20,8 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.whenever
-import org.springframework.web.client.RestClient
-import org.springframework.web.client.body
 import java.io.File
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -51,42 +48,14 @@ class MavenIndexDownloadingServiceTest {
     @Mock
     private lateinit var indexingContextManager: MavenIndexingContextManager
 
-    @Mock
-    private lateinit var restClientBuilder: RestClient.Builder
-
-    @Mock
-    private lateinit var restClient: RestClient
-
-    @Mock
-    private lateinit var requestHeadersUriSpec: RestClient.RequestHeadersUriSpec<*>
-
-    @Mock
-    private lateinit var requestHeadersSpec: RestClient.RequestHeadersSpec<*>
-
-    @Mock
-    private lateinit var responseSpec: RestClient.ResponseSpec
-
-    @Mock
-    private lateinit var properties: MavenIntegrationProperties
-
-    @Mock
-    private lateinit var centralProperties: MavenIntegrationProperties.Central
-
     private lateinit var service: MavenIndexDownloadingService
 
     @BeforeEach
     fun setup() {
-        whenever(properties.central).thenReturn(centralProperties)
-        whenever(centralProperties.indexEndpoint).thenReturn("http://example.com")
-        whenever(restClientBuilder.baseUrl(any<String>())).thenReturn(restClientBuilder)
-        whenever(restClientBuilder.build()).thenReturn(restClient)
-
         service = MavenIndexDownloadingService(
             indexUpdater,
             resourceFetcher,
             indexingContextManager,
-            properties,
-            restClientBuilder
         )
     }
 
@@ -99,13 +68,11 @@ class MavenIndexDownloadingServiceTest {
                 runBlocking { block(indexingContext) }
             }
 
-            // Mock fetchRemoteIndexTimestamp
-            val props = "nexus.index.timestamp=20260130185500.000 +0000"
-            whenever(restClient.get()).thenReturn(requestHeadersUriSpec as RestClient.RequestHeadersUriSpec<Nothing>)
-            whenever(requestHeadersUriSpec.uri(any<String>())).thenReturn(requestHeadersSpec as RestClient.RequestHeadersSpec<Nothing>)
-            whenever(requestHeadersSpec.retrieve()).thenReturn(responseSpec)
-            whenever(responseSpec.hint(any<String>(), any())).thenReturn(responseSpec)
-            whenever(responseSpec.body<String>()).thenReturn(props)
+            var fetchRemoteIndexTimestampCallCount = 0
+            val fetchRemoteIndexTimestamp = {
+                fetchRemoteIndexTimestampCallCount++
+                Instant.parse("2026-01-30T18:55:00Z")
+            }
 
             val localIndexCacheDir = File(tempDir, "local-index-cache")
             whenever(indexingContextManager.getLocalIndexCacheDir()).thenReturn(localIndexCacheDir)
@@ -113,13 +80,14 @@ class MavenIndexDownloadingServiceTest {
             whenever(indexUpdateResult.isFullUpdate).thenReturn(true)
             whenever(indexUpdater.fetchAndUpdateIndex(any())).thenReturn(indexUpdateResult)
 
-            service.downloadIndexIfNewer(Instant.EPOCH)
+            service.downloadIndexIfNewer(Instant.EPOCH, fetchRemoteIndexTimestamp)
 
             verify(indexUpdater).fetchAndUpdateIndex(check {
                 assertTrue(it.isForceFullUpdate, "Should have forceFullUpdate flag set to true")
                 assertEquals(indexingContext.indexDirectoryFile, it.indexTempDir, "Should use context index directory as temp dir")
                 assertEquals(localIndexCacheDir, it.localIndexCacheDir, "Should use local index cache dir to decouple download from extraction")
             })
+            assertEquals(1, fetchRemoteIndexTimestampCallCount, "Should fetch remote index timestamp once")
         }
     }
 }

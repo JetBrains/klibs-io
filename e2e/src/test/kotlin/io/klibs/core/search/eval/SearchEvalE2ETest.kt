@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -40,6 +41,7 @@ import org.springframework.test.web.servlet.MockMvc
 @ActiveProfiles("test")
 @SpringBootTest(classes = [Application::class])
 @AutoConfigureMockMvc
+@Import(SearchEvalOpenSearchConfig::class)
 @EnableAutoConfiguration(exclude = [
     OpenAiChatAutoConfiguration::class,
     OpenAiAudioTranscriptionAutoConfiguration::class,
@@ -106,8 +108,7 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
         val alias = projectSpec.alias
         val indexed = openSearchClient.count { it.index(alias) }.count()
         check(indexed > 0) {
-            "OpenSearch project alias '$alias' is empty after sync — " +
-                "is OpenSearch up at $OS_URI and the prod-copy DB populated?"
+            "OpenSearch project alias '$alias' is empty after sync — is the prod-copy DB populated?"
         }
         log.info("OpenSearch project alias '{}' has {} docs", alias, indexed)
     }
@@ -115,7 +116,6 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
     companion object {
         private fun env(key: String, default: String) = System.getenv(key)?.takeIf { it.isNotBlank() } ?: default
 
-        private val OS_URI = env("SEARCH_EVAL_OS_URI", "https://localhost:9200")
         private val OS_PROJECT_INDEX = env("SEARCH_EVAL_OS_PROJECT_INDEX", "project-eval")
         private val OS_PACKAGE_INDEX = env("SEARCH_EVAL_OS_PACKAGE_INDEX", "package-eval")
 
@@ -125,12 +125,7 @@ class SearchEvalE2ETest : SearchEvalTestBase() {
             registry.add("spring.datasource.url") { env("SEARCH_EVAL_DB_URL", "jdbc:postgresql://localhost:5432/klibs") }
             registry.add("spring.datasource.username") { env("SEARCH_EVAL_DB_USER", "klibs") }
             registry.add("spring.datasource.password") { env("SEARCH_EVAL_DB_PASSWORD", "klibs") }
-            // Drive the production search path through OpenSearch (eval-specific indices, wiped+refilled).
             registry.add("klibs.search.opensearch.enabled") { "true" }
-            registry.add("klibs.search.opensearch.uri") { OS_URI }
-            registry.add("klibs.search.opensearch.trust-all-certificates") { "true" }
-            registry.add("klibs.search.opensearch.username") { "admin" }
-            registry.add("klibs.search.opensearch.password") { "OpenSearch!ocalPassw0rd" }
             registry.add("klibs.search.opensearch.project-index") { OS_PROJECT_INDEX }
             registry.add("klibs.search.opensearch.package-index") { OS_PACKAGE_INDEX }
             // Corpus is a prod-copy; never seed the `test` profile's data.sql fixtures.

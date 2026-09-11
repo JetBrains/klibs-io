@@ -1,5 +1,6 @@
 package io.klibs.app.service.impl
 
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.dto.UserRequestReport
 import io.klibs.app.service.UserRequestReportQueue
 import io.klibs.core.pckg.entity.UserRequestReportEntity
@@ -12,10 +13,15 @@ import java.time.Instant
 @Service
 class DatabaseUserRequestReportQueue(
     private val userRequestReportRepository: UserRequestReportRepository,
+    private val indexingConfigurationProperties: IndexingConfigurationProperties,
 ) : UserRequestReportQueue {
 
     override fun poll(): UserRequestReport? =
-        userRequestReportRepository.findFirstForReportingBefore(Instant.now(), Limit.of(1))?.toReport()
+        userRequestReportRepository.findFirstForReportingBefore(
+            Instant.now(),
+            indexingConfigurationProperties.retry.maxAttempts,
+            Limit.of(1)
+        )?.toReport()
 
     override fun deferFor(report: UserRequestReport, delay: Duration) {
         userRequestReportRepository.deferUntil(report.reportId, Instant.now().plus(delay))

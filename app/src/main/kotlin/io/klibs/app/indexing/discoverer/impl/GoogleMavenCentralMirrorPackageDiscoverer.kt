@@ -12,20 +12,20 @@ import org.springframework.stereotype.Component
 
 @Component
 @ConditionalOnProperty(IndexingConfigurationProperties.CENTRAL_SONATYPE_ENABLED, havingValue = "true")
-@ConditionalOnProperty(IndexingConfigurationProperties.CENTRAL_SONATYPE_TYPE, havingValue = "ORIGIN")
-class CentralSonatypePackageDiscoverer(
+@ConditionalOnProperty(IndexingConfigurationProperties.CENTRAL_SONATYPE_TYPE, havingValue = "GOOGLE_MIRROR")
+class GoogleMavenCentralMirrorPackageDiscoverer(
     mavenIndexDownloadingService: MavenIndexDownloadingService,
-    centralSonatypeMavenIndexScannerService: MavenIndexScannerService,
-    centralSonatypeScraper: MavenCentralScraper,
+    googleMavenCentralMirrorIndexScannerService: MavenIndexScannerService,
+    googleMavenCentralMirrorScraper: MavenCentralScraper,
     mavenCentralLogRepository: MavenCentralLogRepository,
     packageRepository: PackageRepository,
-    sonatypeCentralStaticDataProvider: BaseMavenCentralStaticDataProvider,
+    googleMavenCentralMirrorStaticDataProvider: BaseMavenCentralStaticDataProvider,
 ) : BaseMavenCentralPackageDiscoverer(
     mavenIndexDownloadingService = mavenIndexDownloadingService,
-    mavenIndexScannerService = centralSonatypeMavenIndexScannerService,
-    mavenCentralScraper = centralSonatypeScraper,
+    mavenIndexScannerService = googleMavenCentralMirrorIndexScannerService,
+    mavenCentralScraper = googleMavenCentralMirrorScraper,
     mavenCentralLogRepository = mavenCentralLogRepository,
     packageRepository = packageRepository,
-    fetchRemoteIndexTimestamp = sonatypeCentralStaticDataProvider::fetchRemoteIndexTimestamp,
-    sourceName = "Central sonatype",
+    fetchRemoteIndexTimestamp = googleMavenCentralMirrorStaticDataProvider::fetchRemoteIndexTimestamp,
+    sourceName = "Google Maven Central mirror",
 )

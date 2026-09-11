@@ -1,16 +1,11 @@
 package io.klibs.integration.maven.service
 
-import io.klibs.integration.maven.MavenIntegrationProperties
 import org.apache.maven.index.updater.IndexUpdateRequest
 import org.apache.maven.index.updater.IndexUpdater
 import org.apache.maven.index.updater.ResourceFetcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.web.client.RestClient
-import org.springframework.web.client.body
-import java.text.SimpleDateFormat
 import java.time.Instant
-import java.util.*
 
 /**
  * Service responsible for downloading the Maven Central index to a local directory for further processing.
@@ -26,15 +21,13 @@ class MavenIndexDownloadingService(
     private val indexUpdater: IndexUpdater,
     private val resourceFetcher: ResourceFetcher,
     private val indexingContextManager: MavenIndexingContextManager,
-    properties: MavenIntegrationProperties,
-    restClientBuilder: RestClient.Builder,
 ) {
     private val logger = LoggerFactory.getLogger(MavenIndexDownloadingService::class.java)
-    private val restClient = restClientBuilder
-        .baseUrl("${properties.central.indexEndpoint}/.index/")
-        .build()
 
-    suspend fun downloadIndexIfNewer(localIndexTimestamp: Instant): Instant? {
+    suspend fun downloadIndexIfNewer(
+        localIndexTimestamp: Instant,
+        fetchRemoteIndexTimestamp: () -> Instant?,
+    ): Instant? {
         logger.info("Checking for Maven Central index updates")
 
         var resultTimestamp: Instant? = null
@@ -66,25 +59,5 @@ class MavenIndexDownloadingService(
             }
         }
         return resultTimestamp
-    }
-
-    private fun fetchRemoteIndexTimestamp(): Instant? {
-        return try {
-            restClient.get()
-                .uri("nexus-maven-repository-index.properties")
-                .retrieve()
-                .body<String>()?.let { content ->
-                    val props = Properties()
-                    props.load(content.reader())
-                    val indexTimestamp = props.getProperty("nexus.index.timestamp")
-                    if (indexTimestamp != null) {
-                        // Maven index timestamp format: yyyyMMddHHmmss.SSS Z
-                        SimpleDateFormat("yyyyMMddHHmmss.SSS Z").parse(indexTimestamp).toInstant()
-                    } else null
-                }
-        } catch (e: Exception) {
-            logger.error("Could not fetch remote index timestamp", e)
-            null
-        }
     }
 }
