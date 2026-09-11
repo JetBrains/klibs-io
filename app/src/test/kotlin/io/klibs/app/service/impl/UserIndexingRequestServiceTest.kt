@@ -19,6 +19,8 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -211,25 +213,68 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         }
 
         assertEquals("Artifact com.example:lib:1.0.0 is banned", exception.reason)
+        assertNoMavenAccessOrQueuedRequests()
     }
 
     @Test
     @Sql(value = ["classpath:/sql/UserIndexingRequestServiceTest/insert-into-banned-packages.sql"])
     fun `should throw 400 when all discovered artifacts are banned by group`() {
-        whenever(centralSonatypeSearchClient.getMavenMetadata(eq("com.banned"), eq("libX")))
-            .thenReturn(
-                MavenMetadata(
-                    "com.banned",
-                    "libX",
-                    MavenMetadata.Versioning(versions = listOf("1.0.0", "2.0.0"))
-                )
-            )
-        whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any())).thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
         val exception = assertThrows<UserRequestProcessingException> {
             fulfillRequest(groupId = "com.banned", artifactId = "libX", version = null)
         }
 
-        assertEquals("All artifacts from this request are already indexed, queued or banned", exception.reason)
+        assertEquals("Artifact com.banned:libX is banned", exception.reason)
+        assertNoMavenAccessOrQueuedRequests()
+    }
+
+    @Test
+    @Sql(value = ["classpath:/sql/UserIndexingRequestServiceTest/insert-into-banned-packages.sql"])
+    fun `should reject versionless exact ban before Maven access`() {
+        val exception = assertThrows<UserRequestProcessingException> {
+            fulfillRequest(version = null)
+        }
+
+        assertEquals("Artifact com.example:lib is banned", exception.reason)
+        assertNoMavenAccessOrQueuedRequests()
+    }
+
+    @Test
+    @Sql(value = ["classpath:/sql/UserIndexingRequestServiceTest/insert-into-banned-packages.sql"])
+    fun `should reject specific version in banned group before Maven access`() {
+        val exception = assertThrows<UserRequestProcessingException> {
+            fulfillRequest(groupId = "com.banned", artifactId = "libX")
+        }
+
+        assertEquals("Artifact com.banned:libX:1.0.0 is banned", exception.reason)
+        assertNoMavenAccessOrQueuedRequests()
+    }
+
+    @Test
+    @Sql(value = ["classpath:/sql/UserIndexingRequestServiceTest/insert-into-banned-packages.sql"])
+    fun `should queue allowed sibling for specific and versionless requests`() {
+        whenever(centralSonatypeSearchClient.getMavenMetadata("com.example", "sibling"))
+            .thenReturn(
+                MavenMetadata(
+                    "com.example", "sibling",
+                    MavenMetadata.Versioning(versions = listOf("1.0.0", "2.0.0"))
+                )
+            )
+        whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any()))
+            .thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
+
+        fulfillRequest(artifactId = "sibling")
+        fulfillRequest(artifactId = "sibling", version = null, githubIssueNumber = 43)
+
+        val requests = indexingRequestRepository.findAll().toList()
+        assertEquals(setOf("1.0.0", "2.0.0"), requests.map { it.version }.toSet())
+        assertEquals(2, requests.size)
+        assertTrue(requests.all { it.groupId == "com.example" && it.artifactId == "sibling" })
+    }
+
+    private fun assertNoMavenAccessOrQueuedRequests() {
+        assertEquals(0L, indexingRequestRepository.count())
+        verify(centralSonatypeSearchClient, never()).getMavenMetadata(any(), any())
+        verify(centralSonatypeSearchClient, never()).getKotlinToolingMetadata(any())
     }
 
     @Test

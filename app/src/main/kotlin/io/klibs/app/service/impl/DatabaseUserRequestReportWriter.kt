@@ -39,8 +39,14 @@ class DatabaseUserRequestReportWriter(
     @Transactional
     override fun saveFailureReportIfTerminal(indexRequestId: Long, errorMessage: String?) {
         val indexRequest = indexingRequestRepository.findById(indexRequestId).orElse(null) ?: return
-        val issue = indexRequest.userRequestIssue ?: return
         if (indexRequest.failedAttempts < indexingConfigurationProperties.retry.maxAttempts) return
+        saveFailureReport(indexRequestId, errorMessage)
+    }
+
+    @Transactional
+    override fun saveFailureReport(indexRequestId: Long, errorMessage: String?) {
+        val indexRequest = indexingRequestRepository.findById(indexRequestId).orElse(null) ?: return
+        val issue = indexRequest.userRequestIssue ?: return
         val version = indexRequest.version ?: return
         userRequestReportRepository.save(
             UserRequestReportEntity(
