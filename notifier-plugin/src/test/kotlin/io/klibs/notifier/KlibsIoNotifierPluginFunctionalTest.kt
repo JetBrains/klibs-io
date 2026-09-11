@@ -21,6 +21,8 @@ import java.net.http.HttpResponse
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
+private const val PUBLICATION_TASK_NAME = "publishKotlinMultiplatformPublicationToMavenCentralRepository"
+
 class KlibsIoNotifierPluginFunctionalTest {
 
     private val currentKotlinVersion = System.getProperty("test.kotlinVersion")
@@ -57,7 +59,7 @@ class KlibsIoNotifierPluginFunctionalTest {
     }
 
     private val disablePublishDependencies = """
-        tasks.named("publishKotlinMultiplatformPublicationToMavenCentralRepository") {
+        tasks.named("$PUBLICATION_TASK_NAME") {
             setDependsOn(emptyList<Any>())
         }
     """.trimIndent()
@@ -121,7 +123,7 @@ class KlibsIoNotifierPluginFunctionalTest {
     fun `notifies klibs with publication coordinates when publishing succeeds`() {
         writeProject(disablePublishDependencies)
 
-        val result = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository").build()
+        val result = runner(PUBLICATION_TASK_NAME).build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":notifyKlibsIo")?.outcome)
         assertEquals(
@@ -170,11 +172,11 @@ class KlibsIoNotifierPluginFunctionalTest {
         // https://github.com/vanniktech/gradle-maven-publish-plugin/blob/main/CHANGELOG.md
         writeProject(
             extraBuildScript = disablePublishDependencies,
-            vanniktechVersion = "0.36.0",
+            vanniktechVersion = "0.34.0",
             kotlinVersion = "2.2.0",
         )
 
-        val result = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository")
+        val result = runner(PUBLICATION_TASK_NAME)
             .withGradleVersion("9.0.0")
             .build()
 
@@ -194,7 +196,7 @@ class KlibsIoNotifierPluginFunctionalTest {
             vanniktechVersion = latestVersion,
         )
 
-        val result = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository").build()
+        val result = runner(PUBLICATION_TASK_NAME).build()
 
         assertEquals(
             TaskOutcome.SUCCESS,
@@ -232,13 +234,13 @@ class KlibsIoNotifierPluginFunctionalTest {
         )
         val expectedBody = """{"groupId":"com.example","artifactId":"test-artifact","version":"1.2.3"}"""
 
-        val firstRun = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository").build()
+        val firstRun = runner(PUBLICATION_TASK_NAME).build()
 
         assertEquals(TaskOutcome.SUCCESS, firstRun.task(":notifyKlibsIo")?.outcome)
         assertEquals(expectedBody, receivedBody)
 
         receivedBody = null
-        val secondRun = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository").build()
+        val secondRun = runner(PUBLICATION_TASK_NAME).build()
 
         assertTrue(secondRun.output.contains("Reusing configuration cache."))
         assertEquals(TaskOutcome.SUCCESS, secondRun.task(":notifyKlibsIo")?.outcome)
@@ -253,7 +255,7 @@ class KlibsIoNotifierPluginFunctionalTest {
             version = "1.0.0+\"build\"",
         )
 
-        val result = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository").build()
+        val result = runner(PUBLICATION_TASK_NAME).build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":notifyKlibsIo")?.outcome)
         assertEquals(
@@ -312,7 +314,7 @@ class KlibsIoNotifierPluginFunctionalTest {
             """.trimIndent()
         )
 
-        val result = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository").buildAndFail()
+        val result = runner(PUBLICATION_TASK_NAME).buildAndFail()
 
         assertNull(result.task(":notifyKlibsIo"))
         assertNull(receivedBody)
@@ -329,7 +331,7 @@ class KlibsIoNotifierPluginFunctionalTest {
             kotlinVersion = "2.2.0",
         )
 
-        val result = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository").build()
+        val result = runner(PUBLICATION_TASK_NAME).build()
 
         assertEquals(TaskOutcome.SKIPPED, result.task(":notifyKlibsIo")?.outcome)
         assertNull(receivedBody)
@@ -346,7 +348,7 @@ class KlibsIoNotifierPluginFunctionalTest {
         responseCode = 500
         writeProject(disablePublishDependencies)
 
-        val result = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository").build()
+        val result = runner(PUBLICATION_TASK_NAME).build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":notifyKlibsIo")?.outcome)
         assertTrue(result.output.contains("Failed to notify klibs.io: HTTP 500"))
@@ -365,7 +367,7 @@ class KlibsIoNotifierPluginFunctionalTest {
             apiBaseUrl = "http://localhost:$unreachablePort",
         )
 
-        val result = runner("publishKotlinMultiplatformPublicationToMavenCentralRepository").build()
+        val result = runner(PUBLICATION_TASK_NAME).build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":notifyKlibsIo")?.outcome)
         assertTrue(result.output.contains("Failed to reach klibs.io at http://localhost:$unreachablePort/notify/artifacts"))

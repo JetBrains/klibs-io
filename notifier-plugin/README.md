@@ -3,7 +3,7 @@
 The `klibs-io-notifier` plugin notifies [klibs.io](https://klibs.io) when a Kotlin Multiplatform library has been published to Maven Central. It sends the library's Maven coordinates to klibs.io so the library can be indexed without waiting for the regular Maven Central scan.
 
 > [!NOTE]
-> The plugin is intended for open-source Kotlin Multiplatform projects. It was designed for projects that use the [Vanniktech Gradle Maven Publish Plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/), but it works with any publishing plugin based on Gradle's `maven-publish` after additional configuration (see. [publishTaskName](#publishtaskname)).
+> The plugin is intended for open-source Kotlin Multiplatform projects. It works out of the box with the [Vanniktech Gradle Maven Publish Plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/) (version 0.36.0 or higher), but also supports any publishing plugin based on Gradle's `maven-publish` with additional configuration (see [`publishTaskName`](#publishtaskname)).
 
 ## Table of Contents
 
@@ -37,7 +37,6 @@ To use the klibs-io-notifier plugin in your project, it needs to:
 * JDK 17
 * Gradle 9.0.0
 * Kotlin Gradle Plugin 2.2.0
-* vanniktech gradle-maven-publish-plugin 0.36.0
 
 ## Getting started
 
