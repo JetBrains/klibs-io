@@ -86,6 +86,7 @@ class SecurityConfiguration(
                     authorize(HttpMethod.PATCH, "/content/**", hasRole("content-manager"))
                     authorize(HttpMethod.POST, "/tags/allowed/**", hasRole("ADMIN"))
                     authorize(HttpMethod.DELETE, "/tags/allowed/**", hasRole("ADMIN"))
+                    authorize("/package-index-request/**", hasRole("ADMIN"))
                 } else {
                     authorize("/blacklist/**", permitAll)
                     authorize("/project-visibility/**", permitAll)
@@ -95,6 +96,7 @@ class SecurityConfiguration(
                     authorize("/package-description/**", permitAll)
                     authorize(HttpMethod.POST, "/tags/allowed/**", permitAll)
                     authorize(HttpMethod.DELETE, "/tags/allowed/**", permitAll)
+                    authorize("/package-index-request/**", permitAll)
                 }
 
                 authorize(anyRequest, authenticated)
