@@ -79,13 +79,10 @@ abstract class BaseMavenStaticDataProvider(
 
 
         return executeFetch(kotlinToolingMetadataUrl) { response ->
-            when (val parseResult =
-                KotlinToolingMetadata.parseJson(
-                    String(
-                        response.body.readAllBytes(),
-                        StandardCharsets.UTF_8
-                    )
-                )) {
+            val body = String(response.body.readAllBytes(), StandardCharsets.UTF_8)
+            if (body.isBlank() || body.trim() == "\"\"") return@executeFetch null
+
+            when (val parseResult = KotlinToolingMetadata.parseJson(body)) {
                 is KotlinToolingMetadataParsingResult.Failure -> throw IllegalArgumentException(parseResult.reason)
                 is KotlinToolingMetadataParsingResult.Success -> KotlinToolingMetadataDelegateImpl(validate(parseResult.value))
             }
