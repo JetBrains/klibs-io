@@ -22,22 +22,30 @@ class ReadmeContentBuilder(
         repoName: String,
         defaultBranch: String,
     ): GitHubIndexingReadmeContent {
-        val readmeHtml = gitHubIntegration.markdownToHtml(readmeMd, nativeId)
+        val sanitizedReadme = sanitizeReadme(readmeMd)
+        val readmeHtml = gitHubIntegration.markdownToHtml(sanitizedReadme, nativeId)
             ?: error("No HTML content, even though its got Markdown readme? ghRepositoryId=$nativeId")
 
         val processedReadmeHtml = processReadme(readmeHtml, ownerLogin, repoName, defaultBranch, ReadmeType.HTML)
-        val processedMarkdownReadme = gitHubIntegration.markdownRender(readmeMd, nativeId)
+        val processedMarkdownReadme = gitHubIntegration.markdownRender(sanitizedReadme, nativeId)
             ?.let { processReadme(it, ownerLogin, repoName, defaultBranch, ReadmeType.MARKDOWN) }
             ?: error("No Markdown content, even though its got Markdown readme? ghRepositoryId=$nativeId")
 
-        val minimizedReadme = processReadme(readmeMd, ownerLogin, repoName, defaultBranch, ReadmeType.MINIMIZED_MARKDOWN)
+        val minimizedReadme = processReadme(
+            sanitizedReadme, ownerLogin, repoName, defaultBranch, ReadmeType.MINIMIZED_MARKDOWN,
+        )
 
         return GitHubIndexingReadmeContent(
-            raw = readmeMd,
+            raw = sanitizedReadme,
             markdown = processedMarkdownReadme,
             html = processedReadmeHtml,
             minimized = minimizedReadme,
         )
+    }
+
+    private fun sanitizeReadme(readme: String): String {
+        if ('\u0000' in readme) return ""
+        return readme
     }
 
     private fun processReadme(

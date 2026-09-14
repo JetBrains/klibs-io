@@ -17,6 +17,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.kohsuke.github.GitHub
@@ -67,7 +68,7 @@ class GetReadmeWithModifiedSinceCheckTest {
                 .protocol(Protocol.HTTP_1_1)
                 .code(200)
                 .message("OK")
-                .body("# README content".toResponseBody(contentType = "text/markdown".toMediaTypeOrNull()))
+                .body("\uFEFF# README content".toResponseBody(contentType = "text/markdown".toMediaTypeOrNull()))
                 .build()
         }
         val client = OkHttpClient.Builder().addInterceptor(interceptor).build()
@@ -83,6 +84,63 @@ class GetReadmeWithModifiedSinceCheckTest {
         val expectedIfModifiedSince = ZonedDateTime.ofInstant(modifiedSince, ZoneOffset.UTC)
             .format(DateTimeFormatter.RFC_1123_DATE_TIME)
         assertEquals(expectedIfModifiedSince, sentRequest.header("If-Modified-Since"))
+    }
+
+    @Test
+    @DisplayName("decodes README using standard response headers and BOM")
+    fun `decodes README using headers BOM and BOM-less recovery`() {
+        val markdown = "# README\nHello Kotlin — Привет 世界"
+        val cases = listOf(
+            "\uFEFF$markdown".toByteArray(Charsets.UTF_8) to null,
+            markdown.toByteArray(Charsets.UTF_16LE) to "text/markdown; charset=utf-16le",
+            markdown.toByteArray(Charsets.UTF_16BE) to "text/markdown; charset=utf-16be",
+            (byteArrayOf(0xFF.toByte(), 0xFE.toByte()) + markdown.toByteArray(Charsets.UTF_16LE))
+                to "text/markdown; charset=iso-8859-1",
+            markdown.toByteArray(Charsets.UTF_8) to null,
+        )
+        cases.forEachIndexed { index, (bytes, contentType) ->
+            val client = OkHttpClient.Builder().addInterceptor { chain ->
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(bytes.toResponseBody(contentType?.toMediaTypeOrNull()))
+                    .build()
+            }.build()
+
+            val result = newIntegration(client).getReadmeWithModifiedSinceCheck(12345L, Instant.EPOCH)
+
+            assertEquals(ReadmeFetchResult.Content(markdown), result, "Encoding case $index")
+        }
+    }
+
+    @Test
+    @DisplayName("returns response text without custom encoding recovery or NUL removal")
+    fun `propagates decoding error for BOM-less README on 200`() {
+        val markdown = "# README\nHello Kotlin — Привет 世界"
+        val cases = listOf(
+            markdown.toByteArray(Charsets.UTF_8) to null,
+            markdown.toByteArray(Charsets.UTF_8) to "text/markdown; charset=utf-8",
+            markdown.toByteArray(Charsets.UTF_16LE) to "text/markdown; charset=utf-8",
+            markdown.toByteArray(Charsets.UTF_16BE) to null,
+            "$markdown\u0000".toByteArray(Charsets.UTF_8) to null,
+            byteArrayOf() to "text/markdown",
+        )
+        cases.forEach { (bytes, contentType) ->
+            val client = OkHttpClient.Builder().addInterceptor { chain ->
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(bytes.toResponseBody(contentType?.toMediaTypeOrNull()))
+                    .build()
+            }.build()
+
+            val result = newIntegration(client).getReadmeWithModifiedSinceCheck(12345L, Instant.EPOCH)
+            assertEquals(ReadmeFetchResult.Content(bytes.toString(Charsets.UTF_8)), result)
+        }
     }
 
     @Test
@@ -149,7 +207,7 @@ class GetReadmeWithModifiedSinceCheckTest {
                     .protocol(Protocol.HTTP_1_1)
                     .code(200)
                     .message("OK")
-                    .body("# Anonymous README".toResponseBody("text/markdown".toMediaTypeOrNull()))
+                    .body("\uFEFF# Anonymous README".toResponseBody("text/markdown".toMediaTypeOrNull()))
                     .build()
             }
         }
