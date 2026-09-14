@@ -42,6 +42,13 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
     """, nativeQuery = true)
     fun markAsFailed(@Param("id") id: Long, @Param("errorMessage") errorMessage: String?)
 
+    @Query(value = """
+        SELECT count(*)
+        FROM package_index_request
+        WHERE status = 'FAILED'
+    """, nativeQuery = true)
+    fun countFailed(): Long
+
     fun findByGroupIdAndArtifactIdAndVersion(
         groupId: String,
         artifactId: String,
