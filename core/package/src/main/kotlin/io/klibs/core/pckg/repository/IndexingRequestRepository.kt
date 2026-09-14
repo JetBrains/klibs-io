@@ -25,12 +25,6 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
         FROM package_index_request req
         WHERE req.status = 'PENDING'
           AND req.failed_attempts < :maxAttempts
-          AND NOT EXISTS (
-              SELECT 1
-              FROM banned_packages bp
-              WHERE bp.group_id = req.group_id 
-                AND (bp.artifact_id = req.artifact_id OR bp.artifact_id IS NULL)
-          )
         ORDER BY req.released_ts DESC NULLS FIRST
         LIMIT 1
     """, nativeQuery = true)

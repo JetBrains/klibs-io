@@ -2,6 +2,7 @@ package io.klibs.app.indexing.discoverer.impl
 
 import io.klibs.core.pckg.dto.projection.Package
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.project.blacklist.BlacklistRepository
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.repository.MavenCentralLogRepository
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.times
@@ -47,6 +50,9 @@ internal class CentralSonatypePackageDiscovererTest {
     lateinit var packageRepository: PackageRepository
 
     @MockitoBean
+    lateinit var blacklistRepository: BlacklistRepository
+
+    @MockitoBean
     lateinit var centralSonatypeStaticDataProvider: SonatypeCentralStaticDataProvider
 
     lateinit var discoverer: CentralSonatypePackageDiscoverer
@@ -64,6 +70,56 @@ internal class CentralSonatypePackageDiscovererTest {
             mavenCentralLogRepository,
             packageRepository,
             centralSonatypeStaticDataProvider,
+            blacklistRepository,
+        )
+    }
+
+    private fun discovererFor(mirror: Boolean): BaseMavenCentralPackageDiscoverer = if (mirror) {
+        GoogleMavenCentralMirrorPackageDiscoverer(
+            mavenIndexDownloadingService,
+            mavenIndexScannerService,
+            centralSonatypeScraper,
+            mavenCentralLogRepository,
+            packageRepository,
+            centralSonatypeStaticDataProvider,
+            blacklistRepository,
+        )
+    } else discoverer
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `should exclude banned packages from full discovery`(mirror: Boolean) = runTest {
+        whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(emptyList())
+        whenever(blacklistRepository.checkPackageBanned("com.example", "lib")).thenReturn(true)
+        whenever(blacklistRepository.checkPackageBanned("com.banned", "anything")).thenReturn(true)
+        whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any(), any())).thenReturn(initialTimestamp)
+        val allowed = MavenArtifact("com.example", "sibling", "1.0", ScraperType.CENTRAL_SONATYPE)
+        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(
+            MavenArtifact("com.example", "lib", "1.0", ScraperType.CENTRAL_SONATYPE),
+            MavenArtifact("com.banned", "anything", "1.0", ScraperType.CENTRAL_SONATYPE),
+            allowed,
+        ))
+
+        assertEquals(listOf(allowed), discovererFor(mirror).discover(Channel()).toList())
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `should exclude banned coordinates before requesting new versions`(mirror: Boolean) = runTest {
+        whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(listOf(
+            Package("com.example", "lib", setOf("1.0")),
+            Package("com.banned", "anything", setOf("1.0")),
+            Package("com.example", "sibling", setOf("1.0")),
+        ))
+        whenever(blacklistRepository.checkPackageBanned("com.example", "lib")).thenReturn(true)
+        whenever(blacklistRepository.checkPackageBanned("com.banned", "anything")).thenReturn(true)
+        whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any(), any())).thenReturn(null)
+        whenever(centralSonatypeScraper.findNewVersions(any(), any())).thenReturn(flowOf())
+
+        discovererFor(mirror).discover(Channel()).toList()
+
+        verify(centralSonatypeScraper).findNewVersions(
+            argThat { this == mapOf("com.example:sibling" to setOf("1.0")) }, any()
         )
     }
 

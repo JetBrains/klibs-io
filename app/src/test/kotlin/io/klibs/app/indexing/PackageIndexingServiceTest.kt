@@ -2,6 +2,7 @@ package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
 import io.klibs.app.configuration.properties.IndexingConfigurationProperties
+import io.klibs.app.indexing.discoverer.impl.CentralSonatypePackageDiscoverer
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.entity.UserRequestIssueEntity
 import io.klibs.core.pckg.enums.UserRequestIndexingStatus
@@ -18,6 +19,7 @@ import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
+import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.Variant
@@ -34,6 +36,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.runBlocking
 import org.apache.maven.model.Scm
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -43,6 +47,8 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.system.CapturedOutput
@@ -95,6 +101,83 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @MockitoBean
     private lateinit var readmeContentBuilder: ReadmeContentBuilder
+
+    @MockitoBean
+    private lateinit var discoverer: CentralSonatypePackageDiscoverer
+
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    @Sql(value = ["classpath:/sql/UserIndexingRequestServiceTest/insert-into-banned-packages.sql"])
+    fun `scheduled discovery queues only allowed artifacts`(includeAllowed: Boolean) = runBlocking {
+        val artifacts = mutableListOf(
+            MavenArtifact("com.example", "lib", "1.0", ScraperType.CENTRAL_SONATYPE),
+            MavenArtifact("com.example", "lib", "2.0", ScraperType.CENTRAL_SONATYPE),
+            MavenArtifact("com.banned", "anything", "1.0", ScraperType.CENTRAL_SONATYPE),
+        )
+        if (includeAllowed) {
+            artifacts.add(MavenArtifact("com.example", "sibling", "1.0", ScraperType.CENTRAL_SONATYPE))
+        }
+        whenever(discoverer.discover(any())).thenReturn(artifacts.asFlow())
+
+        uut.indexNewPackages()
+
+        val requests = indexingRequestRepository.findAll().toList()
+        assertEquals(if (includeAllowed) 1 else 0, requests.size)
+        assertTrue(requests.all { it.groupId == "com.example" && it.artifactId == "sibling" })
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["com.example", "com.banned"])
+    @Sql(value = ["classpath:/sql/UserIndexingRequestServiceTest/insert-into-banned-packages.sql"])
+    fun `discards banned scheduled requests without Maven access`(groupId: String) {
+        indexingRequestRepository.save(IndexingRequestEntity(
+            groupId = groupId, artifactId = "lib", version = "1.0.0",
+            releasedAt = Instant.now(), repo = ScraperType.CENTRAL_SONATYPE,
+        ))
+
+        assertTrue(uut.processPackageQueue())
+
+        assertEquals(0L, indexingRequestRepository.count())
+        assertEquals(0L, packageRepository.count())
+        assertEquals(0L, nonKmpPackageRepository.count())
+        assertEquals(0L, userRequestReportRepository.count())
+        verify(mavenStaticDataProvider, never()).getPomWithReleaseDate(any())
+        verify(mavenStaticDataProvider, never()).getKotlinToolingMetadata(any())
+        assertFalse(uut.processPackageQueue())
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [0, 1])
+    @Sql(value = ["classpath:/sql/UserIndexingRequestServiceTest/insert-into-banned-packages.sql"])
+    fun `reports banned user request as failure and continues with allowed request`(failedAttempts: Int) {
+        val issue = saveUserOriginatedRequest(failedAttempts)
+        jdbcTemplate.update("UPDATE package_index_request SET artifact_id = 'lib'")
+
+        assertTrue(uut.processPackageQueue())
+
+        assertEquals(0L, indexingRequestRepository.count())
+        assertEquals(0L, packageRepository.count())
+        verify(mavenStaticDataProvider, never()).getPomWithReleaseDate(any())
+        verify(mavenStaticDataProvider, never()).getKotlinToolingMetadata(any())
+        val report = userRequestReportRepository.findAll().single()
+        assertEquals(UserRequestIndexingStatus.FAILURE, report.indexingStatus)
+        assertEquals("Artifact com.example:lib is banned", report.statusDetails)
+        assertEquals("1.0.0", report.version)
+        assertEquals(issue.id.toString(), jdbcTemplate.queryForObject(
+            "SELECT user_request_issue_id::text FROM user_request_report", String::class.java,
+        ))
+
+        indexingRequestRepository.save(IndexingRequestEntity(
+            groupId = "com.example", artifactId = "sibling", version = "1.0.0",
+            releasedAt = Instant.now(), repo = ScraperType.CENTRAL_SONATYPE,
+        ))
+        stubMavenFetch("com.example", "sibling", "1.0.0", null)
+        assertTrue(uut.processPackageQueue())
+        assertEquals(0L, indexingRequestRepository.count())
+        assertNotNull(packageRepository.findByGroupIdAndArtifactIdAndVersion("com.example", "sibling", "1.0.0"))
+        assertEquals(1L, userRequestReportRepository.count())
+        assertFalse(uut.processPackageQueue())
+    }
 
     @BeforeEach
     fun setUp() {

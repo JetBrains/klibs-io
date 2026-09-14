@@ -58,6 +58,10 @@ class CentralSonatypeUserIndexingRequestService(
             return listOf(resolveSpecificVersion(groupId, artifactId, version))
         }
 
+        if (blacklistRepository.checkPackageBanned(groupId, artifactId)) {
+            throw UserRequestProcessingException("Artifact $groupId:$artifactId is banned")
+        }
+
         val foundPackages = searchForPackages(groupId, artifactId)
 
         val artifactsToSave = foundPackages
