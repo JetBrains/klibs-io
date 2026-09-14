@@ -4,6 +4,7 @@ import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.util.getTargetsVector
 import io.klibs.core.project.ProjectEntity
 import org.hibernate.type.SqlTypes
+import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
@@ -26,18 +27,22 @@ class ProjectRepositoryJdbc(
         .usingGeneratedKeyColumns("id")
 
     override fun insert(projectEntity: ProjectEntity): ProjectEntity {
+        val minimizedReadme = projectEntity.minimizedReadme?.takeUnless { it.contains('\u0000') }
+        if (projectEntity.minimizedReadme != null && minimizedReadme == null) {
+            logger.warn("Omitting minimized README containing NUL for SCM repository {}", projectEntity.scmRepoId)
+        }
         val params = MapSqlParameterSource()
             .addValue("scm_repo_id", projectEntity.scmRepoId)
             .addValue("owner_id", projectEntity.ownerId)
             .addValue("name", projectEntity.name)
             .addValue("description", projectEntity.description)
-            .addValue("minimized_readme", projectEntity.minimizedReadme)
+            .addValue("minimized_readme", minimizedReadme)
             .addValue("latest_version", projectEntity.latestVersion)
             .addValue("latest_version_ts", Timestamp.from(projectEntity.latestVersionTs))
             .addValue("dependent_count", projectEntity.dependentCount)
 
         val id = projectInsert.executeAndReturnKey(params).toInt()
-        return projectEntity.copy(id = id)
+        return projectEntity.copy(id = id, minimizedReadme = minimizedReadme)
     }
 
     override fun updateLatestVersion(id: Int, latestVersion: String, latestVersionTs: Instant): ProjectEntity {
@@ -98,6 +103,10 @@ class ProjectRepositoryJdbc(
     }
 
     override fun updateMinimizedReadme(id: Int, minimizedReadme: String?) {
+        if (minimizedReadme?.contains('\u0000') == true) {
+            logger.warn("Skipping minimized README update containing NUL for project {}", id)
+            return
+        }
         val sql = """
             UPDATE project
             SET minimized_readme = :minimizedReadme
@@ -414,6 +423,7 @@ class ProjectRepositoryJdbc(
     }
 
     private companion object {
+        private val logger = LoggerFactory.getLogger(ProjectRepositoryJdbc::class.java)
         private val PROJECT_ENTITY_ROW_MAPPER = RowMapper<ProjectEntity> { rs, _ ->
             ProjectEntity(
                 id = rs.getInt("id"),
