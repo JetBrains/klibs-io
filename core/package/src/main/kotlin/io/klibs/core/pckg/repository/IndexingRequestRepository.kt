@@ -42,6 +42,8 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
     """, nativeQuery = true)
     fun markAsFailed(@Param("id") id: Long, @Param("errorMessage") errorMessage: String?)
 
+    fun countByStatus(status: IndexingRequestStatus): Long
+
     fun findByGroupIdAndArtifactIdAndVersion(
         groupId: String,
         artifactId: String,
