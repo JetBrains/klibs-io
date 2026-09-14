@@ -47,4 +47,15 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
         artifactId: String,
         version: String
     ): IndexingRequestEntity?
+
+    fun findAllByGroupIdAndArtifactId(
+        groupId: String,
+        artifactId: String
+    ): List<IndexingRequestEntity>
+
+    fun findAllByGroupIdAndArtifactIdAndVersion(
+        groupId: String,
+        artifactId: String,
+        version: String
+    ): List<IndexingRequestEntity>
 }
