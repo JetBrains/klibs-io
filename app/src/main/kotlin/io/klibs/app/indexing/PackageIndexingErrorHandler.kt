@@ -29,7 +29,7 @@ class PackageIndexingErrorHandler(
             )
         )
         nonKmpPackageService.save(
-            MavenArtifactDTO.fromEntity(artifact), exception.releaseTs, exception.scraperType, exception.scmUrl, exception.errorType,
+            MavenArtifactDTO.fromEntity(artifact), exception.scraperType, exception.scmUrl, exception.errorType,
         )
         userRequestReportWriter.saveFailureReport(requestId, exception.message)
         indexingRequestRepository.deleteById(requestId)

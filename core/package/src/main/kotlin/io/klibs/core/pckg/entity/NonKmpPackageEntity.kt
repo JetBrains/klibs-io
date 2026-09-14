@@ -30,9 +30,6 @@ data class NonKmpPackageEntity(
     @JoinColumn(name = "maven_artifact_id", nullable = false)
     val mavenArtifact: MavenArtifactEntity,
 
-    @Column(name = "release_ts", nullable = false)
-    val releaseTs: Instant,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "scraper_type", nullable = false)
     val repo: ScraperType,
