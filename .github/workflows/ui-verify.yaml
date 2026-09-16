@@ -25,6 +25,6 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps
       - run: npm run test:visual
-      - run: npx -y uiverify@1.4.0 upload --static-dir ./uiverify-archive
+      - run: npx -y uiverify@1.4.2 upload --static-dir ./uiverify-archive
         env:
           UIVERIFY_API_KEY: ${{ secrets.UIVERIFY_API_KEY }}
