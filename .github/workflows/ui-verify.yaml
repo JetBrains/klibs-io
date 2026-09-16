@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'frontend/**'
+  push:
+    branches: [master]
+    paths:
+      - 'frontend/**'
 
 jobs:
   visual:
