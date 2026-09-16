@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - 'frontend/**'
+      - '.github/workflows/ui-verify.yaml'
   push:
     branches: [master]
     paths:
       - 'frontend/**'
+      - '.github/workflows/ui-verify.yaml'
 
 jobs:
   visual:
