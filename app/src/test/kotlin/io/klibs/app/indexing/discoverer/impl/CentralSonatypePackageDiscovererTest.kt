@@ -25,7 +25,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.time.Instant
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 @SpringBootTest(classes = [CentralSonatypePackageDiscoverer::class])
 @ActiveProfiles("test")
@@ -81,7 +80,6 @@ internal class CentralSonatypePackageDiscovererTest {
             artifactId = "test-lib",
             version = "1.1.0",
             scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = null
         )
 
         whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(listOf(knownPackage))
@@ -112,7 +110,6 @@ internal class CentralSonatypePackageDiscovererTest {
             artifactId = "test-lib1",
             version = "1.0.0",
             scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = initialTimestamp.plusSeconds(3600)
         )
 
         val artifact2 = MavenArtifact(
@@ -120,7 +117,6 @@ internal class CentralSonatypePackageDiscovererTest {
             artifactId = "test-lib2",
             version = "1.0.0",
             scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = initialTimestamp.plusSeconds(7200)
         )
 
         whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(emptyList())
@@ -138,14 +134,12 @@ internal class CentralSonatypePackageDiscovererTest {
         assertEquals("test-lib1", resultArtifact1?.artifactId)
         assertEquals("1.0.0", resultArtifact1?.version)
         assertEquals(ScraperType.CENTRAL_SONATYPE, resultArtifact1?.scraperType)
-        assertTrue(resultArtifact1?.releasedAt != null)
 
         val resultArtifact2 = artifacts.find { it.artifactId == "test-lib2" }
         assertEquals("org.example", resultArtifact2?.groupId)
         assertEquals("test-lib2", resultArtifact2?.artifactId)
         assertEquals("1.0.0", resultArtifact2?.version)
         assertEquals(ScraperType.CENTRAL_SONATYPE, resultArtifact2?.scraperType)
-        assertTrue(resultArtifact2?.releasedAt != null)
 
         verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
     }
@@ -158,7 +152,6 @@ internal class CentralSonatypePackageDiscovererTest {
             artifactId = "known-lib",
             version = "1.0.0",
             scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = initialTimestamp.plusSeconds(3600)
         )
 
         val newArtifact = MavenArtifact(
@@ -166,7 +159,6 @@ internal class CentralSonatypePackageDiscovererTest {
             artifactId = "new-lib",
             version = "1.0.0",
             scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = initialTimestamp.plusSeconds(7200)
         )
 
         val knownPackage = Package(
@@ -198,7 +190,6 @@ internal class CentralSonatypePackageDiscovererTest {
             artifactId = "test-lib",
             version = "1.0.0",
             scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = initialTimestamp.plusSeconds(3600)
         )
 
         val artifact2 = MavenArtifact(
@@ -206,7 +197,6 @@ internal class CentralSonatypePackageDiscovererTest {
             artifactId = "test-lib",
             version = "2.0.0",
             scraperType = ScraperType.CENTRAL_SONATYPE,
-            releasedAt = initialTimestamp.plusSeconds(7200)
         )
 
         whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(emptyList())

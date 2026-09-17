@@ -4,14 +4,17 @@ import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.api.OptionalLinkResponse
 import io.klibs.core.pckg.api.PackageDetailsResponse
 import io.klibs.core.pckg.api.PackageOverviewResponse
+import io.klibs.core.pckg.api.PackageStatusResponse
 import io.klibs.core.pckg.api.PackageTargetResponse
 import io.klibs.core.pckg.model.PackageDetails
 import io.klibs.core.pckg.model.PackageOverview
+import io.klibs.core.pckg.dto.PackageStatusDTO
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.model.TargetGroup
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -55,6 +58,41 @@ class PackageController(
             artifactId = artifactId,
             version = version
         )?.toDTO()
+    }
+
+    @Operation(
+        summary = "Get indexing status of a package by its coordinates",
+    )
+    @GetMapping("/{groupId}/{artifactId}/{version}/status")
+    fun getPackageStatus(
+        @PathVariable("groupId")
+        @Parameter(
+            description = "Group ID of the Maven artifact",
+            example = "org.jetbrains.kotlinx"
+        )
+        groupId: String,
+
+        @PathVariable("artifactId")
+        @Parameter(
+            description = "Artifact ID of the Maven artifact",
+            example = "kotlinx-coroutines-core"
+        )
+        artifactId: String,
+
+        @PathVariable("version")
+        @Parameter(
+            description = "Version of the Maven artifact",
+            example = "1.9.0-RC"
+        )
+        version: String
+    ): ResponseEntity<PackageStatusResponse> {
+        val status = packageService.getPackageStatus(
+            groupId = groupId,
+            artifactId = artifactId,
+            version = version
+        ) ?: return ResponseEntity.notFound().build()
+
+        return ResponseEntity.ok(status.toDTO())
     }
 
     @Operation(summary = "Get the full info of the latest version by the group id and the artifact id")
@@ -166,6 +204,16 @@ private fun PackageTarget.toDTO(): PackageTargetResponse {
     return PackageTargetResponse(
         platform = this.platform.serializableName,
         target = this.target
+    )
+}
+
+private fun PackageStatusDTO.toDTO(): PackageStatusResponse {
+    return PackageStatusResponse(
+        groupId = this.groupId,
+        artifactId = this.artifactId,
+        version = this.version,
+        status = this.status,
+        statusDescription = this.status.description,
     )
 }
 

@@ -1,7 +1,9 @@
-package io.klibs.core.project.blacklist
+package io.klibs.app.service.impl
 
+import io.klibs.app.service.BlacklistService
 import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.pckg.repository.BlacklistRepository
 import io.klibs.core.project.repository.ProjectRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -40,7 +42,7 @@ class BlacklistServiceTest {
 
     @BeforeEach
     fun setUp() {
-        uut = BlacklistService(
+        uut = DefaultBlacklistService(
             blacklistRepository,
             packageRepository,
             projectRepository

@@ -107,7 +107,8 @@ class PackageIndexingService(
      * @return true if a request was processed, false if the queue is empty or we are rate limited.
      */
     fun processPackageQueue(): Boolean {
-        val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        val indexRequest =
+            indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         if (indexRequest == null) {
             logger.info("The package index queue is empty")
             return false
@@ -133,7 +134,12 @@ class PackageIndexingService(
                     }
 
                     Outcome.FAILED -> {
-                        indexingRequestRepository.markAsFailed(requestId, errorMessage)
+                        indexingRequestRepository.markAsFailed(
+                            requestId,
+                            indexingConfigurationProperties.retry.maxAttempts,
+                            getNextAttemptTs(indexRequest.failedAttempts + 1),
+                            errorMessage
+                        )
                         userRequestReportWriter.saveFailureReportIfTerminal(requestId, errorMessage)
                     }
 
@@ -174,10 +180,8 @@ class PackageIndexingService(
             provider.getPomWithReleaseDate(mavenArtifact)
                 ?: error("Unable to find the .pom for ${provider.getPomUrl(mavenArtifact)}")
 
-        if (mavenArtifact.releasedAt == null) {
-            mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
-            logger.trace("Set releasedAt for {}", mavenArtifact)
-        }
+        mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
+        logger.trace("Set releasedAt for {}", mavenArtifact)
 
         logger.trace("Indexing GitHub info of {}", mavenArtifact)
         val gitHubRepoEntity = indexGitHubInfoIfPresent(pom)
@@ -231,7 +235,6 @@ class PackageIndexingService(
             scraperType = requireNotNull(this.repo) {
                 "Request's repoId is set to null, unable to convert to MavenArtifact: $this"
             },
-            releasedAt = this.releasedAt
         )
     }
 
@@ -305,7 +308,11 @@ class PackageIndexingService(
             Duration.between(previousGeneratedAt, Instant.now()) < indexingConfigurationProperties.description.regenTtl
         ) {
             logger.info("Skipping regeneration for $coordinates; previous description generated within TTL")
-            return ResolvedDescription(latestSavedVersion.description, wasGenerated = true, generatedAt = previousGeneratedAt)
+            return ResolvedDescription(
+                latestSavedVersion.description,
+                wasGenerated = true,
+                generatedAt = previousGeneratedAt
+            )
         }
 
         return try {
@@ -328,6 +335,18 @@ class PackageIndexingService(
         val wasGenerated: Boolean,
         val generatedAt: Instant?
     )
+
+    private fun getNextAttemptTs(
+        failedAttempts: Int
+    ): Instant? {
+        // Indexing runs every 4h, so to make sure retry will be triggered when expected, the lock duration is always set to (expected_duration - 1h)
+        return when (failedAttempts) {
+            1 -> Instant.now().plus(Duration.ofHours(3))    // 4h
+            2 -> Instant.now().plus(Duration.ofHours(11))   // 12h
+            3 -> Instant.now().plus(Duration.ofHours(24 * 4 - 1)) // 4 days
+            else -> null
+        }
+    }
 
     private companion object {
         private val logger = LoggerFactory.getLogger(PackageIndexingService::class.java)

@@ -12,7 +12,6 @@ fun MavenArtifact.toIndexRequest(
         groupId = this.groupId,
         artifactId = this.artifactId,
         version = this.version,
-        releasedAt = this.releasedAt,
         repo = this.scraperType,
         reindex = reindex,
         userRequestIssue = userRequestIssue,

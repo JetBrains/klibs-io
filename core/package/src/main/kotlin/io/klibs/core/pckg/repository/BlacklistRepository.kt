@@ -1,4 +1,4 @@
-package io.klibs.core.project.blacklist
+package io.klibs.core.pckg.repository
 
 /**
  * Repository interface for managing blacklisted packages.

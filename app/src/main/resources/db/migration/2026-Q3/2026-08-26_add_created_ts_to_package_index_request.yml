@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: Add created_ts column to package_index_request table
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - addColumn:
+            tableName: package_index_request
+            columns:
+              - column:
+                  name: created_ts
+                  type: timestamp
