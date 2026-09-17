@@ -24,7 +24,7 @@ class KlibsIoNotifierPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         val extension = project.extensions.create("klibsIoNotifier", KlibsIoNotifierExtension::class.java)
-        extension.apiUrl.convention("https://klibs.io/notify/artifacts")
+        extension.apiUrl.convention("https://api.klibs.io/notify/artifacts")
         extension.publishTaskName.convention("publishKotlinMultiplatformPublicationToMavenCentralRepository")
 
         project.afterEvaluate {
