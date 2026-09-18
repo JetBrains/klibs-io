@@ -6,7 +6,6 @@ import React from "react";
 import { GoogleTagManager } from "@next/third-parties/google";
 
 import 'bootstrap/dist/css/bootstrap.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
 import '@rescui/typography/lib/font-jb-sans-auto.css';
 import { getProjectsCount } from "@/app/api";
 
