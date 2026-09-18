@@ -74,6 +74,12 @@ export const packageOverview = (overrides: Partial<PackageOverview> = {}): Packa
     ...overrides,
 });
 
+// Release history as the API returns it: newest first.
+export const packageVersionHistory = (): [PackageOverview, PackageOverview] => [
+    packageOverview({ id: 1, version: '1.10.2', releasedAtMillis: 1_700_000_000_000 }),
+    packageOverview({ id: 2, version: '1.9.0-RC.2', releasedAtMillis: 1_600_000_000_000 }),
+];
+
 export const packageDetails = (overrides: Partial<PackageDetails> = {}): PackageDetails => ({
     ...packageOverview(),
     projectId: 1,

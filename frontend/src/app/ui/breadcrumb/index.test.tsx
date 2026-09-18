@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { ComponentProps, forwardRef, ReactNode } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 
-import { packageDetails, packageOverview, projectDetails } from '@/test/fixtures';
+import { packageDetails, packageOverview, packageVersionHistory, projectDetails } from '@/test/fixtures';
 import { PackageBreadcrumbs } from './index';
 
 vi.mock('next/navigation', () => ({
@@ -40,23 +40,19 @@ const renderBreadcrumbs = (versions: ReturnType<typeof packageOverview>[], versi
 );
 
 describe('PackageBreadcrumbs', () => {
-    test('shows the latest released version when the url has none', () => {
-        renderBreadcrumbs([
-            packageOverview({ id: 1, version: '1.10.2', releasedAtMillis: 1_700_000_000_000 }),
-            packageOverview({ id: 2, version: '1.9.0-RC.2', releasedAtMillis: 1_600_000_000_000 }),
-        ]);
+    const [latest, previous] = packageVersionHistory();
 
-        expect(screen.getByRole('button')).toHaveTextContent('1.10.2');
+    test('shows the latest released version when the url has none', () => {
+        renderBreadcrumbs([latest, previous]);
+
+        expect(screen.getByRole('button')).toHaveTextContent(latest.version);
     });
 
     test('shows the requested version and keeps the release order in the menu', () => {
-        renderBreadcrumbs([
-            packageOverview({ id: 1, version: '1.10.2', releasedAtMillis: 1_700_000_000_000 }),
-            packageOverview({ id: 2, version: '1.9.0-RC.2', releasedAtMillis: 1_600_000_000_000 }),
-        ], '1.9.0-RC.2');
+        renderBreadcrumbs([latest, previous], previous.version);
 
-        expect(screen.getByRole('button')).toHaveTextContent('1.9.0-RC.2');
+        expect(screen.getByRole('button')).toHaveTextContent(previous.version);
         expect(screen.getAllByRole('link', { name: /^1\./ }).map(link => link.textContent))
-            .toEqual(['1.10.2', '1.9.0-RC.2']);
+            .toEqual([latest.version, previous.version]);
     });
 });
