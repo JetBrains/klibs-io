@@ -19,6 +19,8 @@ interface GitHubIntegration {
 
     fun getUser(login: String): GitHubUser?
 
+    fun getUser(nativeId: Long): GitHubUser?
+
     fun getLicense(repositoryId: Long): GitHubLicense?
 
     /**

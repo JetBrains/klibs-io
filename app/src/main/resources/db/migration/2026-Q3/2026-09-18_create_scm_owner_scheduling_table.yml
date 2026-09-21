@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: create scm_owner_scheduling table
+      author: nikita.vlaev@jetbrains.com
+      comment: "KTL-2209: backoff state for owners that could not be updated"
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: scm_owner_scheduling
+      changes:
+        - createTable:
+            tableName: scm_owner_scheduling
+            columns:
+              - column:
+                  name: scm_owner_id
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+                    references: scm_owner(id)
+                    foreignKeyName: fk_scm_owner_scheduling_scm_owner_id
+                    deleteCascade: true
+              - column:
+                  name: next_retry_at
+                  type: TIMESTAMP
+              - column:
+                  name: retry_attempts
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reason
+                  type: TEXT
+                  remarks: "The exception that deferred the owner, formatted as simple name and message."
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: scm_owner_scheduling
+            columnNames: scm_owner_id
+            constraintName: pk_scm_owner_scheduling

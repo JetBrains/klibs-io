@@ -191,3 +191,5 @@ databaseChangeLog:
       file: db/migration/2026-Q3/2026-09-21_rename_maven_artifact_to_maven_coordinate.yml
   - include:
       file: db/migration/2026-Q3/2026-09-07_create_suspicious_package_candidate_table.yml
+  - include:
+      file: db/migration/2026-Q3/2026-09-18_create_scm_owner_scheduling_table.yml
