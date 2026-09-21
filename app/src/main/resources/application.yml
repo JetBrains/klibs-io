@@ -4,7 +4,7 @@ logging:
 
 spring:
   datasource:
-    url: ${DB0_URL_JDBC}
+    url: jdbc:postgresql://${DB0_HOST}:${DB0_PORT}/${DB0_NAME}${DB0_PARAMS}
     username: ${DB0_USERNAME}
     password: ${DB0_PASSWORD}
     hikari:
