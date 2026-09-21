@@ -198,7 +198,14 @@ class PackageIndexingService(
 
         val (pom, releasedAt) =
             provider.getPomWithReleaseDate(mavenArtifact)
-                ?: error("Unable to find the .pom for ${provider.getPomUrl(mavenArtifact)}")
+                ?: throw PackageIndexingKnownException(
+                    errorType = PackageIndexingErrorType.MISSING_POM,
+                    coordinates = MavenCoordinatesDTO(
+                        mavenArtifact.groupId, mavenArtifact.artifactId, mavenArtifact.version,
+                    ),
+                    scraperType = mavenArtifact.scraperType,
+                    scmUrl = null,
+                )
 
         if (mavenArtifact.releasedAt == null) {
             mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
@@ -246,7 +253,6 @@ class PackageIndexingService(
             ?: throw PackageIndexingKnownException(
                 errorType = PackageIndexingErrorType.MISSING_TOOLING_METADATA,
                 coordinates = mavenCoordinates,
-                releaseTs = requireNotNull(mavenArtifact.releasedAt) { "releasedAt is null for $mavenArtifact" },
                 scraperType = mavenArtifact.scraperType,
                 scmUrl = pom.scm?.url?.let { normalizeGitHubLink(it) },
             )

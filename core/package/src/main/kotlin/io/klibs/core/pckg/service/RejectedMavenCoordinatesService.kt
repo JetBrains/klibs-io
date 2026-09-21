@@ -7,7 +7,6 @@ import io.klibs.core.pckg.repository.RejectedMavenCoordinateRepository
 import io.klibs.integration.maven.ScraperType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 
 @Service
 class RejectedMavenCoordinatesService(
@@ -17,7 +16,6 @@ class RejectedMavenCoordinatesService(
     @Transactional
     fun save(
         mavenArtifact: MavenArtifactDTO,
-        releaseTs: Instant,
         repo: ScraperType,
         scmUrl: String?,
         errorType: PackageIndexingErrorType,
@@ -25,7 +23,6 @@ class RejectedMavenCoordinatesService(
         rejectedMavenCoordinateRepository.save(
             RejectedMavenCoordinateEntity(
                 mavenArtifact = mavenArtifact.toEntityRef(),
-                releaseTs = releaseTs,
                 repo = repo,
                 scmUrl = scmUrl,
                 errorType = errorType,

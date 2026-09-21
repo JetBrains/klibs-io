@@ -24,7 +24,7 @@ class PackageIndexingErrorHandler(
         val coordinates = exception.coordinates
         val artifact = mavenArtifactService.resolveOrCreate(coordinates)
         rejectedMavenCoordinatesService.save(
-            MavenArtifactDTO.fromEntity(artifact.toEntityRef()), exception.releaseTs, exception.scraperType, exception.scmUrl, exception.errorType,
+            MavenArtifactDTO.fromEntity(artifact.toEntityRef()), exception.scraperType, exception.scmUrl, exception.errorType,
         )
         logger.trace("Persisting the package for {}", artifact)
         userRequestReportWriter.saveFailureReport(requestId, exception.message)
