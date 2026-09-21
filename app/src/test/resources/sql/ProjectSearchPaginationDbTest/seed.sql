@@ -30,7 +30,7 @@ INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, 
 
 
 
-INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
     (1097711008, 'io.pagination', 'lib-p1', '1.0.0'),
     (1013351525, 'io.pagination', 'lib-p2', '1.0.0'),
     (1076004550, 'io.pagination', 'lib-p3', '1.0.0'),
@@ -39,7 +39,7 @@ INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
     (1053788082, 'io.pagination', 'lib-p6', '1.0.0')
 ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES (51001, 50001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p1', '1.0.0', 'desc P1', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1097711008),
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_coordinate_id) VALUES (51001, 50001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p1', '1.0.0', 'desc P1', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1097711008),
        (51002, 50002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p2', '1.0.0', 'desc P2', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1013351525),
        (51003, 50003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p3', '1.0.0', 'desc P3', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1076004550),
        (51004, 50004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.pagination', 'lib-p4', '1.0.0', 'desc P4', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1003605758),

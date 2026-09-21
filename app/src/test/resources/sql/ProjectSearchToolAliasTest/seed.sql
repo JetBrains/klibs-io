@@ -20,13 +20,13 @@ INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, 
     (71002, 61002, CURRENT_TIMESTAMP, '1.0.0', 'Persistence library', 'room', 'readme', 61002),
     (71003, 61003, CURRENT_TIMESTAMP, '1.0.0', 'Typesafe SQL for Kotlin', 'sqldelight', 'readme', 61003);
 
-INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
     (1210000001, 'io.insert-koin', 'koin-core', '1.0.0'),
     (1210000002, 'androidx.room', 'room-runtime', '1.0.0'),
     (1210000003, 'app.cash.sqldelight', 'runtime', '1.0.0')
 ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_coordinate_id) VALUES
     (72001, 71001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.insert-koin', 'koin-core', '1.0.0', 'Koin core', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"Apache License 2.0"}]', 1210000001),
     (72002, 71002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'androidx.room', 'room-runtime', '1.0.0', 'Room runtime', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"Apache License 2.0"}]', 1210000002),
     (72003, 71003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'app.cash.sqldelight', 'runtime', '1.0.0', 'SQLDelight runtime', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"Apache License 2.0"}]', 1210000003);

@@ -95,8 +95,8 @@ data class PackageEntity(
     val versionType: VersionType? = null,
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "maven_artifact_id", nullable = false)
-    val mavenArtifact: MavenArtifactEntity,
+    @JoinColumn(name = "maven_coordinate_id", nullable = false)
+    val mavenCoordinate: MavenCoordinateEntity,
 ) {
     @OneToMany(mappedBy = "packageEntity", cascade = [CascadeType.ALL], orphanRemoval = true)
     val targets: MutableList<PackageTargetEntity> = mutableListOf()
@@ -105,9 +105,9 @@ data class PackageEntity(
     @JoinTable(
         name = "package_dependency",
         joinColumns = [JoinColumn(name = "package_id")],
-        inverseJoinColumns = [JoinColumn(name = "dep_maven_artifact_id")],
+        inverseJoinColumns = [JoinColumn(name = "dep_maven_coordinate_id")],
     )
-    val dependencies: MutableSet<MavenArtifactEntity> = mutableSetOf()
+    val dependencies: MutableSet<MavenCoordinateEntity> = mutableSetOf()
 
     val idNotNull: Long get() = requireNotNull(id)
 
@@ -139,7 +139,7 @@ data class PackageEntity(
      * @param generatedDescription Whether the description was generated, defaults to the current entity's value
      * @param descriptionGeneratedAt When the description was last generated, defaults to the current entity's value
      * @param versionType The version type of the new entity, defaults to the current entity's version type
-     * @param mavenArtifact The normalized `maven_artifact` row this package points at, defaults to the current entity's reference
+     * @param mavenCoordinate The normalized `maven_coordinate` row this package points at, defaults to the current entity's reference
      * @return A new PackageEntity instance with specified properties changed and targets reattached
      */
     fun deepCopy(
@@ -162,7 +162,7 @@ data class PackageEntity(
         generatedDescription: Boolean = this.generatedDescription,
         descriptionGeneratedAt: Instant? = this.descriptionGeneratedAt,
         versionType: VersionType? = this.versionType,
-        mavenArtifact: MavenArtifactEntity = this.mavenArtifact
+        mavenCoordinate: MavenCoordinateEntity = this.mavenCoordinate
     ): PackageEntity {
         // Create a copy of the entity with specified fields changed
         val copy = PackageEntity(
@@ -185,7 +185,7 @@ data class PackageEntity(
             generatedDescription = generatedDescription,
             descriptionGeneratedAt = descriptionGeneratedAt,
             versionType = versionType,
-            mavenArtifact = mavenArtifact,
+            mavenCoordinate = mavenCoordinate,
         )
 
         // Create new copies of each target and attach them to the new entity

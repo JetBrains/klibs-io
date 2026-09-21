@@ -36,14 +36,14 @@ VALUES (9101, 9101, 9101, 'project-a', NULL, NULL, '1.0.0', CURRENT_TIMESTAMP, 0
        (9102, 9102, 9101, 'project-b', NULL, NULL, '1.0.0', CURRENT_TIMESTAMP, 0),
        (9103, 9103, 9101, 'project-c', NULL, NULL, '1.0.0', CURRENT_TIMESTAMP, 0);
 
--- ---- maven_artifact rows ----
+-- ---- maven_coordinate rows ----
 -- Pre-seed every (g,a,v) we touch — the package rows below reference these via the
--- NOT NULL package.maven_artifact_id FK introduced in 2026-04-26_*.yml.
+-- NOT NULL package.maven_coordinate_id FK introduced in 2026-04-26_*.yml.
 -- 9201 = io.klibs.test:lib-a:1.0.0  (A's coords — A publishes it; B depends on it)
 -- 9202 = io.klibs.test:lib-b:1.0.0  (B's coords — B publishes it; B's self-dependency)
 -- 9203 = com.external:unknown:9.9.9 (third-party, no klibs project)
 -- 9204 = io.klibs.test:lib-c:1.0.0  (C's coords — C publishes it; nobody depends on it)
-INSERT INTO maven_artifact (id, group_id, artifact_id, version)
+INSERT INTO maven_coordinate (id, group_id, artifact_id, version)
 VALUES (9201, 'io.klibs.test', 'lib-a', '1.0.0'),
        (9202, 'io.klibs.test', 'lib-b', '1.0.0'),
        (9203, 'com.external', 'unknown', '9.9.9'),
@@ -53,7 +53,7 @@ VALUES (9201, 'io.klibs.test', 'lib-a', '1.0.0'),
 -- Project A publishes io.klibs.test:lib-a:1.0.0.
 INSERT INTO package (id, project_id, scraper_type, group_id, artifact_id, version, release_ts,
                      description, url, scm_url, build_tool, build_tool_version, kotlin_version,
-                     developers, licenses, configuration, generated_description, maven_artifact_id)
+                     developers, licenses, configuration, generated_description, maven_coordinate_id)
 VALUES (9101, 9101, 'SEARCH_MAVEN', 'io.klibs.test', 'lib-a', '1.0.0', CURRENT_TIMESTAMP,
         NULL, NULL, NULL, 'gradle', '8.0', '2.0.0',
         '[]'::jsonb, '[]'::jsonb, NULL, false, 9201);
@@ -61,7 +61,7 @@ VALUES (9101, 9101, 'SEARCH_MAVEN', 'io.klibs.test', 'lib-a', '1.0.0', CURRENT_T
 -- Project B publishes io.klibs.test:lib-b:1.0.0.
 INSERT INTO package (id, project_id, scraper_type, group_id, artifact_id, version, release_ts,
                      description, url, scm_url, build_tool, build_tool_version, kotlin_version,
-                     developers, licenses, configuration, generated_description, maven_artifact_id)
+                     developers, licenses, configuration, generated_description, maven_coordinate_id)
 VALUES (9102, 9102, 'SEARCH_MAVEN', 'io.klibs.test', 'lib-b', '1.0.0', CURRENT_TIMESTAMP,
         NULL, NULL, NULL, 'gradle', '8.0', '2.0.0',
         '[]'::jsonb, '[]'::jsonb, NULL, false, 9202);
@@ -69,14 +69,14 @@ VALUES (9102, 9102, 'SEARCH_MAVEN', 'io.klibs.test', 'lib-b', '1.0.0', CURRENT_T
 -- Project C publishes io.klibs.test:lib-c:1.0.0.
 INSERT INTO package (id, project_id, scraper_type, group_id, artifact_id, version, release_ts,
                      description, url, scm_url, build_tool, build_tool_version, kotlin_version,
-                     developers, licenses, configuration, generated_description, maven_artifact_id)
+                     developers, licenses, configuration, generated_description, maven_coordinate_id)
 VALUES (9103, 9103, 'SEARCH_MAVEN', 'io.klibs.test', 'lib-c', '1.0.0', CURRENT_TIMESTAMP,
         NULL, NULL, NULL, 'gradle', '8.0', '2.0.0',
         '[]'::jsonb, '[]'::jsonb, NULL, false, 9204);
 
 -- ---- dependencies ----
 -- Project B's package depends on A, on itself, and on an unknown artifact.
-INSERT INTO package_dependency (package_id, dep_maven_artifact_id)
+INSERT INTO package_dependency (package_id, dep_maven_coordinate_id)
 VALUES (9102, 9201),
        (9102, 9202),
        (9102, 9203);

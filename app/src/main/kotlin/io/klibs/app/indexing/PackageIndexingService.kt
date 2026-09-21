@@ -6,7 +6,7 @@ import io.klibs.app.exceptions.PackageIndexingKnownException
 import io.klibs.app.service.UserRequestReportWriter
 import io.klibs.app.util.normalizeGitHubLink
 import io.klibs.app.util.toIndexRequest
-import io.klibs.core.pckg.dto.MavenCoordinatesDTO
+import io.klibs.core.pckg.dto.MavenCoordinateDTO
 import io.klibs.core.pckg.dto.PackageDTO
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.enums.IndexingRequestStatus
@@ -14,7 +14,7 @@ import io.klibs.core.pckg.enums.PackageIndexingErrorType
 import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
-import io.klibs.core.pckg.service.MavenArtifactService
+import io.klibs.core.pckg.service.MavenCoordinateService
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.blacklist.BlacklistRepository
@@ -57,7 +57,7 @@ class PackageIndexingService(
     private val packageService: PackageService,
     private val packageRepository: PackageRepository,
     private val blacklistRepository: BlacklistRepository,
-    private val mavenArtifactService: MavenArtifactService,
+    private val mavenCoordinateService: MavenCoordinateService,
     private val errorHandler: PackageIndexingErrorHandler,
     private val indexingConfigurationProperties: IndexingConfigurationProperties,
     private val selfProvider: ObjectProvider<PackageIndexingService>
@@ -200,7 +200,7 @@ class PackageIndexingService(
             provider.getPomWithReleaseDate(mavenArtifact)
                 ?: throw PackageIndexingKnownException(
                     errorType = PackageIndexingErrorType.MISSING_POM,
-                    coordinates = MavenCoordinatesDTO(
+                    coordinates = MavenCoordinateDTO(
                         mavenArtifact.groupId, mavenArtifact.artifactId, mavenArtifact.version,
                     ),
                     scraperType = mavenArtifact.scraperType,
@@ -212,7 +212,7 @@ class PackageIndexingService(
             logger.trace("Set releasedAt for {}", mavenArtifact)
         }
 
-        val mavenCoordinates = MavenCoordinatesDTO(pom.groupId, pom.artifactId, pom.version)
+        val mavenCoordinates = MavenCoordinateDTO(pom.groupId, pom.artifactId, pom.version)
         val toolingMetadata = getKotlinToolingMetadata(mavenArtifact, provider, mavenCoordinates, pom)
 
 
@@ -234,8 +234,8 @@ class PackageIndexingService(
                 ?: error("Unable to update a non-existing artifact: $mavenArtifact")
             updated.id
         } else {
-            val mavenArtifactDto = mavenArtifactService.resolveOrCreate(mavenCoordinates)
-            packageRepository.save(packageDto.toEntity(mavenArtifactDto)).id
+            val mavenCoordinateDto = mavenCoordinateService.resolveOrCreate(mavenCoordinates)
+            packageRepository.save(packageDto.toEntity(mavenCoordinateDto)).id
         }
 
         logger.trace("Extracting dependencies for {}", indexRequest)
@@ -245,7 +245,7 @@ class PackageIndexingService(
     private fun getKotlinToolingMetadata(
         mavenArtifact: MavenArtifact,
         provider: MavenStaticDataProvider,
-        mavenCoordinates: MavenCoordinatesDTO,
+        mavenCoordinates: MavenCoordinateDTO,
         pom: MavenPom
     ): KotlinToolingMetadataDelegate {
         logger.trace("Getting tooling metadata for {}", mavenArtifact)

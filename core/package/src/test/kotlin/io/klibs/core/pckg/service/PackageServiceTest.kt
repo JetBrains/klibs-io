@@ -1,6 +1,6 @@
 package io.klibs.core.pckg.service
 
-import io.klibs.core.pckg.entity.MavenArtifactEntity
+import io.klibs.core.pckg.entity.MavenCoordinateEntity
 import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.enums.VersionType
 import io.klibs.core.pckg.repository.PackageIndexRepository
@@ -142,7 +142,7 @@ class PackageServiceTest {
             configuration = null,
             generatedDescription = false,
             versionType = versionType,
-            mavenArtifact = MavenArtifactEntity(
+            mavenCoordinate = MavenCoordinateEntity(
                 id = id,
                 groupId = "io.klibs",
                 artifactId = "test-package",

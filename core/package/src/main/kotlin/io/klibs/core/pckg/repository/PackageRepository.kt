@@ -21,9 +21,9 @@ interface PackageRepository: CrudRepository<PackageEntity, Long> {
                  UNION ALL
                  SELECT group_id, artifact_id, version, scraper_type FROM package_index_request
                  UNION ALL
-                 SELECT ma.group_id, ma.artifact_id, ma.version, rmc.scraper_type AS scraper_type
+                 SELECT mc.group_id, mc.artifact_id, mc.version, rmc.scraper_type AS scraper_type
                  FROM rejected_maven_coordinate rmc
-                 JOIN maven_artifact ma ON ma.id = rmc.maven_artifact_id
+                 JOIN maven_coordinate mc ON mc.id = rmc.maven_coordinate_id
              ) AS combined
         WHERE scraper_type IS DISTINCT FROM 'GOOGLE_MAVEN'
         GROUP BY combined.group_id, combined.artifact_id;

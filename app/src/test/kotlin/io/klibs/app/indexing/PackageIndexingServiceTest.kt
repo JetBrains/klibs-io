@@ -302,8 +302,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val savedId = jdbcTemplate.queryForObject(
             """
                 SELECT rmc.id
-                FROM rejected_maven_coordinate rmc JOIN maven_artifact ma ON ma.id = rmc.maven_artifact_id
-                WHERE ma.group_id = ? AND ma.artifact_id = ? AND ma.version = ?
+                FROM rejected_maven_coordinate rmc JOIN maven_coordinate mc ON mc.id = rmc.maven_coordinate_id
+                WHERE mc.group_id = ? AND mc.artifact_id = ? AND mc.version = ?
             """.trimIndent(),
             Long::class.java,
             indexRequest.groupId, indexRequest.artifactId, requireNotNull(indexRequest.version),

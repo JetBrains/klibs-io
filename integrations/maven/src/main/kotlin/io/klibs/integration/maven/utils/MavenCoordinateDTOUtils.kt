@@ -2,10 +2,10 @@ package io.klibs.integration.maven.utils
 
 import io.klibs.integration.maven.dto.GavCoordinatesDTO
 
-class MavenArtifactDTOUtils {
+class MavenCoordinateDTOUtils {
     companion object {
         /**
-         * Checks if the data in MavenArtifactDTO is in valid format.
+         * Checks if the data in MavenCoordinateDTO is in valid format.
          *
          * Returns null if the request is valid, or an error message if it is not
          */

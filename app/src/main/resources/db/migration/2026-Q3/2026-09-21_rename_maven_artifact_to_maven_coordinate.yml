@@ -1,0 +1,121 @@
+databaseChangeLog:
+  - changeSet:
+      id: rename maven_artifact table to maven_coordinate
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: maven_artifact
+        - not:
+            tableExists:
+              tableName: maven_coordinate
+      changes:
+        - renameTable:
+            oldTableName: maven_artifact
+            newTableName: maven_coordinate
+
+  - changeSet:
+      id: rename maven_artifact primary key constraint
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: maven_coordinate
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE maven_coordinate RENAME CONSTRAINT pk_maven_artifact TO pk_maven_coordinate;
+
+  - changeSet:
+      id: rename maven_artifact indexes
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: maven_coordinate
+      changes:
+        - sql:
+            sql: |
+              ALTER INDEX IF EXISTS uindex_maven_artifact_gav RENAME TO uindex_maven_coordinate_gav;
+              ALTER INDEX IF EXISTS idx_maven_artifact_ga RENAME TO idx_maven_coordinate_ga;
+
+  - changeSet:
+      id: rename maven_artifact sequence
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sequenceExists:
+            sequenceName: maven_artifact_id_seq
+      changes:
+        - sql:
+            sql: |
+              ALTER SEQUENCE maven_artifact_id_seq RENAME TO maven_coordinate_id_seq;
+
+  - changeSet:
+      id: rename package maven_artifact_id column
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: package
+            columnName: maven_artifact_id
+        - not:
+            columnExists:
+              tableName: package
+              columnName: maven_coordinate_id
+      changes:
+        - renameColumn:
+            tableName: package
+            oldColumnName: maven_artifact_id
+            newColumnName: maven_coordinate_id
+            columnDataType: BIGINT
+        - sql:
+            sql: |
+              ALTER TABLE package RENAME CONSTRAINT fk_package_maven_artifact_id TO fk_package_maven_coordinate_id;
+              ALTER INDEX IF EXISTS idx_package_maven_artifact_id RENAME TO idx_package_maven_coordinate_id;
+
+  - changeSet:
+      id: rename rejected_maven_coordinate maven_artifact_id column
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: rejected_maven_coordinate
+            columnName: maven_artifact_id
+        - not:
+            columnExists:
+              tableName: rejected_maven_coordinate
+              columnName: maven_coordinate_id
+      changes:
+        - renameColumn:
+            tableName: rejected_maven_coordinate
+            oldColumnName: maven_artifact_id
+            newColumnName: maven_coordinate_id
+            columnDataType: BIGINT
+        - sql:
+            sql: |
+              ALTER TABLE rejected_maven_coordinate RENAME CONSTRAINT fk_rejected_maven_coordinate_maven_artifact_id TO fk_rejected_maven_coordinate_maven_coordinate_id;
+              ALTER INDEX IF EXISTS uindex_rejected_maven_coordinate_maven_artifact_id RENAME TO uindex_rejected_maven_coordinate_maven_coordinate_id;
+
+  - changeSet:
+      id: rename package_dependency dep_maven_artifact_id column
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: package_dependency
+            columnName: dep_maven_artifact_id
+        - not:
+            columnExists:
+              tableName: package_dependency
+              columnName: dep_maven_coordinate_id
+      changes:
+        - renameColumn:
+            tableName: package_dependency
+            oldColumnName: dep_maven_artifact_id
+            newColumnName: dep_maven_coordinate_id
+            columnDataType: BIGINT
+        - sql:
+            sql: |
+              ALTER TABLE package_dependency RENAME CONSTRAINT fk_package_dependency_dep_maven_artifact_id TO fk_package_dependency_dep_maven_coordinate_id;
+              ALTER INDEX IF EXISTS idx_package_dependency_dep_maven_artifact_id RENAME TO idx_package_dependency_dep_maven_coordinate_id;

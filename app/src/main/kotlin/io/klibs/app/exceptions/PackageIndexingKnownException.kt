@@ -1,6 +1,6 @@
 package io.klibs.app.exceptions
 
-import io.klibs.core.pckg.dto.MavenCoordinatesDTO
+import io.klibs.core.pckg.dto.MavenCoordinateDTO
 import io.klibs.core.pckg.enums.PackageIndexingErrorType
 import io.klibs.integration.maven.ScraperType
 
@@ -13,7 +13,7 @@ import io.klibs.integration.maven.ScraperType
  * */
 class PackageIndexingKnownException(
     val errorType: PackageIndexingErrorType,
-    val coordinates: MavenCoordinatesDTO,
+    val coordinates: MavenCoordinateDTO,
     val scraperType: ScraperType,
     val scmUrl: String?,
 ) : RuntimeException()

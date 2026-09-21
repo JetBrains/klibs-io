@@ -20,13 +20,13 @@ INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, 
     (73002, 62002, CURRENT_TIMESTAMP, '1.0.0', 'Kotlin dependency injection', 'koin', 'readme', 62002),
     (73003, 62003, CURRENT_TIMESTAMP, '1.0.0', 'Key-value storage for KMP', 'MultiplatformSettingsDataStore', 'readme', 62003);
 
-INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
     (1220000001, 'app.cash.sqldelight', 'runtime', '1.0.0'),
     (1220000002, 'io.insert-koin', 'koin-core', '1.0.0'),
     (1220000003, 'com.russhwolf', 'multiplatform-settings-datastore', '1.0.0')
 ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_coordinate_id) VALUES
     (74001, 73001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'app.cash.sqldelight', 'runtime', '1.0.0', 'SQLDelight runtime', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"Apache License 2.0"}]', 1220000001),
     (74002, 73002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.insert-koin', 'koin-core', '1.0.0', 'Koin core', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"Apache License 2.0"}]', 1220000002),
     (74003, 73003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.russhwolf', 'multiplatform-settings-datastore', '1.0.0', 'Multiplatform Settings', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"Apache License 2.0"}]', 1220000003);

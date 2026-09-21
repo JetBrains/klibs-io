@@ -6,7 +6,7 @@ import io.klibs.app.service.UserRequestReportWriter
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
-import io.klibs.core.pckg.service.MavenArtifactService
+import io.klibs.core.pckg.service.MavenCoordinateService
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.service.RejectedMavenCoordinatesService
 import io.klibs.integration.ai.PackageDescriptionGenerator
@@ -43,7 +43,7 @@ class PackageIndexingServiceTestOld {
     private val userRequestReportWriter: UserRequestReportWriter = mock()
     private val packageService: PackageService = mock()
     private val packageRepository: PackageRepository = mock()
-    private val mavenArtifactService: MavenArtifactService = mock()
+    private val mavenCoordinateService: MavenCoordinateService = mock()
     private val rejectedMavenCoordinatesService: RejectedMavenCoordinatesService = mock()
     private val transactionTemplate: TransactionTemplate = mock()
     private val selfProvider: ObjectProvider<PackageIndexingService> = mock()
@@ -67,7 +67,7 @@ class PackageIndexingServiceTestOld {
             packageService,
             packageRepository,
             mock(),
-            mavenArtifactService,
+            mavenCoordinateService,
             mock<PackageIndexingErrorHandler>(),
             IndexingConfigurationProperties(),
             selfProvider

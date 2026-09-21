@@ -37,11 +37,11 @@ data class PackageDTO(
     val targets: List<PackageTarget> = emptyList()
 ) {
     /**
-     * Converts this DTO to an entity and applying maven artifact to it
+     * Converts this DTO to an entity and applying maven coordinate to it
      *
      * @return PackageEntity created from this DTO
      */
-    fun toEntity(mavenArtifact: MavenArtifactDTO): PackageEntity {
+    fun toEntity(mavenCoordinate: MavenCoordinateDTO): PackageEntity {
         val entity = PackageEntity(
             id = id,
             projectId = projectId,
@@ -62,7 +62,7 @@ data class PackageDTO(
             generatedDescription = generatedDescription,
             descriptionGeneratedAt = descriptionGeneratedAt,
             versionType = versionType,
-            mavenArtifact = mavenArtifact.toEntityRef(),
+            mavenCoordinate = mavenCoordinate.toEntityRef(),
         )
 
         // Add targets to the entity

@@ -31,8 +31,8 @@ data class RejectedMavenCoordinateEntity(
     val id: Long? = null,
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "maven_artifact_id", nullable = false)
-    val mavenArtifact: MavenArtifactEntity,
+    @JoinColumn(name = "maven_coordinate_id", nullable = false)
+    val mavenCoordinate: MavenCoordinateEntity,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "scraper_type", nullable = false)
