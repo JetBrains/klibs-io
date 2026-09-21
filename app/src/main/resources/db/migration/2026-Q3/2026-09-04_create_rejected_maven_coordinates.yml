@@ -139,7 +139,49 @@ databaseChangeLog:
               - column:
                   name: error_type
                   type: TEXT
+        - update:
+            tableName: rejected_maven_coordinate
+            columns:
+              - column:
+                  name: error_type
+                  value: MISSING_TOOLING_METADATA
         - addNotNullConstraint:
             tableName: rejected_maven_coordinate
             columnName: error_type
             columnDataType: TEXT
+
+  - changeSet:
+      id: delete release ts column from rejected_maven_coordinate
+      author: dmitrii.krasnov@jetbrains.com
+      changes:
+        - dropColumn:
+            tableName: rejected_maven_coordinate
+            columnName: release_ts
+
+  - changeSet:
+      id: reset all tooling metadata package index request
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: package_index_request
+        - columnExists:
+            tableName: package_index_request
+            columnName: status
+        - columnExists:
+            tableName: package_index_request
+            columnName: failed_attempts
+        - columnExists:
+            tableName: package_index_request
+            columnName: failed_ts
+        - columnExists:
+            tableName: package_index_request
+            columnName: last_error_message
+      changes:
+        - sql:
+            sql: |
+              UPDATE package_index_request
+              SET status = 'PENDING',
+                  failed_attempts = 0,
+                  scraper_type = 'GOOGLE_MAVEN_CENTRAL_MIRROR'
+              WHERE status = 'PENDING';
