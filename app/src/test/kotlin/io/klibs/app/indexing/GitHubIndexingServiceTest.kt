@@ -1,8 +1,9 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
-import io.klibs.app.util.BackoffProvider
+import io.klibs.app.job.GitHubOwnerUpdatingService
 import io.klibs.core.owner.ScmOwnerRepository
+import io.klibs.core.owner.ScmOwnerSchedulingRepository
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.project.ProjectService
 import io.klibs.core.project.repository.ProjectRepository
@@ -31,6 +32,7 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 
 @ExtendWith(OutputCaptureExtension::class)
@@ -60,8 +62,11 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @MockitoBean
     private lateinit var projectService: ProjectService
 
-    @MockitoBean(name = "ownerBackoffProvider")
-    private lateinit var ownerBackoffProvider: BackoffProvider
+    @Autowired
+    private lateinit var ownerUpdatingService: GitHubOwnerUpdatingService
+
+    @Autowired
+    private lateinit var ownerSchedulingRepository: ScmOwnerSchedulingRepository
 
     @Test
     @Sql(value = ["classpath:sql/GitHubIndexingServiceTest/insert-owner-for-update.sql"])
@@ -87,7 +92,7 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         whenever(gitHubIntegration.getUser(login)).thenReturn(githubUser)
 
-        uut.syncOwnerWithGitHub()
+        ownerUpdatingService.syncOwnerWithGitHub()
 
         val updatedOwnerEntity = scmOwnerRepository.findByLogin(login)
         assertNotNull(updatedOwnerEntity, "Owner entity should exist after sync method call")
@@ -111,24 +116,35 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         assertEquals(expectedUpdatedOwnerEntity, updatedOwnerEntity)
         assert(!output.out.contains("Error while updating a GitHub owner"))
+        assertNull(
+            ownerSchedulingRepository.find(updatedOwnerEntity.idNotNull),
+            "a successful sync should leave the owner eligible"
+        )
     }
 
     @Sql(value = ["classpath:sql/GitHubIndexingServiceTest/insert-owner-for-update.sql"])
     @Test
-    fun `updateOwner should handle exception when GitHub user not found`(output: CapturedOutput) {
+    fun `an owner that resolves by neither login nor native id is deferred as deleted`(output: CapturedOutput) {
 
-        whenever(gitHubIntegration.getUser(any())).thenReturn(null)
+        whenever(gitHubIntegration.getUser(any<String>())).thenReturn(null)
+        whenever(gitHubIntegration.getUser(any<Long>())).thenReturn(null)
 
-        uut.syncOwnerWithGitHub()
+        ownerUpdatingService.syncOwnerWithGitHub()
 
-        verify(gitHubIntegration, times(1)).getUser(any())
-        assertContains(output.out, "Error while updating a GitHub owner")
+        val deferred = assertNotNull(
+            ownerSchedulingRepository.find(ownerId("voize-gmbh")),
+            "a deleted owner should be deferred so it stops being re-selected"
+        )
+        assertContains(deferred.reason, "ScmOwnerDeletedException")
+        assert(!output.out.contains("Error while updating a GitHub owner")) {
+            "a deleted account is expected, so it should not reach the ERROR stream"
+        }
     }
 
     @Test
     fun `updateOwner should do nothing when no owner for update exists`(output: CapturedOutput) {
 
-        uut.syncOwnerWithGitHub()
+        ownerUpdatingService.syncOwnerWithGitHub()
 
         verifyNoMoreInteractions(gitHubIntegration)
         assert(!output.out.contains("Error while updating a GitHub owner"))
@@ -138,14 +154,17 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `updateOwner should handle exception when GitHub integration fails`(output: CapturedOutput) {
 
-        whenever(gitHubIntegration.getUser(any())).thenThrow(RuntimeException("API error"))
+        whenever(gitHubIntegration.getUser(any<String>())).thenThrow(RuntimeException("API error"))
 
-        uut.syncOwnerWithGitHub()
+        ownerUpdatingService.syncOwnerWithGitHub()
 
-        verify(gitHubIntegration, times(1)).getUser(any())
+        verify(gitHubIntegration, times(1)).getUser(any<String>())
         assertContains(output.out, "Error while updating a GitHub owner")
     }
 
+
+    private fun ownerId(login: String): Int =
+        assertNotNull(scmOwnerRepository.findByLogin(login), "seeded owner $login should exist").idNotNull
 
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
     @Test

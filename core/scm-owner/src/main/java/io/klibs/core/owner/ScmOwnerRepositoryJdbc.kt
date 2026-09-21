@@ -137,24 +137,26 @@ class ScmOwnerRepositoryJdbc(
 
     override fun findForUpdate(): ScmOwnerEntity? {
         val sql = """
-            SELECT id,
-                   updated_at,
-                   login,
-                   id_native,
-                   followers,
-                   type,
-                   name,
-                   description,
-                   homepage,
-                   twitter_handle,
-                   email,
-                   location,
-                   company
-            FROM scm_owner
-            WHERE updated_at < (current_timestamp - interval '23 hours')
+            SELECT owner.id,
+                   owner.updated_at,
+                   owner.login,
+                   owner.id_native,
+                   owner.followers,
+                   owner.type,
+                   owner.name,
+                   owner.description,
+                   owner.homepage,
+                   owner.twitter_handle,
+                   owner.email,
+                   owner.location,
+                   owner.company
+            FROM scm_owner owner
+                     LEFT JOIN scm_owner_scheduling sched ON sched.scm_owner_id = owner.id
+            WHERE owner.updated_at < (current_timestamp - interval '23 hours')
+              AND (sched.next_retry_at IS NULL OR sched.next_retry_at < current_timestamp)
             ORDER BY random()
             LIMIT 1
-            FOR UPDATE
+            FOR UPDATE OF owner
             SKIP LOCKED
         """.trimIndent()
 

@@ -8,6 +8,7 @@ import io.klibs.integration.github.model.GitHubLicense
 import io.klibs.integration.github.model.GitHubPullRequest
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
+import io.klibs.integration.github.model.GitHubUserByIdResponse
 import io.klibs.integration.github.model.GqlCommitAuthorsResponse
 import io.klibs.integration.github.model.GqlRepositoryArchivedAtResponse
 import io.klibs.integration.github.model.ReadmeFetchResult
@@ -92,19 +93,64 @@ internal class GitHubIntegrationKohsukeLibrary(
             github.getUser(login)
         } ?: return null
 
-        return GitHubUser(
+        return GitHubUser.of(
             id = ghUser.id,
             login = ghUser.login,
             type = ghUser.type,
-            name = ghUser.name?.takeIf { it.isNotBlank() } ?: ghUser.login,
-            company = ghUser.company?.takeIf { it.isNotBlank() },
-            blog = ghUser.blog?.takeIf { it.isNotBlank() },
-            location = ghUser.location?.takeIf { it.isNotBlank() },
-            email = ghUser.email?.takeIf { it.isNotBlank() },
-            bio = ghUser.bio?.takeIf { it.isNotBlank() },
-            twitterUsername = ghUser.twitterUsername?.takeIf { it.isNotBlank() },
-            followers = ghUser.followersCount
+            name = ghUser.name,
+            company = ghUser.company,
+            blog = ghUser.blog,
+            location = ghUser.location,
+            email = ghUser.email,
+            bio = ghUser.bio,
+            twitterUsername = ghUser.twitterUsername,
+            followers = ghUser.followersCount,
         )
+    }
+
+    override fun getUser(nativeId: Long): GitHubUser? {
+        val sample = Timer.start(meterRegistry)
+        try {
+            return executeUserByIdRequest(nativeId, gitHubAuthorizationProvider.encodedAuthorization)
+        } finally {
+            sample.stop(meterRegistry.timer("klibs.github.request.time"))
+            lastSuccessfulRequestTime.set(Instant.now())
+        }
+    }
+
+    private fun executeUserByIdRequest(nativeId: Long, authorization: String?): GitHubUser? {
+        val url = "$GITHUB_API_URL/user/$nativeId"
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .addHeader("Accept", "application/vnd.github+json")
+            .apply { authorization?.let { addHeader("Authorization", it) } }
+            .build()
+
+        okHttpClient.newCall(request).execute().use { response ->
+            return when (response.code) {
+                200 -> jsonMapper
+                    .readValue(response.body?.string().orEmpty(), GitHubUserByIdResponse::class.java)
+                    .toModel()
+
+                404 -> {
+                    logger.debug("GitHub user with native id {} not found.", nativeId)
+                    null
+                }
+
+                403 -> {
+                    val responseBody = response.body?.string().orEmpty()
+                    if (authorization != null && isIpAllowListRejection(response.code, responseBody)) {
+                        logger.warn("GitHub user-by-id request was blocked by an organization IP allow list; retrying anonymously")
+                        executeUserByIdRequest(nativeId, null)
+                    } else {
+                        throw GitHubApiException(response.code, url, responseBody)
+                    }
+                }
+
+                else -> throw GitHubApiException(response.code, url, response.body?.string().orEmpty())
+            }
+        }
     }
 
     override fun getArchivedAt(owner: String, name: String): Instant? {

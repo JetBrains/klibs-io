@@ -1,7 +1,7 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
-import io.klibs.app.util.BackoffProvider
+import io.klibs.app.job.GitHubOwnerUpdatingService
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubUser
@@ -19,16 +19,13 @@ import kotlin.test.assertNotNull
 class GitHubIndexingServiceOwnerHomepageTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
-    private lateinit var uut: GitHubIndexingService
-
-    @Autowired
     private lateinit var scmOwnerRepository: ScmOwnerRepository
 
     @MockitoBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
-    @MockitoBean(name = "ownerBackoffProvider")
-    private lateinit var ownerBackoffProvider: BackoffProvider
+    @Autowired
+    private lateinit var ownerUpdatingService: GitHubOwnerUpdatingService
 
     @Test
     @Sql("classpath:sql/GitHubIndexingServiceOwnerHomepageTest/insert-owner-incorrect-homepage.sql")
@@ -76,7 +73,7 @@ class GitHubIndexingServiceOwnerHomepageTest : BaseUnitWithDbLayerTest() {
         )
         whenever(gitHubIntegration.getUser(login)).thenReturn(updatedGitHubUser)
 
-        uut.syncOwnerWithGitHub()
+        ownerUpdatingService.syncOwnerWithGitHub()
 
         val after = scmOwnerRepository.findByLogin(login)
         assertNotNull(after, "Owner entity should exist after sync method call")
