@@ -1,17 +1,17 @@
 package io.klibs.core.pckg.service
 
 import io.klibs.core.pckg.dto.MavenArtifactDTO
-import io.klibs.core.pckg.entity.NonKmpPackageEntity
+import io.klibs.core.pckg.entity.RejectedMavenCoordinateEntity
 import io.klibs.core.pckg.enums.PackageIndexingErrorType
-import io.klibs.core.pckg.repository.NonKmpPackageRepository
+import io.klibs.core.pckg.repository.RejectedMavenCoordinateRepository
 import io.klibs.integration.maven.ScraperType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
 @Service
-class NonKmpPackageService(
-    private val nonKmpPackageRepository: NonKmpPackageRepository,
+class RejectedMavenCoordinatesService(
+    private val rejectedMavenCoordinateRepository: RejectedMavenCoordinateRepository,
 ) {
 
     @Transactional
@@ -22,8 +22,8 @@ class NonKmpPackageService(
         scmUrl: String?,
         errorType: PackageIndexingErrorType,
     ) {
-        nonKmpPackageRepository.save(
-            NonKmpPackageEntity(
+        rejectedMavenCoordinateRepository.save(
+            RejectedMavenCoordinateEntity(
                 mavenArtifact = mavenArtifact.toEntityRef(),
                 releaseTs = releaseTs,
                 repo = repo,

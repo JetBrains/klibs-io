@@ -15,7 +15,7 @@ class PackageRepositoryTest : BaseUnitWithDbLayerTest() {
     private lateinit var packageRepository: PackageRepository
 
     @Test
-    @Sql("classpath:sql/PackageRepositoryTest/insert-known-non-kmp-package.sql")
+    @Sql("classpath:sql/PackageRepositoryTest/insert-known-rejected-maven-coordinates.sql")
     fun `should include non-KMP artifacts in known maven central packages`() {
         val knownPackages = packageRepository.findAllKnownMavenCentralPackages()
         val knownArtifact = knownPackages.find { it.groupId == "com.example" && it.artifactId == "non-kmp-artifact" }
