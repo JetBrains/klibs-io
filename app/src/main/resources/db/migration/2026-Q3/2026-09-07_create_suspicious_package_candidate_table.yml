@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: create suspicious_package_candidate table
+      author: daniel.emeka-ilozor@jetbrains.com
+      comment: "KTL-4790: collect artifactIds published under more than one groupId within a project, for review"
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: suspicious_package_candidate
+      changes:
+        - createTable:
+            tableName: suspicious_package_candidate
+            columns:
+              - column:
+                  name: project_id
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+                    references: project(id)
+                    foreignKeyName: fk_suspicious_package_candidate_project_id
+              - column:
+                  name: artifact_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: group_id
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: notes
+                  type: TEXT
+              - column:
+                  name: detected_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: suspicious_package_candidate
+            columnNames: project_id, artifact_id, group_id
+            constraintName: pk_suspicious_package_candidate
