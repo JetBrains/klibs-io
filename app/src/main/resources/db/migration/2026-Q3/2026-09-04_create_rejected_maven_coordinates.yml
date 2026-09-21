@@ -1,15 +1,15 @@
 databaseChangeLog:
   - changeSet:
-      id: create non_kmp_packages table
+      id: create rejected_maven_coordinate table
       author: dmitrii.krasnov@jetbrains.com
       preConditions:
         - onFail: MARK_RAN
         - not:
             tableExists:
-              tableName: non_kmp_packages
+              tableName: rejected_maven_coordinate
       changes:
         - createTable:
-            tableName: non_kmp_packages
+            tableName: rejected_maven_coordinate
             columns:
               - column:
                   name: id
@@ -17,7 +17,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                     primaryKey: true
-                    primaryKeyName: pk_non_kmp_packages
+                    primaryKeyName: pk_rejected_maven_coordinate
               - column:
                   name: maven_artifact_id
                   type: BIGINT
@@ -44,51 +44,51 @@ databaseChangeLog:
                   type: TEXT
 
   - changeSet:
-      id: add unique index on non_kmp_packages maven_artifact_id
+      id: add unique index on rejected_maven_coordinate maven_artifact_id
       author: dmitrii.krasnov@jetbrains.com
       preConditions:
         - onFail: MARK_RAN
         - not:
             indexExists:
-              tableName: non_kmp_packages
-              indexName: uindex_non_kmp_packages_maven_artifact_id
+              tableName: rejected_maven_coordinate
+              indexName: uindex_rejected_maven_coordinate_maven_artifact_id
       changes:
         - createIndex:
-            tableName: non_kmp_packages
-            indexName: uindex_non_kmp_packages_maven_artifact_id
+            tableName: rejected_maven_coordinate
+            indexName: uindex_rejected_maven_coordinate_maven_artifact_id
             unique: true
             columns:
               - column:
                   name: maven_artifact_id
 
   - changeSet:
-      id: create non_kmp_packages sequence
+      id: create rejected_maven_coordinate sequence
       author: dmitrii.krasnov@jetbrains.com
       preConditions:
         - onFail: MARK_RAN
         - not:
             sequenceExists:
-              sequenceName: non_kmp_packages_id_seq
+              sequenceName: rejected_maven_coordinate_id_seq
       changes:
         - sql:
             sql: |
-              CREATE SEQUENCE non_kmp_packages_id_seq
+              CREATE SEQUENCE rejected_maven_coordinate_id_seq
                   AS BIGINT
                   INCREMENT BY 50
                   START WITH 1;
 
   - changeSet:
-      id: add non_kmp_packages.maven_artifact_id foreign key
+      id: add rejected_maven_coordinate.maven_artifact_id foreign key
       author: dmitrii.krasnov@jetbrains.com
       preConditions:
         - onFail: MARK_RAN
         - not:
             foreignKeyConstraintExists:
-              foreignKeyName: fk_non_kmp_packages_maven_artifact_id
+              foreignKeyName: fk_rejected_maven_coordinate_maven_artifact_id
       changes:
         - addForeignKeyConstraint:
-            constraintName: fk_non_kmp_packages_maven_artifact_id
-            baseTableName: non_kmp_packages
+            constraintName: fk_rejected_maven_coordinate_maven_artifact_id
+            baseTableName: rejected_maven_coordinate
             baseColumnNames: maven_artifact_id
             referencedTableName: maven_artifact
             referencedColumnNames: id
@@ -124,7 +124,7 @@ databaseChangeLog:
               WHERE last_error_message LIKE 'Unable to find tooling metadata for %';
 
   - changeSet:
-      id: add non_kmp_packages error type
+      id: add rejected_maven_coordinate error type
       author: dmitrii.krasnov@jetbrains.com
       preConditions:
         - onFail: MARK_RAN
@@ -134,12 +134,12 @@ databaseChangeLog:
               columnName: error_type
       changes:
         - addColumn:
-            tableName: non_kmp_packages
+            tableName: rejected_maven_coordinate
             columns:
               - column:
                   name: error_type
                   type: TEXT
         - addNotNullConstraint:
-            tableName: non_kmp_packages
+            tableName: rejected_maven_coordinate
             columnName: error_type
             columnDataType: TEXT

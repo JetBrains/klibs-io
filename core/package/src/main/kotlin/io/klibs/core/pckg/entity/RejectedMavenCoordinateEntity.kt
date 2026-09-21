@@ -17,12 +17,16 @@ import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import java.time.Instant
 
+/**
+ * We store in this table GAV coordinates for which we couldn't determine whether they are KMP packages or not.
+ * It could be KMP package with broken tooling metadata json file or old versions of KMP package, before it became KMP.
+ */
 @Entity
-@Table(name = "non_kmp_packages")
-data class NonKmpPackageEntity(
+@Table(name = "rejected_maven_coordinate")
+data class RejectedMavenCoordinateEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "non_kmp_packages_id_seq")
-    @SequenceGenerator(name = "non_kmp_packages_id_seq", sequenceName = "non_kmp_packages_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "rejected_maven_coordinate_id_seq")
+    @SequenceGenerator(name = "rejected_maven_coordinate_id_seq", sequenceName = "rejected_maven_coordinate_id_seq")
     @Column(name = "id")
     val id: Long? = null,
 

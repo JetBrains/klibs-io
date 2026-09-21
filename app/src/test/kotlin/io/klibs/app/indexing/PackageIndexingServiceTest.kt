@@ -8,9 +8,9 @@ import io.klibs.core.pckg.entity.UserRequestIssueEntity
 import io.klibs.core.pckg.enums.PackageIndexingErrorType
 import io.klibs.core.pckg.enums.UserRequestIndexingStatus
 import io.klibs.core.pckg.repository.IndexingRequestRepository
-import io.klibs.core.pckg.repository.NonKmpPackageRepository
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
+import io.klibs.core.pckg.repository.RejectedMavenCoordinateRepository
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.core.pckg.repository.UserRequestReportRepository
 import io.klibs.core.pckg.service.PackageDescriptionService
@@ -20,7 +20,6 @@ import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
-import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.Variant
@@ -31,17 +30,12 @@ import io.klibs.integration.maven.service.PomWithReleaseDate
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.UUID
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.runBlocking
-import liquibase.integration.spring.SpringLiquibase
 import org.apache.maven.model.Scm
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -57,7 +51,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
@@ -75,7 +68,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     private lateinit var packageRepository: PackageRepository
 
     @Autowired
-    private lateinit var nonKmpPackageRepository: NonKmpPackageRepository
+    private lateinit var rejectedMavenCoordinateRepository: RejectedMavenCoordinateRepository
 
     @Autowired
     private lateinit var packageIndexRepository: PackageIndexRepository
@@ -123,7 +116,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         assertEquals(0L, indexingRequestRepository.count())
         assertEquals(0L, packageRepository.count())
-        assertEquals(0L, nonKmpPackageRepository.count())
+        assertEquals(0L, rejectedMavenCoordinateRepository.count())
         assertEquals(0L, userRequestReportRepository.count())
         verify(mavenStaticDataProvider, never()).getPomWithReleaseDate(any())
         verify(mavenStaticDataProvider, never()).getKotlinToolingMetadata(any())
@@ -308,14 +301,14 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         )
         val savedId = jdbcTemplate.queryForObject(
             """
-                SELECT nkp.id
-                FROM non_kmp_packages nkp JOIN maven_artifact ma ON ma.id = nkp.maven_artifact_id
+                SELECT rmc.id
+                FROM rejected_maven_coordinate rmc JOIN maven_artifact ma ON ma.id = rmc.maven_artifact_id
                 WHERE ma.group_id = ? AND ma.artifact_id = ? AND ma.version = ?
             """.trimIndent(),
             Long::class.java,
             indexRequest.groupId, indexRequest.artifactId, requireNotNull(indexRequest.version),
         )
-        val row = nonKmpPackageRepository.findById(requireNotNull(savedId)).orElseThrow()
+        val row = rejectedMavenCoordinateRepository.findById(requireNotNull(savedId)).orElseThrow()
         assertEquals(PackageIndexingErrorType.MISSING_TOOLING_METADATA, row.errorType)
         assertEquals(indexRequest.releasedAt ?: releaseTs, row.releaseTs)
         assertEquals(indexRequest.repo, row.repo)
