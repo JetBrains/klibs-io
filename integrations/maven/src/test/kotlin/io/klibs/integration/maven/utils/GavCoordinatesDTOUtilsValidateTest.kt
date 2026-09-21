@@ -15,7 +15,7 @@ class GavCoordinatesDTOUtilsValidateTest {
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
         )
-        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
+        val error = MavenCoordinateDTOUtils.validateGAVField(parsed)
 
         assertNull(error)
     }
@@ -27,7 +27,7 @@ class GavCoordinatesDTOUtilsValidateTest {
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2"
         )
-        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
+        val error = MavenCoordinateDTOUtils.validateGAVField(parsed)
 
         assertNotNull(error)
         assertEquals(
@@ -43,7 +43,7 @@ class GavCoordinatesDTOUtilsValidateTest {
             artifactId = "kotlinx coroutines core",
             version = "1.10.2"
         )
-        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
+        val error = MavenCoordinateDTOUtils.validateGAVField(parsed)
 
         assertNotNull(error)
         assertEquals(
@@ -59,7 +59,7 @@ class GavCoordinatesDTOUtilsValidateTest {
             artifactId = "kotlinx-coroutines-core",
             version = "1.10.2-revision._$~=+:"
         )
-        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
+        val error = MavenCoordinateDTOUtils.validateGAVField(parsed)
 
         assertNull(error)
     }
@@ -71,7 +71,7 @@ class GavCoordinatesDTOUtilsValidateTest {
             artifactId = "kotlinx-coroutines-core",
             version = null
         )
-        val error = MavenArtifactDTOUtils.validateGAVField(parsed)
+        val error = MavenCoordinateDTOUtils.validateGAVField(parsed)
 
         assertNull(error)
     }

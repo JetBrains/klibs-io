@@ -10,7 +10,7 @@ import io.klibs.core.pckg.enums.UserRequestProcessingStatus
 import io.klibs.core.pckg.mapper.UserRequestMapper
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.integration.maven.dto.GavCoordinatesDTO
-import io.klibs.integration.maven.utils.MavenArtifactDTOUtils
+import io.klibs.integration.maven.utils.MavenCoordinateDTOUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
@@ -54,7 +54,7 @@ internal class DefaultUserRequestService(
     }
 
     private fun isUserIndexingRequestValid(userIndexingRequestDto: UserIndexingRequestDto): Boolean {
-        val requestValidationError = MavenArtifactDTOUtils.validateGAVField(
+        val requestValidationError = MavenCoordinateDTOUtils.validateGAVField(
             GavCoordinatesDTO(
                 userIndexingRequestDto.groupId,
                 userIndexingRequestDto.artifactId,

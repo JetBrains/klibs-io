@@ -26,13 +26,13 @@ INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, 
 
 
 
-INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
     (1075077997, 'com.example', 'lib-a', '1.0.0'),
     (1037489706, 'com.example', 'lib-b', '1.0.0'),
     (1080431850, 'com.example', 'lib-c', '1.0.0')
 ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES (11001, 10001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-a', '1.0.0', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1075077997),
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_coordinate_id) VALUES (11001, 10001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-a', '1.0.0', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1075077997),
        (11002, 10002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-b', '1.0.0', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1037489706),
        (11003, 10003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.example', 'lib-c', '1.0.0', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1080431850);
 

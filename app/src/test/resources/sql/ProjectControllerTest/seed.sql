@@ -45,15 +45,15 @@ INSERT INTO public.project (
 
 
 
-INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
     (1022148281, 'org.jetbrains.kotlinx', 'atomicfu', '0.25.0'),
     (1041806903, 'org.jetbrains.kotlinx', 'atomicfu', '0.26.0')
 ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES (498, 18, CURRENT_TIMESTAMP - INTERVAL '365 days', CURRENT_TIMESTAMP - INTERVAL '365 days', 'org.jetbrains.kotlinx', 'atomicfu', '0.25.0', NULL, 'https://github.com/Kotlin/kotlinx.atomicfu', 'https://github.com/Kotlin/kotlinx.atomicfu', 'Gradle', '8.0', '2.0.0', '{}'::jsonb, '[]'::jsonb, '[]'::jsonb, 1022148281);
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_coordinate_id) VALUES (498, 18, CURRENT_TIMESTAMP - INTERVAL '365 days', CURRENT_TIMESTAMP - INTERVAL '365 days', 'org.jetbrains.kotlinx', 'atomicfu', '0.25.0', NULL, 'https://github.com/Kotlin/kotlinx.atomicfu', 'https://github.com/Kotlin/kotlinx.atomicfu', 'Gradle', '8.0', '2.0.0', '{}'::jsonb, '[]'::jsonb, '[]'::jsonb, 1022148281);
 
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES (497, 18, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.jetbrains.kotlinx', 'atomicfu', '0.26.0', 'AtomicFU utilities', 'https://github.com/Kotlin/kotlinx.atomicfu', 'https://github.com/Kotlin/kotlinx.atomicfu', 'Gradle', '8.7', '2.0.21', '{}'::jsonb, '[]'::jsonb, '[]'::jsonb, 1041806903);
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_coordinate_id) VALUES (497, 18, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.jetbrains.kotlinx', 'atomicfu', '0.26.0', 'AtomicFU utilities', 'https://github.com/Kotlin/kotlinx.atomicfu', 'https://github.com/Kotlin/kotlinx.atomicfu', 'Gradle', '8.7', '2.0.21', '{}'::jsonb, '[]'::jsonb, '[]'::jsonb, 1041806903);
 
 
 INSERT INTO public.package_target (package_id, platform, target) VALUES

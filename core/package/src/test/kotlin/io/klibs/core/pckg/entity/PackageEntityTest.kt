@@ -157,7 +157,7 @@ class PackageEntityTest {
             licenses = listOf(PackageLicense("MIT", "https://opensource.org/licenses/MIT")),
             configuration = configuration,
             generatedDescription = false,
-            mavenArtifact = MavenArtifactEntity(
+            mavenCoordinate = MavenCoordinateEntity(
                 id = 9001L,
                 groupId = "io.klibs",
                 artifactId = "test-package",

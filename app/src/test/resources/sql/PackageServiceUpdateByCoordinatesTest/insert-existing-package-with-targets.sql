@@ -10,12 +10,12 @@ VALUES (8101, 8101, 8101, false, true, true, true, CURRENT_TIMESTAMP, CURRENT_TI
 INSERT INTO public.project VALUES (8101, 8101, CURRENT_TIMESTAMP, '1.0.0', CURRENT_TIMESTAMP, 'sample-repo', NULL, 8101);
 
 
-INSERT INTO public.maven_artifact (id, group_id, artifact_id, version)
+INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version)
 VALUES (8201, 'io.klibs', 'sample', '1.0.0');
 
 
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, scraper_type, generated_description, maven_artifact_id) VALUES (8201, 8101, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.klibs', 'sample', '1.0.0', 'Old desc', 'https://example.com/sample', NULL, 'gradle', '8.0', '2.0.0', NULL, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false, 8201);
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, scraper_type, generated_description, maven_coordinate_id) VALUES (8201, 8101, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.klibs', 'sample', '1.0.0', 'Old desc', 'https://example.com/sample', NULL, 'gradle', '8.0', '2.0.0', NULL, '[]'::jsonb, '[]'::jsonb, 'SEARCH_MAVEN', false, 8201);
 
 
 

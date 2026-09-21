@@ -187,3 +187,5 @@ databaseChangeLog:
       file: db/migration/2026-Q3/2026-09-03_indices_exclude_hidden_projects.yml
   - include:
       file: db/migration/2026-Q3/2026-09-04_create_rejected_maven_coordinates.yml
+  - include:
+      file: db/migration/2026-Q3/2026-09-21_rename_maven_artifact_to_maven_coordinate.yml

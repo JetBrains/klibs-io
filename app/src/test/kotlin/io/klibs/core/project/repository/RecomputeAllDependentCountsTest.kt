@@ -15,7 +15,7 @@ class RecomputeAllDependentCountsTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql("/sql/RecomputeAllDependentCountsTest/setup.sql")
-    fun `recomputeAllDependentCounts walks maven_artifact and excludes self-dependencies`() {
+    fun `recomputeAllDependentCounts walks maven_coordinate and excludes self-dependencies`() {
         projectRepository.recomputeAllDependentCounts()
 
         val a = requireNotNull(projectRepository.findById(9101)) { "project A is missing" }

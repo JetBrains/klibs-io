@@ -1,23 +1,23 @@
 package io.klibs.core.pckg.repository
 
-import io.klibs.core.pckg.entity.MavenArtifactEntity
+import io.klibs.core.pckg.entity.MavenCoordinateEntity
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.query.Param
 
-interface MavenArtifactRepository : CrudRepository<MavenArtifactEntity, Long> {
+interface MavenCoordinateRepository : CrudRepository<MavenCoordinateEntity, Long> {
 
     fun findByGroupIdAndArtifactIdAndVersion(
         groupId: String,
         artifactId: String,
         version: String,
-    ): MavenArtifactEntity?
+    ): MavenCoordinateEntity?
 
     @Modifying
     @Query(
         value = """
-            INSERT INTO MavenArtifactEntity (groupId, artifactId, version)
+            INSERT INTO MavenCoordinateEntity (groupId, artifactId, version)
             VALUES (:groupId, :artifactId, :version)
             ON CONFLICT (groupId, artifactId, version) DO NOTHING
         """,
@@ -34,9 +34,9 @@ interface MavenArtifactRepository : CrudRepository<MavenArtifactEntity, Long> {
      */
     @Query(
         """
-            SELECT a FROM MavenArtifactEntity a
+            SELECT a FROM MavenCoordinateEntity a
             WHERE CONCAT(a.groupId, '|', a.artifactId, '|', a.version) IN :keys
         """
     )
-    fun findAllByPackedKey(@Param("keys") keys: Collection<String>): List<MavenArtifactEntity>
+    fun findAllByPackedKey(@Param("keys") keys: Collection<String>): List<MavenCoordinateEntity>
 }

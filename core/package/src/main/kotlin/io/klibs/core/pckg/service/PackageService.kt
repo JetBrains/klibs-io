@@ -1,6 +1,6 @@
 package io.klibs.core.pckg.service
 
-import io.klibs.core.pckg.dto.MavenArtifactDTO
+import io.klibs.core.pckg.dto.MavenCoordinateDTO
 import io.klibs.core.pckg.dto.PackageDTO
 import io.klibs.core.pckg.entity.PackageEntity
 import io.klibs.core.pckg.entity.PackageIndexEntity
@@ -38,7 +38,7 @@ class PackageService(
             packageDTO.version
         ) ?: return null
 
-        val updatedPackage = packageDTO.toEntity(MavenArtifactDTO.fromEntity(existingPackage.mavenArtifact))
+        val updatedPackage = packageDTO.toEntity(MavenCoordinateDTO.fromEntity(existingPackage.mavenCoordinate))
             .deepCopy(
                 id = existingPackage.id,
                 description = existingPackage.description,

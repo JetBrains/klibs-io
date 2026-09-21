@@ -1,18 +1,18 @@
 package io.klibs.core.pckg.dto
 
-import io.klibs.core.pckg.entity.MavenArtifactEntity
+import io.klibs.core.pckg.entity.MavenCoordinateEntity
 
 /**
- * Service-layer Data Transfer Object for a `maven_artifact` row.
+ * Data Transfer Object for Maven coordinates.
  */
-data class MavenArtifactDTO(
-    val id: Long,
+data class MavenCoordinateDTO(
     val groupId: String,
     val artifactId: String,
     val version: String,
+    val id: Long? = null,
 ) {
 
-    fun toEntityRef(): MavenArtifactEntity = MavenArtifactEntity(
+    fun toEntityRef(): MavenCoordinateEntity = MavenCoordinateEntity(
         id = id,
         groupId = groupId,
         artifactId = artifactId,
@@ -20,10 +20,10 @@ data class MavenArtifactDTO(
     )
 
     companion object {
-        fun fromEntity(entity: MavenArtifactEntity): MavenArtifactDTO {
-            return MavenArtifactDTO(
+        fun fromEntity(entity: MavenCoordinateEntity): MavenCoordinateDTO {
+            return MavenCoordinateDTO(
                 id = requireNotNull(entity.id) {
-                    "Cannot create MavenArtifactDTO from a non-persisted entity: $entity"
+                    "Cannot create MavenCoordinateDTO from a non-persisted entity: $entity"
                 },
                 groupId = entity.groupId,
                 artifactId = entity.artifactId,

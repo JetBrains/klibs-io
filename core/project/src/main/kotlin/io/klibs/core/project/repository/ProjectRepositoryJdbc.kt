@@ -376,7 +376,7 @@ class ProjectRepositoryJdbc(
                 SELECT producer.project_id,
                        COUNT(DISTINCT consumer.project_id)::int AS dependent_count
                 FROM package_dependency pd
-                JOIN package producer ON pd.dep_maven_artifact_id = producer.maven_artifact_id
+                JOIN package producer ON pd.dep_maven_coordinate_id = producer.maven_coordinate_id
                 JOIN package consumer ON consumer.id = pd.package_id
                 WHERE consumer.project_id IS DISTINCT FROM producer.project_id
                 GROUP BY producer.project_id

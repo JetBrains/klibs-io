@@ -9,11 +9,11 @@ import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "maven_artifact")
-data class MavenArtifactEntity(
+@Table(name = "maven_coordinate")
+data class MavenCoordinateEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "maven_artifact_id_seq")
-    @SequenceGenerator(name = "maven_artifact_id_seq", sequenceName = "maven_artifact_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "maven_coordinate_id_seq")
+    @SequenceGenerator(name = "maven_coordinate_id_seq", sequenceName = "maven_coordinate_id_seq")
     @Column(name = "id")
     val id: Long? = null,
 

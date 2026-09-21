@@ -35,7 +35,7 @@ VALUES
 
 
 
-INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
     (1013010679, 'com.cat', 'feat-1', '1.0.0'),
     (1001362694, 'com.cat', 'feat-2', '1.0.0'),
     (1099880812, 'com.cat', 'grant-23', '1.0.0'),
@@ -45,7 +45,7 @@ INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
     (1068060872, 'com.cat', 'grant-25', '1.0.0')
 ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES (51001, 50001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'feat-1', '1.0.0', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1013010679),
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_coordinate_id) VALUES (51001, 50001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'feat-1', '1.0.0', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1013010679),
        (51002, 50002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'feat-2', '1.0.0', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1001362694),
        (51003, 50003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'grant-23', '1.0.0', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1099880812),
        (51004, 50004, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'com.cat', 'grant-24', '1.0.0', 'desc', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1030641991),

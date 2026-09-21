@@ -16,15 +16,15 @@ INSERT INTO public.project VALUES (8002, 8002, CURRENT_TIMESTAMP, '1.0.0', CURRE
 
 
 
-INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
     (1014548742, 'org.example', 'http-client', '1.0.0'),
     (1029769046, 'org.example', 'http-lib', '1.0.0')
 ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, build_tool, build_tool_version, kotlin_version, developers, configuration, licenses, scraper_type, maven_artifact_id) VALUES (8001, 8001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'http-client', '1.0.0', 'Kotlin library for HTTP requests', 'https://example.com/http-client', 'gradle', '7.0', '1.6.0', '2.1.20', null, '[{"url": "mailto:rob@continuousexcellence.io", "name": "Rob Murdock"}]'::jsonb, 'SEARCH_MAVEN', 1014548742);
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, build_tool, build_tool_version, kotlin_version, developers, configuration, licenses, scraper_type, maven_coordinate_id) VALUES (8001, 8001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'http-client', '1.0.0', 'Kotlin library for HTTP requests', 'https://example.com/http-client', 'gradle', '7.0', '1.6.0', '2.1.20', null, '[{"url": "mailto:rob@continuousexcellence.io", "name": "Rob Murdock"}]'::jsonb, 'SEARCH_MAVEN', 1014548742);
 
 
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, build_tool, build_tool_version, kotlin_version, developers, configuration, licenses, scraper_type, maven_artifact_id) VALUES (8002, 8002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'http-lib', '1.0.0', 'Kotlin library for HTTP requests', 'https://example.com/http-lib', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, 'SEARCH_MAVEN', 1029769046);
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, build_tool, build_tool_version, kotlin_version, developers, configuration, licenses, scraper_type, maven_coordinate_id) VALUES (8002, 8002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'org.example', 'http-lib', '1.0.0', 'Kotlin library for HTTP requests', 'https://example.com/http-lib', 'gradle', '7.0', '1.6.0', '[]'::jsonb, null, '[]'::jsonb, 'SEARCH_MAVEN', 1029769046);
 
 INSERT INTO public.package_target VALUES (8001, 'NATIVE', 'macos_arm64', 3029111);
 INSERT INTO public.package_target VALUES (8002, 'NATIVE', 'macos_x64', 30301111);

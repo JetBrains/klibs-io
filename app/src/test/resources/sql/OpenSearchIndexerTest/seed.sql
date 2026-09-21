@@ -16,7 +16,7 @@ INSERT INTO public.project (id, scm_repo_id, latest_version_ts, latest_version, 
     (70002, 60002, CURRENT_TIMESTAMP, '1.0.0', 'Project I2', 'repo-i2', NULL, 60001),
     (70003, 60003, CURRENT_TIMESTAMP, '1.0.0', 'Project I3', 'repo-i3', NULL, 60001);
 
-INSERT INTO public.maven_artifact (id, group_id, artifact_id, version) VALUES
+INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
     (1200000001, 'io.indexer', 'lib-i1', '1.0.0'),
     (1200000002, 'io.indexer', 'lib-i2', '1.0.0'),
     (1200000003, 'io.indexer', 'lib-i3', '1.0.0'),
@@ -25,7 +25,7 @@ ON CONFLICT (group_id, artifact_id, version) DO NOTHING;
 
 -- Project 70003 owns two packages, so project docs (3) and package docs (4) differ: a count
 -- assertion that passed for the wrong index would show up.
-INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_artifact_id) VALUES
+INSERT INTO public.package (id, project_id, release_ts, created_at, group_id, artifact_id, version, description, url, scm_url, build_tool, build_tool_version, kotlin_version, configuration, developers, licenses, maven_coordinate_id) VALUES
     (71001, 70001, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.indexer', 'lib-i1', '1.0.0', 'desc I1', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1200000001),
     (71002, 70002, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.indexer', 'lib-i2', '1.0.0', 'desc I2', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1200000002),
     (71003, 70003, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'io.indexer', 'lib-i3', '1.0.0', 'desc I3', NULL, NULL, 'maven', '3.9.0', '2.0', '{}', '[]', '[{"name":"MIT"}]', 1200000003),
