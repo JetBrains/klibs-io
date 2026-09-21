@@ -1,6 +1,5 @@
 package io.klibs.app.indexing
 
-import io.klibs.app.util.BackoffProvider
 import io.klibs.core.owner.ScmOwnerEntity
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.owner.ScmOwnerType
@@ -19,7 +18,6 @@ import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -38,39 +36,12 @@ class GitHubIndexingService(
     private val readmeService: ReadmeService,
     private val readmeContentBuilder: ReadmeContentBuilder,
     private val projectRepository: ProjectRepository,
-    @Qualifier("ownerBackoffProvider")
-    private val ownerBackoffProvider: BackoffProvider,
     private val projectService: ProjectService,
     private val unreachableRepoHidingService: UnreachableRepoHidingService,
 
     @Value("\${klibs.readme.reprocess-period-days}")
     private val readmeReprocessPeriodDays: Long
 ) {
-
-    @Transactional
-    fun syncOwnerWithGitHub() {
-        var selectedOwnerId: Int? = null
-        try {
-            val ownerToUpdate = scmOwnerRepository.findForUpdate() ?: return
-
-            if (ownerBackoffProvider.isBackedOff(ownerToUpdate.idNotNull)) {
-                logger.debug(
-                    "Selected ownerId={} login={} is in backoff; skipping this run",
-                    ownerToUpdate.id,
-                    ownerToUpdate.login
-                )
-                return
-            }
-            selectedOwnerId = ownerToUpdate.idNotNull
-
-            val updated = updateOwner(ownerToUpdate)
-            logger.debug("Updated GitHub owner: {}", updated)
-            ownerBackoffProvider.onSuccess(ownerToUpdate.idNotNull)
-        } catch (e: Exception) {
-            logger.error("Error while updating a GitHub owner", e)
-            selectedOwnerId?.let { ownerBackoffProvider.onFailure(it) }
-        }
-    }
 
     @Transactional
     fun updateRepo(repoToUpdate: ScmRepositoryEntity): ScmRepositoryEntity {
@@ -283,14 +254,32 @@ class GitHubIndexingService(
         projectRepository.updateMinimizedReadme(projectEntity.idNotNull, readmeContent.minimized)
     }
 
-    private fun updateOwner(ownerEntity: ScmOwnerEntity): ScmOwnerEntity {
-        val ghUser = gitHubIntegration.getUser(ownerEntity.login)
-            ?: error("Unable to find a user with login ${ownerEntity.login}")
+    @Transactional
+    fun updateOwner(ownerEntity: ScmOwnerEntity): ScmOwnerEntity {
+        val userByLogin = gitHubIntegration.getUser(ownerEntity.login)
+        if (userByLogin != null && userByLogin.id == ownerEntity.nativeId) {
+            return applyGitHubUser(ownerEntity, userByLogin)
+        }
 
+        // only the native id can tell a rename from a deletion
+        val userByNativeId = gitHubIntegration.getUser(ownerEntity.nativeId)
+            ?: throw ScmOwnerDeletedException(ownerEntity.login, ownerEntity.nativeId)
+
+        logger.info(
+            "GitHub owner nativeId={} was renamed from {} to {}",
+            ownerEntity.nativeId,
+            ownerEntity.login,
+            userByNativeId.login
+        )
+        return applyGitHubUser(ownerEntity, userByNativeId)
+    }
+
+    private fun applyGitHubUser(ownerEntity: ScmOwnerEntity, ghUser: GitHubUser): ScmOwnerEntity {
         return scmOwnerRepository.upsert(
             ownerEntity.copy(
                 nativeId = ghUser.id,
                 type = ghUser.getOwnerType(),
+                login = ghUser.login,
                 name = ghUser.name,
                 description = ghUser.bio,
                 location = ghUser.location,

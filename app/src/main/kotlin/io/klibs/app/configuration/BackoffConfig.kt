@@ -10,11 +10,6 @@ import org.springframework.beans.factory.annotation.Qualifier
 class BackoffConfig {
 
     @Bean
-    @Qualifier("ownerBackoffProvider")
-    fun ownerBackoffProvider(meterRegistry: MeterRegistry): BackoffProvider =
-        BackoffProvider("SyncGitHubOwner", meterRegistry)
-
-    @Bean
     @Qualifier("aiDescriptionBackoffProvider")
     fun aiDescriptionBackoffProvider(meterRegistry: MeterRegistry): BackoffProvider =
         BackoffProvider("AiProjectDescription", meterRegistry)

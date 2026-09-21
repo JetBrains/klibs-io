@@ -27,3 +27,10 @@ data class ScmOwnerEntity(
         return "https://avatars.githubusercontent.com/u/${this.nativeId}?v=4"
     }
 }
+
+data class ScmOwnerSchedulingData(
+    val scmOwnerId: Int,
+    val nextRetryAt: Instant? = null,
+    val retryAttempts: Int = 0,
+    val reason: String = ""
+)
