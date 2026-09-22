@@ -166,9 +166,9 @@ class PackageIndexingService(
     }
 
     @Transactional
-    internal fun processRequest(indexRequest: IndexingRequestEntity) {
+    internal fun processRequest(indexRequestToProcess: IndexingRequestEntity) {
         val indexRequest =
-            indexingRequestRepository.updateStatus(indexRequest.idNotNull, IndexingRequestStatus.IN_PROCESS) ?: return
+            indexingRequestRepository.updateStatus(indexRequestToProcess.idNotNull, IndexingRequestStatus.IN_PROCESS) ?: return
 
         val isIndividualArtifact = indexRequest.version != null
         if (isIndividualArtifact) {
