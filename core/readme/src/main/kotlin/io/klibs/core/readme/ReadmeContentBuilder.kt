@@ -44,6 +44,7 @@ class ReadmeContentBuilder(
     }
 
     private fun sanitizeReadme(readme: String): String {
+        // Some readmes could contain null characters, which are not allowed in our system
         if ('\u0000' in readme) return ""
         return readme
     }
