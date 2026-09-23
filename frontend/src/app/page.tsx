@@ -1,9 +1,10 @@
 //Index page
 import { getCategoriesWithProjects, getProjectsCount } from "@/app/api";
 import PageContent from "@/app/page-content";
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
+import { socialMetadata } from "@/app/helpers";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata(_: unknown, parent: ResolvingMetadata): Promise<Metadata> {
     const projectsCount = await getProjectsCount();
     const title = `Kotlin Multiplatform Libraries (KMP) – Explore ${projectsCount}+ | Klibs.io`;
     const description = `AI-powered search for Kotlin Multiplatform libraries (KMP). Discover ${projectsCount}+ tools, frameworks, and community libraries for building cross-platform apps with Kotlin Multiplatform.`;
@@ -11,8 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
         title: { absolute: title },
         description,
-        openGraph: { title, description },
-        twitter: { title, description },
+        ...await socialMetadata(parent, title, description),
     };
 }
 
