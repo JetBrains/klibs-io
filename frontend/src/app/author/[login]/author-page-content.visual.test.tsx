@@ -1,16 +1,9 @@
-import '@rescui/typography/lib/font-jb-sans-auto.css';
-import 'bootstrap/dist/css/bootstrap.css';
-import '@/app/globals.css';
-
 import { render } from 'vitest-browser-react';
-import { test, vi } from 'vitest';
+import { page } from 'vitest/browser';
+import { expect, test, vi } from 'vitest';
 
-import { author } from '@/test/fixtures';
+import { author, authorProjects } from '@/test/fixtures';
 import Author from './author-page-content';
-
-vi.mock('@/app/ui/project-card', () => ({
-    default: () => null,
-}));
 
 vi.mock('next/image', () => ({
     default: ({ alt, className, height, width }: {
@@ -34,4 +27,17 @@ test('author profile with contact details', async () => {
             initialProjects={[]}
         />,
     );
+});
+
+test('author profile with projects', async () => {
+    await page.viewport(1280, 1100);
+    await render(
+        <Author
+            initialAuthor={author({ avatarUrl: 'deterministic-avatar' })}
+            initialProjects={authorProjects()}
+        />,
+    );
+
+    await expect.element(page.getByRole('heading', { name: 'kmp-settings' })).toBeVisible();
+    await expect.element(page.getByText('No projects')).not.toBeInTheDocument();
 });
