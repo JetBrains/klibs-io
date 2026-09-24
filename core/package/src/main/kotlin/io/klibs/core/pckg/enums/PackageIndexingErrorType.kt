@@ -1,8 +1,11 @@
 package io.klibs.core.pckg.enums
 
-enum class PackageIndexingErrorType {
-    MISSING_TOOLING_METADATA,
-    MISSING_POM,
-    BROKEN_TOOLING_METADATA,
-    BROKEN_POM,
+/**
+ * @property retryable whether indexing is retried with backoff before the coordinate is rejected.
+ */
+enum class PackageIndexingErrorType(val retryable: Boolean) {
+    MISSING_TOOLING_METADATA(retryable = false),
+    MISSING_POM(retryable = true),
+    BROKEN_TOOLING_METADATA(retryable = false),
+    BROKEN_POM(retryable = false),
 }

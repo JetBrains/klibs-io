@@ -10,10 +10,12 @@ import io.klibs.integration.maven.ScraperType
  * @property coordinates maven GAV coordinates
  * @property scraperType scraperType the type of maven artifacts discoverer
  * @property scmUrl the url of scm repository for this package
+ * @param message human-readable error details, used as the request's error message
  * */
 class PackageIndexingKnownException(
     val errorType: PackageIndexingErrorType,
     val coordinates: MavenCoordinateDTO,
     val scraperType: ScraperType,
     val scmUrl: String?,
-) : RuntimeException()
+    message: String? = null,
+) : RuntimeException(message)
