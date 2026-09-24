@@ -168,6 +168,8 @@ class PackageIndexingService(
             selfProvider.getObject().processRequest(indexRequest)
             Outcome.SUCCESS
         } catch (error: PackageIndexingKnownException) {
+            val isLastAttempt = indexRequest.failedAttempts + 1 >= indexingConfigurationProperties.retry.maxAttempts
+            if (error.errorType.retryable && !isLastAttempt) throw error
             errorHandler.handle(indexRequest.idNotNull, error)
             Outcome.HANDLED_ERROR
         }
@@ -210,6 +212,7 @@ class PackageIndexingService(
                     ),
                     scraperType = mavenArtifact.scraperType,
                     scmUrl = null,
+                    message = "Missing POM for ${mavenArtifact.groupId}:${mavenArtifact.artifactId}:${mavenArtifact.version}",
                 )
 
         mavenArtifact = mavenArtifact.copy(releasedAt = releasedAt)
