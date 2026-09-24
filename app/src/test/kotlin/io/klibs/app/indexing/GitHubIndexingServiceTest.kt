@@ -1,9 +1,8 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
-import io.klibs.app.job.GitHubOwnerUpdatingService
 import io.klibs.core.owner.ScmOwnerRepository
-import io.klibs.core.owner.ScmOwnerSchedulingRepository
+import io.klibs.core.owner.repository.ScmOwnerSchedulingRepository
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.project.ProjectService
 import io.klibs.core.project.repository.ProjectRepository
@@ -24,6 +23,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.system.CapturedOutput
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
@@ -117,7 +117,7 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(expectedUpdatedOwnerEntity, updatedOwnerEntity)
         assert(!output.out.contains("Error while updating a GitHub owner"))
         assertNull(
-            ownerSchedulingRepository.find(updatedOwnerEntity.idNotNull),
+            ownerSchedulingRepository.findByIdOrNull(updatedOwnerEntity.idNotNull),
             "a successful sync should leave the owner eligible"
         )
     }
@@ -132,7 +132,7 @@ class GitHubIndexingServiceTest : BaseUnitWithDbLayerTest() {
         ownerUpdatingService.syncOwnerWithGitHub()
 
         val deferred = assertNotNull(
-            ownerSchedulingRepository.find(ownerId("voize-gmbh")),
+            ownerSchedulingRepository.findByIdOrNull(ownerId("voize-gmbh")),
             "a deleted owner should be deferred so it stops being re-selected"
         )
         assertContains(deferred.reason, "ScmOwnerDeletedException")

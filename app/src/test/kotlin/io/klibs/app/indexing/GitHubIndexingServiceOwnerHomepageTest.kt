@@ -1,7 +1,6 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
-import io.klibs.app.job.GitHubOwnerUpdatingService
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubUser

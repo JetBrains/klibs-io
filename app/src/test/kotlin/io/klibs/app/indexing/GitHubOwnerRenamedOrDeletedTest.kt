@@ -1,9 +1,8 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
-import io.klibs.app.job.GitHubOwnerUpdatingService
 import io.klibs.core.owner.ScmOwnerRepository
-import io.klibs.core.owner.ScmOwnerSchedulingRepository
+import io.klibs.core.owner.repository.ScmOwnerSchedulingRepository
 import io.klibs.integration.github.GitHubApiException
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubUser
@@ -16,6 +15,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
+import org.springframework.data.repository.findByIdOrNull
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -55,7 +55,10 @@ class GitHubOwnerRenamedOrDeletedTest : BaseUnitWithDbLayerTest() {
         assertNull(scmOwnerRepository.findByLogin(VOIZE_LOGIN), "the old login should no longer resolve")
         val renamed = assertNotNull(scmOwnerRepository.findByLogin(newLogin))
         assertEquals(VOIZE_NATIVE_ID, renamed.nativeId, "the rename must reuse the same owner row")
-        assertNull(schedulingRepository.find(renamed.idNotNull), "a resolved rename is a success, not a failure")
+        assertNull(
+            schedulingRepository.findByIdOrNull(renamed.idNotNull),
+            "a resolved rename is a success, not a failure"
+        )
     }
 
     @Test
@@ -83,7 +86,7 @@ class GitHubOwnerRenamedOrDeletedTest : BaseUnitWithDbLayerTest() {
         ownerUpdatingService.syncOwnerWithGitHub()
 
         val voizeId = assertNotNull(scmOwnerRepository.findByLogin(VOIZE_LOGIN))
-        val deferred = assertNotNull(schedulingRepository.find(voizeId.idNotNull))
+        val deferred = assertNotNull(schedulingRepository.findByIdOrNull(voizeId.idNotNull))
         assertEquals(
             "GitHubApiException",
             deferred.reason.substringBefore(':'),
@@ -104,7 +107,7 @@ class GitHubOwnerRenamedOrDeletedTest : BaseUnitWithDbLayerTest() {
         val after = assertNotNull(scmOwnerRepository.findByLogin(VOIZE_LOGIN), "the owner row must not be removed")
         assertEquals(before, after, "a deleted owner keeps its data untouched, including updated_at")
 
-        val deferred = assertNotNull(schedulingRepository.find(after.idNotNull))
+        val deferred = assertNotNull(schedulingRepository.findByIdOrNull(after.idNotNull))
         assertContains(deferred.reason, "ScmOwnerDeletedException")
 
         assertContains(output.out, "Deferring a deleted GitHub owner")
