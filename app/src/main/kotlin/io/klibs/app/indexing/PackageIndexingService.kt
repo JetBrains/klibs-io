@@ -125,6 +125,9 @@ class PackageIndexingService(
                 outcome = Outcome.BANNED
             } else {
                 outcome = processWithKnownErrorHandling(indexRequest)
+                if (outcome == Outcome.MISSING_POM) {
+                    errorMessage = "Missing POM"
+                }
             }
         } catch (e: MavenRateLimitedException) {
             outcome = Outcome.RATE_LIMITED
@@ -141,7 +144,7 @@ class PackageIndexingService(
                         indexingRequestRepository.deleteById(requestId)
                     }
 
-                    Outcome.FAILED -> {
+                    Outcome.FAILED, Outcome.MISSING_POM -> {
                         indexingRequestRepository.markAsFailed(
                             requestId,
                             indexingConfigurationProperties.retry.maxAttempts,
@@ -161,15 +164,19 @@ class PackageIndexingService(
         return outcome != Outcome.RATE_LIMITED
     }
 
-    private enum class Outcome { SUCCESS, FAILED, RATE_LIMITED, BANNED, HANDLED_ERROR }
+    private enum class Outcome { SUCCESS, FAILED, RATE_LIMITED, BANNED, HANDLED_ERROR, MISSING_POM }
 
     private fun processWithKnownErrorHandling(indexRequest: IndexingRequestEntity): Outcome {
         return try {
             selfProvider.getObject().processRequest(indexRequest)
             Outcome.SUCCESS
         } catch (error: PackageIndexingKnownException) {
-            errorHandler.handle(indexRequest.idNotNull, error)
-            Outcome.HANDLED_ERROR
+            if (error.errorType == PackageIndexingErrorType.MISSING_POM) {
+                Outcome.MISSING_POM
+            } else {
+                errorHandler.handle(indexRequest.idNotNull, error)
+                Outcome.HANDLED_ERROR
+            }
         }
     }
 
