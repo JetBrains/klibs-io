@@ -312,6 +312,39 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
+    fun `missing pom keeps the request pending for retry`() {
+        val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        assertNotNull(indexRequest)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(null)
+
+        assertTrue(uut.processPackageQueue())
+
+        val row = jdbcTemplate.queryForMap(
+            "SELECT status, failed_attempts, last_error_message FROM package_index_request WHERE id = ?",
+            indexRequest.idNotNull,
+        )
+        assertEquals("PENDING", row["status"])
+        assertEquals(1, (row["failed_attempts"] as Number).toInt())
+        assertContains(row["last_error_message"] as String, "Missing POM")
+        assertEquals(0, rejectedMavenCoordinateRepository.count())
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing-last-attempt.sql"])
+    fun `missing pom on the last attempt rejects the coordinate`() {
+        val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
+        assertNotNull(indexRequest)
+        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(null)
+
+        assertTrue(uut.processPackageQueue())
+
+        assertFalse(indexingRequestRepository.existsById(indexRequest.idNotNull))
+        val rejected = rejectedMavenCoordinateRepository.findAll().single()
+        assertEquals(PackageIndexingErrorType.MISSING_POM, rejected.errorType)
+    }
+
+    @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-failed-tooling-metadata-request.sql"])
     fun `should make historical tooling metadata failures retryable after reset`() {
         assertNull(
