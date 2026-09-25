@@ -1,4 +1,4 @@
-package io.klibs.core.project.blacklist
+package io.klibs.core.pckg.repository
 
 import BaseUnitWithDbLayerTest
 import org.springframework.test.context.jdbc.Sql

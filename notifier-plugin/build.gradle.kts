@@ -1,0 +1,46 @@
+plugins {
+    `kotlin-dsl`
+    id("maven-publish")
+}
+
+group = "io.klibs.notifier"
+version = "1.0.0"
+
+kotlin {
+    jvmToolchain(17)
+}
+
+dependencies {
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+
+    testImplementation(libs.gradle.maven.publish.plugin)
+    testImplementation(libs.kotlin.gradle.plugin)
+}
+
+gradlePlugin {
+    plugins {
+        create("klibs-io-notifier") {
+            id = "io.klibs.notifier"
+            implementationClass = "io.klibs.notifier.KlibsIoNotifierPlugin"
+            displayName = "Klibs.io Notifier"
+            description = "Notifies klibs.io about artifacts published to Maven Central"
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "localRepo"
+            url = layout.buildDirectory.dir("local-repo").get().asFile.toURI()
+        }
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
+    systemProperty("test.kotlinVersion", libs.versions.kotlin.get())
+    systemProperty("test.vanniktechVersion", libs.versions.vanniktech.maven.publish.get())
+}

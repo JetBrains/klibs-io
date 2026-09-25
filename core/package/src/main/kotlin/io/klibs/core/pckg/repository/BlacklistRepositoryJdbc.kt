@@ -1,4 +1,4 @@
-package io.klibs.core.project.blacklist
+package io.klibs.core.pckg.repository
 
 import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate

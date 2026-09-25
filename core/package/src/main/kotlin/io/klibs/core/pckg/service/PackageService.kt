@@ -13,6 +13,11 @@ import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackageTarget
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.dto.projection.SitemapPackageView
+import io.klibs.core.pckg.enums.PackageProcessingStatus
+import io.klibs.core.pckg.dto.PackageStatusDTO
+import io.klibs.core.pckg.enums.IndexingRequestStatus
+import io.klibs.core.pckg.repository.BlacklistRepository
+import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
@@ -26,7 +31,9 @@ import org.springframework.transaction.annotation.Transactional
 class PackageService(
     private val packageRepository: PackageRepository,
     private val packageIndexRepository: PackageIndexRepository,
-    private val selfProvider: ObjectProvider<PackageService>
+    private val blacklistRepository: BlacklistRepository,
+    private val indexingRequestRepository: IndexingRequestRepository,
+    private val selfProvider: ObjectProvider<PackageService>,
 ) {
     private val logger = LoggerFactory.getLogger(PackageService::class.java)
 
@@ -124,6 +131,33 @@ class PackageService(
             .mapValues { (_, latestPackages) ->
                 latestPackages.maxBy { it.releaseTs }.kotlinVersion
             }
+    }
+
+    fun getPackageStatus(
+        groupId: String,
+        artifactId: String,
+        version: String
+    ): PackageStatusDTO? = when {
+        packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version) != null ->
+            PackageProcessingStatus.INDEXED
+
+        blacklistRepository.checkPackageBanned(groupId, artifactId) ->
+            PackageProcessingStatus.BANNED
+
+        else -> indexingRequestRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version)
+            ?.let {
+                if (it.status == IndexingRequestStatus.FAILED)
+                    PackageProcessingStatus.FAILED
+                else
+                    PackageProcessingStatus.QUEUED
+            }
+    }?.let {
+        PackageStatusDTO(
+            groupId = groupId,
+            artifactId = artifactId,
+            version = version,
+            status = it,
+        )
     }
 }
 

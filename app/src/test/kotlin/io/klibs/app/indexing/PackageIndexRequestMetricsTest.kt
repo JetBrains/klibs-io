@@ -38,7 +38,6 @@ class PackageIndexRequestMetricsTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.example",
                 artifactId = "artifact-one",
                 version = "1.0.0",
-                releasedAt = null,
                 repo = ScraperType.SEARCH_MAVEN,
                 status = IndexingRequestStatus.PENDING,
             )
@@ -49,7 +48,6 @@ class PackageIndexRequestMetricsTest : BaseUnitWithDbLayerTest() {
                 groupId = "org.example",
                 artifactId = "artifact-two",
                 version = "1.0.0",
-                releasedAt = null,
                 repo = ScraperType.SEARCH_MAVEN,
                 status = IndexingRequestStatus.PENDING,
             )

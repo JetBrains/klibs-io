@@ -8,6 +8,7 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.query.Param
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long> {
 
@@ -25,7 +26,8 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
         FROM package_index_request req
         WHERE req.status = 'PENDING'
           AND req.failed_attempts < :maxAttempts
-        ORDER BY req.released_ts DESC NULLS FIRST
+          AND req.next_attempt_ts < current_timestamp
+        ORDER BY req.next_attempt_ts
         LIMIT 1
     """, nativeQuery = true)
     fun findFirstForIndexing(@Param("maxAttempts") maxAttempts: Int): IndexingRequestEntity?
@@ -34,13 +36,15 @@ interface IndexingRequestRepository : CrudRepository<IndexingRequestEntity, Long
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Query(value = """
         UPDATE package_index_request
-        SET status = 'PENDING',
+        SET status = CASE WHEN failed_attempts + 1 >= :maxAttempts
+                      THEN 'FAILED' ELSE 'PENDING' END,
             failed_ts = current_timestamp,
             failed_attempts = failed_attempts + 1,
-            last_error_message = :errorMessage
+            last_error_message = :errorMessage,
+            next_attempt_ts = COALESCE(:nextAttemptTs, 'infinity'::timestamptz)
         WHERE id = :id
     """, nativeQuery = true)
-    fun markAsFailed(@Param("id") id: Long, @Param("errorMessage") errorMessage: String?)
+    fun markAsFailed(@Param("id") id: Long, @Param("maxAttempts") maxAttempts: Int,@Param("nextAttemptTs") nextAttemptTs: Instant?, @Param("errorMessage") errorMessage: String?)
 
     fun countByStatus(status: IndexingRequestStatus): Long
 
