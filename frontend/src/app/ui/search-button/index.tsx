@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import {SearchIcon} from "@rescui/icons";
 
 export default function SearchButton() {
     const linkRef = useRef<HTMLAnchorElement | null>(null);
@@ -24,7 +25,7 @@ export default function SearchButton() {
 
     return (
         <Link href={"/search"} className={'btn btn-primary'} ref={linkRef}>
-            <i className="bi bi-search fs-6 text-light pe-1"></i>
+            <SearchIcon size={'xs'} className="text-light pe-1"/>
             {" Search "}
             <span className="x-btn-hotkey">
                 ⌘ + K

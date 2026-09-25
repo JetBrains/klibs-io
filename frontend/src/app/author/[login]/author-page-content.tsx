@@ -5,6 +5,7 @@ import {OwnerAuthor, ProjectSearchResults} from "@/app/types";
 import Image from "next/image";
 import ProjectCard from "@/app/ui/project-card";
 import Container from "@/app/ui/container";
+import {CompanyIcon, ExternalIcon, GitHubIcon, LocationIcon, TeamIcon, TwitterIcon} from "@rescui/icons";
 
 interface AuthorPageContentProps {
     initialAuthor: OwnerAuthor;
@@ -51,7 +52,7 @@ export default function Author({initialAuthor, initialProjects}: AuthorPageConte
                         <ul className="list-unstyled">
                             <li data-testid="author-followers">
                                 <span className="d-flex align-items-center gap-2">
-                                    <i className="bi bi-people"></i>
+                                    <TeamIcon size={'xs'}/>
                                     <span className="text">
                                         {author.followers} followers
                                     </span>
@@ -61,7 +62,7 @@ export default function Author({initialAuthor, initialProjects}: AuthorPageConte
                             {author.company &&
                                 <li data-testid="author-company">
                                     <span className="d-flex align-items-center gap-2">
-                                        <i className="bi bi-building"></i>
+                                        <CompanyIcon size={'xs'}/>
                                         <span className="text">{author.company}</span>
                                     </span>
                                 </li>
@@ -70,7 +71,7 @@ export default function Author({initialAuthor, initialProjects}: AuthorPageConte
                             {author.location &&
                                 <li data-testid="author-location">
                                     <span className="d-flex align-items-center gap-2">
-                                        <i className="bi bi-geo"></i>
+                                        <LocationIcon size={'xs'}/>
                                         <span className="text">{author.location}</span>
                                     </span>
                                 </li>
@@ -87,7 +88,7 @@ export default function Author({initialAuthor, initialProjects}: AuthorPageConte
                                         target="_blank"
                                         data-testid="author-homepage-link"
                                         href={author.homepage}>
-                                        <i className="bi bi-box-arrow-up-right"></i>
+                                        <ExternalIcon size={'xs'}/>
                                         <span className="text">{author.homepage}</span>
                                     </a>
                                 </li>
@@ -99,7 +100,7 @@ export default function Author({initialAuthor, initialProjects}: AuthorPageConte
                                         target="_blank"
                                         data-testid="author-twitter-link"
                                         href={`https://x.com/${author.twitterHandle}`}>
-                                        <i className="bi bi-twitter-x"></i>
+                                        <TwitterIcon size={'xs'}/>
                                         <span className="text">{author.twitterHandle}</span>
                                     </a>
                                 </li>
@@ -112,7 +113,7 @@ export default function Author({initialAuthor, initialProjects}: AuthorPageConte
                                         target="_blank"
                                         data-testid="author-github-login"
                                         href={`https://github.com/${author.login}`}>
-                                        <i className="bi bi-github"></i>
+                                        <GitHubIcon size={'xs'}/>
                                         <span className="text">{author.login}</span>
                                     </a>
                                 </li>
