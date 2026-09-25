@@ -122,6 +122,16 @@
     display: none;
 }
 
+ .titleWrapper {
+     width: 100%;
+     text-align: left;
+     margin-top: 8px;
+ }
+
+ .title {
+     /*color: #fff !important;*/
+ }
+
 @media (max-width: 640px) {
     .compactModeSwitcher {
         display: none;

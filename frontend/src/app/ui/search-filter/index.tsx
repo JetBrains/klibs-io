@@ -21,9 +21,11 @@ import {DropdownTrigger} from "@/app/ui/dropdown-trigger";
 import {FilterIcon, ProjectsIcon} from "@rescui/icons";
 
 import {SidebarMenuHeader} from '@jetbrains/kotlin-web-site-ui/out/components/sidebar-menu';
-import {textCn} from '@rescui/typography';
+import {createTextCn, textCn} from '@rescui/typography';
 
 import SidebarMobile from "@/app/ui/sidebar-mobile/sidebar-mobile";
+
+const darkTextCn = createTextCn('dark');
 
 interface SearchFilterProps {
     filters: SearchParams,
@@ -171,6 +173,7 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
             <div className={cn(styles.searchFilterContainer)}>
                 <div ref={searchFilterContainerRef} className={cn(styles.searchFilterContainerWrapper)}>
                     <Container mode="container" className={styles.searchFilterWrapper}>
+
                         {/*Switcher*/}
                         <div className={styles.modeSwitcher}>
                             <ModeSwitcher
@@ -224,6 +227,11 @@ export default function SearchFilter({filters, setFilters, updateURLFromState, s
                                 </Dropdown>
                             </div>
                         </div>
+
+                        <div className={styles.titleWrapper}>
+                            <p className={cn(darkTextCn('rs-text-3', {hardness: 'average'}), styles.title)}>The official search for Kotlin Multiplatform libraries</p>
+                        </div>
+
                     </Container>
                 </div>
             </div>
