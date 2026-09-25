@@ -1,3 +1,5 @@
+import type {ResolvingMetadata} from "next";
+import {socialMetadata} from "@/app/helpers";
 import ProjectPageContent from './project-page-content'
 import {getProjectDetails, getProjectPackages, getProjectReadme, NotFoundException} from "@/app/api";
 import {notFound} from "next/navigation";
@@ -8,7 +10,7 @@ type MetadataParamsProps = {
     projectName: string;
 };
 
-export async function generateMetadata({ params }: { params: MetadataParamsProps }) {
+export async function generateMetadata({ params }: { params: MetadataParamsProps }, parent: ResolvingMetadata) {
 
     const projectDetails = await getProjectDetails(params?.organization, params?.projectName);
 
@@ -29,14 +31,7 @@ export async function generateMetadata({ params }: { params: MetadataParamsProps
     return {
         title,
         description,
-        openGraph: {
-            title,
-            description,
-        },
-        twitter: {
-            title,
-            description,
-        },
+        ...await socialMetadata(parent, title, description),
     };
 }
 

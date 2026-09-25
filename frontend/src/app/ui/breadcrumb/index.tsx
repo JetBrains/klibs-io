@@ -55,21 +55,20 @@ export function PackageBreadcrumbs({projectPackage, packageVersions, version, pr
         packages,
     ]
 
+    // The API returns versions ordered by release date, newest first
     const versions = packageVersions && packageVersions.length ?
         packageVersions.map(settings => settings.version) :
         null;
 
-    const list = versions?.sort().reverse();
-    const current = version || list?.[0];
+    const current = version || versions?.[0];
 
     if (current) {
         menu.push({
             current: current,
-            menu: versions?.sort().reverse()
-                .map(option => ({
-                    href: artifactLink + '/' + option,
-                    children: option,
-                })),
+            menu: versions?.map(option => ({
+                href: artifactLink + '/' + option,
+                children: option,
+            })),
         });
     }
 

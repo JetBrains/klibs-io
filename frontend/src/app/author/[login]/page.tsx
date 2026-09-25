@@ -1,3 +1,5 @@
+import type {ResolvingMetadata} from "next";
+import {socialMetadata} from "@/app/helpers";
 import AuthorPageContent from './author-page-content'
 import {getOwnerDetails, searchProjects} from "@/app/api";
 import {OwnerAuthor} from "@/app/types";
@@ -6,7 +8,7 @@ type MetadataParamsProps = {
     login: string;
 };
 
-export async function generateMetadata({params}: { params: MetadataParamsProps }) {
+export async function generateMetadata({params}: { params: MetadataParamsProps }, parent: ResolvingMetadata) {
     const author = await getOwnerDetails<OwnerAuthor>(params.login);
 
     const title = author?.name || params.login;
@@ -15,14 +17,7 @@ export async function generateMetadata({params}: { params: MetadataParamsProps }
     return {
         title,
         description,
-        openGraph: {
-            title,
-            description,
-        },
-        twitter: {
-            title,
-            description,
-        },
+        ...await socialMetadata(parent, title, description),
     };
 }
 

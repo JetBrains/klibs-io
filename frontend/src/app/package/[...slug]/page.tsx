@@ -1,3 +1,5 @@
+import type {ResolvingMetadata} from "next";
+import {socialMetadata} from "@/app/helpers";
 import PackagePageContent from './package-page-content'
 
 import {
@@ -13,7 +15,7 @@ type MetadataParamsProps = {
     slug: string[];
 };
 
-export async function generateMetadata({ params }: { params: MetadataParamsProps }) {
+export async function generateMetadata({ params }: { params: MetadataParamsProps }, parent: ResolvingMetadata) {
 
     const pkg = await getPackageDetails(params.slug[0], params.slug[1]);
 
@@ -38,14 +40,7 @@ export async function generateMetadata({ params }: { params: MetadataParamsProps
         alternates: {
             canonical,
         },
-        openGraph: {
-            title,
-            description,
-        },
-        twitter: {
-            title,
-            description,
-        },
+        ...await socialMetadata(parent, title, description),
     };
 }
 

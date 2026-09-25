@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
+import { socialMetadata } from "@/app/helpers";
 import React from "react";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata(_: unknown, parent: ResolvingMetadata): Promise<Metadata> {
     const title = `Klibs.io FAQ - Kotlin Multiplatform Libraries Help`;
     const description = 'Find answers to common questions about Klibs.io and Kotlin Multiplatform libraries.';
 
     return {
         title: { absolute: title },
         description,
-        openGraph: { title, description },
-        twitter: { title, description },
+        ...await socialMetadata(parent, title, description),
     };
 }
 
