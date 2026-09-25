@@ -1,23 +1,19 @@
 import styles from './styles.module.css';
 import { SearchIcon } from "@rescui/icons";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 import cn from "classnames";
-import { ProjectSearchResults } from "@/app/types";
-// import SearchSuggestionsList from "@/app/ui/search-suggestions/search-suggestions";
 import { Tag, presets } from '@rescui/tag';
 import { CloseIcon } from '@rescui/icons';
 
 import { trackEvent, GAEvent } from "@/app/analytics";
 
 interface SearchFieldProps {
-	onChange?: (value: string) => void;
-	value?: string;
+	onChange: (value: string) => void;
+	value: string;
 	onEnter?: (value: string) => void;
 	className?: string;
 	autofocus?: boolean;
-	suggestionsList?: ProjectSearchResults[] | null
-	suggestionsClose?: () => void;
 	compact?: boolean;
 	selectedCategory?: string | null;
 	onCategoryReset?: () => void;
@@ -25,36 +21,17 @@ interface SearchFieldProps {
 	projectsCount?: string;
 }
 
-export default function SearchField({ value, onChange, onEnter, className, autofocus, suggestionsList, suggestionsClose, compact, selectedCategory, onCategoryReset, onClear, projectsCount }: SearchFieldProps) {
+export interface SearchFieldHandle {
+	focus: () => void;
+}
+
+// Fully controlled: the text lives in the parent, so several instances
+// (main and compact bar) always show the same query and none of it is
+// lost when one of them unmounts. Debouncing is up to the caller.
+const SearchField = forwardRef<SearchFieldHandle, SearchFieldProps>(function SearchField({ value, onChange, onEnter, className, autofocus, compact, selectedCategory, onCategoryReset, onClear, projectsCount }, ref) {
 	const [isFocused, setFocused] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
-	const [inputValue, setInputValue] = useState(value || "");
-	const debounceTimeout = useRef<number | null>(null);
-
-	useEffect(() => {
-		if ((value ?? "") !== inputValue) {
-			setInputValue(value || "");
-		}
-	}, [value]);
-
-	// Debounced onChange
-	useEffect(() => {
-		if (debounceTimeout.current !== null) {
-			clearTimeout(debounceTimeout.current);
-		}
-
-		debounceTimeout.current = window.setTimeout(() => {
-			if (onChange && inputValue !== value) {
-				onChange(inputValue);
-			}
-		}, 200);
-
-		return () => {
-			if (debounceTimeout.current !== null) {
-				clearTimeout(debounceTimeout.current);
-			}
-		};
-	}, [inputValue, onChange, value]);
+	const inputValue = value;
 
 	const setFocus = () => {
 		if (inputRef.current) {
@@ -63,6 +40,8 @@ export default function SearchField({ value, onChange, onEnter, className, autof
 			inputRef.current.setSelectionRange(valueLength, valueLength);
 		}
 	};
+
+	useImperativeHandle(ref, () => ({ focus: setFocus }));
 
 	// Autofocus only on initial load
 	useEffect(() => {
@@ -93,11 +72,6 @@ export default function SearchField({ value, onChange, onEnter, className, autof
 	}, [isFocused]);
 
 
-	const clearSuggestionsList = useCallback(() => {
-		setInputValue("");
-		suggestionsClose && suggestionsClose();
-	}, [setInputValue, suggestionsClose])
-
 	const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
 		if (event.key === 'Enter') {
 			onEnter && onEnter(event.currentTarget.value);
@@ -116,7 +90,7 @@ export default function SearchField({ value, onChange, onEnter, className, autof
 	};
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setInputValue(e.target.value);
+		onChange(e.target.value);
 	};
 
 	const handleClearButtonClick = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -125,9 +99,9 @@ export default function SearchField({ value, onChange, onEnter, className, autof
 	}
 
 	const clearInput = () => {
-		setInputValue("");
-		if (suggestionsList) {
-			clearSuggestionsList();
+		// Escape/Clear on an already-empty field must stay a no-op
+		if (inputValue !== "") {
+			onChange("");
 		}
 		onClear?.();
 		setFocus();
@@ -195,10 +169,6 @@ export default function SearchField({ value, onChange, onEnter, className, autof
 				</div>
 			)}
 
-			{/*Suggestion list hidden until fixed*/}
-			{/*Also, seams like it is a bit broken in FF*/}
-			{/*{!!suggestionsList?.length && inputValue.length > 1 && <SearchSuggestionsList list={suggestionsList} onEnter={onEnter} suggestionsClose={suggestionsClose} />}*/}
-
 		</div>
 
 			{
@@ -210,4 +180,6 @@ export default function SearchField({ value, onChange, onEnter, className, autof
 	}
 		</div >
 	)
-}
+});
+
+export default SearchField;
