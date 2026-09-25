@@ -3,13 +3,14 @@ package io.klibs.core.pckg.repository
 import BaseUnitWithDbLayerTest
 import io.klibs.core.pckg.entity.SuspiciousPackageCandidateEntity
 import io.klibs.core.pckg.enums.CandidateStatus
+import io.klibs.core.pckg.service.CandidateRefreshSummary
+import io.klibs.core.pckg.service.SuspiciousPackageCandidateCollectionService
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -20,6 +21,9 @@ class SuspiciousPackageCandidateCollectionDbTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var repository: SuspiciousPackageCandidateRepository
+
+    @Autowired
+    private lateinit var collectionService: SuspiciousPackageCandidateCollectionService
 
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
@@ -135,19 +139,28 @@ class SuspiciousPackageCandidateCollectionDbTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql(SEED)
-    fun `keeps rows whose entries stop conflicting`() {
+    fun `refresh deletes a pending row whose conflict is gone and keeps a resolved one`() {
         repository.insertMissingCandidates()
-        review(47001, "lib", "org.alpha", CandidateStatus.RESOLVED, "banned")
+        review(47001, "lib", "io.github.beta", CandidateStatus.RESOLVED, "banned")
 
         // Removing one entry leaves its sibling alone under one groupId, so both stop conflicting.
         jdbcTemplate.update("DELETE FROM package WHERE project_id = 47001 AND group_id = 'io.github.beta'")
-        val inserted = repository.insertMissingCandidates()
+        val refresh = collectionService.refreshCandidates()
 
-        assertEquals(0, inserted)
-        val remaining = candidatesOf(47001)
-        assertEquals(2, remaining.size, "neither row is deleted when its entry stops conflicting")
-        assertEquals(CandidateStatus.RESOLVED, remaining.single { it.groupId == "org.alpha" }.status)
-        assertNotNull(remaining.singleOrNull { it.groupId == "io.github.beta" })
+        assertEquals(CandidateRefreshSummary(inserted = 0, deleted = 1), refresh)
+        assertEquals(listOf("io.github.beta"), candidatesOf(47001).map { it.groupId })
+        assertEquals(3, candidatesOf(47002).size)
+    }
+
+    @Test
+    @Sql(SEED)
+    fun `refresh deletes a pending row whose own entry is gone while its siblings still conflict`() {
+        repository.insertMissingCandidates()
+
+        jdbcTemplate.update("DELETE FROM package WHERE project_id = 47002 AND group_id = 'org.epsilon'")
+        collectionService.refreshCandidates()
+
+        assertEquals(listOf("org.delta", "org.gamma"), candidatesOf(47002).map { it.groupId })
     }
 
     private fun candidates(): List<SuspiciousPackageCandidateEntity> =

@@ -90,9 +90,10 @@ class GitHubIntegrationKohsukeLibraryTest {
     }
 
     @Test
-    fun `repository not found returns null for both lookup methods`() {
+    fun `repository not found returns null for every lookup method`() {
         assertNull(uut.getRepository(12345678L))
         assertNull(uut.getRepository("JetBrains", "missing"))
+        assertNull(uut.getForkParentFullName("JetBrains", "missing"))
     }
 
     @ParameterizedTest
@@ -102,6 +103,17 @@ class GitHubIntegrationKohsukeLibraryTest {
 
         assertFailsWith<IOException> { uut.getRepository(12345678L) }
         assertFailsWith<IOException> { uut.getRepository("JetBrains", "missing") }
+        assertFailsWith<IOException> { uut.getForkParentFullName("JetBrains", "missing") }
+    }
+
+    @Test
+    fun `fork repository exposes its parent`() {
+        assertEquals("cashapp/zipline", uut.getForkParentFullName("suspect", "zipline"))
+    }
+
+    @Test
+    fun `non-fork repository has no parent`() {
+        assertNull(uut.getForkParentFullName("cashapp", "zipline"))
     }
 
     @TestConfiguration
@@ -143,6 +155,9 @@ class GitHubIntegrationKohsukeLibraryTest {
                         """{"message":"Repository lookup failed"}"""
                     )
 
+                    "/repos/suspect/zipline" -> Triple(200, "OK", FORK_REPOSITORY_RESPONSE)
+                    "/repos/cashapp/zipline" -> Triple(200, "OK", ORIGINAL_REPOSITORY_RESPONSE)
+
                     "/users/JetBrains" -> {
                         requestRecorder.authorizations += authorization
                         if (authorization == AUTHORIZATION) {
@@ -182,6 +197,10 @@ class GitHubIntegrationKohsukeLibraryTest {
                     "an IP allow list enabled, and your IP address is not permitted to access this resource."
         const val NOT_FOUND_RESPONSE =
             """{"message":"Not Found","documentation_url":"https://docs.github.com/rest","status":"404"}"""
+        const val ORIGINAL_REPOSITORY_RESPONSE =
+            """{"id":1,"name":"zipline","full_name":"cashapp/zipline","owner":{"login":"cashapp"},"fork":false,"created_at":"2020-01-01T00:00:00Z","pushed_at":"2026-01-01T00:00:00Z","default_branch":"trunk","has_pages":false,"has_issues":true,"has_wiki":false,"archived":false,"stargazers_count":10,"open_issues_count":1}"""
+        const val FORK_REPOSITORY_RESPONSE =
+            """{"id":2,"name":"zipline","full_name":"suspect/zipline","owner":{"login":"suspect"},"fork":true,"parent":{"id":1,"name":"zipline","full_name":"cashapp/zipline"},"created_at":"2024-01-01T00:00:00Z","pushed_at":"2026-01-01T00:00:00Z","default_branch":"trunk","has_pages":false,"has_issues":false,"has_wiki":false,"archived":false,"stargazers_count":0,"open_issues_count":0}"""
         const val USER_RESPONSE =
             """{"id":12345678,"login":"JetBrains","type":"Organization","name":"JetBrains"}"""
         const val APP_RESPONSE =

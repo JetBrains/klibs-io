@@ -86,6 +86,11 @@ internal class GitHubIntegrationKohsukeLibrary(
         return ghRepository.toModel()
     }
 
+    override fun getForkParentFullName(owner: String, name: String): String? =
+        executeNullableWithAnonymousFallback { github ->
+            github.getRepository("$owner/$name").takeIf { it.isFork }?.parent?.fullName
+        }
+
     override fun getUser(login: String): GitHubUser? {
         githubApi.refreshCache()
 
