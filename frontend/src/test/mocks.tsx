@@ -7,6 +7,7 @@ vi.mock('next/image', () => ({
 
 vi.mock('@rescui/typography', () => ({
     textCn: () => '',
+    createTextCn: () => () => '',
 }));
 
 vi.mock('@/app/ui/container', () => ({
