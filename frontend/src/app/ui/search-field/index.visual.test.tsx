@@ -6,7 +6,7 @@ import SearchField from './index';
 test('search field with a selected category', async () => {
     await render(
         <div style={{ width: 720 }}>
-            <SearchField projectsCount="3200" selectedCategory="Featured" />
+            <SearchField value="" onChange={() => {}} projectsCount="3200" selectedCategory="Featured" />
         </div>,
     );
 });

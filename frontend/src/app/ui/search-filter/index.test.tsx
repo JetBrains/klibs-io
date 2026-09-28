@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { ComponentProps, ReactNode } from 'react';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { SearchParams } from '@/app/types';
 import SearchFilter from './index';
@@ -58,15 +58,23 @@ vi.mock('@/app/ui/sidebar-mobile/sidebar-mobile', () => ({
     default: ({ children, isOpen }: { children: ReactNode; isOpen: boolean }) => isOpen ? children : null,
 }));
 
-vi.mock('@/app/ui/search-field', () => ({
-    default: ({ onChange, value }: { onChange?: (value: string) => void; value?: string }) => (
-        <input
-            aria-label="Search"
-            value={value ?? ''}
-            onChange={event => onChange?.(event.target.value)}
-        />
-    ),
-}));
+vi.mock('@/app/ui/search-field', async () => {
+    const { forwardRef } = await import('react');
+    type Props = { onChange?: (value: string) => void; onEnter?: (value: string) => void; value?: string };
+    return {
+        default: forwardRef<HTMLInputElement, Props>(function SearchField({ onChange, onEnter, value }, ref) {
+            return (
+                <input
+                    aria-label="Search"
+                    ref={ref}
+                    value={value ?? ''}
+                    onChange={event => onChange?.(event.target.value)}
+                    onKeyDown={event => event.key === 'Enter' && onEnter?.(event.currentTarget.value)}
+                />
+            );
+        }),
+    };
+});
 
 vi.mock('@/app/analytics', () => ({
     GAEvent: {
@@ -99,15 +107,78 @@ const renderFilter = () => {
     return { setFilters, updateURLFromState };
 };
 
+let filterBottom = 100;
+
+const scrollFilterOutOfView = (outOfView: boolean) => {
+    filterBottom = outOfView ? -100 : 100;
+    act(() => {
+        fireEvent.scroll(window);
+    });
+};
+
+const compactSearchInput = () =>
+    within(screen.getByTestId('compact-search-filter')).getByRole('textbox', { name: 'Search' });
+
 describe('SearchFilter', () => {
-    test('resets paging and tags when the query changes', () => {
+    beforeEach(() => {
+        filterBottom = 100;
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+            .mockImplementation(() => ({ bottom: filterBottom } as DOMRect));
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    test('applies the query after the debounce delay and resets paging and tags', () => {
         const { setFilters, updateURLFromState } = renderFilter();
 
         fireEvent.change(screen.getByRole('textbox', { name: 'Search' }), { target: { value: 'Ktor' } });
+        expect(setFilters).not.toHaveBeenCalled();
+
+        act(() => vi.advanceTimersByTime(200));
 
         const expected = { ...filters, query: 'Ktor', page: 1, tags: [] };
         expect(setFilters).toHaveBeenCalledWith(expected);
-        expect(updateURLFromState).toHaveBeenCalledWith(expected);
+        expect(updateURLFromState).toHaveBeenCalledWith(expected, { scroll: false });
+    });
+
+    test('searches as you type in the compact sticky bar without Enter', () => {
+        const { setFilters } = renderFilter();
+        scrollFilterOutOfView(true);
+
+        fireEvent.change(compactSearchInput(), { target: { value: 'Kt' } });
+        act(() => vi.advanceTimersByTime(200));
+
+        expect(setFilters).toHaveBeenCalledWith({ ...filters, query: 'Kt', page: 1, tags: [] });
+    });
+
+    test('commits the compact bar query immediately on Enter', () => {
+        const { setFilters } = renderFilter();
+        scrollFilterOutOfView(true);
+
+        fireEvent.change(compactSearchInput(), { target: { value: 'Ktor' } });
+        fireEvent.keyDown(compactSearchInput(), { key: 'Enter' });
+
+        expect(setFilters).toHaveBeenCalledOnce();
+        expect(setFilters).toHaveBeenCalledWith({ ...filters, query: 'Ktor', page: 1, tags: [] });
+    });
+
+    test('hands focus and text over to the main field when the compact bar hides', () => {
+        renderFilter();
+        scrollFilterOutOfView(true);
+        const compactInput = compactSearchInput();
+
+        compactInput.focus();
+        fireEvent.change(compactInput, { target: { value: 'Kt' } });
+        scrollFilterOutOfView(false);
+
+        expect(screen.queryByTestId('compact-search-filter')).not.toBeInTheDocument();
+        const mainInput = screen.getByRole('textbox', { name: 'Search' });
+        expect(mainInput).toHaveValue('Kt');
+        expect(mainInput).toHaveFocus();
     });
 
     test('switches from project search to package search', () => {

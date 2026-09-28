@@ -8,17 +8,18 @@ import SearchTabFilter from "@/app/ui/search-tab-filter";
 interface SearchContainerProps {
     filters: SearchParams;
     setFilters: (params: SearchParams) => void;
-    updateURLFromState: (state: SearchParams) => void;
+    updateURLFromState: (state: SearchParams, options?: { scroll?: boolean }) => void;
     hideTagsFilter?: boolean;
     selectedCategory?: string | null;
     onCategoryReset?: () => void;
     categorySearchQuery?: string;
     onCategorySearch?: (query: string) => void;
+    onCategorySearchEnter?: (query: string) => void;
     onCategorySearchClear?: () => void;
     projectsCount?: string;
 }
 
-export default function SearchContainer({ filters, setFilters, updateURLFromState, hideTagsFilter, selectedCategory, onCategoryReset, categorySearchQuery, onCategorySearch, onCategorySearchClear, projectsCount }: SearchContainerProps) {
+export default function SearchContainer({ filters, setFilters, updateURLFromState, hideTagsFilter, selectedCategory, onCategoryReset, categorySearchQuery, onCategorySearch, onCategorySearchEnter, onCategorySearchClear, projectsCount }: SearchContainerProps) {
     return (
         <>
             <SearchFilter
@@ -29,6 +30,7 @@ export default function SearchContainer({ filters, setFilters, updateURLFromStat
                 onCategoryReset={onCategoryReset}
                 categorySearchQuery={categorySearchQuery}
                 onCategorySearch={onCategorySearch}
+                onCategorySearchEnter={onCategorySearchEnter}
                 onCategorySearchClear={onCategorySearchClear}
                 projectsCount={projectsCount}
             />
