@@ -13,9 +13,6 @@ spring:
   ai:
     openai:
       api-key: ${KLIBS_OPENAPI_KEY}
-      chat:
-        options:
-          model: gpt-4o
     mcp:
       server:
         name: klibs-mcp-server
