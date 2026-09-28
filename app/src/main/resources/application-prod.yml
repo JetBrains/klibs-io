@@ -6,6 +6,9 @@
 #
 klibs:
   auth:
+    session:
+      cookie-name: __Host-klibs_session
+      cookie-secure: true
     users:
       - username: ${KLIBS_MAIN_USERNAME}
         password: ${KLIBS_MAIN_PASSWORD}

@@ -1,0 +1,74 @@
+databaseChangeLog:
+  - changeSet:
+      id: create klibs user auth tables
+      author: daniel.volostnov@jetbrains.com
+      comment: "KTL-4765: Store users and authentication sessions"
+      preConditions:
+        - onFail: HALT
+        - not:
+            tableExists:
+              tableName: klibs_user
+        - not:
+            tableExists:
+              tableName: klibs_user_session
+      changes:
+        - createTable:
+            tableName: klibs_user
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: authentication_provider
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: external_user_id_hash
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: klibs_user
+            columnNames: authentication_provider, external_user_id_hash
+            constraintName: unique_klibs_user_external_identity
+
+        - createTable:
+            tableName: klibs_user_session
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    referencedTableName: klibs_user
+                    referencedColumnNames: id
+                    foreignKeyName: foreign_key_klibs_user_session_user_id
+                    deleteCascade: true
+              - column:
+                  name: token_hash
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: unique_klibs_user_session_token_hash
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false

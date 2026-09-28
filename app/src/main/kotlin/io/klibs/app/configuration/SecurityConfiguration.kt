@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
 import org.springframework.http.HttpMethod
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.core.userdetails.User
@@ -13,6 +14,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
+@EnableMethodSecurity
 class SecurityConfiguration(
     private val environment: Environment
 ) {
@@ -31,6 +33,10 @@ class SecurityConfiguration(
             httpBasic { }
 
             authorizeHttpRequests {
+                authorize(HttpMethod.GET, "/auth/current-user", permitAll)
+                authorize(HttpMethod.POST, "/auth/sign-out", permitAll)
+                authorize(USER_ACTIONS_PATH, denyAll)
+
                 authorize(HttpMethod.GET, "/categories.json", permitAll)
                 authorize(HttpMethod.GET, "/sitemap.xml", permitAll)
 
@@ -116,4 +122,5 @@ class SecurityConfiguration(
         }
         return InMemoryUserDetailsManager(users)
     }
+
 }
