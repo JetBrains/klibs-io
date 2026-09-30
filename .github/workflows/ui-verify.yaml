@@ -1,5 +1,10 @@
 name: UI Verify
 
+# Runs the visual tests. For a push or a same-repo pull request it uploads to UI Verify here, and the
+# job stays red until the changes are accepted (uiverify-rerun.yml then re-runs it green). A pull
+# request from a fork gets no secrets, so it saves the capture as an artifact instead and
+# ui-verify-upload.yaml uploads it.
+
 on:
   pull_request:
     paths:
@@ -31,6 +36,16 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps
       - run: npm run test:visual
-      - run: npx -y uiverify@1.4.2 upload --static-dir ./uiverify-archive
+      - name: Upload to UI Verify
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        run: npx -y uiverify@1.4.2 upload --static-dir ./uiverify-archive
         env:
           UIVERIFY_API_KEY: ${{ secrets.UIVERIFY_API_KEY }}
+      - name: Save the capture for the upload workflow
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        uses: actions/upload-artifact@v4
+        with:
+          name: uiverify-archive
+          path: frontend/uiverify-archive/
+          if-no-files-found: error
+          retention-days: 7

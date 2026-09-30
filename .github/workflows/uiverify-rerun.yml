@@ -27,7 +27,7 @@ jobs:
           set -euo pipefail
           slug="${STATUS_CONTEXT#UI Verify: }"
           case "$slug" in
-            <klibs-io-slug>) workflow=ui-verify.yaml ;;
+            klibs-io) workflow=ui-verify.yaml ;;
             *) echo "No workflow mapped for project '$slug'; nothing to re-run."; exit 0 ;;
           esac
           run_ids=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow" \
