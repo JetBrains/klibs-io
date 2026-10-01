@@ -42,8 +42,12 @@ npm run test:e2e             # Playwright user journeys (needs a running fronten
 Pick the cheapest level that proves the behavior:
 
 - `*.test.tsx` — rendering, links, keyboard, filters. Assert user-visible outcomes via Testing Library queries; don't assert implementation details or call order.
-- `*.visual.test.tsx` — layout and styling regressions only. Runs as a separate Vitest project, so `test:component` skips it. Import the global CSS the component needs, pin an explicit viewport, and disable animations/transitions so frames are deterministic.
+- `*.visual.test.tsx` — layout and styling regressions only. Runs as a separate Vitest project, so `test:component` skips it. `src/test/visual-setup.ts` already loads the global CSS in layout order, stops animations, and swaps `next/image`, `next/link` and `next/navigation` for the doubles in `src/test/`; don't repeat any of that in a test file. Pin an explicit viewport. Test data (projects, packages, authors, API responses) lives in `src/test/fixtures.ts`, not in test files; add a factory there and import it. Answer API calls from `src/test/api.ts`, and use the helpers in `src/test/visual.ts` (`renderSingleAnimationFrame`, `waitForLayoutToSettle`) for anything else that varies between runs.
 - `e2e-tests/*` — reserve for full journeys crossing routing or backend boundaries.
+
+### Visual coverage
+
+Every page and route state (`page`, `loading`, `error`, `not-found`) needs a visual test that renders it or its content component; `src/app/visual-coverage.test.ts` fails otherwise. That test can't see states inside a page, so when you add one (empty, error, a different layout), add a visual test for it too.
 
 ## Guardrails
 
