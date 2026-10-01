@@ -1,0 +1,92 @@
+name: UI Verify upload
+
+# Uploads the capture a fork's pull request saved in the "UI Verify" workflow. `workflow_run` always
+# runs this file from the default branch with the repo's secrets, including for pull requests from forks.
+#
+# Nothing from the pull request runs here: no checkout of its files, no `npm ci`, no `npx` inside its
+# tree (a PR could change .npmrc or package.json to replace the CLI). The CLI runs at a pinned version
+# from an empty directory, and gets only the downloaded capture plus the PR's git history (fetched as
+# objects, never checked out). Values the PR controls, like branch names, reach the shell only via `env`.
+#
+# GitHub's own environment here describes the default branch, so the PR's commit, branch and number
+# are passed to the CLI explicitly. This run isn't shown on the PR, so it doesn't fail on changes; on a
+# fork's PR the gate is the "UI Verify: klibs-io" status the UI Verify app posts on the PR's commit.
+
+on:
+  workflow_run:
+    workflows: [UI Verify]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  upload:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Download the capture
+        uses: actions/download-artifact@v4
+        with:
+          name: uiverify-archive
+          path: ${{ runner.temp }}/archive
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Resolve the branch and PR
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+        run: |
+          set -euo pipefail
+          # workflow_run.pull_requests is empty for fork PRs, so look the PR up by its head.
+          pr=$(gh api "repos/$REPO/pulls?state=open&head=$HEAD_OWNER:$HEAD_BRANCH" --jq '.[0].number // empty')
+          if [ -z "$pr" ]; then echo "No open PR for $HEAD_OWNER:$HEAD_BRANCH; nothing to upload."; fi
+          {
+            echo "pr=$pr"
+            echo "branch<<__EOF__"
+            # A fork's branch can share a name with one of ours (a PR from a fork's "master"), so prefix it.
+            echo "$HEAD_OWNER:$HEAD_BRANCH"
+            echo "__EOF__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the commit's history (objects only, no checkout)
+        if: steps.meta.outputs.pr != ''
+        env:
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/repo"
+          cd "$RUNNER_TEMP/repo"
+          git remote add origin "https://github.com/$REPO"
+          git fetch -q --filter=blob:none --no-tags origin "$HEAD_SHA"
+          git update-ref HEAD "$HEAD_SHA"
+
+      - name: Upload to UI Verify
+        if: steps.meta.outputs.pr != ''
+        env:
+          UIVERIFY_API_KEY: ${{ secrets.UIVERIFY_API_KEY }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          BRANCH: ${{ steps.meta.outputs.branch }}
+          PR_NUMBER: ${{ steps.meta.outputs.pr }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/clean"
+          cd "$RUNNER_TEMP/clean"
+          npx -y uiverify@1.7.0 upload \
+            --static-dir "$RUNNER_TEMP/archive" \
+            --working-directory "$RUNNER_TEMP/repo" \
+            --exit-zero-on-changes
