@@ -3,11 +3,10 @@ package io.klibs.app.configuration
 import io.klibs.app.auth.AuthenticatedUserPrincipal
 import io.klibs.app.auth.RequiresAuthenticatedUser
 import io.klibs.app.auth.SessionCookieService
-import io.klibs.app.auth.TrustedOriginValidator
-import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.BasicAuthenticationProperties
+import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.core.user.entity.UserEntity
-import io.klibs.core.user.model.AuthenticatedSession
-import io.klibs.core.user.model.AuthenticationProvider
+import io.klibs.core.user.dto.AuthenticatedSession
 import io.klibs.core.user.service.UserSessionService
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.containsString
@@ -20,9 +19,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration
 import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterAutoConfiguration
 import org.springframework.boot.security.autoconfigure.web.servlet.ServletWebSecurityAutoConfiguration
-import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
-import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -43,6 +40,7 @@ private const val USER_ACTION_PATH = "/user/security-test"
 private const val SESSION_COOKIE_NAME = "test_session"
 private const val SESSION_TOKEN = "session-token"
 private const val TRUSTED_ORIGIN = "https://frontend.example"
+private const val ENCODED_HMAC_SECRET = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
 
 @ActiveProfiles("test")
 @WebMvcTest(controllers = [UserActionSecurityProbeController::class])
@@ -51,8 +49,9 @@ private const val TRUSTED_ORIGIN = "https://frontend.example"
         SecurityConfiguration::class,
         UserAuthenticationCorsConfiguration::class,
         UserAuthenticationSecurityConfiguration::class,
+        UserAuthenticationConfiguration::class,
         UserActionSecurityProbeController::class,
-        UserActionSecurityTestConfiguration::class,
+        SessionCookieService::class,
     ]
 )
 @ImportAutoConfiguration(
@@ -60,10 +59,16 @@ private const val TRUSTED_ORIGIN = "https://frontend.example"
     SecurityFilterAutoConfiguration::class,
     ServletWebSecurityAutoConfiguration::class,
 )
-@EnableConfigurationProperties(AuthProperties::class)
+@EnableConfigurationProperties(
+    value = [
+        BasicAuthenticationProperties::class,
+        UserAuthenticationProperties::class,
+    ]
+)
 @TestPropertySource(
     properties = [
-        "klibs.auth.enabled=true",
+        "klibs.auth.hub.enabled=true",
+        "klibs.auth.hmac-secret=$ENCODED_HMAC_SECRET",
         "klibs.auth.trusted-frontend-origin=$TRUSTED_ORIGIN",
         "klibs.auth.session.cookie-name=$SESSION_COOKIE_NAME",
         "klibs.auth.session.cookie-secure=true",
@@ -89,7 +94,7 @@ class UserActionSecurityTest {
 
     @Test
     fun `protected action receives the authenticated local user`() {
-        whenever(userSessionService.authenticateAndRefreshSession(SESSION_TOKEN))
+        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN))
             .thenReturn(authenticatedSession())
 
         mockMvc.get(USER_ACTION_PATH) {
@@ -129,7 +134,7 @@ class UserActionSecurityTest {
 
     @Test
     fun `unsafe action accepts a valid session from the trusted origin`() {
-        whenever(userSessionService.authenticateAndRefreshSession(SESSION_TOKEN))
+        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN))
             .thenReturn(authenticatedSession())
 
         mockMvc.post(USER_ACTION_PATH) {
@@ -143,7 +148,7 @@ class UserActionSecurityTest {
 
     @Test
     fun `unknown session is rejected and its cookie is expired`() {
-        whenever(userSessionService.authenticateAndRefreshSession(SESSION_TOKEN)).thenReturn(null)
+        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN)).thenReturn(null)
 
         mockMvc.get(USER_ACTION_PATH) {
             cookie(sessionCookie())
@@ -170,7 +175,6 @@ class UserActionSecurityTest {
     private fun authenticatedSession() = AuthenticatedSession(
         user = UserEntity(
             id = USER_ID,
-            authenticationProvider = AuthenticationProvider.JETBRAINS_HUB,
             externalUserIdHash = "external-user-id-hash",
         ),
         expirationRefreshed = false,
@@ -198,14 +202,3 @@ internal class UserActionSecurityProbeController {
 internal class UserActionSecurityProbeResponse(
     val userId: UUID,
 )
-
-@TestConfiguration(proxyBeanMethods = false)
-internal class UserActionSecurityTestConfiguration {
-    @Bean
-    fun sessionCookieService(authProperties: AuthProperties): SessionCookieService =
-        SessionCookieService(authProperties.session)
-
-    @Bean
-    fun trustedOriginValidator(authProperties: AuthProperties): TrustedOriginValidator =
-        TrustedOriginValidator(requireNotNull(authProperties.trustedFrontendOrigin))
-}

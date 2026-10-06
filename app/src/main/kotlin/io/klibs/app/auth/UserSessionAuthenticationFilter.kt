@@ -5,9 +5,9 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken
 import org.springframework.security.web.util.matcher.AnyRequestMatcher
 import org.springframework.security.web.util.matcher.RequestMatcher
 import org.springframework.web.filter.OncePerRequestFilter
@@ -30,7 +30,7 @@ class UserSessionAuthenticationFilter(
             return
         }
 
-        val session = userSessionService.authenticateAndRefreshSession(sessionToken)
+        val session = userSessionService.authenticateAndRefreshSessionIfAlive(sessionToken)
         if (session == null) {
             response.addHeader(
                 HttpHeaders.SET_COOKIE,
@@ -40,7 +40,7 @@ class UserSessionAuthenticationFilter(
             return
         }
 
-        val authentication = UsernamePasswordAuthenticationToken(
+        val authentication = PreAuthenticatedAuthenticationToken(
             AuthenticatedUserPrincipal(session.user.id),
             null,
             listOf(SimpleGrantedAuthority(AUTHENTICATED_USER_AUTHORITY)),

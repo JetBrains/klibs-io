@@ -2,6 +2,6 @@ package io.klibs.app.auth
 
 import java.util.UUID
 
-class AuthenticatedUserPrincipal(
+data class AuthenticatedUserPrincipal(
     val userId: UUID,
 )

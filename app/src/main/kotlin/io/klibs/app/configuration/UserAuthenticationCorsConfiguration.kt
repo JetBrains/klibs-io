@@ -1,6 +1,6 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -8,20 +8,14 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
-@ConditionalOnProperty("klibs.auth.enabled", havingValue = "true")
+@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
 class UserAuthenticationCorsConfiguration {
 
     @Bean
     fun authenticationCorsConfigurationSource(
-        authProperties: AuthProperties,
+        userAuthenticationProperties: UserAuthenticationProperties,
     ): UrlBasedCorsConfigurationSource {
-        val trustedOrigin = authProperties.trustedFrontendOrigin
-        if (trustedOrigin.isNullOrBlank()) {
-            throw IllegalArgumentException(
-                "KLIBS_AUTH_TRUSTED_FRONTEND_ORIGIN must be configured when authentication is enabled"
-            )
-        }
-
+        val trustedOrigin = userAuthenticationProperties.trustedFrontendOrigin
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration(
             AUTHENTICATION_ENDPOINTS_PATH,

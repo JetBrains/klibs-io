@@ -2,7 +2,8 @@ package io.klibs.app.configuration
 
 import io.klibs.app.auth.SessionCookieService
 import io.klibs.app.auth.TrustedOriginValidator
-import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.BasicAuthenticationProperties
+import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.core.user.service.UserSessionService
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.hasItem
@@ -54,7 +55,12 @@ private const val ENCODED_HMAC_SECRET = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmN
     SecurityFilterAutoConfiguration::class,
     ServletWebSecurityAutoConfiguration::class,
 )
-@EnableConfigurationProperties(AuthProperties::class)
+@EnableConfigurationProperties(
+    value = [
+        BasicAuthenticationProperties::class,
+        UserAuthenticationProperties::class,
+    ]
+)
 @TestPropertySource(
     properties = [
         "KLIBS_MAIN_USERNAME=admin-user",
@@ -65,7 +71,7 @@ private const val ENCODED_HMAC_SECRET = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmN
         "KLIBS_MED_PASSWORD={noop}actuator-password",
         "KLIBS_CAT_USERNAME=content-manager-user",
         "KLIBS_CAT_PASSWORD={noop}content-manager-password",
-        "klibs.auth.enabled=true",
+        "klibs.auth.hub.enabled=true",
         "klibs.auth.hmac-secret=$ENCODED_HMAC_SECRET",
         "klibs.auth.trusted-frontend-origin=https://frontend.example",
         "klibs.auth.session.cookie-name=$SESSION_COOKIE_NAME",

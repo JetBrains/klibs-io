@@ -1,8 +1,9 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.core.env.Environment
 import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
@@ -20,6 +21,7 @@ class SecurityConfiguration(
 ) {
 
     @Bean
+    @Order(3)
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http {
             csrf {
@@ -112,15 +114,15 @@ class SecurityConfiguration(
     }
 
     @Bean
-    fun users(adminAuthProperties: AuthProperties): UserDetailsService {
-        val users = adminAuthProperties.users.map {
+    fun basicAuthUsers(basicAuthenticationProperties: BasicAuthenticationProperties): UserDetailsService {
+        val basicAuthUsers = basicAuthenticationProperties.users.map {
             User.builder()
                 .username(it.username)
                 .password(it.password)
                 .roles(*it.roles.toTypedArray())
                 .build()
         }
-        return InMemoryUserDetailsManager(users)
+        return InMemoryUserDetailsManager(basicAuthUsers)
     }
 
 }

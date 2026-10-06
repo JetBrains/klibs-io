@@ -27,7 +27,7 @@ internal const val AUTHENTICATION_ENDPOINTS_PATH = "/auth/**"
 internal const val USER_ACTIONS_PATH = "/user/**"
 
 @Configuration
-@ConditionalOnProperty("klibs.auth.enabled", havingValue = "true")
+@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
 class UserAuthenticationSecurityConfiguration {
 
     @Bean

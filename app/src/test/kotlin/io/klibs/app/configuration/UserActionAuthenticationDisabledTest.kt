@@ -1,7 +1,7 @@
 package io.klibs.app.configuration
 
 import io.klibs.app.auth.RequiresAuthenticatedUser
-import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -44,13 +44,13 @@ private const val BASIC_PASSWORD = "basic-password"
     SecurityFilterAutoConfiguration::class,
     ServletWebSecurityAutoConfiguration::class,
 )
-@EnableConfigurationProperties(AuthProperties::class)
+@EnableConfigurationProperties(BasicAuthenticationProperties::class)
 @TestPropertySource(
     properties = [
-        "klibs.auth.enabled=false",
-        "klibs.auth.users[0].username=$BASIC_USERNAME",
-        "klibs.auth.users[0].password={noop}$BASIC_PASSWORD",
-        "klibs.auth.users[0].roles[0]=ADMIN",
+        "klibs.auth.hub.enabled=false",
+        "klibs.auth.basic.users[0].username=$BASIC_USERNAME",
+        "klibs.auth.basic.users[0].password={noop}$BASIC_PASSWORD",
+        "klibs.auth.basic.users[0].roles[0]=ADMIN",
     ]
 )
 class UserActionAuthenticationDisabledTest {
