@@ -1,8 +1,8 @@
-package io.klibs.core.user.model
+package io.klibs.core.user.dto
 
 import java.time.Instant
 
-class CreatedSession(
+data class CreatedSession(
     val token: String,
     val expiresAt: Instant,
 )

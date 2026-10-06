@@ -2,8 +2,7 @@ package io.klibs.core.user.service
 
 import io.klibs.core.user.entity.UserEntity
 import io.klibs.core.user.entity.UserSessionEntity
-import io.klibs.core.user.model.AuthenticationProvider
-import io.klibs.core.user.repository.KlibsUserSessionRepository
+import io.klibs.core.user.repository.UserSessionRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -30,7 +29,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class UserSessionServiceTest {
-    private val sessionRepository = mock<KlibsUserSessionRepository>()
+    private val sessionRepository = mock<UserSessionRepository>()
     private val hashingService = AuthenticationHashingService(SECRET)
     private val clock = Clock.fixed(NOW, ZoneOffset.UTC)
 
@@ -102,7 +101,7 @@ class UserSessionServiceTest {
         val session = session(user)
         whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
 
-        val result = service().authenticateAndRefreshSession(TOKEN)
+        val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertSame(user, result?.user)
         assertFalse(requireNotNull(result).expirationRefreshed)
@@ -125,7 +124,7 @@ class UserSessionServiceTest {
             sessionRepository.updateExpiration(session.id, session.expiresAt, NOW.plus(IDLE_TTL))
         ).thenReturn(1)
 
-        val result = service().authenticateAndRefreshSession(TOKEN)
+        val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertSame(user, result?.user)
         assertTrue(requireNotNull(result).expirationRefreshed)
@@ -143,7 +142,7 @@ class UserSessionServiceTest {
         whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
         whenever(sessionRepository.updateExpiration(any(), any(), any())).thenReturn(0)
 
-        val result = service().authenticateAndRefreshSession(TOKEN)
+        val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertFalse(requireNotNull(result).expirationRefreshed)
     }
@@ -162,7 +161,7 @@ class UserSessionServiceTest {
             sessionRepository.updateExpiration(session.id, session.expiresAt, absoluteExpiresAt)
         ).thenReturn(1)
 
-        val result = service().authenticateAndRefreshSession(TOKEN)
+        val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertTrue(requireNotNull(result).expirationRefreshed)
         assertEquals(Duration.ofDays(1), result.remainingTtl)
@@ -174,7 +173,7 @@ class UserSessionServiceTest {
         val session = session(user(), expiresAt = NOW)
         whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
 
-        val result = service().authenticateAndRefreshSession(TOKEN)
+        val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertNull(result)
         verify(sessionRepository).delete(session)
@@ -189,7 +188,7 @@ class UserSessionServiceTest {
         )
         whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
 
-        val result = service().authenticateAndRefreshSession(TOKEN)
+        val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertNull(result)
         verify(sessionRepository).delete(session)
@@ -209,31 +208,32 @@ class UserSessionServiceTest {
     fun `rejects invalid session lifetime configuration`(configuration: InvalidSessionLifetime) {
         assertFailsWith<IllegalArgumentException> {
             service(
-                sessionIdleTtl = configuration.idleTtl,
-                sessionRefreshInterval = configuration.refreshInterval,
-                sessionAbsoluteTtl = configuration.absoluteTtl,
+                sessionSettings = UserSessionSettings(
+                    idleTtl = configuration.idleTtl,
+                    refreshInterval = configuration.refreshInterval,
+                    absoluteTtl = configuration.absoluteTtl,
+                )
             )
         }
     }
 
     private fun service(
-        sessionIdleTtl: Duration = IDLE_TTL,
-        sessionRefreshInterval: Duration = REFRESH_INTERVAL,
-        sessionAbsoluteTtl: Duration = ABSOLUTE_TTL,
+        sessionSettings: UserSessionSettings = UserSessionSettings(
+            idleTtl = IDLE_TTL,
+            refreshInterval = REFRESH_INTERVAL,
+            absoluteTtl = ABSOLUTE_TTL,
+        ),
         secureRandom: SecureRandom = FixedSecureRandom(ByteArray(32)),
     ) = UserSessionService(
         sessionRepository = sessionRepository,
         hashingService = hashingService,
-        sessionIdleTtl = sessionIdleTtl,
-        sessionRefreshInterval = sessionRefreshInterval,
-        sessionAbsoluteTtl = sessionAbsoluteTtl,
+        sessionSettings = sessionSettings,
         clock = clock,
         secureRandom = secureRandom,
     )
 
     private fun user() = UserEntity(
         id = UUID.fromString("11111111-1111-1111-1111-111111111111"),
-        authenticationProvider = AuthenticationProvider.JETBRAINS_HUB,
         externalUserIdHash = "external-user-id-hash",
     )
 

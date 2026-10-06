@@ -1,6 +1,5 @@
 package io.klibs.core.user.service
 
-import io.klibs.core.user.model.AuthenticationProvider
 import io.klibs.core.user.model.ExternalUserIdentity
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -20,12 +19,9 @@ class AuthenticationHashingServiceTest {
     }
 
     @Test
-    fun `hashes external identities using the provider and a separate domain`() {
+    fun `hashes external identities using a separate domain`() {
         val service = AuthenticationHashingService(SECRET.copyOf())
-        val identity = ExternalUserIdentity(
-            provider = AuthenticationProvider.JETBRAINS_HUB,
-            externalUserId = "hub-user-42",
-        )
+        val identity = ExternalUserIdentity("hub-user-42")
 
         val identityHash = service.hashExternalIdentity(identity)
 

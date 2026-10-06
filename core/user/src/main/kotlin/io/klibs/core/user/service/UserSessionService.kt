@@ -1,9 +1,11 @@
 package io.klibs.core.user.service
 
+import io.klibs.core.user.dto.AuthenticatedSession
+import io.klibs.core.user.dto.CreatedSession
 import io.klibs.core.user.entity.UserEntity
-import io.klibs.core.user.model.AuthenticatedSession
-import io.klibs.core.user.model.CreatedSession
-import io.klibs.core.user.repository.KlibsUserSessionRepository
+import io.klibs.core.user.repository.UserSessionRepository
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.security.SecureRandom
 import java.time.Clock
@@ -11,31 +13,19 @@ import java.time.Duration
 import java.util.Base64
 import java.util.UUID
 
+@Service
+@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
 @Transactional
 class UserSessionService(
-    private val sessionRepository: KlibsUserSessionRepository,
+    private val sessionRepository: UserSessionRepository,
     private val hashingService: AuthenticationHashingService,
-    private val sessionIdleTtl: Duration,
-    private val sessionRefreshInterval: Duration,
-    private val sessionAbsoluteTtl: Duration,
+    private val sessionSettings: UserSessionSettings,
     private val clock: Clock = Clock.systemUTC(),
     private val secureRandom: SecureRandom = SecureRandom(),
 ) {
-    init {
-        require(sessionIdleTtl.isPositive) {
-            "Session idle TTL must be positive"
-        }
-        require(sessionRefreshInterval.isPositive && sessionRefreshInterval < sessionIdleTtl) {
-            "Session refresh interval must be positive and shorter than the idle TTL"
-        }
-        require(sessionAbsoluteTtl >= sessionIdleTtl) {
-            "Session absolute TTL must be greater than or equal to the idle TTL"
-        }
-    }
-
     fun createSession(user: UserEntity): CreatedSession {
         val createdAt = clock.instant()
-        val expiresAt = createdAt.plus(sessionIdleTtl)
+        val expiresAt = createdAt.plus(sessionSettings.idleTtl)
 
         repeat(MAX_TOKEN_GENERATION_ATTEMPTS) {
             val token = generateToken()
@@ -56,11 +46,11 @@ class UserSessionService(
         )
     }
 
-    fun authenticateAndRefreshSession(token: String): AuthenticatedSession? {
+    fun authenticateAndRefreshSessionIfAlive(token: String): AuthenticatedSession? {
         val tokenHash = hashingService.hashSessionToken(token)
         val session = sessionRepository.findByTokenHash(tokenHash) ?: return null
         val now = clock.instant()
-        val absoluteExpiresAt = session.createdAt.plus(sessionAbsoluteTtl)
+        val absoluteExpiresAt = session.createdAt.plus(sessionSettings.absoluteTtl)
 
         // Reject sessions that exceeded either the idle or absolute lifetime.
         if (!session.expiresAt.isAfter(now) || !absoluteExpiresAt.isAfter(now)) {
@@ -70,8 +60,8 @@ class UserSessionService(
 
         // Refresh at most once per interval instead of writing on every request.
         val refreshTime = session.expiresAt
-            .minus(sessionIdleTtl)
-            .plus(sessionRefreshInterval)
+            .minus(sessionSettings.idleTtl)
+            .plus(sessionSettings.refreshInterval)
         if (now.isBefore(refreshTime)) {
             return AuthenticatedSession(
                 user = session.user,
@@ -81,7 +71,7 @@ class UserSessionService(
         }
 
         // Never extend a session beyond its absolute lifetime.
-        val refreshedExpiresAt = minOf(now.plus(sessionIdleTtl), absoluteExpiresAt)
+        val refreshedExpiresAt = minOf(now.plus(sessionSettings.idleTtl), absoluteExpiresAt)
         if (!refreshedExpiresAt.isAfter(session.expiresAt)) {
             return AuthenticatedSession(
                 user = session.user,
