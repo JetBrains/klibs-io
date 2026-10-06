@@ -236,8 +236,8 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
     sends `Set-Cookie` or accesses the session store.
   - Public endpoint with a valid session cookie -> stays anonymous for this feature. Future public endpoints may define
     separate behavior for signed-in users.
-  - Concurrent logins for the same provider and stable external user id -> resolve one local user through the database unique
-    constraint and conflict-safe insert.
+  - Concurrent logins for the same stable Hub user id -> resolve one local user through the database unique constraint and
+    conflict-safe insert.
   - Session creation fails after a new local user was created -> no partial session remains; the local user may remain and a
     later login reuses it.
 
@@ -342,15 +342,16 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
   <br>
 
   - **FR-018:** Re-login with the same stable Hub user id MUST resolve to the same local klibs `userId`.
-  - **FR-019:** The backend MUST store a provider plus an HMAC-derived external user id hash, never the raw Hub user id.
+  - **FR-019:** The backend MUST store an HMAC-derived external user id hash, never the raw Hub user id.
   - **FR-020:** Identity hashes, session-token hashes, and signed OAuth state MUST use the same configured HMAC secret with
     distinct domain prefixes (`hub-account:`, `session-token:`, and `oauth-state:`).
   - **FR-021:** Automatic HMAC-secret rotation and previous-key lookup are out of scope. Replacing the secret is unsupported:
     it invalidates existing sessions and breaks identity continuity until a separate migration/rotation flow is implemented.
-  - **FR-022:** Concurrent successful logins for the same provider and stable external user id MUST resolve one local user.
+  - **FR-022:** Concurrent successful logins for the same stable Hub user id MUST resolve one local user.
   - **FR-023:** Browser JavaScript MUST NOT receive the Hub access token.
-  - **FR-024:** When authentication is disabled, `GET /auth/current-user` and `POST /auth/sign-out` MUST be absent (`404`),
-    existing klibs session cookies MUST NOT authenticate user-only requests, and `/user/**` MUST remain inaccessible.
+  - **FR-024:** When Hub authentication is disabled, `GET /auth/current-user` and `POST /auth/sign-out` MUST be absent
+    (`404`), existing klibs session cookies MUST NOT authenticate user-only requests, and `/user/**` MUST remain
+    inaccessible.
 
   </details>
 
@@ -435,11 +436,11 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
 
   <br>
 
-  - Authentication must be feature-flagged. When it is disabled, `GET /auth/current-user` and `POST /auth/sign-out` are
-    absent and return `404`; other `/auth/**` requests follow the existing fallback security policy. Existing klibs session
-    cookies no longer authenticate users, and `/user/**` is denied. Anonymous user-only requests return `401`; Basic
-    credentials do not grant the regular-user authority. Public endpoints and existing Basic-protected endpoints continue
-    to work unchanged.
+  - Hub authentication must be feature-flagged. When it is disabled, `GET /auth/current-user` and `POST /auth/sign-out`
+    are absent and return `404`; other `/auth/**` requests follow the existing fallback security policy. Existing klibs
+    session cookies no longer authenticate users, and `/user/**` is denied. Anonymous user-only requests return `401`;
+    Basic credentials do not grant the regular-user authority. Public endpoints and existing Basic-protected endpoints
+    continue to work unchanged.
   - Every endpoint that accepts the klibs session cookie for credentialed API calls must allow credentialed browser calls
     only from the configured trusted frontend origin for that deployment.
   - Browser requests with a klibs session cookie must be allowed only from that exact origin, never from every origin (`*`).
@@ -513,11 +514,11 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
   <br>
 
   - Extend existing `klibs.auth` namespace.
-  - Keep existing `klibs.auth.users` for Basic auth.
-  - Keep shared authentication settings under `klibs.auth.*`: `enabled`, `hmac-secret`, and `trusted-frontend-origin`.
+  - Keep existing Basic-auth users under `klibs.auth.basic.users`.
+  - Keep shared authentication settings under `klibs.auth.*`: `hmac-secret` and `trusted-frontend-origin`.
   - Keep local-session settings under `klibs.auth.session.*`: idle TTL, refresh interval, absolute TTL, cookie name, and
-    `Secure` flag. Keep Hub-specific settings under `klibs.auth.hub.*`, including connection, OAuth-state, and login-cookie
-    settings.
+    `Secure` flag. Keep the Hub feature flag at `klibs.auth.hub.enabled` and other Hub-specific settings under
+    `klibs.auth.hub.*`, including connection, OAuth-state, and login-cookie settings.
   - Configure one Base64-encoded HMAC secret containing at least 32 decoded bytes. The same secret is used with domain
     separation for identity hashes, session-token hashes, and OAuth-state signatures.
   - Secret values must come from the deployment environment or secret storage and must not be committed to the repository.
@@ -606,14 +607,14 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
 
   <br>
 
-  - **Choice:** Store `authentication_provider` plus
-    `external_user_id_hash = HMAC(sharedHmacSecret, "hub-account:" + stableHubUserId)`, not the raw Hub user id.
-  - **Concurrency:** The provider/hash pair is unique. Conflict-safe insert followed by lookup makes concurrent logins for
-    the same Hub account resolve one local user.
+  - **Choice:** Store `external_user_id_hash = HMAC(sharedHmacSecret, "hub-account:" + stableHubUserId)`, not the raw Hub
+    user id.
+  - **Concurrency:** The external user id hash is unique. Conflict-safe insert followed by lookup makes concurrent logins
+    for the same Hub account resolve one local user.
   - **Secret lifecycle:** Automatic rotation and previous-key lookup are not implemented. Replacing the secret is unsupported:
     it invalidates existing sessions and breaks identity continuity until a separate migration/rotation flow is implemented.
-  - **Why:** A DB leak alone should not reveal the real Hub user, while provider plus a stable derived id supports future
-    identity providers without changing the local user model.
+  - **Why:** A DB leak alone should not reveal the real Hub user, while a stable derived id lets repeated Hub logins resolve
+    the same local user.
   - **Rejected:** Storing raw external user ids; using a plain SHA hash without a secret; automatic multi-key rotation in the
     first version.
 
@@ -683,10 +684,10 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
   <br>
 
   - **Purpose:** local pseudonymous regular-user identity.
-  - **Key fields:** local id, authentication provider, external user id hash.
+  - **Key fields:** local id and external user id hash.
   - **Relationships:** one user has many sessions; future user-owned data should reference this local id.
-  - **Lifecycle:** created on first successful login for a provider/external-id pair and reused on later logins for the same
-    pair. Secret replacement is unsupported until a separate migration/rotation flow is implemented.
+  - **Lifecycle:** created on first successful login for a Hub external user id and reused on later logins for the same id.
+    Secret replacement is unsupported until a separate migration/rotation flow is implemented.
 
   </details>
 
@@ -751,8 +752,7 @@ erDiagram
     KLIBS_USER ||--o{ KLIBS_USER_SESSION : has
     KLIBS_USER {
         identifier id PK "(new)"
-        string authentication_provider "(new, composite UK)"
-        string external_user_id_hash "(new, composite UK)"
+        string external_user_id_hash "(new, UK)"
     }
     KLIBS_USER_SESSION {
         identifier id PK "(new)"
@@ -765,8 +765,8 @@ erDiagram
 
 Notes:
 
-- (`authentication_provider`, `external_user_id_hash`) is unique. For Hub, the hash is derived from the stable Hub user id
-  with the shared HMAC secret and the `hub-account:` domain prefix.
+- `external_user_id_hash` is unique and derived from the stable Hub user id with the shared HMAC secret and the
+  `hub-account:` domain prefix.
 - `token_hash` is derived from the random browser session token with the same secret and the `session-token:` domain prefix.
 - `created_at` anchors the absolute lifetime; `expires_at` is the refreshable idle expiry.
 - The DB stores no raw Hub user id, no raw Hub access token, and no raw browser session token.
@@ -797,11 +797,11 @@ Notes:
   <br>
 
   - User/session repositories and service behavior.
-  - Unique provider/external-id and session-token constraints.
+  - Unique external-id and session-token constraints.
   - Session expiry lookup.
   - Rollback within user and session transactional operations.
   - A session failure may leave a reusable local user but no partial session.
-  - Concurrent logins for the same provider/external-id pair result in one local user.
+  - Concurrent logins for the same external user id result in one local user.
   - Repeated token-hash collisions are retried and eventually fail without creating an ambiguous session.
 
   </details>
@@ -855,7 +855,7 @@ Notes:
 - Production login callback is hosted on the backend origin, and the final successful redirect must return to the frontend
   origin.
 - `returnTo` only needs to support relative frontend paths.
-- Existing Basic-auth users under `klibs.auth.users` remain the operator/admin auth source.
+- Existing Basic-auth users under `klibs.auth.basic.users` remain the operator/admin auth source.
 - A new `core/user` module is acceptable for local user/session domain code.
 - The exact OAuth state/login-cookie TTL and Hub scopes are deferred to Hub implementation. Local-session TTLs and the
   production session-cookie requirements are confirmed in section 14.
@@ -875,7 +875,7 @@ Notes:
   - `05 - Logout And Storage Rules`
 - Spec-driven workflow template from JetBrains/klibs-io PR #307.
 - Existing project architecture on clean `master`: Spring Boot `app`, feature-oriented `core/*` modules, PostgreSQL with
-  Liquibase migrations, Kotlin Toolchain `project.yaml`/`module.yaml`, existing `klibs.auth.users` Basic auth.
+  Liquibase migrations, Kotlin Toolchain `project.yaml`/`module.yaml`, existing `klibs.auth.basic.users` Basic auth.
 
 </details>
 
