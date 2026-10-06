@@ -10,7 +10,7 @@ class ExternalUserIdentityTest {
     @ValueSource(strings = ["", " ", "\t", "\n"])
     fun `rejects a blank external user id`(externalUserId: String) {
         assertFailsWith<IllegalArgumentException> {
-            ExternalUserIdentity(AuthenticationProvider.JETBRAINS_HUB, externalUserId)
+            ExternalUserIdentity(externalUserId)
         }
     }
 }

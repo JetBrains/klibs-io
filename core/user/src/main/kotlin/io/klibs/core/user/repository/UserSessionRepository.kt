@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param
 import java.time.Instant
 import java.util.UUID
 
-interface KlibsUserSessionRepository : CrudRepository<UserSessionEntity, UUID> {
+interface UserSessionRepository : CrudRepository<UserSessionEntity, UUID> {
     fun findByTokenHash(tokenHash: String): UserSessionEntity?
 
     @Modifying

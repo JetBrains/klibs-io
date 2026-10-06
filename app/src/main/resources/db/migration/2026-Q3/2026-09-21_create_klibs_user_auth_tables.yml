@@ -1,16 +1,13 @@
 databaseChangeLog:
   - changeSet:
-      id: create klibs user auth tables
+      id: create klibs user table
       author: daniel.volostnov@jetbrains.com
-      comment: "KTL-4765: Store users and authentication sessions"
+      comment: "KTL-4765: Store users"
       preConditions:
         - onFail: HALT
         - not:
             tableExists:
               tableName: klibs_user
-        - not:
-            tableExists:
-              tableName: klibs_user_session
       changes:
         - createTable:
             tableName: klibs_user
@@ -22,11 +19,6 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: authentication_provider
-                  type: VARCHAR(32)
-                  constraints:
-                    nullable: false
-              - column:
                   name: external_user_id_hash
                   type: VARCHAR(64)
                   constraints:
@@ -34,9 +26,21 @@ databaseChangeLog:
 
         - addUniqueConstraint:
             tableName: klibs_user
-            columnNames: authentication_provider, external_user_id_hash
+            columnNames: external_user_id_hash
             constraintName: unique_klibs_user_external_identity
 
+  - changeSet:
+      id: create klibs user session table
+      author: daniel.volostnov@jetbrains.com
+      comment: "KTL-4765: Store authentication sessions"
+      preConditions:
+        - onFail: HALT
+        - tableExists:
+            tableName: klibs_user
+        - not:
+            tableExists:
+              tableName: klibs_user_session
+      changes:
         - createTable:
             tableName: klibs_user_session
             columns:
