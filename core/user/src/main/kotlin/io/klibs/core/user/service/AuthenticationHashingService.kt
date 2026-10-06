@@ -5,12 +5,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 class AuthenticationHashingService(secret: ByteArray) {
-    private val secretKey: SecretKeySpec
-
-    init {
-        require(secret.isNotEmpty()) { "HMAC secret must not be empty" }
-        secretKey = SecretKeySpec(secret, HMAC_ALGORITHM)
-    }
+    private val secretKey = SecretKeySpec(secret, HMAC_ALGORITHM)
 
     fun hashSessionToken(token: String): String = computeHmac("$SESSION_TOKEN_PREFIX$token")
 

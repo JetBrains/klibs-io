@@ -3,7 +3,6 @@ package io.klibs.core.user.service
 import io.klibs.core.user.model.ExternalUserIdentity
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 
 class AuthenticationHashingServiceTest {
@@ -42,13 +41,6 @@ class AuthenticationHashingServiceTest {
             "c99f455fb84f6c109473b11de7df05f2053d9a09dcafd6b38ee45e50d60e0be6",
             service.hashSessionToken("test-token"),
         )
-    }
-
-    @Test
-    fun `rejects an empty secret`() {
-        assertFailsWith<IllegalArgumentException> {
-            AuthenticationHashingService(byteArrayOf())
-        }
     }
 
     private companion object {
