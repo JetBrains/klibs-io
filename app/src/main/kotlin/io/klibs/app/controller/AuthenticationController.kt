@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/auth")
-@ConditionalOnProperty("klibs.auth.enabled", havingValue = "true")
+@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
 class AuthenticationController(
     private val sessionCookieService: SessionCookieService,
     private val userSessionService: UserSessionService,

@@ -1,7 +1,6 @@
 package io.klibs.app.controller
 
 import BaseUnitWithDbLayerTest
-import io.klibs.core.user.model.AuthenticationProvider
 import io.klibs.core.user.model.ExternalUserIdentity
 import io.klibs.core.user.service.UserService
 import io.klibs.core.user.service.UserSessionService
@@ -23,7 +22,7 @@ import kotlin.test.assertTrue
 
 @TestPropertySource(
     properties = [
-        "klibs.auth.enabled=true",
+        "klibs.auth.hub.enabled=true",
         "klibs.auth.hmac-secret=$ENCODED_HMAC_SECRET",
         "klibs.auth.trusted-frontend-origin=$TRUSTED_ORIGIN",
         "klibs.auth.session.idle-ttl=30d",
@@ -88,7 +87,7 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
             jsonPath("$.userId") { doesNotExist() }
         }
 
-        assertNotNull(userSessionService.authenticateAndRefreshSession(session.token))
+        assertNotNull(userSessionService.authenticateAndRefreshSessionIfAlive(session.token))
     }
 
     @Test
@@ -126,7 +125,7 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
         assertTrue(setCookie.contains("Secure"))
         assertTrue(setCookie.contains("HttpOnly"))
         assertTrue(setCookie.contains("SameSite=Lax"))
-        assertNull(userSessionService.authenticateAndRefreshSession(session.token))
+        assertNull(userSessionService.authenticateAndRefreshSessionIfAlive(session.token))
     }
 
     @Test
@@ -142,7 +141,7 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
             header { doesNotExist(HttpHeaders.SET_COOKIE) }
         }
 
-        assertNotNull(userSessionService.authenticateAndRefreshSession(session.token))
+        assertNotNull(userSessionService.authenticateAndRefreshSessionIfAlive(session.token))
     }
 
     @Test
@@ -158,7 +157,7 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
             header { doesNotExist(HttpHeaders.SET_COOKIE) }
         }
 
-        assertNotNull(userSessionService.authenticateAndRefreshSession(session.token))
+        assertNotNull(userSessionService.authenticateAndRefreshSessionIfAlive(session.token))
     }
 
     @Test
@@ -174,7 +173,7 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
             header { doesNotExist(HttpHeaders.SET_COOKIE) }
         }
 
-        assertNotNull(userSessionService.authenticateAndRefreshSession(session.token))
+        assertNotNull(userSessionService.authenticateAndRefreshSessionIfAlive(session.token))
     }
 
     @ParameterizedTest
@@ -205,7 +204,7 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
     }
 
     private companion object {
-        val IDENTITY = ExternalUserIdentity(AuthenticationProvider.JETBRAINS_HUB, "hub-user-42")
+        val IDENTITY = ExternalUserIdentity("hub-user-42")
     }
 }
 
