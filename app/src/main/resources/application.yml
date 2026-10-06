@@ -133,7 +133,8 @@ klibs:
     pr-median-days-threshold: 10.0
     active-contributors-target: 5
   auth:
-    enabled: ${KLIBS_AUTH_ENABLED:false}
+    hub:
+      enabled: ${KLIBS_AUTH_HUB_ENABLED:false}
     hmac-secret: ${KLIBS_AUTH_HMAC_SECRET:}
     trusted-frontend-origin: ${KLIBS_AUTH_TRUSTED_FRONTEND_ORIGIN:}
     session:

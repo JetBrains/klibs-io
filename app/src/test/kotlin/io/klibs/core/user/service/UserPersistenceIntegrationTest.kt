@@ -2,10 +2,9 @@ package io.klibs.core.user.service
 
 import BaseUnitWithDbLayerTest
 import io.klibs.core.user.entity.UserSessionEntity
-import io.klibs.core.user.model.AuthenticationProvider
 import io.klibs.core.user.model.ExternalUserIdentity
-import io.klibs.core.user.repository.KlibsUserRepository
-import io.klibs.core.user.repository.KlibsUserSessionRepository
+import io.klibs.core.user.repository.UserRepository
+import io.klibs.core.user.repository.UserSessionRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.TestPropertySource
@@ -27,7 +26,7 @@ import kotlin.test.assertNull
 
 @TestPropertySource(
     properties = [
-        "klibs.auth.enabled=true",
+        "klibs.auth.hub.enabled=true",
         "klibs.auth.hmac-secret=$ENCODED_HMAC_SECRET",
         "klibs.auth.trusted-frontend-origin=https://frontend.example",
         "klibs.auth.session.idle-ttl=30d",
@@ -49,10 +48,10 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
     private lateinit var hashingService: AuthenticationHashingService
 
     @Autowired
-    private lateinit var userRepository: KlibsUserRepository
+    private lateinit var userRepository: UserRepository
 
     @Autowired
-    private lateinit var sessionRepository: KlibsUserSessionRepository
+    private lateinit var sessionRepository: UserSessionRepository
 
     @Autowired
     private lateinit var transactionManager: PlatformTransactionManager
@@ -160,7 +159,7 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
             )
         )
 
-        assertNull(userSessionService.authenticateAndRefreshSession(rawToken))
+        assertNull(userSessionService.authenticateAndRefreshSessionIfAlive(rawToken))
         assertNull(sessionRepository.findByTokenHash(tokenHash))
     }
 
@@ -183,7 +182,7 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
         val result = inTransaction {
             requireNotNull(
                 sessionService(FixedSecureRandom(ByteArray(32)))
-                    .authenticateAndRefreshSession(rawToken)
+                    .authenticateAndRefreshSessionIfAlive(rawToken)
             )
         }
 
@@ -228,9 +227,11 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
     private fun sessionService(secureRandom: SecureRandom) = UserSessionService(
         sessionRepository = sessionRepository,
         hashingService = hashingService,
-        sessionIdleTtl = SESSION_IDLE_TTL,
-        sessionRefreshInterval = Duration.ofDays(1),
-        sessionAbsoluteTtl = Duration.ofDays(180),
+        sessionSettings = UserSessionSettings(
+            idleTtl = SESSION_IDLE_TTL,
+            refreshInterval = Duration.ofDays(1),
+            absoluteTtl = Duration.ofDays(180),
+        ),
         clock = Clock.fixed(NOW, ZoneOffset.UTC),
         secureRandom = secureRandom,
     )
@@ -259,7 +260,7 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
     private companion object {
         val NOW: Instant = Instant.parse("2026-09-23T10:15:30Z")
         val SESSION_IDLE_TTL: Duration = Duration.ofDays(30)
-        val IDENTITY = ExternalUserIdentity(AuthenticationProvider.JETBRAINS_HUB, "concurrent-hub-user")
+        val IDENTITY = ExternalUserIdentity("concurrent-hub-user")
     }
 }
 

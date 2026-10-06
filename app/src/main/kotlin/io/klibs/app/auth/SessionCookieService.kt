@@ -1,15 +1,31 @@
 package io.klibs.app.auth
 
-import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.core.env.Environment
 import org.springframework.http.ResponseCookie
+import org.springframework.stereotype.Component
 import java.time.Duration
 
+@Component
+@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
 class SessionCookieService(
-    private val sessionProperties: AuthProperties.Session,
+    userAuthenticationProperties: UserAuthenticationProperties,
+    environment: Environment,
 ) {
+    private val sessionProperties = userAuthenticationProperties.session
+
     init {
         validateCookieName(sessionProperties.cookieName)
+        if (environment.matchesProfiles("prod")) {
+            require(sessionProperties.cookieSecure) {
+                "KLIBS_AUTH_SESSION_COOKIE_SECURE must be true in production"
+            }
+            require(sessionProperties.cookieName.startsWith(HOST_COOKIE_PREFIX)) {
+                "KLIBS_AUTH_SESSION_COOKIE_NAME must start with $HOST_COOKIE_PREFIX in production"
+            }
+        }
     }
 
     fun getSessionToken(request: HttpServletRequest): String? =
@@ -47,6 +63,7 @@ class SessionCookieService(
     }
 
     private companion object {
+        const val HOST_COOKIE_PREFIX = "__Host-"
         const val SAME_SITE = "Lax"
         const val COOKIE_PATH = "/"
     }

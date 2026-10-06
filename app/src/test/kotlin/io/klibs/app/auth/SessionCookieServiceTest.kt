@@ -1,24 +1,26 @@
 package io.klibs.app.auth
 
-import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.mock.env.MockEnvironment
 import org.springframework.mock.web.MockHttpServletRequest
 import java.time.Duration
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SessionCookieServiceTest {
-    private val sessionProperties = AuthProperties.Session(
+    private val sessionProperties = UserAuthenticationProperties.Session(
         idleTtl = Duration.ofHours(12),
         cookieName = SESSION_COOKIE_NAME,
         cookieSecure = true,
     )
-    private val service = SessionCookieService(sessionProperties)
+    private val service = createService(sessionProperties)
 
     @Test
     fun `reads the first matching session cookie value`() {
@@ -96,7 +98,97 @@ class SessionCookieServiceTest {
         }
     }
 
+    @Test
+    fun `allows an insecure cookie outside production`() {
+        val service = createService(
+            UserAuthenticationProperties.Session(
+                cookieName = LOCAL_SESSION_COOKIE_NAME,
+                cookieSecure = false,
+            ),
+            "local",
+        )
+
+        assertFalse(service.createSessionCookie("token").isSecure)
+    }
+
+    @Test
+    fun `rejects an insecure cookie in production`() {
+        assertFailsWith<IllegalArgumentException> {
+            createService(
+                UserAuthenticationProperties.Session(
+                    cookieName = PRODUCTION_SESSION_COOKIE_NAME,
+                    cookieSecure = false,
+                ),
+                "prod",
+            )
+        }
+    }
+
+    @Test
+    fun `rejects a session cookie without the host prefix in production`() {
+        assertFailsWith<IllegalArgumentException> {
+            createService(
+                UserAuthenticationProperties.Session(
+                    cookieName = LOCAL_SESSION_COOKIE_NAME,
+                    cookieSecure = true,
+                ),
+                "prod",
+            )
+        }
+    }
+
+    @Test
+    fun `rejects an invalid session cookie name`() {
+        assertFailsWith<IllegalArgumentException> {
+            createService(
+                UserAuthenticationProperties.Session(
+                    cookieName = "__Host-invalid cookie name",
+                    cookieSecure = true,
+                ),
+                "prod",
+            )
+        }
+    }
+
+    @Test
+    fun `creates a host-prefixed session cookie in production`() {
+        val service = createService(
+            UserAuthenticationProperties.Session(
+                cookieName = PRODUCTION_SESSION_COOKIE_NAME,
+                cookieSecure = true,
+            ),
+            "prod",
+        )
+
+        val cookie = service.createSessionCookie("token")
+
+        assertEquals(PRODUCTION_SESSION_COOKIE_NAME, cookie.name)
+        assertEquals("/", cookie.path)
+        assertNull(cookie.domain)
+        assertTrue(cookie.isSecure)
+    }
+
+    private fun createService(
+        sessionProperties: UserAuthenticationProperties.Session,
+        vararg profiles: String,
+    ): SessionCookieService {
+        val environment = MockEnvironment()
+        environment.setActiveProfiles(*profiles)
+        return SessionCookieService(
+            UserAuthenticationProperties(
+                hmacSecret = ENCODED_HMAC_SECRET,
+                trustedFrontendOrigin = TRUSTED_ORIGIN,
+                session = sessionProperties,
+            ),
+            environment,
+        )
+    }
+
     private companion object {
+        const val ENCODED_HMAC_SECRET = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+        const val TRUSTED_ORIGIN = "https://frontend.example"
         const val SESSION_COOKIE_NAME = "test_session"
+        const val LOCAL_SESSION_COOKIE_NAME = "klibs_session"
+        const val PRODUCTION_SESSION_COOKIE_NAME = "__Host-klibs_session"
     }
 }
