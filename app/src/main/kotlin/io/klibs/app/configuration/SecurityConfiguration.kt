@@ -1,10 +1,12 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.core.env.Environment
 import org.springframework.http.HttpMethod
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.core.userdetails.User
@@ -13,11 +15,13 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
+@EnableMethodSecurity
 class SecurityConfiguration(
     private val environment: Environment
 ) {
 
     @Bean
+    @Order(3)
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http {
             csrf {
@@ -31,6 +35,10 @@ class SecurityConfiguration(
             httpBasic { }
 
             authorizeHttpRequests {
+                authorize(HttpMethod.GET, "/auth/current-user", permitAll)
+                authorize(HttpMethod.POST, "/auth/sign-out", permitAll)
+                authorize(USER_ACTIONS_PATH, denyAll)
+
                 authorize(HttpMethod.GET, "/categories.json", permitAll)
                 authorize(HttpMethod.GET, "/sitemap.xml", permitAll)
 
@@ -106,14 +114,15 @@ class SecurityConfiguration(
     }
 
     @Bean
-    fun users(adminAuthProperties: AuthProperties): UserDetailsService {
-        val users = adminAuthProperties.users.map {
+    fun basicAuthUsers(basicAuthenticationProperties: BasicAuthenticationProperties): UserDetailsService {
+        val basicAuthUsers = basicAuthenticationProperties.users.map {
             User.builder()
                 .username(it.username)
                 .password(it.password)
                 .roles(*it.roles.toTypedArray())
                 .build()
         }
-        return InMemoryUserDetailsManager(users)
+        return InMemoryUserDetailsManager(basicAuthUsers)
     }
+
 }
