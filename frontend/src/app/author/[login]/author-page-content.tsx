@@ -35,7 +35,7 @@ export default function Author({initialAuthor, initialProjects}: AuthorPageConte
                         </div>
 
                         <div className="col-md-12 col-9 pt-md-3 pt-0">
-                            <h1 className="h3 mb-0" data-testid="author-name" style={{color: 'red'}}>
+                            <h1 className="h3 mb-0" data-testid="author-name" style={{color: 'green'}}>
                                 {author.name}
                             </h1>
                             <h5 className="fw-lighter" data-testid="author-login">{author.login}</h5>
