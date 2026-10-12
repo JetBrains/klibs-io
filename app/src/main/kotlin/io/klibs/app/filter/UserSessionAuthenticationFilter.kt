@@ -1,9 +1,13 @@
-package io.klibs.app.auth
+package io.klibs.app.filter
 
+import io.klibs.app.auth.AUTHENTICATED_USER_AUTHORITY
+import io.klibs.app.auth.AuthenticatedUserPrincipal
+import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
@@ -32,6 +36,11 @@ class UserSessionAuthenticationFilter(
 
         val session = userSessionService.authenticateAndRefreshSessionIfAlive(sessionToken)
         if (session == null) {
+            log.debug(
+                "Discarding invalid or expired session cookie: method={}, path={}",
+                request.method,
+                request.requestURI,
+            )
             response.addHeader(
                 HttpHeaders.SET_COOKIE,
                 sessionCookieService.createSessionCookieForDeletion().toString(),
@@ -41,7 +50,7 @@ class UserSessionAuthenticationFilter(
         }
 
         val authentication = PreAuthenticatedAuthenticationToken(
-            AuthenticatedUserPrincipal(session.user.id),
+            AuthenticatedUserPrincipal(session.userId),
             null,
             listOf(SimpleGrantedAuthority(AUTHENTICATED_USER_AUTHORITY)),
         )
@@ -49,13 +58,17 @@ class UserSessionAuthenticationFilter(
         securityContext.authentication = authentication
         SecurityContextHolder.setContext(securityContext)
 
-        if (session.expirationRefreshed) {
+        session.refreshedCookieTtl?.let { cookieTtl ->
             response.addHeader(
                 HttpHeaders.SET_COOKIE,
-                sessionCookieService.createSessionCookie(sessionToken, session.remainingTtl).toString(),
+                sessionCookieService.createSessionCookie(sessionToken, cookieTtl).toString(),
             )
         }
 
         filterChain.doFilter(request, response)
+    }
+
+    private companion object {
+        private val log = LoggerFactory.getLogger(UserSessionAuthenticationFilter::class.java)
     }
 }

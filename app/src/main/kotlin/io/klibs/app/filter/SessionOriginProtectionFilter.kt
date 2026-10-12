@@ -1,8 +1,12 @@
-package io.klibs.app.auth
+package io.klibs.app.filter
 
+import io.klibs.app.auth.TrustedOriginValidator
+import io.klibs.app.service.SessionCookieService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
+import org.springframework.http.HttpHeaders
 import org.springframework.security.web.util.matcher.AnyRequestMatcher
 import org.springframework.security.web.util.matcher.RequestMatcher
 import org.springframework.web.filter.OncePerRequestFilter
@@ -25,6 +29,12 @@ class SessionOriginProtectionFilter(
             request.method !in SAFE_HTTP_METHODS &&
             !trustedOriginValidator.isTrustedOrigin(request)
         ) {
+            log.warn(
+                "Rejected request carrying a session cookie due to untrusted origin: method={}, path={}, origin={}",
+                request.method,
+                request.requestURI,
+                request.getHeader(HttpHeaders.ORIGIN),
+            )
             response.status = HttpServletResponse.SC_FORBIDDEN
             return
         }
@@ -33,6 +43,8 @@ class SessionOriginProtectionFilter(
     }
 
     private companion object {
+        private val log = LoggerFactory.getLogger(SessionOriginProtectionFilter::class.java)
+
         val SAFE_HTTP_METHODS = setOf("GET", "HEAD", "OPTIONS", "TRACE")
     }
 }

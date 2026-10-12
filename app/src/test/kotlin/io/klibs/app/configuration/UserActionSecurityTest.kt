@@ -1,12 +1,10 @@
 package io.klibs.app.configuration
 
 import io.klibs.app.auth.AuthenticatedUserPrincipal
-import io.klibs.app.auth.RequiresAuthenticatedUser
-import io.klibs.app.auth.SessionCookieService
 import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
-import io.klibs.core.user.entity.UserEntity
-import io.klibs.core.user.dto.AuthenticatedSession
+import io.klibs.app.service.SessionCookieService
+import io.klibs.core.user.dto.AuthenticatedSessionDTO
 import io.klibs.core.user.service.UserSessionService
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.containsString
@@ -33,7 +31,6 @@ import org.springframework.test.web.servlet.post
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
-import java.time.Duration
 import java.util.UUID
 
 private const val USER_ACTION_PATH = "/user/security-test"
@@ -172,13 +169,9 @@ class UserActionSecurityTest {
 
     private fun sessionCookie(): Cookie = Cookie(SESSION_COOKIE_NAME, SESSION_TOKEN)
 
-    private fun authenticatedSession() = AuthenticatedSession(
-        user = UserEntity(
-            id = USER_ID,
-            externalUserIdHash = "external-user-id-hash",
-        ),
-        expirationRefreshed = false,
-        remainingTtl = Duration.ofDays(1),
+    private fun authenticatedSession() = AuthenticatedSessionDTO(
+        userId = USER_ID,
+        refreshedCookieTtl = null,
     )
 
     private companion object {
@@ -189,13 +182,11 @@ class UserActionSecurityTest {
 @RestController
 internal class UserActionSecurityProbeController {
     @GetMapping(USER_ACTION_PATH)
-    @RequiresAuthenticatedUser
     fun read(
         @AuthenticationPrincipal principal: AuthenticatedUserPrincipal,
     ): UserActionSecurityProbeResponse = UserActionSecurityProbeResponse(principal.userId)
 
     @PostMapping(USER_ACTION_PATH)
-    @RequiresAuthenticatedUser
     fun write(): ResponseEntity<Void> = ResponseEntity.noContent().build()
 }
 

@@ -1,10 +1,10 @@
 package io.klibs.app.configuration
 
 import io.klibs.app.auth.AUTHENTICATED_USER_AUTHORITY
-import io.klibs.app.auth.SessionCookieService
-import io.klibs.app.auth.SessionOriginProtectionFilter
 import io.klibs.app.auth.TrustedOriginValidator
-import io.klibs.app.auth.UserSessionAuthenticationFilter
+import io.klibs.app.filter.SessionOriginProtectionFilter
+import io.klibs.app.filter.UserSessionAuthenticationFilter
+import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
@@ -25,6 +25,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 internal const val AUTHENTICATION_ENDPOINTS_PATH = "/auth/**"
 internal const val USER_ACTIONS_PATH = "/user/**"
+internal const val CURRENT_USER_PATH = "/auth/current-user"
+internal const val SIGN_OUT_PATH = "/auth/sign-out"
 
 @Configuration
 @ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
@@ -124,10 +126,5 @@ class UserAuthenticationSecurityConfiguration {
             AnonymousAuthenticationFilter::class.java,
         )
         return http.build()
-    }
-
-    private companion object {
-        const val CURRENT_USER_PATH = "/auth/current-user"
-        const val SIGN_OUT_PATH = "/auth/sign-out"
     }
 }

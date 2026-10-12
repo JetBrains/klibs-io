@@ -1,7 +1,7 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.auth.SessionCookieService
 import io.klibs.app.auth.TrustedOriginValidator
+import io.klibs.app.service.SessionCookieService
 import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.core.user.service.UserSessionService

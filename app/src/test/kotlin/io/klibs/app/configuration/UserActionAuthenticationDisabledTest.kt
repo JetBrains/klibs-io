@@ -1,6 +1,5 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.auth.RequiresAuthenticatedUser
 import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.Test
@@ -24,7 +23,6 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 private const val DISABLED_USER_ACTION_PATH = "/user/disabled-security-test"
-private const val METHOD_SECURITY_PROBE_PATH = "/test/security/requires-klibs-user"
 private const val SESSION_COOKIE_NAME = "klibs_session"
 private const val BASIC_USERNAME = "basic-user"
 private const val BASIC_PASSWORD = "basic-password"
@@ -84,15 +82,6 @@ class UserActionAuthenticationDisabledTest {
         }
     }
 
-    @Test
-    fun `authenticated-user annotation remains active when authentication is disabled`() {
-        mockMvc.get(METHOD_SECURITY_PROBE_PATH) {
-            header(HttpHeaders.AUTHORIZATION, basicAuthorization())
-        }.andExpect {
-            status { isForbidden() }
-        }
-    }
-
     private fun basicAuthorization(): String {
         val credentials = "$BASIC_USERNAME:$BASIC_PASSWORD"
         val encodedCredentials = Base64.getEncoder().encodeToString(credentials.toByteArray(StandardCharsets.UTF_8))
@@ -104,8 +93,4 @@ class UserActionAuthenticationDisabledTest {
 internal class UserActionAuthenticationDisabledProbeController {
     @GetMapping(DISABLED_USER_ACTION_PATH)
     fun userAction(): ResponseEntity<Void> = ResponseEntity.noContent().build()
-
-    @GetMapping(METHOD_SECURITY_PROBE_PATH)
-    @RequiresAuthenticatedUser
-    fun methodSecurityProbe(): ResponseEntity<Void> = ResponseEntity.noContent().build()
 }
