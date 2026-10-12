@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.klibs.app.service.TagsGenerationService
 import io.klibs.core.project.dto.AllowedTag
 import io.klibs.core.project.service.TagService
+import io.klibs.integration.ai.AiModelsProperties
 import io.klibs.integration.ai.AiService
 import org.springframework.ai.chat.messages.Message
 import org.springframework.ai.chat.messages.SystemMessage
@@ -22,7 +23,8 @@ internal class ProjectTagsGenerationService(
     private val tagsPrompt: Resource,
     private val tagService: TagService,
     private val aiService: AiService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    aiModels: AiModelsProperties,
 ) : TagsGenerationService {
     override fun generateTagsForProject(
         projectName: String,
@@ -76,7 +78,7 @@ internal class ProjectTagsGenerationService(
         "additionalProperties" to false
     )
 
-    private val modelName = AiService.DEFAULT_GPT
+    private val modelName = aiModels.default
 
     private val options by lazy {
         val responseFormat = OpenAiChatModel.ResponseFormat.builder()
