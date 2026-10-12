@@ -8,10 +8,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.security.SecureRandom
@@ -19,14 +17,10 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
-import java.util.Base64
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 class UserSessionServiceTest {
     private val sessionRepository = mock<UserSessionRepository>()
@@ -39,60 +33,18 @@ class UserSessionServiceTest {
         val service = service(
             secureRandom = FixedSecureRandom(ByteArray(32) { it.toByte() }),
         )
-        whenever(
-            sessionRepository.saveIfAbsent(
-                any(), eq(user), any(), eq(NOW), eq(NOW.plus(IDLE_TTL))
-            )
-        ).thenReturn(1)
-
         val createdSession = service.createSession(user)
 
-        val storedTokenHash = argumentCaptor<String>().run {
-            verify(sessionRepository).saveIfAbsent(
-                any(),
-                eq(user),
-                capture(),
-                eq(NOW),
-                eq(createdSession.expiresAt),
-            )
+        val storedSession = argumentCaptor<UserSessionEntity>().run {
+            verify(sessionRepository).save(capture())
             firstValue
         }
         assertEquals("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8", createdSession.token)
         assertEquals(NOW.plus(IDLE_TTL), createdSession.expiresAt)
-        assertEquals(hashingService.hashSessionToken(createdSession.token), storedTokenHash)
-    }
-
-    @Test
-    fun `regenerates the token when its hash already exists`() {
-        val user = user()
-        val firstBytes = ByteArray(32)
-        val secondBytes = ByteArray(32) { (it + 1).toByte() }
-        whenever(
-            sessionRepository.saveIfAbsent(any(), eq(user), any(), eq(NOW), eq(NOW.plus(IDLE_TTL)))
-        ).thenReturn(0, 1)
-
-        val createdSession = service(
-            secureRandom = SequenceSecureRandom(firstBytes, secondBytes),
-        ).createSession(user)
-
-        val expectedToken = Base64.getUrlEncoder().withoutPadding().encodeToString(secondBytes)
-        assertEquals(expectedToken, createdSession.token)
-        verify(sessionRepository, times(2)).saveIfAbsent(any(), eq(user), any(), any(), any())
-    }
-
-    @Test
-    fun `fails after bounded retries when the random source keeps colliding`() {
-        val user = user()
-        whenever(
-            sessionRepository.saveIfAbsent(any(), eq(user), any(), eq(NOW), eq(NOW.plus(IDLE_TTL)))
-        ).thenReturn(0)
-
-        val exception = assertFailsWith<IllegalStateException> {
-            service(secureRandom = FixedSecureRandom(ByteArray(32))).createSession(user)
-        }
-
-        assertEquals("Failed to generate a unique session token after 5 attempts", exception.message)
-        verify(sessionRepository, times(5)).saveIfAbsent(any(), eq(user), any(), any(), any())
+        assertEquals(user, storedSession.user)
+        assertEquals(NOW, storedSession.createdAt)
+        assertEquals(createdSession.expiresAt, storedSession.expiresAt)
+        assertEquals(hashingService.hashSessionToken(createdSession.token), storedSession.tokenHash)
     }
 
     @Test
@@ -103,9 +55,8 @@ class UserSessionServiceTest {
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
-        assertSame(user, result?.user)
-        assertFalse(requireNotNull(result).expirationRefreshed)
-        assertEquals(IDLE_TTL, result.remainingTtl)
+        assertEquals(user.id, result?.userId)
+        assertNull(requireNotNull(result).refreshedCookieTtl)
         verify(sessionRepository, never()).updateExpiration(any(), any(), any())
         verify(sessionRepository, never()).delete(any<UserSessionEntity>())
     }
@@ -126,13 +77,12 @@ class UserSessionServiceTest {
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
-        assertSame(user, result?.user)
-        assertTrue(requireNotNull(result).expirationRefreshed)
-        assertEquals(IDLE_TTL, result.remainingTtl)
+        assertEquals(user.id, result?.userId)
+        assertEquals(IDLE_TTL, requireNotNull(result).refreshedCookieTtl)
     }
 
     @Test
-    fun `does not report a refresh when another request updated the session first`() {
+    fun `does not request a cookie refresh when another request updated the session first`() {
         val createdAt = NOW.minus(Duration.ofDays(2))
         val session = session(
             user = user(),
@@ -144,7 +94,7 @@ class UserSessionServiceTest {
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
-        assertFalse(requireNotNull(result).expirationRefreshed)
+        assertNull(requireNotNull(result).refreshedCookieTtl)
     }
 
     @Test
@@ -163,8 +113,7 @@ class UserSessionServiceTest {
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
-        assertTrue(requireNotNull(result).expirationRefreshed)
-        assertEquals(Duration.ofDays(1), result.remainingTtl)
+        assertEquals(Duration.ofDays(1), requireNotNull(result).refreshedCookieTtl)
         verify(sessionRepository).updateExpiration(session.id, session.expiresAt, absoluteExpiresAt)
     }
 
@@ -251,17 +200,6 @@ class UserSessionServiceTest {
 
     private class FixedSecureRandom(private val source: ByteArray) : SecureRandom() {
         override fun nextBytes(bytes: ByteArray) {
-            require(bytes.size == source.size)
-            source.copyInto(bytes)
-        }
-    }
-
-    private class SequenceSecureRandom(vararg sources: ByteArray) : SecureRandom() {
-        private val sources = sources.toList()
-        private var index = 0
-
-        override fun nextBytes(bytes: ByteArray) {
-            val source = sources[index++]
             require(bytes.size == source.size)
             source.copyInto(bytes)
         }

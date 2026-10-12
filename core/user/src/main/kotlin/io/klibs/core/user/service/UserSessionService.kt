@@ -1,8 +1,9 @@
 package io.klibs.core.user.service
 
-import io.klibs.core.user.dto.AuthenticatedSession
-import io.klibs.core.user.dto.CreatedSession
+import io.klibs.core.user.dto.AuthenticatedSessionDTO
+import io.klibs.core.user.dto.CreatedSessionDTO
 import io.klibs.core.user.entity.UserEntity
+import io.klibs.core.user.entity.UserSessionEntity
 import io.klibs.core.user.repository.UserSessionRepository
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
@@ -11,7 +12,6 @@ import java.security.SecureRandom
 import java.time.Clock
 import java.time.Duration
 import java.util.Base64
-import java.util.UUID
 
 @Service
 @ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
@@ -23,30 +23,24 @@ class UserSessionService(
     private val clock: Clock = Clock.systemUTC(),
     private val secureRandom: SecureRandom = SecureRandom(),
 ) {
-    fun createSession(user: UserEntity): CreatedSession {
+    fun createSession(user: UserEntity): CreatedSessionDTO {
         val createdAt = clock.instant()
         val expiresAt = createdAt.plus(sessionSettings.idleTtl)
+        val token = generateToken()
 
-        repeat(MAX_TOKEN_GENERATION_ATTEMPTS) {
-            val token = generateToken()
-            val insertedRows = sessionRepository.saveIfAbsent(
-                id = UUID.randomUUID(),
+        sessionRepository.save(
+            UserSessionEntity(
                 user = user,
                 tokenHash = hashingService.hashSessionToken(token),
                 createdAt = createdAt,
                 expiresAt = expiresAt,
             )
-            if (insertedRows > 0) {
-                return CreatedSession(token = token, expiresAt = expiresAt)
-            }
-        }
-
-        throw IllegalStateException(
-            "Failed to generate a unique session token after $MAX_TOKEN_GENERATION_ATTEMPTS attempts"
         )
+
+        return CreatedSessionDTO(token = token, expiresAt = expiresAt)
     }
 
-    fun authenticateAndRefreshSessionIfAlive(token: String): AuthenticatedSession? {
+    fun authenticateAndRefreshSessionIfAlive(token: String): AuthenticatedSessionDTO? {
         val tokenHash = hashingService.hashSessionToken(token)
         val session = sessionRepository.findByTokenHash(tokenHash) ?: return null
         val now = clock.instant()
@@ -63,20 +57,18 @@ class UserSessionService(
             .minus(sessionSettings.idleTtl)
             .plus(sessionSettings.refreshInterval)
         if (now.isBefore(refreshTime)) {
-            return AuthenticatedSession(
-                user = session.user,
-                expirationRefreshed = false,
-                remainingTtl = Duration.between(now, session.expiresAt),
+            return AuthenticatedSessionDTO(
+                userId = session.user.id,
+                refreshedCookieTtl = null,
             )
         }
 
         // Never extend a session beyond its absolute lifetime.
         val refreshedExpiresAt = minOf(now.plus(sessionSettings.idleTtl), absoluteExpiresAt)
         if (!refreshedExpiresAt.isAfter(session.expiresAt)) {
-            return AuthenticatedSession(
-                user = session.user,
-                expirationRefreshed = false,
-                remainingTtl = Duration.between(now, session.expiresAt),
+            return AuthenticatedSessionDTO(
+                userId = session.user.id,
+                refreshedCookieTtl = null,
             )
         }
 
@@ -86,11 +78,9 @@ class UserSessionService(
             newExpiresAt = refreshedExpiresAt,
         ) > 0
 
-        val effectiveExpiresAt = if (expirationRefreshed) refreshedExpiresAt else session.expiresAt
-        return AuthenticatedSession(
-            user = session.user,
-            expirationRefreshed = expirationRefreshed,
-            remainingTtl = Duration.between(now, effectiveExpiresAt),
+        return AuthenticatedSessionDTO(
+            userId = session.user.id,
+            refreshedCookieTtl = if (expirationRefreshed) Duration.between(now, refreshedExpiresAt) else null,
         )
     }
 
@@ -108,6 +98,5 @@ class UserSessionService(
 
     private companion object {
         const val TOKEN_SIZE_BYTES = 32
-        const val MAX_TOKEN_GENERATION_ATTEMPTS = 5
     }
 }
