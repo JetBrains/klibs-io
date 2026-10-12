@@ -7,6 +7,7 @@ import org.springframework.ai.openai.OpenAiChatOptions
 import org.springframework.ai.openai.setup.OpenAiSetup
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -15,6 +16,7 @@ import java.time.Duration
 
 @Configuration
 @ComponentScan(basePackages = ["io.klibs.integration.ai"])
+@EnableConfigurationProperties(AiModelsProperties::class)
 class AiIntegrationConfiguration {
 
     @Bean

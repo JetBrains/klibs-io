@@ -4,6 +4,7 @@ import BaseUnitWithDbLayerTest
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.klibs.app.service.impl.ProjectTagsGenerationService
 import io.klibs.core.project.service.TagService
+import io.klibs.integration.ai.AiModelsProperties
 import io.klibs.integration.ai.AiService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -20,13 +21,16 @@ class ProjectTagsGeneratorTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var tagService: TagService
 
+    private val aiModels = AiModelsProperties()
+
     private fun newGenerator(mockAi: AiService): TagsGenerationService {
         val tagsPrompt = ClassPathResource("ai/prompts/project-tags.md")
         return ProjectTagsGenerationService(
             tagsPrompt = tagsPrompt,
             tagService = tagService,
             aiService = mockAi,
-            objectMapper = jacksonObjectMapper()
+            objectMapper = jacksonObjectMapper(),
+            aiModels = aiModels
         )
     }
 
@@ -54,7 +58,7 @@ class ProjectTagsGeneratorTest : BaseUnitWithDbLayerTest() {
             ai.executeOpenAiRequest(
                 any(),
                 eq("generateProjectTags"),
-                eq(AiService.DEFAULT_GPT)
+                eq(aiModels.default)
             )
         ).thenReturn("{" + "\"indices\":[0,2,5]}")
 

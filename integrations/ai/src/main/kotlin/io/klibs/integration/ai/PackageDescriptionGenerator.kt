@@ -11,7 +11,8 @@ import org.springframework.stereotype.Service
 class PackageDescriptionGenerator(
     @Value("classpath:/ai/prompts/package-description.md")
     private val packageDescriptionPrompt: Resource,
-    private val aiService: AiService
+    private val aiService: AiService,
+    private val aiModels: AiModelsProperties,
 ) {
     fun generatePackageDescription(
         groupId: String,
@@ -42,10 +43,10 @@ class PackageDescriptionGenerator(
 
         return cleanResponse(
             aiService.executeWebSearchRequest(
-                model = AiService.WEBSEARCH_GPT,
+                model = aiModels.webSearch,
                 instructions = instructions,
                 userContent = userContent,
-                reasoningEffort = AiService.WEBSEARCH_EFFORT,
+                reasoningEffort = aiModels.webSearchEffort,
                 methodName = "generatePackageDescription"
             )
         )
