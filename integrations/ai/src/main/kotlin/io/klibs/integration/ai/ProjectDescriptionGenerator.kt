@@ -14,7 +14,8 @@ import org.springframework.stereotype.Service
 class ProjectDescriptionGenerator(
     @Value("classpath:/ai/prompts/project-description.md")
     private val projectDescriptionPrompt: Resource,
-    private val aiService: AiService
+    private val aiService: AiService,
+    private val aiModels: AiModelsProperties,
 ) {
     fun generateProjectDescription(
         projectName: String,
@@ -32,12 +33,12 @@ class ProjectDescriptionGenerator(
             )
 
         val options = OpenAiChatOptions.builder()
-            .model(AiService.DEFAULT_GPT)
+            .model(aiModels.default)
             .build()
 
         val userMessage = UserMessage(readmeMdContent)
         val prompt = Prompt(listOf(systemMessage, userMessage), options)
 
-        return aiService.executeOpenAiRequest(prompt, "generateProjectDescription", AiService.DEFAULT_GPT)
+        return aiService.executeOpenAiRequest(prompt, "generateProjectDescription", aiModels.default)
     }
 }

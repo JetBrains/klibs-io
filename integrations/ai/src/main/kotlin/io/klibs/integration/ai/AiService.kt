@@ -18,10 +18,4 @@ interface AiService {
         reasoningEffort: String,
         methodName: String,
     ): String
-
-    companion object {
-        const val DEFAULT_GPT = "gpt-5-mini"
-        const val WEBSEARCH_GPT = "gpt-5-mini"
-        const val WEBSEARCH_EFFORT = "low"
-    }
 }
