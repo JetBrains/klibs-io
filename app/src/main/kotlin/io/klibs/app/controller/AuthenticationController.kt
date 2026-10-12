@@ -2,7 +2,7 @@ package io.klibs.app.controller
 
 import io.klibs.app.api.CurrentUserResponse
 import io.klibs.app.auth.AuthenticatedUserPrincipal
-import io.klibs.app.auth.SessionCookieService
+import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
