@@ -1,4 +1,4 @@
-package io.klibs.app.auth
+package io.klibs.app.service
 
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import jakarta.servlet.http.Cookie
@@ -17,6 +17,8 @@ import kotlin.test.assertTrue
 class SessionCookieServiceTest {
     private val sessionProperties = UserAuthenticationProperties.Session(
         idleTtl = Duration.ofHours(12),
+        refreshInterval = Duration.ofHours(1),
+        absoluteTtl = Duration.ofDays(30),
         cookieName = SESSION_COOKIE_NAME,
         cookieSecure = true,
     )
@@ -47,7 +49,7 @@ class SessionCookieServiceTest {
 
     @Test
     fun `creates a secure http-only session cookie`() {
-        val cookie = service.createSessionCookie("session-token")
+        val cookie = service.createSessionCookie("session-token", sessionProperties.idleTtl)
 
         assertEquals(SESSION_COOKIE_NAME, cookie.name)
         assertEquals("session-token", cookie.value)
@@ -61,11 +63,11 @@ class SessionCookieServiceTest {
 
     @Test
     fun `creates a session cookie with the supplied remaining lifetime`() {
-        val remainingTtl = Duration.ofMinutes(30)
+        val cookieTtl = Duration.ofMinutes(30)
 
-        val cookie = service.createSessionCookie("session-token", remainingTtl)
+        val cookie = service.createSessionCookie("session-token", cookieTtl)
 
-        assertEquals(remainingTtl, cookie.maxAge)
+        assertEquals(cookieTtl, cookie.maxAge)
     }
 
     @Test
@@ -86,7 +88,7 @@ class SessionCookieServiceTest {
     @ValueSource(strings = ["", " ", "\t", "\n"])
     fun `rejects a blank token when creating a live cookie`(token: String) {
         assertFailsWith<IllegalArgumentException> {
-            service.createSessionCookie(token)
+            service.createSessionCookie(token, sessionProperties.idleTtl)
         }
     }
 
@@ -100,22 +102,20 @@ class SessionCookieServiceTest {
 
     @Test
     fun `allows an insecure cookie outside production`() {
-        val service = createService(
-            UserAuthenticationProperties.Session(
-                cookieName = LOCAL_SESSION_COOKIE_NAME,
-                cookieSecure = false,
-            ),
-            "local",
+        val localSessionProperties = sessionProperties.copy(
+            cookieName = LOCAL_SESSION_COOKIE_NAME,
+            cookieSecure = false,
         )
+        val service = createService(localSessionProperties, "local")
 
-        assertFalse(service.createSessionCookie("token").isSecure)
+        assertFalse(service.createSessionCookie("token", localSessionProperties.idleTtl).isSecure)
     }
 
     @Test
     fun `rejects an insecure cookie in production`() {
         assertFailsWith<IllegalArgumentException> {
             createService(
-                UserAuthenticationProperties.Session(
+                sessionProperties.copy(
                     cookieName = PRODUCTION_SESSION_COOKIE_NAME,
                     cookieSecure = false,
                 ),
@@ -128,7 +128,7 @@ class SessionCookieServiceTest {
     fun `rejects a session cookie without the host prefix in production`() {
         assertFailsWith<IllegalArgumentException> {
             createService(
-                UserAuthenticationProperties.Session(
+                sessionProperties.copy(
                     cookieName = LOCAL_SESSION_COOKIE_NAME,
                     cookieSecure = true,
                 ),
@@ -141,7 +141,7 @@ class SessionCookieServiceTest {
     fun `rejects an invalid session cookie name`() {
         assertFailsWith<IllegalArgumentException> {
             createService(
-                UserAuthenticationProperties.Session(
+                sessionProperties.copy(
                     cookieName = "__Host-invalid cookie name",
                     cookieSecure = true,
                 ),
@@ -152,15 +152,13 @@ class SessionCookieServiceTest {
 
     @Test
     fun `creates a host-prefixed session cookie in production`() {
-        val service = createService(
-            UserAuthenticationProperties.Session(
-                cookieName = PRODUCTION_SESSION_COOKIE_NAME,
-                cookieSecure = true,
-            ),
-            "prod",
+        val productionSessionProperties = sessionProperties.copy(
+            cookieName = PRODUCTION_SESSION_COOKIE_NAME,
+            cookieSecure = true,
         )
+        val service = createService(productionSessionProperties, "prod")
 
-        val cookie = service.createSessionCookie("token")
+        val cookie = service.createSessionCookie("token", productionSessionProperties.idleTtl)
 
         assertEquals(PRODUCTION_SESSION_COOKIE_NAME, cookie.name)
         assertEquals("/", cookie.path)

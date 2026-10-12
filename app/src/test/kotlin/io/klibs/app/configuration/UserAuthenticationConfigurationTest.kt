@@ -21,6 +21,7 @@ class UserAuthenticationConfigurationTest {
                 UserAuthenticationProperties(
                     hmacSecret = hmacSecret,
                     trustedFrontendOrigin = TRUSTED_ORIGIN,
+                    session = SESSION_PROPERTIES,
                 )
             )
         }
@@ -36,6 +37,8 @@ class UserAuthenticationConfigurationTest {
                 idleTtl = IDLE_TTL,
                 refreshInterval = REFRESH_INTERVAL,
                 absoluteTtl = ABSOLUTE_TTL,
+                cookieName = SESSION_COOKIE_NAME,
+                cookieSecure = true,
             ),
         )
 
@@ -52,6 +55,7 @@ class UserAuthenticationConfigurationTest {
         val properties = UserAuthenticationProperties(
             hmacSecret = VALID_HMAC_SECRET,
             trustedFrontendOrigin = "http://frontend.example",
+            session = SESSION_PROPERTIES,
         )
         val environment = MockEnvironment().apply {
             setActiveProfiles("prod")
@@ -69,5 +73,13 @@ class UserAuthenticationConfigurationTest {
         val IDLE_TTL: Duration = Duration.ofDays(30)
         val REFRESH_INTERVAL: Duration = Duration.ofDays(1)
         val ABSOLUTE_TTL: Duration = Duration.ofDays(180)
+        const val SESSION_COOKIE_NAME = "test_session"
+        val SESSION_PROPERTIES = UserAuthenticationProperties.Session(
+            idleTtl = IDLE_TTL,
+            refreshInterval = REFRESH_INTERVAL,
+            absoluteTtl = ABSOLUTE_TTL,
+            cookieName = SESSION_COOKIE_NAME,
+            cookieSecure = true,
+        )
     }
 }

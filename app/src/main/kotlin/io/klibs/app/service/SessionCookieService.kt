@@ -1,4 +1,4 @@
-package io.klibs.app.auth
+package io.klibs.app.service
 
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import jakarta.servlet.http.HttpServletRequest
@@ -33,9 +33,6 @@ class SessionCookieService(
             ?.firstOrNull { it.name == sessionProperties.cookieName }
             ?.value
             ?.takeIf { it.isNotBlank() }
-
-    fun createSessionCookie(token: String): ResponseCookie =
-        createSessionCookie(token, sessionProperties.idleTtl)
 
     fun createSessionCookie(token: String, maxAge: Duration): ResponseCookie {
         require(token.isNotBlank()) { "Session token must not be blank" }

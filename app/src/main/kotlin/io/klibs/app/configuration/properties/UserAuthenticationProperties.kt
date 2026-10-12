@@ -9,28 +9,35 @@ import java.time.Duration
 @Validated
 @ConfigurationProperties(prefix = "klibs.auth")
 data class UserAuthenticationProperties(
+    /**
+     * Base64-encoded key with at least 32 decoded bytes, used for:
+     * Hub identity hashes, session-token hashes, and OAuth-state signatures.
+     */
     @field:NotBlank(message = "KLIBS_AUTH_HMAC_SECRET must be configured when Hub authentication is enabled")
     val hmacSecret: String,
 
+    /** Exact frontend origin allowed for credentialed CORS and session-protected writes. */
     @field:NotBlank(message = "KLIBS_AUTH_TRUSTED_FRONTEND_ORIGIN must be configured when Hub authentication is enabled")
     val trustedFrontendOrigin: String,
 
     @field:Valid
-    val session: Session = Session(),
+    val session: Session,
 ) {
     data class Session(
-        /** Maximum time a session may remain unused before it expires. */
-        val idleTtl: Duration = Duration.ofDays(30),
+        /** Session expires after this much inactivity; accepted activity may extend it up to the absolute TTL. */
+        val idleTtl: Duration,
 
         /** Minimum time between extensions of an active session. */
-        val refreshInterval: Duration = Duration.ofDays(1),
+        val refreshInterval: Duration,
 
-        /** Maximum session lifetime measured from its creation time. */
-        val absoluteTtl: Duration = Duration.ofDays(180),
+        /** Session expires this long after creation regardless of activity and cannot be extended further. */
+        val absoluteTtl: Duration,
 
+        /** Session cookie name; production requires the `__Host-` prefix. */
         @field:NotBlank(message = "KLIBS_AUTH_SESSION_COOKIE_NAME must not be blank")
-        val cookieName: String = "klibs_session",
+        val cookieName: String,
 
-        val cookieSecure: Boolean = true,
+        /** Whether the cookie is HTTPS-only; this must be true in production. */
+        val cookieSecure: Boolean,
     )
 }
