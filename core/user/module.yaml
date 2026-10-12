@@ -1,0 +1,4 @@
+product: jvm/lib
+
+apply:
+  - ../../build-logic/templates/persistence.module-template.yaml

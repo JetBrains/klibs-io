@@ -132,6 +132,17 @@ klibs:
     issue-median-days-threshold: 21.0
     pr-median-days-threshold: 10.0
     active-contributors-target: 5
+  auth:
+    hub:
+      enabled: ${KLIBS_AUTH_HUB_ENABLED:false}
+    hmac-secret: ${KLIBS_AUTH_HMAC_SECRET:}
+    trusted-frontend-origin: ${KLIBS_AUTH_TRUSTED_FRONTEND_ORIGIN:}
+    session:
+      idle-ttl: ${KLIBS_AUTH_SESSION_IDLE_TTL:30d}
+      refresh-interval: ${KLIBS_AUTH_SESSION_REFRESH_INTERVAL:1d}
+      absolute-ttl: ${KLIBS_AUTH_SESSION_ABSOLUTE_TTL:180d}
+      cookie-name: ${KLIBS_AUTH_SESSION_COOKIE_NAME:klibs_session}
+      cookie-secure: ${KLIBS_AUTH_SESSION_COOKIE_SECURE:true}
 
 management:
   endpoints:

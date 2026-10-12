@@ -1,6 +1,6 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.configuration.properties.AuthProperties
+import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
@@ -31,6 +31,10 @@ class SecurityConfiguration(
             httpBasic { }
 
             authorizeHttpRequests {
+                authorize(HttpMethod.GET, CURRENT_USER_PATH, permitAll)
+                authorize(HttpMethod.POST, SIGN_OUT_PATH, permitAll)
+                authorize(USER_ACTIONS_PATH, denyAll)
+
                 authorize(HttpMethod.GET, "/categories.json", permitAll)
                 authorize(HttpMethod.GET, "/sitemap.xml", permitAll)
 
@@ -106,14 +110,15 @@ class SecurityConfiguration(
     }
 
     @Bean
-    fun users(adminAuthProperties: AuthProperties): UserDetailsService {
-        val users = adminAuthProperties.users.map {
+    fun basicAuthUsers(basicAuthenticationProperties: BasicAuthenticationProperties): UserDetailsService {
+        val basicAuthUsers = basicAuthenticationProperties.users.map {
             User.builder()
                 .username(it.username)
                 .password(it.password)
                 .roles(*it.roles.toTypedArray())
                 .build()
         }
-        return InMemoryUserDetailsManager(users)
+        return InMemoryUserDetailsManager(basicAuthUsers)
     }
+
 }
