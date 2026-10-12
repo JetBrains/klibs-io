@@ -491,7 +491,7 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
     `app/src/main/resources/db/migration/<YYYY>-Q<n>/`. Do not change migrations that may have already run.
   - Include the migration in `db.changelog-master.yml`.
   - Store users and sessions using the database access pattern already used by the project. Add database tests for
-    constraints, conflict-safe inserts, and rollback within each transactional operation.
+    constraints, conflict-safe user inserts, and rollback within each transactional operation.
   - Project and package search must continue working unchanged. Authentication tables are not part of the search data.
 
   </details>
@@ -802,7 +802,7 @@ Notes:
   - Rollback within user and session transactional operations.
   - A session failure may leave a reusable local user but no partial session.
   - Concurrent logins for the same external user id result in one local user.
-  - Repeated token-hash collisions are retried and eventually fail without creating an ambiguous session.
+  - A session-token hash conflict fails session creation without replacing the existing session.
 
   </details>
 
