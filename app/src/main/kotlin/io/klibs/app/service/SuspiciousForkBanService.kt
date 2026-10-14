@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
 @Service
 class SuspiciousForkBanService(
     private val suspiciousPackageCandidateRepository: SuspiciousPackageCandidateRepository,
-    private val suspiciousPackageCandidateBanService: SuspiciousPackageCandidateBanService,
+    private val suspiciousCandidateReviewService: SuspiciousCandidateReviewService,
     private val gitHubIntegration: GitHubIntegration,
 ) {
 
@@ -51,7 +51,7 @@ class SuspiciousForkBanService(
         val forkFullName = "${candidate.suspectOwner}/${candidate.repoName}"
         val reason = "Auto-banned: $forkFullName is a fork of ${candidate.repoOwner}/${candidate.repoName}"
         try {
-            suspiciousPackageCandidateBanService.banCandidate(
+            suspiciousCandidateReviewService.banCandidate(
                 projectId = candidate.projectId,
                 artifactId = candidate.artifactId,
                 groupId = candidate.groupId,
