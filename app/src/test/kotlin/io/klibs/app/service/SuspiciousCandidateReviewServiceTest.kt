@@ -14,13 +14,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
-private const val SEED = "classpath:sql/SuspiciousPackageCandidateBanServiceTest/seed-candidates.sql"
+private const val SEED = "classpath:sql/SuspiciousCandidateReviewServiceTest/seed-candidates.sql"
 
 @ActiveProfiles("test")
-class SuspiciousPackageCandidateBanServiceTest : BaseUnitWithDbLayerTest() {
+class SuspiciousCandidateReviewServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
-    private lateinit var uut: SuspiciousPackageCandidateBanService
+    private lateinit var uut: SuspiciousCandidateReviewService
 
     @Autowired
     private lateinit var candidateRepository: SuspiciousPackageCandidateRepository
