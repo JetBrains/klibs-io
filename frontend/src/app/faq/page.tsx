@@ -14,8 +14,6 @@ import cn from "classnames";
 
 const SUBMIT_ISSUE_URL =
     "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=question&projects=&template=question.md&title=";
-const NOTIFIER_GRADLE_PLUGIN_URL =
-    "https://github.com/JetBrains/klibs-io/blob/master/notifier-plugin/README.md";
 const REQUEST_INDEXING_URL =
     "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=index-request&projects=&template=index_request.yml";
 const POM_EXAMPLE_URL =
@@ -102,7 +100,7 @@ export default function Faq() {
                         </p>
 
                         <p>
-                            If you prefer not to wait for the automatic sync, you can add the <a href={NOTIFIER_GRADLE_PLUGIN_URL} target="_blank" className={"link-secondary"}>klibs-io-notifier</a> Gradle plugin to your project, or <a href={REQUEST_INDEXING_URL} target="_blank" className={"link-secondary"}>
+                            If you prefer not to wait for the automatic sync, you can <a href={REQUEST_INDEXING_URL} target="_blank" className={"link-secondary"}>
                                 submit an indexing request</a>.
                         </p>
 
