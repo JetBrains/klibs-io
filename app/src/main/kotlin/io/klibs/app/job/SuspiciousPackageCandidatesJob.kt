@@ -17,7 +17,7 @@ class SuspiciousPackageCandidatesJob(
 ) {
 
     @Scheduled(cron = "0 0 4 * * *")
-    @SchedulerLock(name = "suspiciousPackageCandidatesLock", lockAtMostFor = "1h")
+    @SchedulerLock(name = "suspiciousPackageCandidatesLock", lockAtLeastFor = "20h", lockAtMostFor = "20h")
     fun collectAndBan() {
         LockAssert.assertLocked()
         val refresh = candidateCollectionService.refreshCandidates()
