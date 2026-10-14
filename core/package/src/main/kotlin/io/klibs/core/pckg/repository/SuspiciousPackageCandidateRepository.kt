@@ -3,6 +3,7 @@ package io.klibs.core.pckg.repository
 import io.klibs.core.pckg.dto.projection.ForkBanCandidateView
 import io.klibs.core.pckg.entity.SuspiciousPackageCandidateEntity
 import io.klibs.core.pckg.entity.SuspiciousPackageCandidateKey
+import io.klibs.core.pckg.enums.CandidateStatus
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -105,4 +106,24 @@ interface SuspiciousPackageCandidateRepository :
         @Param("groupId") groupId: String,
         @Param("notes") notes: String,
     ): Int
+
+    @Modifying
+    @Transactional
+    @Query(
+        """
+            UPDATE SuspiciousPackageCandidateEntity candidate
+            SET candidate.status = io.klibs.core.pckg.enums.CandidateStatus.RESOLVED,
+                candidate.notes = :notes
+            WHERE candidate.projectId = :projectId
+              AND candidate.groupId = :groupId
+              AND candidate.status = io.klibs.core.pckg.enums.CandidateStatus.PENDING
+        """
+    )
+    fun markGroupResolved(
+        @Param("projectId") projectId: Int,
+        @Param("groupId") groupId: String,
+        @Param("notes") notes: String,
+    ): Int
+
+    fun findAllByStatus(status: CandidateStatus): List<SuspiciousPackageCandidateEntity>
 }
