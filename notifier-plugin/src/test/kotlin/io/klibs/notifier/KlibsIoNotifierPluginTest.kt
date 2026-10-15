@@ -14,7 +14,7 @@ class KlibsIoNotifierPluginTest {
     fun `registers the klibsIoNotify extension`() {
         val project = ProjectBuilder.builder().build()
 
-        project.plugins.apply("io.klibs.notifier")
+        project.plugins.apply("org.jetbrains.kotlin.klibs-io-notifier")
 
         assertNotNull(project.extensions.findByName("klibsIoNotifier"))
     }
@@ -23,7 +23,7 @@ class KlibsIoNotifierPluginTest {
     fun `registers the notify task if the maven publish and KMP plugins present`() {
         val project = ProjectBuilder.builder().build()
 
-        project.plugins.apply("io.klibs.notifier")
+        project.plugins.apply("org.jetbrains.kotlin.klibs-io-notifier")
         project.plugins.apply("com.vanniktech.maven.publish")
         project.plugins.apply("org.jetbrains.kotlin.multiplatform")
 
@@ -34,7 +34,7 @@ class KlibsIoNotifierPluginTest {
     fun `collects coordinates only of KMP maven publications`() {
         val project = ProjectBuilder.builder().build()
 
-        project.plugins.apply("io.klibs.notifier")
+        project.plugins.apply("org.jetbrains.kotlin.klibs-io-notifier")
         project.plugins.apply("com.vanniktech.maven.publish")
         project.plugins.apply("org.jetbrains.kotlin.multiplatform")
 
@@ -62,7 +62,7 @@ class KlibsIoNotifierPluginTest {
     fun `does not register the notify task if the KMP plugin not present`() {
         val project = ProjectBuilder.builder().build()
 
-        project.plugins.apply("io.klibs.notifier")
+        project.plugins.apply("org.jetbrains.kotlin.klibs-io-notifier")
         project.plugins.apply("com.vanniktech.maven.publish")
 
         assertNull(project.tasks.findByName("notifyKlibsIo"))
@@ -72,7 +72,7 @@ class KlibsIoNotifierPluginTest {
     fun `does not register the notify task if the maven publish plugin not present`() {
         val project = ProjectBuilder.builder().build()
 
-        project.plugins.apply("io.klibs.notifier")
+        project.plugins.apply("org.jetbrains.kotlin.klibs-io-notifier")
         project.plugins.apply("org.jetbrains.kotlin.multiplatform")
 
         assertNull(project.tasks.findByName("notifyKlibsIo"))
