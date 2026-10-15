@@ -126,4 +126,6 @@ interface SuspiciousPackageCandidateRepository :
     ): Int
 
     fun findAllByStatus(status: CandidateStatus): List<SuspiciousPackageCandidateEntity>
+
+    fun countByStatus(status: CandidateStatus): Long
 }
