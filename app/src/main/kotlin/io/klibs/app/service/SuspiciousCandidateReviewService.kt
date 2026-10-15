@@ -4,6 +4,9 @@ import io.klibs.app.api.KeepSuspiciousCandidateRequest
 import io.klibs.app.api.SuspiciousCandidateResponse
 import io.klibs.core.pckg.enums.CandidateStatus
 import io.klibs.core.pckg.repository.SuspiciousPackageCandidateRepository
+import io.micrometer.core.instrument.Gauge
+import io.micrometer.core.instrument.MeterRegistry
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -11,7 +14,14 @@ import org.springframework.transaction.annotation.Transactional
 class SuspiciousCandidateReviewService(
     private val suspiciousPackageCandidateRepository: SuspiciousPackageCandidateRepository,
     private val blacklistService: BlacklistService,
+    registry: MeterRegistry,
 ) {
+
+    init {
+        Gauge.builder(METRIC_SUSPICIOUS_PACKAGE_CANDIDATE_PENDING) { pendingCountOrNaN() }
+            .description("Klibs: Number of suspicious package candidates with status PENDING")
+            .register(registry)
+    }
 
     fun findPending(): List<SuspiciousCandidateResponse> =
         suspiciousPackageCandidateRepository.findAllByStatus(CandidateStatus.PENDING)
@@ -27,5 +37,16 @@ class SuspiciousCandidateReviewService(
         if (resolved == 0 || !blacklistService.banPackage(groupId, artifactId, reason)) {
             throw CandidateBanRefusedException(groupId, artifactId)
         }
+    }
+
+    private fun pendingCountOrNaN(): Double =
+        runCatching { suspiciousPackageCandidateRepository.countByStatus(CandidateStatus.PENDING).toDouble() }
+            .onFailure { logger.debug("Could not count pending suspicious package candidates", it) }
+            .getOrDefault(Double.NaN)
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(SuspiciousCandidateReviewService::class.java)
+
+        const val METRIC_SUSPICIOUS_PACKAGE_CANDIDATE_PENDING = "klibs.suspicious.package.candidate.pending"
     }
 }
