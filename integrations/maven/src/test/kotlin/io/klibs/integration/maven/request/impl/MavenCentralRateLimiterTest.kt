@@ -24,7 +24,6 @@ class MavenCentralRateLimiterTest {
                 rateLimitRefillAmount = 1000,
                 rateLimitRefillPeriodSec = 1,
                 indexDir = "/tmp",
-                contentEndpoint = "https://content",
             )
         )
         return MavenCentralRateLimiter(properties, SimpleMeterRegistry(), clock)

@@ -35,7 +35,7 @@ data class IndexingConfigurationProperties(
 
     data class MavenCentralProperties(
         val enabled: Boolean = false,
-        val type: MavenCentralType = MavenCentralType.ORIGIN
+        val type: MavenCentralType = MavenCentralType.GOOGLE_MIRROR
     ) {
         enum class MavenCentralType {
             ORIGIN,
