@@ -25,6 +25,9 @@ abstract class BaseMavenCentralStaticDataProvider(
     clock = clock,
 ) {
 
+    val repositoryUrl: String
+        get() = contentEndpoint
+
     override fun getContentUrlPrefix(): String = contentEndpoint
 
 }

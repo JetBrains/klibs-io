@@ -10,11 +10,13 @@ import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
 import io.klibs.integration.maven.dto.MavenMetadata
+import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -25,10 +27,15 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.transaction.annotation.Transactional
 
+@TestPropertySource(properties = [
+    "klibs.indexing-configuration.central-sonatype.type=ORIGIN",
+    "klibs.indexing-configuration.central-sonatype.enabled=false",
+])
 class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
@@ -46,9 +53,18 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
     @MockitoBean
     private lateinit var centralSonatypeSearchClient: SonatypeCentralStaticDataProvider
 
+    @MockitoBean
+    private lateinit var googleMirrorSearchClient: GoogleMavenCentralMirrorStaticDataProvider
+
     @BeforeEach
     fun setUp() {
         whenever(centralSonatypeSearchClient.scraperType).thenReturn(ScraperType.CENTRAL_SONATYPE)
+    }
+
+    @AfterEach
+    fun verifyNoMirrorAccess() {
+        verify(googleMirrorSearchClient, never()).getMavenMetadata(any(), any())
+        verify(googleMirrorSearchClient, never()).getKotlinToolingMetadata(any())
     }
 
     // Tests for specific artifact with given version

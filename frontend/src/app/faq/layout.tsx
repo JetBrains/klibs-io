@@ -13,6 +13,21 @@ export async function generateMetadata(_: unknown, parent: ResolvingMetadata): P
     };
 }
 
+const SUBMIT_ISSUE_URL =
+    "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=question&projects=&template=question.md&title=";
+const REQUEST_INDEXING_URL =
+    "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=index-request&projects=&template=index_request.yml";
+const GOOGLE_MAVEN_CENTRAL_MIRROR_URL =
+    "https://storage-download.googleapis.com/maven-central/index.html";
+const POM_EXAMPLE_URL =
+    "https://maven-central.storage-download.googleapis.com/maven2/" +
+    "org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0.pom";
+const TOOLING_METADATA_EXAMPLE_URL =
+    "https://maven-central.storage-download.googleapis.com/maven2/" +
+    "org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0-kotlin-tooling-metadata.json";
+const INDEX_PROPERTIES_URL =
+    "https://maven-central.storage-download.googleapis.com/maven2/.index/nexus-maven-repository-index.properties";
+
 const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -33,12 +48,25 @@ const faqSchema = {
                 "text":
                     "For a project to be listed on klibs.io, it must first meet the following criteria: " +
                     "The project is open source and is available on GitHub. " +
-                    "At least one artifact is published to Maven Central. " +
-                    "At least one artifact is multiplatform – must have kotlin-tooling-metadata.json. " +
-                    "At least one artifact's POM contains a valid link to the GitHub repository, either under \"url\" or \"scm.url\" example. " +
-                    "All projects fulfilling the criteria are added automatically within one month (it is a frequency of maven central public index update). If your project is already presented in the klibs.io, then new versions should appear the next day after they are published to Maven Central. " +
-                    "If you prefer not to wait for the automatic sync, you can submit an indexing request. " +
-                    "If you believe your project satisfies all criteria, yet it's still not available, or new versions are not appearing, please submit an issue."
+                    "At least one artifact is published to Maven Central and the exact version is available " +
+                    `on <a href="${GOOGLE_MAVEN_CENTRAL_MIRROR_URL}">Google's Maven Central mirror</a>. ` +
+                    "At least one artifact is multiplatform – must have " +
+                    `<a href="${TOOLING_METADATA_EXAMPLE_URL}">kotlin-tooling-metadata.json</a>. ` +
+                    "At least one artifact's POM contains a valid link to the GitHub repository, " +
+                    `either under "url" or "scm.url" <a href="${POM_EXAMPLE_URL}">POM example</a>. ` +
+                    "Publish your library to Maven Central as usual, not directly to Google's mirror. " +
+                    "Before waiting for indexing or reporting a missing version, verify that the exact " +
+                    "version's POM and kotlin-tooling-metadata.json are available on Google's " +
+                    "Maven Central mirror. Availability on Maven Central alone is not enough. " +
+                    "Mirror propagation can take time, there is no guaranteed synchronization deadline. " +
+                    "klibs.io checks new versions of already-listed projects daily. The " +
+                    `<a href="${INDEX_PROPERTIES_URL}">mirrored index properties</a> identify the available index. ` +
+                    "If the exact version is available on the mirror and you prefer not to wait for automatic " +
+                    `discovery, you can <a href="${REQUEST_INDEXING_URL}">submit an indexing request</a>. ` +
+                    "Manual indexing cannot fetch files that are absent from the mirror. " +
+                    "If your project meets all criteria and the exact version is available on Google's " +
+                    "mirror, but it is still missing after the discovery cycle, " +
+                    `please <a href="${SUBMIT_ISSUE_URL}">submit an issue</a>.`
             }
         },
         {
