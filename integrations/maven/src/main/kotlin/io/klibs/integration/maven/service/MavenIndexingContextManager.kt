@@ -16,9 +16,10 @@ class MavenIndexingContextManager(
 ) {
     suspend fun <T> useCentralContext(
         contextId: String,
+        repositoryUrl: String,
         block: suspend (IndexingContext) -> T
     ): T {
-        val context = createCentralContext(contextId)
+        val context = createCentralContext(contextId, repositoryUrl)
         try {
             return block(context)
         } finally {
@@ -36,7 +37,7 @@ class MavenIndexingContextManager(
 
     fun getLocalIndexCacheDir(): File = File("${properties.central.indexDir}/local-index-cache")
 
-    private fun createCentralContext(contextId: String): IndexingContext {
+    private fun createCentralContext(contextId: String, repositoryUrl: String): IndexingContext {
         if (!indexDir.exists()) {
             indexDir.mkdirs()
         }
@@ -46,7 +47,7 @@ class MavenIndexingContextManager(
             "central",
             indexDir,
             indexDir,
-            properties.central.contentEndpoint,
+            repositoryUrl,
             null,
             true,
             true,

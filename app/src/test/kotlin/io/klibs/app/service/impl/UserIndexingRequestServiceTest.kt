@@ -12,9 +12,9 @@ import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
 import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -25,10 +25,17 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.transaction.annotation.Transactional
 
+@TestPropertySource(
+    properties = [
+        "klibs.indexing-configuration.central-sonatype.type=ORIGIN",
+        "klibs.indexing-configuration.central-sonatype.enabled=false",
+    ]
+)
 class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
@@ -62,7 +69,7 @@ class UserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         }
 
         assertEquals(
-            "Artifact com.example:lib:1.0.0 is not a valid Kotlin Multiplatform library (kotlin-tooling-metadata.json not found)",
+            "Artifact com.example:lib:1.0.0 unavailable from the selected Maven Central source (kotlin-tooling-metadata.json not found)",
             exception.reason
         )
     }
