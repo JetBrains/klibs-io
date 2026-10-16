@@ -2,6 +2,7 @@ package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
 import io.klibs.app.configuration.properties.IndexingConfigurationProperties
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties.MavenCentralProperties.MavenCentralType
 import io.klibs.app.indexing.discoverer.impl.CentralSonatypePackageDiscoverer
 import io.klibs.core.pckg.entity.IndexingRequestEntity
 import io.klibs.core.pckg.entity.UserRequestIssueEntity
@@ -26,7 +27,9 @@ import io.klibs.integration.maven.androidx.Variant
 import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
 import io.klibs.integration.maven.exception.MavenRateLimitedException
 import io.klibs.integration.maven.service.MavenPom
+import io.klibs.integration.maven.service.MavenStaticDataProvider
 import io.klibs.integration.maven.service.PomWithReleaseDate
+import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import java.time.Instant
 import java.time.Duration
@@ -44,6 +47,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -53,6 +57,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import java.sql.Timestamp
@@ -92,6 +97,9 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @MockitoBean
     private lateinit var mavenStaticDataProvider: SonatypeCentralStaticDataProvider
+
+    @MockitoBean
+    private lateinit var googleMavenStaticDataProvider: GoogleMavenCentralMirrorStaticDataProvider
 
     @MockitoBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
@@ -161,6 +169,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @BeforeEach
     fun setUp() {
         whenever(mavenStaticDataProvider.scraperType).thenReturn(ScraperType.CENTRAL_SONATYPE)
+        whenever(googleMavenStaticDataProvider.scraperType).thenReturn(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
     }
 
     @Test
@@ -224,9 +233,10 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = ["classpath:sql/PackageIndexingServiceTest/insert-request-for-processing.sql"])
     fun `should successfully process package indexing request`(output: CapturedOutput) {
-
+        assertEquals(MavenCentralType.GOOGLE_MIRROR, indexingConfigurationProperties.centralSonatype.type)
         val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequestBeforeProcessing)
+        assertEquals(ScraperType.CENTRAL_SONATYPE, packageIndexRequestBeforeProcessing.repo)
 
         val pom = mock<MavenPom>()
         whenever(pom.groupId).thenReturn(packageIndexRequestBeforeProcessing.groupId)
@@ -260,6 +270,10 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(foundPackages.get(0).groupId, packageIndexRequestBeforeProcessing.groupId)
         assertEquals(foundPackages.get(0).artifactId, packageIndexRequestBeforeProcessing.artifactId)
         assertEquals(foundPackages.get(0).version, packageIndexRequestBeforeProcessing.version)
+        verify(mavenStaticDataProvider).getPomWithReleaseDate(argThat { scraperType == ScraperType.CENTRAL_SONATYPE })
+        verify(mavenStaticDataProvider).getKotlinToolingMetadata(argThat { scraperType == ScraperType.CENTRAL_SONATYPE })
+        verify(googleMavenStaticDataProvider, never()).getPomWithReleaseDate(any())
+        verify(googleMavenStaticDataProvider, never()).getKotlinToolingMetadata(any())
     }
 
     @ParameterizedTest
@@ -626,7 +640,14 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
      * Stubs the Maven static-data boundary (POM + release date + tooling metadata) so a queued
      * request can be processed end-to-end against the real database without network access.
      */
-    private fun stubMavenFetch(groupId: String, artifactId: String, version: String, pomDescription: String?, releasedAt: Instant = Instant.now()) {
+    private fun stubMavenFetch(
+        groupId: String,
+        artifactId: String,
+        version: String,
+        pomDescription: String?,
+        releasedAt: Instant = Instant.now(),
+        provider: MavenStaticDataProvider = mavenStaticDataProvider,
+    ) {
         val pom = mock<MavenPom>()
         whenever(pom.groupId).thenReturn(groupId)
         whenever(pom.artifactId).thenReturn(artifactId)
@@ -636,9 +657,9 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         whenever(kotlinToolingMetadata.variants)
             .thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
+        whenever(provider.getPomWithReleaseDate(any()))
             .thenReturn(PomWithReleaseDate(pom, releasedAt))
-        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        whenever(provider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
     }
 
     @Test
@@ -964,5 +985,86 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             )
         )
         return issue
+    }
+}
+
+@TestPropertySource(properties = ["${IndexingConfigurationProperties.CENTRAL_SONATYPE_TYPE}=ORIGIN"])
+class OriginSelection : BaseUnitWithDbLayerTest() {
+
+    @Autowired
+    private lateinit var uut: PackageIndexingService
+
+    @Autowired
+    private lateinit var indexingConfigurationProperties: IndexingConfigurationProperties
+
+    @Autowired
+    private lateinit var indexingRequestRepository: IndexingRequestRepository
+
+    @Autowired
+    private lateinit var packageRepository: PackageRepository
+
+    @MockitoBean
+    private lateinit var mavenStaticDataProvider: SonatypeCentralStaticDataProvider
+
+    @MockitoBean
+    private lateinit var googleMavenStaticDataProvider: GoogleMavenCentralMirrorStaticDataProvider
+
+    @MockitoBean
+    private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
+
+    @MockitoBean
+    private lateinit var gitHubIntegration: GitHubIntegration
+
+    @MockitoBean
+    private lateinit var readmeContentBuilder: ReadmeContentBuilder
+
+    @MockitoBean
+    private lateinit var discoverer: CentralSonatypePackageDiscoverer
+
+    @Test
+    fun `stored Google request uses Google when origin is selected for new work`() {
+        assertEquals(MavenCentralType.ORIGIN, indexingConfigurationProperties.centralSonatype.type)
+        whenever(mavenStaticDataProvider.scraperType).thenReturn(ScraperType.CENTRAL_SONATYPE)
+        whenever(googleMavenStaticDataProvider.scraperType).thenReturn(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
+        val groupId = "com.example"
+        val artifactId = "google-artifact"
+        val version = "1.0.0"
+        val request = indexingRequestRepository.save(
+            IndexingRequestEntity(
+                groupId = groupId,
+                artifactId = artifactId,
+                version = version,
+                repo = ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR,
+            )
+        )
+        assertEquals(
+            ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR,
+            indexingRequestRepository.findById(request.idNotNull).orElseThrow().repo,
+        )
+        val pom = mock<MavenPom>()
+        whenever(pom.groupId).thenReturn(groupId)
+        whenever(pom.artifactId).thenReturn(artifactId)
+        whenever(pom.version).thenReturn(version)
+        whenever(pom.description).thenReturn(null)
+        val kotlinToolingMetadata = mock<GradleMetadata>()
+        whenever(kotlinToolingMetadata.variants)
+            .thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
+        whenever(googleMavenStaticDataProvider.getPomWithReleaseDate(any()))
+            .thenReturn(PomWithReleaseDate(pom, Instant.now()))
+        whenever(googleMavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+
+        assertTrue(uut.processPackageQueue())
+
+        assertFalse(indexingRequestRepository.existsById(request.idNotNull))
+        assertNotNull(packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version))
+        verify(googleMavenStaticDataProvider).getPomWithReleaseDate(
+            argThat { scraperType == ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR }
+        )
+        verify(googleMavenStaticDataProvider).getKotlinToolingMetadata(
+            argThat { scraperType == ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR }
+        )
+        verify(mavenStaticDataProvider, never()).getPomWithReleaseDate(any())
+        verify(mavenStaticDataProvider, never()).getKotlinToolingMetadata(any())
     }
 }
