@@ -13,7 +13,7 @@ abstract class BaseMavenCentralStaticDataProvider(
     mavenCentralRateLimiter: MavenCentralRateLimiter,
     logger: Logger,
     objectMapper: ObjectMapper,
-    private val contentEndpoint: String,
+    val contentEndpoint: String,
     clientTransport: Transport = Java11HttpClientTransport(),
     clock: Clock = Clock.System,
 ) : BaseMavenStaticDataProvider(
@@ -24,7 +24,6 @@ abstract class BaseMavenCentralStaticDataProvider(
     clientTransport = clientTransport,
     clock = clock,
 ) {
-
     override fun getContentUrlPrefix(): String = contentEndpoint
 
 }

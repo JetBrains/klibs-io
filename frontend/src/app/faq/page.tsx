@@ -16,10 +16,16 @@ const SUBMIT_ISSUE_URL =
     "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=question&projects=&template=question.md&title=";
 const REQUEST_INDEXING_URL =
     "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=index-request&projects=&template=index_request.yml";
+const GOOGLE_MAVEN_CENTRAL_MIRROR_URL =
+    "https://storage-download.googleapis.com/maven-central/index.html";
 const POM_EXAMPLE_URL =
-    "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0.pom";
+    "https://maven-central.storage-download.googleapis.com/maven2/" +
+    "org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0.pom";
 const TOOLING_METADATA_EXAMPLE_URL =
-    "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0-kotlin-tooling-metadata.json";
+    "https://maven-central.storage-download.googleapis.com/maven2/" +
+    "org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0-kotlin-tooling-metadata.json";
+const INDEX_PROPERTIES_URL =
+    "https://maven-central.storage-download.googleapis.com/maven2/.index/nexus-maven-repository-index.properties";
 
 export default function Faq() {
     return (
@@ -75,7 +81,14 @@ export default function Faq() {
 
                         <ul>
                             <li>The project is open source and is available on GitHub.</li>
-                            <li>At least one artifact is published to Maven Central.</li>
+                            <li>
+								At least one artifact is published to <a href={GOOGLE_MAVEN_CENTRAL_MIRROR_URL}
+																		 target="_blank"
+																		 className={"link-secondary"}>Maven
+	                            Central</a> and the exact version is available
+								on <a href={GOOGLE_MAVEN_CENTRAL_MIRROR_URL} target="_blank"
+									  className={"link-secondary"}>Google&apos;s Maven Central mirror</a>.
+                            </li>
                             <li>
                                 At least one artifact is multiplatform &ndash;
                                 must have <a href={TOOLING_METADATA_EXAMPLE_URL} target="_blank"
@@ -86,27 +99,25 @@ export default function Faq() {
                                 repository,
                                 either under &quot;url&quot; or &quot;scm.url&quot; <a
                                 href={POM_EXAMPLE_URL} target="_blank"
-                                className={"link-secondary"}>example</a>.
+                                className={"link-secondary"}>POM example</a>.
                             </li>
                         </ul>
 
                         <p>
-                            All projects fulfilling the criteria are added automatically within <b>one month</b> (it is
-                            a frequency of <a href="https://repo1.maven.org/maven2/.index/">maven central public
-                            index</a> update).
-                            If your project is already presented in the klibs.io,
-                            then new versions should appear the <b>next day</b> after
-                            they are published to Maven Central.
+                            Publish your library to Maven Central as usual, not directly to Google&apos;s mirror.
+                            Mirror propagation can take time, there is no guaranteed synchronization deadline.
                         </p>
 
                         <p>
-                            If you prefer not to wait for the automatic sync, you can <a href={REQUEST_INDEXING_URL} target="_blank" className={"link-secondary"}>
+                            If the exact version is available on the mirror and you prefer not to wait for automatic
+                            discovery, you can <a href={REQUEST_INDEXING_URL} target="_blank" className={"link-secondary"}>
                                 submit an indexing request</a>.
+                            Manual indexing cannot fetch files that are absent from the mirror.
                         </p>
 
                         <p>
-                            If you believe your project satisfies all criteria, yet it&apos;s still not
-                            available, or new versions are not appearing,
+                            If your project meets all criteria and the exact version is available on Google&apos;s
+                            mirror, but it is still missing after the discovery cycle,
                             please <a href={SUBMIT_ISSUE_URL} target="_blank" className={"link-secondary"}>submit
                             an issue</a>.
                         </p>

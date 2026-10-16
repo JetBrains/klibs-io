@@ -12,8 +12,6 @@ import org.apache.maven.index.Indexer
 import org.apache.maven.index.IteratorSearchRequest
 import org.apache.maven.index.context.IndexingContext
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Service
-import java.time.Instant
 
 /**
  * Service for scanning the local Maven index for artifacts.
@@ -31,11 +29,11 @@ abstract class MavenIndexScannerService(
      *
      * @return A Flow of MavenArtifact objects matching the search criteria.
      */
-    fun scanForNewKMPArtifacts(): Flow<MavenArtifact> = flow {
+    fun scanForNewKMPArtifacts(repositoryUrl: String): Flow<MavenArtifact> = flow {
         logger.info("Starting scan of local Maven index for Kotlin tooling metadata.")
 
         try {
-            indexingContextManager.useCentralContext("maven-central-scan-context") { context ->
+            indexingContextManager.useCentralContext("maven-central-scan-context", repositoryUrl) { context ->
                 val request = createSearchRequestForKMPPackages(context)
 
                 val resultSet = indexer.searchIterator(request)

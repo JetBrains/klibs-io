@@ -9,6 +9,8 @@ import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.service.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
+import io.klibs.integration.maven.service.impl.BaseMavenCentralStaticDataProvider
+import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.flowOf
@@ -20,6 +22,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -42,6 +45,12 @@ internal class CentralSonatypePackageDiscovererTest {
     @MockitoBean(name = "centralSonatypeScraper")
     lateinit var centralSonatypeScraper: MavenCentralScraper
 
+    @MockitoBean(name = "googleMavenCentralMirrorIndexScannerService")
+    lateinit var googleMavenCentralMirrorIndexScannerService: MavenIndexScannerService
+
+    @MockitoBean(name = "googleMavenCentralMirrorScraper")
+    lateinit var googleMavenCentralMirrorScraper: MavenCentralScraper
+
     @MockitoBean
     lateinit var mavenCentralLogRepository: MavenCentralLogRepository
 
@@ -54,13 +63,23 @@ internal class CentralSonatypePackageDiscovererTest {
     @MockitoBean
     lateinit var centralSonatypeStaticDataProvider: SonatypeCentralStaticDataProvider
 
+    @MockitoBean
+    lateinit var googleMavenCentralMirrorStaticDataProvider: GoogleMavenCentralMirrorStaticDataProvider
+
     lateinit var discoverer: CentralSonatypePackageDiscoverer
 
     private val initialTimestamp = Instant.parse("2023-01-01T00:00:00Z")
+    private val originUrl = "https://repo1.maven.org/maven2"
+    private val mirrorUrl = "https://maven-central.storage-download.googleapis.com/maven2"
 
     @BeforeEach
     fun setUp() {
         whenever(mavenCentralLogRepository.retrieveMavenIndexTimestamp()).thenReturn(initialTimestamp)
+        whenever(centralSonatypeStaticDataProvider.contentEndpoint).thenReturn(originUrl)
+        whenever(centralSonatypeStaticDataProvider.scraperType).thenReturn(ScraperType.CENTRAL_SONATYPE)
+        whenever(googleMavenCentralMirrorStaticDataProvider.contentEndpoint).thenReturn(mirrorUrl)
+        whenever(googleMavenCentralMirrorStaticDataProvider.scraperType)
+            .thenReturn(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
 
         discoverer = CentralSonatypePackageDiscoverer(
             mavenIndexDownloadingService,
@@ -76,14 +95,15 @@ internal class CentralSonatypePackageDiscovererTest {
     private fun discovererFor(mirror: Boolean): BaseMavenCentralPackageDiscoverer = if (mirror) {
         GoogleMavenCentralMirrorPackageDiscoverer(
             mavenIndexDownloadingService,
-            mavenIndexScannerService,
-            centralSonatypeScraper,
+            googleMavenCentralMirrorIndexScannerService,
+            googleMavenCentralMirrorScraper,
             mavenCentralLogRepository,
             packageRepository,
-            centralSonatypeStaticDataProvider,
+            googleMavenCentralMirrorStaticDataProvider,
             blacklistRepository,
         )
     } else discoverer
+
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
@@ -92,10 +112,11 @@ internal class CentralSonatypePackageDiscovererTest {
         whenever(blacklistRepository.checkPackageBanned("com.example", "lib")).thenReturn(true)
         whenever(blacklistRepository.checkPackageBanned("com.banned", "anything")).thenReturn(true)
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any(), any())).thenReturn(initialTimestamp)
-        val allowed = MavenArtifact("com.example", "sibling", "1.0", ScraperType.CENTRAL_SONATYPE)
-        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(
-            MavenArtifact("com.example", "lib", "1.0", ScraperType.CENTRAL_SONATYPE),
-            MavenArtifact("com.banned", "anything", "1.0", ScraperType.CENTRAL_SONATYPE),
+        val source = providerFor(mirror).scraperType
+        val allowed = MavenArtifact("com.example", "sibling", "1.0", source)
+        whenever(scannerFor(mirror).scanForNewKMPArtifacts(providerFor(mirror).contentEndpoint)).thenReturn(flowOf(
+            MavenArtifact("com.example", "lib", "1.0", source),
+            MavenArtifact("com.banned", "anything", "1.0", source),
             allowed,
         ))
 
@@ -113,17 +134,18 @@ internal class CentralSonatypePackageDiscovererTest {
         whenever(blacklistRepository.checkPackageBanned("com.example", "lib")).thenReturn(true)
         whenever(blacklistRepository.checkPackageBanned("com.banned", "anything")).thenReturn(true)
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any(), any())).thenReturn(null)
-        whenever(centralSonatypeScraper.findNewVersions(any(), any())).thenReturn(flowOf())
+        whenever(scraperFor(mirror).findNewVersions(any(), any())).thenReturn(flowOf())
 
         discovererFor(mirror).discover(Channel()).toList()
 
-        verify(centralSonatypeScraper).findNewVersions(
+        verify(scraperFor(mirror)).findNewVersions(
             argThat { this == mapOf("com.example:sibling" to setOf("1.0")) }, any()
         )
     }
 
-    @Test
-    fun `should discover new versions for known packages in UPDATE_KNOWN mode`() = runTest {
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `should discover new versions for known packages in UPDATE_KNOWN mode`(mirror: Boolean) = runTest {
         // Given
         val knownPackage = Package(
             groupId = "org.example",
@@ -135,53 +157,58 @@ internal class CentralSonatypePackageDiscovererTest {
             groupId = "org.example",
             artifactId = "test-lib",
             version = "1.1.0",
-            scraperType = ScraperType.CENTRAL_SONATYPE,
+            scraperType = providerFor(mirror).scraperType,
         )
 
         whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(listOf(knownPackage))
-        whenever(centralSonatypeScraper.findNewVersions(any(), any())).thenReturn(flowOf(newVersion))
+        whenever(scraperFor(mirror).findNewVersions(any(), any())).thenReturn(flowOf(newVersion))
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any(), any())).thenReturn(null)
 
         val errorChannel = Channel<Exception>()
 
         // When
-        val artifacts = discoverer.discover(errorChannel).toList()
+        val artifacts = discovererFor(mirror).discover(errorChannel).toList()
 
         // Then
         assertEquals(1, artifacts.size)
         assertEquals("1.1.0", artifacts[0].version)
         assertEquals("test-lib", artifacts[0].artifactId)
+        assertEquals(providerFor(mirror).scraperType, artifacts[0].scraperType)
 
-        verify(centralSonatypeScraper).findNewVersions(
+        verify(mavenIndexDownloadingService).downloadIndexIfNewer(initialTimestamp, providerFor(mirror))
+        verify(scannerFor(mirror), never()).scanForNewKMPArtifacts(any())
+        verify(scraperFor(mirror)).findNewVersions(
             argThat { containsKey("org.example:test-lib") },
             any()
         )
     }
 
-    @Test
-    fun `should discover new maven artifacts`() = runTest {
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `should discover new maven artifacts`(mirror: Boolean) = runTest {
         // Given
         val artifact1 = MavenArtifact(
             groupId = "org.example",
             artifactId = "test-lib1",
             version = "1.0.0",
-            scraperType = ScraperType.CENTRAL_SONATYPE,
+            scraperType = providerFor(mirror).scraperType,
         )
 
         val artifact2 = MavenArtifact(
             groupId = "org.example",
             artifactId = "test-lib2",
             version = "1.0.0",
-            scraperType = ScraperType.CENTRAL_SONATYPE,
+            scraperType = providerFor(mirror).scraperType,
         )
 
         whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(emptyList())
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any(), any())).thenReturn(initialTimestamp)
-        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(artifact1, artifact2))
+        whenever(scannerFor(mirror).scanForNewKMPArtifacts(providerFor(mirror).contentEndpoint))
+            .thenReturn(flowOf(artifact1, artifact2))
 
         val errorChannel = Channel<Exception>()
 
-        val artifacts = discoverer.discover(errorChannel = errorChannel).toList()
+        val artifacts = discovererFor(mirror).discover(errorChannel = errorChannel).toList()
 
         assertEquals(2, artifacts.size)
 
@@ -189,14 +216,17 @@ internal class CentralSonatypePackageDiscovererTest {
         assertEquals("org.example", resultArtifact1?.groupId)
         assertEquals("test-lib1", resultArtifact1?.artifactId)
         assertEquals("1.0.0", resultArtifact1?.version)
-        assertEquals(ScraperType.CENTRAL_SONATYPE, resultArtifact1?.scraperType)
+        assertEquals(providerFor(mirror).scraperType, resultArtifact1?.scraperType)
 
         val resultArtifact2 = artifacts.find { it.artifactId == "test-lib2" }
         assertEquals("org.example", resultArtifact2?.groupId)
         assertEquals("test-lib2", resultArtifact2?.artifactId)
         assertEquals("1.0.0", resultArtifact2?.version)
-        assertEquals(ScraperType.CENTRAL_SONATYPE, resultArtifact2?.scraperType)
+        assertEquals(providerFor(mirror).scraperType, resultArtifact2?.scraperType)
 
+        verify(mavenIndexDownloadingService).downloadIndexIfNewer(initialTimestamp, providerFor(mirror))
+        verify(scannerFor(mirror)).scanForNewKMPArtifacts(providerFor(mirror).contentEndpoint)
+        verify(scannerFor(!mirror), never()).scanForNewKMPArtifacts(any())
         verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
     }
 
@@ -225,7 +255,8 @@ internal class CentralSonatypePackageDiscovererTest {
 
         whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(listOf(knownPackage))
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any(), any())).thenReturn(initialTimestamp)
-        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(knownArtifact, newArtifact))
+        whenever(mavenIndexScannerService.scanForNewKMPArtifacts(originUrl))
+            .thenReturn(flowOf(knownArtifact, newArtifact))
 
         val errorChannel = Channel<Exception>()
 
@@ -257,7 +288,7 @@ internal class CentralSonatypePackageDiscovererTest {
 
         whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(emptyList())
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any(), any())).thenReturn(initialTimestamp)
-        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf(artifact1, artifact2))
+        whenever(mavenIndexScannerService.scanForNewKMPArtifacts(originUrl)).thenReturn(flowOf(artifact1, artifact2))
 
         val errorChannel = Channel<Exception>()
 
@@ -275,7 +306,7 @@ internal class CentralSonatypePackageDiscovererTest {
     fun `should handle empty results`() = runTest {
         whenever(packageRepository.findAllKnownMavenCentralPackages()).thenReturn(emptyList())
         whenever(mavenIndexDownloadingService.downloadIndexIfNewer(any(), any())).thenReturn(initialTimestamp)
-        whenever(mavenIndexScannerService.scanForNewKMPArtifacts()).thenReturn(flowOf())
+        whenever(mavenIndexScannerService.scanForNewKMPArtifacts(originUrl)).thenReturn(flowOf())
 
         val errorChannel = Channel<Exception>()
 
@@ -284,5 +315,35 @@ internal class CentralSonatypePackageDiscovererTest {
         assertEquals(0, artifacts.size)
         verify(mavenCentralLogRepository, times(1)).saveMavenIndexTimestamp(any())
     }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `should report download errors and update known packages using the same source`(mirror: Boolean) = runTest {
+        val failure = IllegalStateException("Index download failed")
+        val errorChannel = Channel<Exception>(Channel.UNLIMITED)
+        val artifact = MavenArtifact("org.example", "test-lib", "1.1.0", providerFor(mirror).scraperType)
+        whenever(packageRepository.findAllKnownMavenCentralPackages())
+            .thenReturn(listOf(Package("org.example", "test-lib", setOf("1.0.0"))))
+        whenever(mavenIndexDownloadingService.downloadIndexIfNewer(initialTimestamp, providerFor(mirror)))
+            .thenThrow(failure)
+        whenever(scraperFor(mirror).findNewVersions(any(), any())).thenReturn(flowOf(artifact))
+
+        assertEquals(listOf(artifact), discovererFor(mirror).discover(errorChannel).toList())
+        val error = errorChannel.receive()
+        assertEquals("Failed to download Maven index", error.message)
+        assertEquals(failure, error.cause)
+        verify(scannerFor(mirror), never()).scanForNewKMPArtifacts(any())
+        verify(mavenCentralLogRepository, never()).saveMavenIndexTimestamp(any())
+    }
+
+    private fun providerFor(mirror: Boolean): BaseMavenCentralStaticDataProvider =
+        if (mirror) googleMavenCentralMirrorStaticDataProvider else centralSonatypeStaticDataProvider
+
+    private fun scannerFor(mirror: Boolean): MavenIndexScannerService =
+        if (mirror) googleMavenCentralMirrorIndexScannerService else mavenIndexScannerService
+
+    private fun scraperFor(mirror: Boolean): MavenCentralScraper =
+        if (mirror) googleMavenCentralMirrorScraper else centralSonatypeScraper
+
 
 }

@@ -10,6 +10,7 @@ import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.service.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
+import io.klibs.integration.maven.service.impl.BaseMavenCentralStaticDataProvider
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,7 +32,7 @@ abstract class BaseMavenCentralPackageDiscoverer(
     private val mavenCentralLogRepository: MavenCentralLogRepository,
     private val packageRepository: PackageRepository,
     private val blacklistRepository: BlacklistRepository,
-    private val fetchRemoteIndexTimestamp: () -> Instant?,
+    private val provider: BaseMavenCentralStaticDataProvider,
     private val sourceName: String,
 ) : PackageDiscoverer {
 
@@ -44,7 +45,7 @@ abstract class BaseMavenCentralPackageDiscoverer(
 
             newIndexTs = mavenIndexDownloadingService.downloadIndexIfNewer(
                 localIndexTimestamp = localIndexTimestamp,
-                fetchRemoteIndexTimestamp = fetchRemoteIndexTimestamp,
+                provider = provider,
             )
         } catch (e: Exception) {
             errorChannel.send(Exception("Failed to download Maven index", e))
@@ -64,7 +65,7 @@ abstract class BaseMavenCentralPackageDiscoverer(
         val existingPackages = collectAllKnownMavenCentralPackages(packageRepository)
 
         return mavenIndexScannerService
-            .scanForNewKMPArtifacts()
+            .scanForNewKMPArtifacts(provider.contentEndpoint)
             .filterNot { blacklistRepository.checkPackageBanned(it.groupId, it.artifactId) }
             .chunked(100)
             .flatMapConcat { foundArtifactsBatch ->

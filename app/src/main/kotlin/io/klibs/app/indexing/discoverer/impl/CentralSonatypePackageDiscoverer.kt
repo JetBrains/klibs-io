@@ -7,7 +7,7 @@ import io.klibs.integration.maven.repository.MavenCentralLogRepository
 import io.klibs.integration.maven.service.MavenCentralScraper
 import io.klibs.integration.maven.service.MavenIndexDownloadingService
 import io.klibs.integration.maven.service.MavenIndexScannerService
-import io.klibs.integration.maven.service.impl.BaseMavenCentralStaticDataProvider
+import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
@@ -20,7 +20,7 @@ class CentralSonatypePackageDiscoverer(
     centralSonatypeScraper: MavenCentralScraper,
     mavenCentralLogRepository: MavenCentralLogRepository,
     packageRepository: PackageRepository,
-    sonatypeCentralStaticDataProvider: BaseMavenCentralStaticDataProvider,
+    sonatypeCentralStaticDataProvider: SonatypeCentralStaticDataProvider,
     blacklistRepository: BlacklistRepository,
 ) : BaseMavenCentralPackageDiscoverer(
     mavenIndexDownloadingService = mavenIndexDownloadingService,
@@ -29,6 +29,6 @@ class CentralSonatypePackageDiscoverer(
     mavenCentralLogRepository = mavenCentralLogRepository,
     packageRepository = packageRepository,
     blacklistRepository = blacklistRepository,
-    fetchRemoteIndexTimestamp = sonatypeCentralStaticDataProvider::fetchRemoteIndexTimestamp,
+    provider = sonatypeCentralStaticDataProvider,
     sourceName = "Central sonatype",
 )
