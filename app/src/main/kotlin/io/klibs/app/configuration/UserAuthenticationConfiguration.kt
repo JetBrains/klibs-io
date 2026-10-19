@@ -1,6 +1,5 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.auth.TrustedOriginValidator
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.core.user.service.AuthenticationHashingService
 import io.klibs.core.user.service.UserSessionSettings
@@ -8,7 +7,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.env.Environment
 import java.util.Base64
 
 @Configuration
@@ -34,20 +32,25 @@ class UserAuthenticationConfiguration {
     @Bean
     fun userSessionSettings(
         userAuthenticationProperties: UserAuthenticationProperties,
-    ): UserSessionSettings = UserSessionSettings(
-        idleTtl = userAuthenticationProperties.session.idleTtl,
-        refreshInterval = userAuthenticationProperties.session.refreshInterval,
-        absoluteTtl = userAuthenticationProperties.session.absoluteTtl,
-    )
-
-    @Bean
-    fun trustedOriginValidator(
-        userAuthenticationProperties: UserAuthenticationProperties,
-        environment: Environment,
-    ): TrustedOriginValidator = TrustedOriginValidator(
-        trustedOrigin = userAuthenticationProperties.trustedFrontendOrigin,
-        requireHttps = environment.matchesProfiles("prod"),
-    )
+    ): UserSessionSettings {
+        val idleTtlFromProperty = userAuthenticationProperties.session.idleTtl
+        val refreshIntervalFromProperty = userAuthenticationProperties.session.refreshInterval
+        val absoluteTtlFromProperty = userAuthenticationProperties.session.absoluteTtl
+        require(idleTtlFromProperty.isPositive) {
+            "Session idle TTL must be positive"
+        }
+        require(refreshIntervalFromProperty.isPositive && refreshIntervalFromProperty < idleTtlFromProperty) {
+            "Session refresh interval must be positive and shorter than the idle TTL"
+        }
+        require(absoluteTtlFromProperty >= idleTtlFromProperty) {
+            "Session absolute TTL must be greater than or equal to the idle TTL"
+        }
+        return UserSessionSettings(
+            idleTtl = idleTtlFromProperty,
+            refreshInterval = refreshIntervalFromProperty,
+            absoluteTtl = absoluteTtlFromProperty,
+        )
+    }
 
     private companion object {
         const val MINIMUM_HMAC_SECRET_SIZE_BYTES = 32

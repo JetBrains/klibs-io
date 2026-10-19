@@ -4,7 +4,7 @@ import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.springframework.mock.env.MockEnvironment
+import org.junit.jupiter.params.provider.EnumSource
 import java.time.Duration
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -49,20 +49,23 @@ class UserAuthenticationConfigurationTest {
         assertEquals(ABSOLUTE_TTL, settings.absoluteTtl)
     }
 
-    @Test
-    fun `requires a secure trusted origin in production`() {
-        val configuration = UserAuthenticationConfiguration()
+    @ParameterizedTest
+    @EnumSource(InvalidSessionLifetime::class)
+    fun `rejects invalid session lifetime configuration`(
+        configuration: InvalidSessionLifetime,
+    ) {
         val properties = UserAuthenticationProperties(
             hmacSecret = VALID_HMAC_SECRET,
-            trustedFrontendOrigin = "http://frontend.example",
-            session = SESSION_PROPERTIES,
+            trustedFrontendOrigin = TRUSTED_ORIGIN,
+            session = SESSION_PROPERTIES.copy(
+                idleTtl = configuration.idleTtl,
+                refreshInterval = configuration.refreshInterval,
+                absoluteTtl = configuration.absoluteTtl,
+            ),
         )
-        val environment = MockEnvironment().apply {
-            setActiveProfiles("prod")
-        }
 
         assertFailsWith<IllegalArgumentException> {
-            configuration.trustedOriginValidator(properties, environment)
+            UserAuthenticationConfiguration().userSessionSettings(properties)
         }
     }
 
@@ -82,4 +85,15 @@ class UserAuthenticationConfigurationTest {
             cookieSecure = true,
         )
     }
+}
+
+enum class InvalidSessionLifetime(
+    val idleTtl: Duration = Duration.ofDays(30),
+    val refreshInterval: Duration = Duration.ofDays(1),
+    val absoluteTtl: Duration = Duration.ofDays(180),
+) {
+    ZERO_IDLE_TTL(idleTtl = Duration.ZERO),
+    ZERO_REFRESH_INTERVAL(refreshInterval = Duration.ZERO),
+    REFRESH_INTERVAL_EQUAL_TO_IDLE(refreshInterval = Duration.ofDays(30)),
+    ABSOLUTE_TTL_SHORTER_THAN_IDLE(absoluteTtl = Duration.ofDays(30).minusSeconds(1)),
 }

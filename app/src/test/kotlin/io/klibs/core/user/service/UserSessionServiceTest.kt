@@ -4,8 +4,6 @@ import io.klibs.core.user.entity.UserEntity
 import io.klibs.core.user.entity.UserSessionEntity
 import io.klibs.core.user.repository.UserSessionRepository
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
@@ -19,7 +17,6 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class UserSessionServiceTest {
@@ -152,20 +149,6 @@ class UserSessionServiceTest {
         verify(sessionRepository, never()).delete(any<UserSessionEntity>())
     }
 
-    @ParameterizedTest
-    @EnumSource(InvalidSessionLifetime::class)
-    fun `rejects invalid session lifetime configuration`(configuration: InvalidSessionLifetime) {
-        assertFailsWith<IllegalArgumentException> {
-            service(
-                sessionSettings = UserSessionSettings(
-                    idleTtl = configuration.idleTtl,
-                    refreshInterval = configuration.refreshInterval,
-                    absoluteTtl = configuration.absoluteTtl,
-                )
-            )
-        }
-    }
-
     private fun service(
         sessionSettings: UserSessionSettings = UserSessionSettings(
             idleTtl = IDLE_TTL,
@@ -214,15 +197,4 @@ class UserSessionServiceTest {
         const val TOKEN = "test-token"
         const val TOKEN_HASH = "c99f455fb84f6c109473b11de7df05f2053d9a09dcafd6b38ee45e50d60e0be6"
     }
-}
-
-enum class InvalidSessionLifetime(
-    val idleTtl: Duration = Duration.ofDays(30),
-    val refreshInterval: Duration = Duration.ofDays(1),
-    val absoluteTtl: Duration = Duration.ofDays(180),
-) {
-    ZERO_IDLE_TTL(idleTtl = Duration.ZERO),
-    ZERO_REFRESH_INTERVAL(refreshInterval = Duration.ZERO),
-    REFRESH_INTERVAL_EQUAL_TO_IDLE(refreshInterval = Duration.ofDays(30)),
-    ABSOLUTE_TTL_SHORTER_THAN_IDLE(absoluteTtl = Duration.ofDays(30).minusSeconds(1)),
 }
