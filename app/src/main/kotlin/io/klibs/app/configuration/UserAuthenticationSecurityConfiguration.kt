@@ -1,11 +1,11 @@
 package io.klibs.app.configuration
 
 import io.klibs.app.auth.AUTHENTICATED_USER_AUTHORITY
-import io.klibs.app.auth.TrustedOriginValidator
 import io.klibs.app.filter.SessionOriginProtectionFilter
 import io.klibs.app.filter.UserSessionAuthenticationFilter
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
+import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -38,7 +38,7 @@ class UserAuthenticationSecurityConfiguration {
         http: HttpSecurity,
         authenticationCorsConfigurationSource: UrlBasedCorsConfigurationSource,
         sessionCookieService: SessionCookieService,
-        trustedOriginValidator: TrustedOriginValidator,
+        userAuthenticationProperties: UserAuthenticationProperties,
         userSessionService: UserSessionService,
     ): SecurityFilterChain {
         http {
@@ -63,7 +63,7 @@ class UserAuthenticationSecurityConfiguration {
         http.addFilterBefore(
             SessionOriginProtectionFilter(
                 sessionCookieService,
-                trustedOriginValidator,
+                userAuthenticationProperties.trustedFrontendOrigin,
                 PathPatternRequestMatcher.pathPattern(HttpMethod.POST, SIGN_OUT_PATH),
             ),
             LogoutFilter::class.java,
@@ -85,7 +85,7 @@ class UserAuthenticationSecurityConfiguration {
         http: HttpSecurity,
         authenticationCorsConfigurationSource: UrlBasedCorsConfigurationSource,
         sessionCookieService: SessionCookieService,
-        trustedOriginValidator: TrustedOriginValidator,
+        userAuthenticationProperties: UserAuthenticationProperties,
         userSessionService: UserSessionService,
     ): SecurityFilterChain {
         http {
@@ -118,7 +118,7 @@ class UserAuthenticationSecurityConfiguration {
         }
 
         http.addFilterBefore(
-            SessionOriginProtectionFilter(sessionCookieService, trustedOriginValidator),
+            SessionOriginProtectionFilter(sessionCookieService, userAuthenticationProperties.trustedFrontendOrigin),
             LogoutFilter::class.java,
         )
         http.addFilterBefore(

@@ -1,6 +1,5 @@
 package io.klibs.app.filter
 
-import io.klibs.app.auth.TrustedOriginValidator
 import io.klibs.app.service.SessionCookieService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -13,7 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 
 class SessionOriginProtectionFilter(
     private val sessionCookieService: SessionCookieService,
-    private val trustedOriginValidator: TrustedOriginValidator,
+    private val trustedOrigin: String,
     private val requestMatcher: RequestMatcher = AnyRequestMatcher.INSTANCE,
 ) : OncePerRequestFilter() {
     override fun shouldNotFilter(request: HttpServletRequest): Boolean = !requestMatcher.matches(request)
@@ -27,7 +26,7 @@ class SessionOriginProtectionFilter(
         if (
             sessionToken != null &&
             request.method !in SAFE_HTTP_METHODS &&
-            !trustedOriginValidator.isTrustedOrigin(request)
+            request.getHeader(HttpHeaders.ORIGIN) != trustedOrigin
         ) {
             log.warn(
                 "Rejected request carrying a session cookie due to untrusted origin: method={}, path={}, origin={}",

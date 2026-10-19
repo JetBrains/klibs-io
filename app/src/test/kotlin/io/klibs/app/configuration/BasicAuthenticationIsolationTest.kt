@@ -1,6 +1,5 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.auth.TrustedOriginValidator
 import io.klibs.app.service.SessionCookieService
 import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
@@ -87,9 +86,6 @@ class BasicAuthenticationIsolationTest {
     private lateinit var sessionCookieService: SessionCookieService
 
     @MockitoBean
-    private lateinit var trustedOriginValidator: TrustedOriginValidator
-
-    @MockitoBean
     private lateinit var userSessionService: UserSessionService
 
     @Test
@@ -163,7 +159,7 @@ class BasicAuthenticationIsolationTest {
     }
 
     private fun verifyUserSessionAuthenticationWasNotUsed() {
-        verifyNoInteractions(sessionCookieService, trustedOriginValidator, userSessionService)
+        verifyNoInteractions(sessionCookieService, userSessionService)
     }
 
     private fun sessionCookie(): Cookie = Cookie(SESSION_COOKIE_NAME, "session-token")
