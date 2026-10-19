@@ -4,6 +4,7 @@ import io.klibs.core.pckg.dto.projection.ForkBanCandidateView
 import io.klibs.core.pckg.entity.SuspiciousPackageCandidateEntity
 import io.klibs.core.pckg.entity.SuspiciousPackageCandidateKey
 import io.klibs.core.pckg.enums.CandidateStatus
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -125,7 +126,7 @@ interface SuspiciousPackageCandidateRepository :
         @Param("notes") notes: String,
     ): Int
 
-    fun findAllByStatus(status: CandidateStatus): List<SuspiciousPackageCandidateEntity>
+    fun findAllByStatus(status: CandidateStatus, pageable: Pageable): List<SuspiciousPackageCandidateEntity>
 
     fun countByStatus(status: CandidateStatus): Long
 }

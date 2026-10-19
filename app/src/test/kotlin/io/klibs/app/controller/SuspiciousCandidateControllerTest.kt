@@ -40,16 +40,31 @@ class SuspiciousCandidateControllerTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(SEED)
     fun `lists only pending candidates`() {
-        val response = mockMvc.get("/suspicious-candidates")
-            .andExpect { status { isOk() } }
-            .andReturn().response.contentAsString
-            .let { objectMapper.readValue(it, Array<SuspiciousCandidateResponse>::class.java) }
+        val response = pending("")
 
         assertEquals(
             setOf("app.cash.zipline:loader", "$SUSPECT:loader", "$SUSPECT:runtime"),
             response.map { "${it.groupId}:${it.artifactId}" }.toSet(),
         )
         assertEquals(setOf(60001), response.map { it.projectId }.toSet())
+    }
+
+    @Test
+    @Sql(SEED)
+    fun `pages split pending candidates in primary key order`() {
+        val coordinates = { page: Int -> pending("?page=$page&limit=2").map { "${it.groupId}:${it.artifactId}" } }
+
+        assertEquals(listOf("app.cash.zipline:loader", "$SUSPECT:loader"), coordinates(1))
+        assertEquals(listOf("$SUSPECT:runtime"), coordinates(2))
+        assertEquals(emptyList(), coordinates(3))
+    }
+
+    @Test
+    @Sql(SEED)
+    fun `out of range page or limit is rejected`() {
+        mockMvc.get("/suspicious-candidates?page=0").andExpect { status { isBadRequest() } }
+        mockMvc.get("/suspicious-candidates?limit=0").andExpect { status { isBadRequest() } }
+        mockMvc.get("/suspicious-candidates?limit=1001").andExpect { status { isBadRequest() } }
     }
 
     @Test
@@ -107,6 +122,12 @@ class SuspiciousCandidateControllerTest : BaseUnitWithDbLayerTest() {
         assertEquals(CandidateStatus.PENDING to null, candidate("runtime", SUSPECT))
         assertEquals(0, bannedCount())
     }
+
+    private fun pending(query: String): List<SuspiciousCandidateResponse> =
+        mockMvc.get("/suspicious-candidates$query")
+            .andExpect { status { isOk() } }
+            .andReturn().response.contentAsString
+            .let { objectMapper.readValue(it, Array<SuspiciousCandidateResponse>::class.java).toList() }
 
     private fun keep(groupId: String, note: String) =
         post("keep", KeepSuspiciousCandidateRequest(60001, groupId, note))
