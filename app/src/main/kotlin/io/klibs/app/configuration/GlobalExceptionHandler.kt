@@ -1,7 +1,9 @@
 package io.klibs.app.configuration
 
+import io.klibs.app.service.CandidateBanRefusedException
 import jakarta.validation.ConstraintViolationException
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -37,6 +39,11 @@ class GlobalExceptionHandler {
             errors = errors
         )
     }
+
+    @ExceptionHandler(CandidateBanRefusedException::class)
+    fun handleCandidateBanRefused(e: CandidateBanRefusedException): ResponseEntity<String> =
+        ResponseEntity.status(HttpStatus.CONFLICT)
+            .body("${e.message}: the row is not PENDING, or the package is missing or already banned")
 }
 
 data class ApiError(
