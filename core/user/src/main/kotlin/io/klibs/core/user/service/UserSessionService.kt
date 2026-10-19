@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.security.SecureRandom
 import java.time.Clock
 import java.time.Duration
+import java.time.Instant
 import java.util.Base64
 
 @Service
@@ -52,35 +53,16 @@ class UserSessionService(
             return null
         }
 
-        // Refresh at most once per interval instead of writing on every request.
-        val refreshTime = session.expiresAt
-            .minus(sessionSettings.idleTtl)
-            .plus(sessionSettings.refreshInterval)
-        if (now.isBefore(refreshTime)) {
-            return AuthenticatedSessionDTO(
-                userId = session.user.id,
-                refreshedCookieTtl = null,
-            )
+        val refreshedExpiresAt = calculateRefreshedExpiration(session, now, absoluteExpiresAt)
+        val refreshedCookieTtl = if (refreshedExpiresAt != null) {
+            refreshSession(session, now, refreshedExpiresAt)
+        } else {
+            null
         }
-
-        // Never extend a session beyond its absolute lifetime.
-        val refreshedExpiresAt = minOf(now.plus(sessionSettings.idleTtl), absoluteExpiresAt)
-        if (!refreshedExpiresAt.isAfter(session.expiresAt)) {
-            return AuthenticatedSessionDTO(
-                userId = session.user.id,
-                refreshedCookieTtl = null,
-            )
-        }
-
-        val expirationRefreshed = sessionRepository.updateExpiration(
-            id = session.id,
-            currentExpiresAt = session.expiresAt,
-            newExpiresAt = refreshedExpiresAt,
-        ) > 0
 
         return AuthenticatedSessionDTO(
             userId = session.user.id,
-            refreshedCookieTtl = if (expirationRefreshed) Duration.between(now, refreshedExpiresAt) else null,
+            refreshedCookieTtl = refreshedCookieTtl,
         )
     }
 
@@ -88,6 +70,38 @@ class UserSessionService(
         val tokenHash = hashingService.hashSessionToken(token)
         val session = sessionRepository.findByTokenHash(tokenHash) ?: return
         sessionRepository.delete(session)
+    }
+
+    private fun calculateRefreshedExpiration(
+        session: UserSessionEntity,
+        now: Instant,
+        absoluteExpiresAt: Instant,
+    ): Instant? {
+        // Refresh at most once per interval instead of writing on every request.
+        val refreshTime = session.expiresAt
+            .minus(sessionSettings.idleTtl)
+            .plus(sessionSettings.refreshInterval)
+        if (now.isBefore(refreshTime)) return null
+
+        // Never extend a session beyond its absolute lifetime.
+        val refreshedExpiresAt = minOf(now.plus(sessionSettings.idleTtl), absoluteExpiresAt)
+        if (!refreshedExpiresAt.isAfter(session.expiresAt)) return null
+
+        return refreshedExpiresAt
+    }
+
+    private fun refreshSession(
+        session: UserSessionEntity,
+        now: Instant,
+        refreshedExpiresAt: Instant,
+    ): Duration? {
+        val expirationRefreshed = sessionRepository.updateExpiration(
+            id = session.id,
+            currentExpiresAt = session.expiresAt,
+            newExpiresAt = refreshedExpiresAt,
+        ) > 0
+
+        return if (expirationRefreshed) Duration.between(now, refreshedExpiresAt) else null
     }
 
     private fun generateToken(): String {

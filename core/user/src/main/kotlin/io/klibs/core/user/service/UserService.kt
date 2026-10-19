@@ -19,12 +19,22 @@ class UserService(
         val externalUserIdHash = hashingService.hashExternalIdentity(identity)
 
         val existingUser = userRepository.findByExternalUserIdHash(externalUserIdHash)
-        if (existingUser != null) return existingUser
+        if (existingUser != null) {
+            return existingUser
+        }
 
-        userRepository.saveIfAbsent(
-            UUID.randomUUID(),
-            externalUserIdHash,
+        val newUser = UserEntity(
+            id = UUID.randomUUID(),
+            externalUserIdHash = externalUserIdHash,
         )
+        val wasInserted = userRepository.saveIfAbsent(
+            id = newUser.id,
+            externalUserIdHash = newUser.externalUserIdHash,
+        ) > 0
+
+        if (wasInserted) {
+            return newUser
+        }
 
         val createdUser = userRepository.findByExternalUserIdHash(externalUserIdHash)
         if (createdUser == null) {
