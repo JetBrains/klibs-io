@@ -6,6 +6,10 @@
       "headers": {
         "Authorization": "Bearer ${UIVERIFY_API_KEY}"
       }
+    },
+    "idea": {
+      "url": "http://127.0.0.1:64342/stream",
+      "type": "http"
     }
   }
 }

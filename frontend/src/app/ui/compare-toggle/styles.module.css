@@ -1,0 +1,13 @@
+.toggle {
+    --rs-color-primary-light-theme: #0067FF;
+
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.checkedLabel {
+    color: #0067FF;
+}

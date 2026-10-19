@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import "./globals.css";
 
 import Navbar from "@/app/ui/navbar";
+import CompareProvider from "@/app/ui/compare-provider";
 import React from "react";
 import { GoogleTagManager } from "@next/third-parties/google";
 
@@ -47,7 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
             <body className="d-flex flex-column">
                 <Navbar />
-                {children}
+                <CompareProvider>{children}</CompareProvider>
             </body>
         </html>
     );

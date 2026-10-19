@@ -1,0 +1,28 @@
+.compareBar {
+    --rs-color-primary-light-theme: #0067FF;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 24px;
+    background: var(--w);
+    box-shadow: 0 0 16px rgba(0, 0, 0, 0.1);
+}
+
+.items {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 12px;
+}
