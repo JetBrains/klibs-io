@@ -7,6 +7,8 @@ import io.klibs.core.pckg.repository.SuspiciousPackageCandidateRepository
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -23,8 +25,11 @@ class SuspiciousCandidateReviewService(
             .register(registry)
     }
 
-    fun findPending(): List<SuspiciousCandidateResponse> =
-        suspiciousPackageCandidateRepository.findAllByStatus(CandidateStatus.PENDING)
+    fun findPending(page: Int, limit: Int): List<SuspiciousCandidateResponse> =
+        suspiciousPackageCandidateRepository.findAllByStatus(
+            CandidateStatus.PENDING,
+            PageRequest.of(page - 1, limit, Sort.by("projectId", "groupId", "artifactId")),
+        )
             .map { SuspiciousCandidateResponse(it.projectId, it.groupId, it.artifactId, it.detectedAt) }
 
     /** Returns false when the groupId has no PENDING rows in the project. */
