@@ -3,14 +3,12 @@ package io.klibs.app.controller
 import io.klibs.app.api.BanSuspiciousCandidateRequest
 import io.klibs.app.api.KeepSuspiciousCandidateRequest
 import io.klibs.app.api.SuspiciousCandidateResponse
-import io.klibs.app.service.CandidateBanRefusedException
 import io.klibs.app.service.SuspiciousCandidateReviewService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -52,9 +50,4 @@ class SuspiciousCandidateController(
         )
         return ResponseEntity.ok("Resolved and banned")
     }
-
-    @ExceptionHandler(CandidateBanRefusedException::class)
-    fun banRefused(e: CandidateBanRefusedException): ResponseEntity<String> =
-        ResponseEntity.status(HttpStatus.CONFLICT)
-            .body("${e.message}: the row is not PENDING, or the package is missing or already banned")
 }
