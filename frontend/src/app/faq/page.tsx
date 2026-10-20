@@ -24,8 +24,6 @@ const POM_EXAMPLE_URL =
 const TOOLING_METADATA_EXAMPLE_URL =
     "https://maven-central.storage-download.googleapis.com/maven2/" +
     "org/jetbrains/kotlinx/kotlinx-coroutines-core/1.8.0/kotlinx-coroutines-core-1.8.0-kotlin-tooling-metadata.json";
-const INDEX_PROPERTIES_URL =
-    "https://maven-central.storage-download.googleapis.com/maven2/.index/nexus-maven-repository-index.properties";
 
 export default function Faq() {
     return (
