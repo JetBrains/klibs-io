@@ -1,4 +1,12 @@
-FROM node:24-alpine AS base
+FROM node:24.22.1-alpine AS base
+
+# Alpine CA bundle with eMudhra remediation
+RUN apk add --no-cache --upgrade ca-certificates \
+    && update-ca-certificates
+
+# Use the patched system CA store instead of Node's bundled store
+ENV NODE_OPTIONS="--use-openssl-ca" \
+    NEXT_TELEMETRY_DISABLED=1
 
 # Stage 1: Install dependencies
 FROM base AS deps
@@ -25,9 +33,6 @@ COPY . .
 
 COPY --from=deps /app/node_modules ./node_modules
 
-# Disable Next.js telemetry
-ENV NEXT_TELEMETRY_DISABLED=1
-
 # Select which env file to use at build time (defaults to production)
 ARG APP_ENV=production
 COPY .env.${APP_ENV} ./.env.production
@@ -38,12 +43,10 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-# Disable Next.js telemetry
-ENV NEXT_TELEMETRY_DISABLED=1
-
 # Install runtime dependencies for 'sharp'
 RUN apk add --no-cache \
     libc6-compat \
+    curl \
     vips
 
 # Copy necessary files from the builder stage
