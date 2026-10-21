@@ -47,6 +47,26 @@ profiles:
               applicationName: "{{.APPLICATION_NAME}}"
             valuesFiles:
               - values-features.yaml
+  - name: zimmer
+    build:
+      artifacts:
+        - image: registry.jetbrains.team/p/klibs-io/containers/klibs-frontend
+          docker:
+            buildArgs:
+              APP_ENV: "zimmer"
+    deploy:
+      helm:
+        releases:
+          - name: klibs-frontend
+            remoteChart: oci://registry.jetbrains.team/p/cb/helm-charts/simple-app
+            version: 0.2.1
+            upgradeOnChange: true
+            setValueTemplates:
+              image: "{{.IMAGE_FULLY_QUALIFIED}}"
+              imagePullSecret: "{{.IMAGE_PULL_SECRET}}"
+              applicationName: "{{.APPLICATION_NAME}}"
+            valuesFiles:
+              - values-features.yaml
   - name: staging
     build:
       artifacts:
