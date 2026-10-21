@@ -1,7 +1,5 @@
 package io.klibs.app.filter
 
-import io.klibs.app.auth.AUTHENTICATED_USER_AUTHORITY
-import io.klibs.app.auth.AuthenticatedUserPrincipal
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
 import jakarta.servlet.FilterChain
@@ -15,6 +13,8 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.security.web.util.matcher.AnyRequestMatcher
 import org.springframework.security.web.util.matcher.RequestMatcher
 import org.springframework.web.filter.OncePerRequestFilter
+
+internal const val AUTHENTICATED_USER_AUTHORITY = "KLIBS_USER"
 
 class UserSessionAuthenticationFilter(
     private val sessionCookieService: SessionCookieService,
@@ -50,7 +50,7 @@ class UserSessionAuthenticationFilter(
         }
 
         val authentication = PreAuthenticatedAuthenticationToken(
-            AuthenticatedUserPrincipal(session.userId),
+            session.userId,
             null,
             listOf(SimpleGrantedAuthority(AUTHENTICATED_USER_AUTHORITY)),
         )

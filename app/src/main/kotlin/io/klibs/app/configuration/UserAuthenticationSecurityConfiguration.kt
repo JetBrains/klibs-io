@@ -1,6 +1,6 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.auth.AUTHENTICATED_USER_AUTHORITY
+import io.klibs.app.filter.AUTHENTICATED_USER_AUTHORITY
 import io.klibs.app.filter.SessionOriginProtectionFilter
 import io.klibs.app.filter.UserSessionAuthenticationFilter
 import io.klibs.app.service.SessionCookieService

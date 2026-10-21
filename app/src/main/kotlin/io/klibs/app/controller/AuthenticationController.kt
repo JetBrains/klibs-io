@@ -1,7 +1,6 @@
 package io.klibs.app.controller
 
 import io.klibs.app.api.CurrentUserResponse
-import io.klibs.app.auth.AuthenticatedUserPrincipal
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
 import jakarta.servlet.http.HttpServletRequest
@@ -13,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 
 @RestController
 @RequestMapping("/auth")
@@ -23,11 +23,11 @@ class AuthenticationController(
 ) {
     @GetMapping("/current-user")
     fun currentUser(
-        @AuthenticationPrincipal principal: AuthenticatedUserPrincipal?,
+        @AuthenticationPrincipal principalUserId: UUID?,
     ): CurrentUserResponse =
         CurrentUserResponse(
-            authenticated = principal != null,
-            userId = principal?.userId,
+            authenticated = principalUserId != null,
+            userId = principalUserId,
         )
 
     @PostMapping("/sign-out")

@@ -1,6 +1,5 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.auth.AuthenticatedUserPrincipal
 import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.app.service.SessionCookieService
@@ -183,8 +182,8 @@ class UserActionSecurityTest {
 internal class UserActionSecurityProbeController {
     @GetMapping(USER_ACTION_PATH)
     fun read(
-        @AuthenticationPrincipal principal: AuthenticatedUserPrincipal,
-    ): UserActionSecurityProbeResponse = UserActionSecurityProbeResponse(principal.userId)
+        @AuthenticationPrincipal userId: UUID,
+    ): UserActionSecurityProbeResponse = UserActionSecurityProbeResponse(userId)
 
     @PostMapping(USER_ACTION_PATH)
     fun write(): ResponseEntity<Void> = ResponseEntity.noContent().build()
