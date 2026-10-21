@@ -51,6 +51,14 @@ profiles:
       - op: replace
         path: /deploy/helm/releases/0/valuesFiles/1
         value: values.features.yaml
+  - name: zimmer
+    patches:
+      - op: replace
+        path: /build/artifacts/0/image
+        value: registry.jetbrains.team/p/klibs-io/containers/klibs-zimmer
+      - op: replace
+        path: /deploy/helm/releases/0/valuesFiles/1
+        value: values.zimmer.yaml
   - name: kotlintoolchain
     patches:
       - op: replace
