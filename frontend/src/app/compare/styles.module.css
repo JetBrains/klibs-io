@@ -10,6 +10,11 @@
     margin-bottom: 24px;
 }
 
+/* Rescui draws the chip border on ::before and makes it 2px when selected */
+.rowFilter [data-rs-internal='chip-list__chip']::before {
+    border-width: 1px;
+}
+
 /* Fixed layout gives every project column the same width */
 .table {
     table-layout: fixed;
