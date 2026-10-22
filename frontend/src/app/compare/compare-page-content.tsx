@@ -15,7 +15,7 @@ import {CompareProjectResponse, getPlatformName, kFormatter, Platform, platformO
 import {useCompare} from "@/app/ui/compare-provider";
 import Container from "@/app/ui/container";
 import {ContentFailed} from "@/app/ui/content-failed";
-import {TimestampToDate} from "@/app/ui/time-ago";
+import TimeAgo from "@/app/ui/time-ago";
 
 import styles from './styles.module.css';
 
@@ -26,6 +26,7 @@ interface ComparePageContentProps {
 interface CompareRow {
     label: string;
     render: (project: CompareProjectResponse) => ReactNode;
+    isGood?: (project: CompareProjectResponse) => boolean;
 }
 
 const sortedPlatforms = (platforms: string[]) =>
@@ -46,25 +47,41 @@ const DESCRIPTION_MAX_LENGTH = 300;
 const truncate = (text: string | null, maxLength: number) =>
     text && text.length > maxLength ? `${text.slice(0, maxLength).trimEnd()}…` : text;
 
+// SPDX ids plus the GitHub display names that licenseName actually carries
+const PERMISSIVE_LICENSES = new Set([
+    'MIT', 'Apache-2.0', 'ISC', 'BSD-2-Clause', 'BSD-3-Clause', 'Unlicense', '0BSD',
+    'MIT License', 'Apache License 2.0', 'ISC License', 'BSD 2-Clause "Simplified" License',
+    'BSD 3-Clause "New" or "Revised" License', 'The Unlicense', 'BSD Zero Clause License',
+]);
+
+const FRESH_PERIOD_MILLIS = 3 * 30 * 24 * 60 * 60 * 1000;
+
+const isRecent = (timestamp: number) => Date.now() - timestamp < FRESH_PERIOD_MILLIS;
+
 const ROWS: CompareRow[] = [
     {label: 'Description', render: project => truncate(project.description, DESCRIPTION_MAX_LENGTH)},
     {label: 'Stars', render: project => kFormatter(project.scmStars)},
-    {label: 'License', render: project => project.licenseName},
-    {label: 'Latest release', render: project => project.latestReleaseVersion && <>
-        {project.latestReleaseVersion}
-        {project.latestReleasePublishedAtMillis && <div className={textCn('rs-text-3')}>
-            <TimestampToDate timestamp={project.latestReleasePublishedAtMillis}/>
-        </div>}
-    </>},
-    {label: 'Kotlin version', render: project => project.kotlinVersion},
+    {
+        label: 'License', render: project => project.licenseName,
+        isGood: project => project.licenseName !== null && PERMISSIVE_LICENSES.has(project.licenseName),
+    },
+    {label: 'Latest release', render: project => project.latestReleasePublishedAtMillis &&
+        <TimeAgo timestamp={project.latestReleasePublishedAtMillis} strictMode/>},
+    {
+        label: 'Kotlin version', render: project => project.kotlinVersion,
+        isGood: project => project.kotlinVersion?.startsWith('2.') ?? false,
+    },
     {label: 'Platforms', render: project => <div className={styles.platforms}>
         {sortedPlatforms(project.platforms).map((platform: Platform) =>
             <Tag key={platform} backgroundColor={PLATFORM_COLORS[platform]}>{getPlatformName(platform)}</Tag>
         )}
     </div>},
     {label: 'Open issues', render: project => project.openIssues},
-    {label: 'Last activity', render: project => <TimestampToDate timestamp={project.lastActivityAtMillis}/>},
-    {label: 'Created', render: project => <TimestampToDate timestamp={project.createdAtMillis}/>},
+    {
+        label: 'Last activity', render: project => <TimeAgo timestamp={project.lastActivityAtMillis} strictMode/>,
+        isGood: project => isRecent(project.lastActivityAtMillis),
+    },
+    {label: 'Created', render: project => <TimeAgo timestamp={project.createdAtMillis} strictMode/>},
     {label: 'Tags', render: project => project.tags.length > 0 ? project.tags.map(tag => `#${tag}`).join(', ') : null},
 ];
 
@@ -93,7 +110,8 @@ function CompareTable({projects, rows}: { projects: CompareProjectResponse[], ro
                                 {row.label}
                             </td>
                             {projects.map(project => (
-                                <td key={`${project.ownerLogin}/${project.projectName}`}>
+                                <td key={`${project.ownerLogin}/${project.projectName}`}
+                                    className={cn({[styles.status_good]: row.isGood?.(project)})}>
                                     {row.render(project) ?? '—'}
                                 </td>
                             ))}

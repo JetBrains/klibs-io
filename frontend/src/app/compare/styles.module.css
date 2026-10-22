@@ -60,6 +60,10 @@
     min-width: 2140px;
 }
 
+.table .status_good {
+    color: #1a7f37;
+}
+
 .platforms {
     display: flex;
     flex-wrap: wrap;
