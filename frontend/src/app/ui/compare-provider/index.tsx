@@ -4,6 +4,7 @@ import {createContext, ReactNode, useCallback, useContext, useMemo, useState} fr
 import {usePathname, useRouter} from 'next/navigation';
 
 import CompareBar, {CompareBarItem} from '@/app/ui/compare-bar';
+import CompareHint from '@/app/ui/compare-hint';
 import {MAX_COMPARE_ITEMS} from '@/app/constants';
 import {getCompareLink} from '@/app/helpers';
 
@@ -75,6 +76,7 @@ export default function CompareProvider({children}: { children: ReactNode }) {
     return (
         <CompareContext.Provider value={value}>
             {children}
+            {items.length === 0 && <CompareHint/>}
             {items.length > 0 &&
                 <div className={styles.barWrapper}>
                     <CompareBar
