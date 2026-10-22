@@ -2,19 +2,49 @@
     margin-bottom: 24px;
 }
 
+/* Fixed layout gives every project column the same width */
+.table {
+    table-layout: fixed;
+}
+
 .table th,
 .table td {
-    min-width: 140px;
+    padding-left: 12px;
     vertical-align: top;
 }
 
-/* Keeps labels visible while scrolling through up to 10 projects */
+.table thead th {
+    background: #F3F1F3;
+}
+
+/* Keeps labels visible while scrolling through many projects */
 .table .labelColumn {
     position: sticky;
     left: 0;
     z-index: 1;
-    min-width: 120px;
-    background: var(--w);
+    width: 140px;
+    background: #F3F1F3;
+}
+
+/* Project columns stay at least 200px wide: label 140px + 200px per project, scrolls from 6 projects on */
+.table:has(thead th:nth-child(7)) {
+    min-width: 1340px;
+}
+
+.table:has(thead th:nth-child(8)) {
+    min-width: 1540px;
+}
+
+.table:has(thead th:nth-child(9)) {
+    min-width: 1740px;
+}
+
+.table:has(thead th:nth-child(10)) {
+    min-width: 1940px;
+}
+
+.table:has(thead th:nth-child(11)) {
+    min-width: 2140px;
 }
 
 .platforms {

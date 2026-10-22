@@ -14,13 +14,13 @@ export async function socialMetadata(parent: ResolvingMetadata, title: string, d
 }
 
 export function getCompareLink(projects: ProjectReference[]): string {
-    const params = new URLSearchParams(projects.map(it => ['projects', `${it.ownerLogin}/${it.projectName}`]));
+    const params = new URLSearchParams({projects: projects.map(it => `${it.ownerLogin}/${it.projectName}`).join(',')});
     return `/compare?${params}`;
 }
 
-// Parses `projects=owner/name` search params, skipping malformed values
+// Parses `projects=owner/name,owner/name` search params, skipping malformed values
 export function parseCompareParams(value: string | string[] | undefined): ProjectReference[] {
-    return [value ?? []].flat().flatMap(it => {
+    return [value ?? []].flat().flatMap(it => it.split(',')).flatMap(it => {
         const [ownerLogin, projectName, ...rest] = it.split('/');
         return ownerLogin && projectName && rest.length === 0 ? [{ownerLogin, projectName}] : [];
     });

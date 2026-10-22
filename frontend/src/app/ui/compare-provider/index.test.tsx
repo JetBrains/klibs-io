@@ -10,6 +10,7 @@ const push = vi.fn();
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push }),
+    usePathname: () => '/',
 }));
 
 function renderCards() {
@@ -52,6 +53,6 @@ describe('CompareProvider', () => {
 
         await userEvent.click(screen.getByRole('button', { name: 'Compare (2/10)' }));
 
-        expect(push).toHaveBeenCalledWith('/compare?projects=arrow-kt%2FArrow&projects=InsertKoinIO%2FKoin');
+        expect(push).toHaveBeenCalledWith('/compare?projects=arrow-kt%2FArrow%2CInsertKoinIO%2FKoin');
     });
 });

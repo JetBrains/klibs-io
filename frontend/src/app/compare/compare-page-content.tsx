@@ -4,12 +4,12 @@ import {ReactNode} from "react";
 import Link from "next/link";
 import cn from "classnames";
 import {tableCn, tableOverflowWrapperCn} from "@rescui/table";
+import {Tag} from "@rescui/tag";
 import {textCn} from "@rescui/typography";
 
 import {CompareProjectResponse, getPlatformName, kFormatter, Platform, platformOrder} from "@/app/types";
 import Container from "@/app/ui/container";
 import {ContentFailed} from "@/app/ui/content-failed";
-import PlatformTag from "@/app/ui/platform-tag";
 import {TimestampToDate} from "@/app/ui/time-ago";
 
 import styles from './styles.module.css';
@@ -26,6 +26,16 @@ interface CompareRow {
 const sortedPlatforms = (platforms: string[]) =>
     platformOrder.filter(platform => platforms.includes(platform));
 
+// Same platform colors as the project page
+const PLATFORM_COLORS: Record<Platform, string> = {
+    [Platform.androidJvm]: 'var(--jvm)',
+    [Platform.jvm]: 'var(--jvm)',
+    [Platform.native]: 'var(--kotlin-native)',
+    [Platform.wasm]: 'var(--wasm)',
+    [Platform.js]: 'var(--js)',
+    [Platform.common]: 'var(--common)',
+};
+
 const ROWS: CompareRow[] = [
     {label: 'Description', render: project => project.description},
     {label: 'Stars', render: project => kFormatter(project.scmStars)},
@@ -39,7 +49,7 @@ const ROWS: CompareRow[] = [
     {label: 'Kotlin version', render: project => project.kotlinVersion},
     {label: 'Platforms', render: project => <div className={styles.platforms}>
         {sortedPlatforms(project.platforms).map((platform: Platform) =>
-            <PlatformTag key={platform}>{getPlatformName(platform)}</PlatformTag>
+            <Tag key={platform} backgroundColor={PLATFORM_COLORS[platform]}>{getPlatformName(platform)}</Tag>
         )}
     </div>},
     {label: 'Open issues', render: project => project.openIssues},
