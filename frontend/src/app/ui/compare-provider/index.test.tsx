@@ -27,7 +27,7 @@ describe('CompareProvider', () => {
         renderCards();
         expect(screen.queryByRole('button', { name: /^Compare \(/ })).not.toBeInTheDocument();
 
-        await userEvent.click(screen.getAllByRole('checkbox', { name: 'Compare' })[0]);
+        await userEvent.click(screen.getAllByText('Compare')[0]);
 
         expect(screen.getByRole('button', { name: 'Compare (1/10)' })).toBeInTheDocument();
         expect(screen.getByRole('checkbox', { name: 'Compare (1)' })).toBeChecked();
@@ -35,7 +35,7 @@ describe('CompareProvider', () => {
 
     test('hides the compare bar when the comparison is cleared', async () => {
         renderCards();
-        const [arrow, koin] = screen.getAllByRole('checkbox', { name: 'Compare' });
+        const [arrow, koin] = screen.getAllByText('Compare');
         await userEvent.click(arrow);
         await userEvent.click(koin);
 
@@ -47,7 +47,7 @@ describe('CompareProvider', () => {
 
     test('opens the comparison page with the selected libraries', async () => {
         renderCards();
-        const [arrow, koin] = screen.getAllByRole('checkbox', { name: 'Compare' });
+        const [arrow, koin] = screen.getAllByText('Compare');
         await userEvent.click(arrow);
         await userEvent.click(koin);
 
