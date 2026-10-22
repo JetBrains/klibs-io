@@ -14,6 +14,10 @@ import cn from "classnames";
 
 const SUBMIT_ISSUE_URL =
     "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=question&projects=&template=question.md&title=";
+const NOTIFIER_GRADLE_PLUGIN_URL =
+    "https://github.com/JetBrains/klibs-io/blob/master/notifier-plugin/README.md";
+const NOTIFIER_TOOLCHAIN_URL =
+    "https://kotlin-toolchain.org/dev/user-guide/publishing/#notifying-klibsio";
 const REQUEST_INDEXING_URL =
     "https://github.com/JetBrains/klibs-io-issue-management/issues/new?assignees=&labels=index-request&projects=&template=index_request.yml";
 const GOOGLE_MAVEN_CENTRAL_MIRROR_URL =
@@ -108,8 +112,19 @@ export default function Faq() {
 
                         <p>
                             If the exact version is available on the mirror and you prefer not to wait for automatic
-                            discovery, you can <a href={REQUEST_INDEXING_URL} target="_blank" className={"link-secondary"}>
-                                submit an indexing request</a>.
+                            discovery, you can use one of the following methods:
+                        </p>
+                        <ul>
+                            <li><a href={NOTIFIER_TOOLCHAIN_URL} target="_blank" className={"link-secondary"}>enable
+                                the klibs.io notifier</a> in module settings (Kotlin Toolchain projects only)
+                            </li>
+                            <li><a href={NOTIFIER_GRADLE_PLUGIN_URL} target="_blank" className={"link-secondary"}>add
+                                the klibs-io-notifier</a> plugin to your project (Gradle projects only)
+                            </li>
+                            <li><a href={REQUEST_INDEXING_URL} target="_blank" className={"link-secondary"}>
+                                submit an indexing request</a></li>
+                        </ul>
+                        <p>
                             Manual indexing cannot fetch files that are absent from the mirror.
                         </p>
 
