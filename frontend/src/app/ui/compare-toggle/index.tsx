@@ -1,6 +1,6 @@
 'use client'
 
-import {MouseEvent} from 'react';
+import {KeyboardEvent, MouseEvent} from 'react';
 import cn from 'classnames';
 import {ToggleControl} from '@rescui/toggle';
 import {textCn} from '@rescui/typography';
@@ -28,8 +28,16 @@ export default function CompareToggle({ownerLogin, name}: CompareToggleProps) {
         if (!disabled) compare.toggle({ownerLogin, name});
     };
 
+    // A native keyboard click would be cancelled by onClick and revert the checkbox, so toggle here instead
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key !== ' ' && e.key !== 'Enter') return;
+        e.preventDefault();
+        if (!disabled && !e.repeat) compare.toggle({ownerLogin, name});
+    };
+
     return (
-        <label className={styles.toggle} onClick={onClick} onMouseDown={e => e.preventDefault()}>
+        <label className={styles.toggle} onClick={onClick} onKeyDown={onKeyDown}
+               onMouseDown={e => e.preventDefault()}>
             <span className={cn(textCn('rs-text-3'), {[styles.checkedLabel]: checked})}>
                 {checked ? `Compare (${compare.items.length})` : 'Compare'}
             </span>

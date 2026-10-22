@@ -5,6 +5,7 @@ import Link from "next/link";
 import {useSearchParams} from "next/navigation";
 import cn from "classnames";
 import {Chip, ChipListMulti} from "@rescui/chip-list";
+import FocusManager from "@rescui/focus-manager";
 import {tableCn, tableOverflowWrapperCn} from "@rescui/table";
 import {Tag} from "@rescui/tag";
 import {textCn} from "@rescui/typography";
@@ -120,6 +121,11 @@ export default function ComparePageContent(props: ComparePageContentProps) {
     const projects = useComparedProjects(props.projects);
     const [visibleLabels, setVisibleLabels] = useState<string[]>(ROWS.map(row => row.label));
     const replaceCompared = useCompare()?.replace;
+
+    useEffect(() => {
+        const focusManager = new FocusManager();
+        return () => focusManager.destroy();
+    }, []);
 
     // Restores the compare bar from the URL after a reload or when opened via a link
     useEffect(() => {
