@@ -12,9 +12,15 @@ import styles from './styles.module.css';
 interface CompareContextValue {
     items: CompareBarItem[];
     isFull: boolean;
-    isSelected: (id: number) => boolean;
+    isSelected: (item: CompareBarItem) => boolean;
     toggle: (item: CompareBarItem) => void;
+    replace: (items: CompareBarItem[]) => void;
 }
+
+const isSame = (a: CompareBarItem, b: CompareBarItem) => a.ownerLogin === b.ownerLogin && a.name === b.name;
+
+const toCompareLink = (items: CompareBarItem[]) =>
+    getCompareLink(items.map(it => ({ownerLogin: it.ownerLogin, projectName: it.name})));
 
 const CompareContext = createContext<CompareContextValue | undefined>(undefined);
 
@@ -27,19 +33,20 @@ export default function CompareProvider({children}: { children: ReactNode }) {
     const pathname = usePathname();
     const [items, setItems] = useState<CompareBarItem[]>([]);
 
-    const remove = useCallback((id: number) => setItems(current => current.filter(item => item.id !== id)), []);
-
     const toggle = useCallback((item: CompareBarItem) => setItems(current => {
-        if (current.some(it => it.id === item.id)) return current.filter(it => it.id !== item.id);
+        if (current.some(it => isSame(it, item))) return current.filter(it => !isSame(it, item));
         return current.length < MAX_COMPARE_ITEMS ? [...current, item] : current;
     }), []);
+
+    const replace = useCallback((next: CompareBarItem[]) => setItems(next.slice(0, MAX_COMPARE_ITEMS)), []);
 
     const value = useMemo(() => ({
         items,
         isFull: items.length >= MAX_COMPARE_ITEMS,
-        isSelected: (id: number) => items.some(item => item.id === id),
+        isSelected: (item: CompareBarItem) => items.some(it => isSame(it, item)),
         toggle,
-    }), [items, toggle]);
+        replace,
+    }), [items, toggle, replace]);
 
     const isComparePage = pathname === '/compare';
     const clear = () => {
@@ -47,7 +54,14 @@ export default function CompareProvider({children}: { children: ReactNode }) {
         if (isComparePage) router.push('/');
     };
 
-    const compareLink = getCompareLink(items.map(it => ({ownerLogin: it.ownerLogin, projectName: it.name})));
+    // On the compare page the table follows the URL; pushState updates it without a server round-trip
+    const remove = (item: CompareBarItem) => {
+        const next = items.filter(it => !isSame(it, item));
+        setItems(next);
+        if (!isComparePage) return;
+        if (next.length > 1) window.history.pushState(null, '', toCompareLink(next));
+        else router.push('/');
+    };
 
     return (
         <CompareContext.Provider value={value}>
@@ -59,7 +73,7 @@ export default function CompareProvider({children}: { children: ReactNode }) {
                         maxItems={MAX_COMPARE_ITEMS}
                         onRemove={remove}
                         onClear={clear}
-                        onCompare={() => router.push(compareLink)}
+                        onCompare={() => router.push(toCompareLink(items))}
                         showCompare={!isComparePage}
                     />
                 </div>

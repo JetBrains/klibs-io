@@ -10,23 +10,22 @@ import {useCompare} from '@/app/ui/compare-provider';
 import styles from './styles.module.css';
 
 interface CompareToggleProps {
-    id: number;
     ownerLogin: string;
     name: string;
 }
 
-export default function CompareToggle({id, ownerLogin, name}: CompareToggleProps) {
+export default function CompareToggle({ownerLogin, name}: CompareToggleProps) {
     const compare = useCompare();
     if (!compare) return null;
 
-    const checked = compare.isSelected(id);
+    const checked = compare.isSelected({ownerLogin, name});
     const disabled = !checked && compare.isFull;
 
     // Rendered inside the card link: cancel navigation and drive the checked state manually
     const onClick = (e: MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!disabled) compare.toggle({id, ownerLogin, name});
+        if (!disabled) compare.toggle({ownerLogin, name});
     };
 
     return (

@@ -1,4 +1,12 @@
+.pageContainer {
+    margin: 72px 0 144px 0;
+}
+
 .title {
+    margin-bottom: 64px;
+}
+
+.rowFilter {
     margin-bottom: 24px;
 }
 

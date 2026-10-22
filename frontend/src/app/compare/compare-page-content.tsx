@@ -1,13 +1,17 @@
 'use client'
 
-import {ReactNode} from "react";
+import {ReactNode, useEffect, useMemo, useState} from "react";
 import Link from "next/link";
+import {useSearchParams} from "next/navigation";
 import cn from "classnames";
+import {Chip, ChipListMulti} from "@rescui/chip-list";
 import {tableCn, tableOverflowWrapperCn} from "@rescui/table";
 import {Tag} from "@rescui/tag";
 import {textCn} from "@rescui/typography";
 
+import {parseCompareParams} from "@/app/helpers";
 import {CompareProjectResponse, getPlatformName, kFormatter, Platform, platformOrder} from "@/app/types";
+import {useCompare} from "@/app/ui/compare-provider";
 import Container from "@/app/ui/container";
 import {ContentFailed} from "@/app/ui/content-failed";
 import {TimestampToDate} from "@/app/ui/time-ago";
@@ -58,7 +62,7 @@ const ROWS: CompareRow[] = [
     {label: 'Tags', render: project => project.tags.length > 0 ? project.tags.map(tag => `#${tag}`).join(', ') : null},
 ];
 
-function CompareTable({projects}: { projects: CompareProjectResponse[] }) {
+function CompareTable({projects, rows}: { projects: CompareProjectResponse[], rows: CompareRow[] }) {
     return (
         <div className={tableOverflowWrapperCn()}>
             <table className={cn(tableCn({isWide: true, size: 's'}), styles.table)}>
@@ -77,7 +81,7 @@ function CompareTable({projects}: { projects: CompareProjectResponse[] }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {ROWS.map(row => (
+                    {rows.map(row => (
                         <tr key={row.label}>
                             <td className={cn(textCn('rs-text-3', {hardness: 'hard'}), styles.labelColumn)}>
                                 {row.label}
@@ -95,14 +99,43 @@ function CompareTable({projects}: { projects: CompareProjectResponse[] }) {
     );
 }
 
-export default function ComparePageContent({projects}: ComparePageContentProps) {
+// Follows the current URL, so removals from the compare bar apply without refetching
+function useComparedProjects(projects: CompareProjectResponse[] | null) {
+    const searchParams = useSearchParams();
+    return useMemo(() => {
+        if (!projects || !searchParams) return projects;
+        const references = parseCompareParams(searchParams.getAll('projects'));
+        return projects.filter(project => references.some(
+            ref => ref.ownerLogin === project.ownerLogin && ref.projectName === project.projectName
+        ));
+    }, [projects, searchParams]);
+}
+
+export default function ComparePageContent(props: ComparePageContentProps) {
+    const projects = useComparedProjects(props.projects);
+    const [visibleLabels, setVisibleLabels] = useState<string[]>(ROWS.map(row => row.label));
+    const replaceCompared = useCompare()?.replace;
+
+    // Restores the compare bar from the URL after a reload or when opened via a link
+    useEffect(() => {
+        if (projects && projects.length > 0) {
+            replaceCompared?.(projects.map(it => ({ownerLogin: it.ownerLogin, name: it.projectName})));
+        }
+    }, [projects, replaceCompared]);
+
     if (projects === null) return <ContentFailed/>;
 
     return (
-        <Container mode="container" className="padding-top-medium padding-bottom-large">
+        <Container mode="container" className={styles.pageContainer}>
             <Container mode="wrapper">
                 <h1 className={cn(textCn('rs-h1'), styles.title)}>Compare projects</h1>
-                {projects.length > 0 ? <CompareTable projects={projects}/> :
+                {projects.length > 0 ? <>
+                    <ChipListMulti value={visibleLabels} onChange={setVisibleLabels} mode="rock" size="s" compact
+                                   className={styles.rowFilter}>
+                        {ROWS.map(row => <Chip key={row.label} value={row.label}>{row.label}</Chip>)}
+                    </ChipListMulti>
+                    <CompareTable projects={projects} rows={ROWS.filter(row => visibleLabels.includes(row.label))}/>
+                </> :
                     <p className={textCn('rs-text-2', {hardness: 'hard'})}>
                         Nothing to compare yet. Use the Compare toggle on project cards
                         to <Link href="/">pick projects</Link>.

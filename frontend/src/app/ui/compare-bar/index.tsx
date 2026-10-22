@@ -6,7 +6,6 @@ import {RemovableTag} from '@rescui/tag';
 import styles from './styles.module.css';
 
 export interface CompareBarItem {
-    id: number;
     ownerLogin: string;
     name: string;
 }
@@ -14,7 +13,7 @@ export interface CompareBarItem {
 interface CompareBarProps {
     items: CompareBarItem[];
     maxItems: number;
-    onRemove: (id: number) => void;
+    onRemove: (item: CompareBarItem) => void;
     onClear: () => void;
     onCompare: () => void;
     showCompare?: boolean;
@@ -27,8 +26,8 @@ export default function CompareBar(
         <div className={styles.compareBar}>
             <ul className={styles.items}>
                 {items.map(item => (
-                    <li key={item.id}>
-                        <RemovableTag size={'xs'} onRemoveClick={() => onRemove(item.id)}>
+                    <li key={`${item.ownerLogin}/${item.name}`}>
+                        <RemovableTag size={'xs'} onRemoveClick={() => onRemove(item)}>
                             {item.name}
                         </RemovableTag>
                     </li>

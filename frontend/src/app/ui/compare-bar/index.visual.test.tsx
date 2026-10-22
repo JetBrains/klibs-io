@@ -8,9 +8,9 @@ test('compare bar with selected libraries', async () => {
         <div style={{ width: 1024 }}>
             <CompareBar
                 items={[
-                    { id: 1, ownerLogin: 'JetBrains', name: 'compose-multiplatform' },
-                    { id: 2, ownerLogin: 'InsertKoinIO', name: 'koin' },
-                    { id: 3, ownerLogin: 'ktorio', name: 'ktor' },
+                    { ownerLogin: 'JetBrains', name: 'compose-multiplatform' },
+                    { ownerLogin: 'InsertKoinIO', name: 'koin' },
+                    { ownerLogin: 'ktorio', name: 'ktor' },
                 ]}
                 maxItems={10}
                 onRemove={() => {}}

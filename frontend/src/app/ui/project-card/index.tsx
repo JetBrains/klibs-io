@@ -161,7 +161,6 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 							</p>
 							<div className={styles.compareToggle}>
 								<CompareToggle
-									id={featuredProject.id}
 									ownerLogin={featuredProject.ownerLogin}
 									name={featuredProject.name}
 								/>
