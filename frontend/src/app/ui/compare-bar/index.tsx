@@ -7,6 +7,7 @@ import styles from './styles.module.css';
 
 export interface CompareBarItem {
     id: number;
+    ownerLogin: string;
     name: string;
 }
 
@@ -24,7 +25,7 @@ export default function CompareBar({items, maxItems, onRemove, onClear, onCompar
             <ul className={styles.items}>
                 {items.map(item => (
                     <li key={item.id}>
-                        <RemovableTag size={'s'} onRemoveClick={() => onRemove(item.id)}>
+                        <RemovableTag size={'xs'} onRemoveClick={() => onRemove(item.id)}>
                             {item.name}
                         </RemovableTag>
                     </li>

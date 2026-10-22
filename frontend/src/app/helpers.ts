@@ -1,4 +1,5 @@
 import type { ResolvingMetadata } from "next";
+import { ProjectReference } from "@/app/types";
 
 export function toCategorySlug(categoryName: string): string {
     return categoryName.toLowerCase().replace(/\s+/g, '-');
@@ -10,4 +11,17 @@ export async function socialMetadata(parent: ResolvingMetadata, title: string, d
         openGraph: { title, description, images: resolved.openGraph?.images },
         twitter: { card: 'summary_large_image' as const, title, description, images: resolved.twitter?.images },
     };
+}
+
+export function getCompareLink(projects: ProjectReference[]): string {
+    const params = new URLSearchParams(projects.map(it => ['projects', `${it.ownerLogin}/${it.projectName}`]));
+    return `/compare?${params}`;
+}
+
+// Parses `projects=owner/name` search params, skipping malformed values
+export function parseCompareParams(value: string | string[] | undefined): ProjectReference[] {
+    return [value ?? []].flat().flatMap(it => {
+        const [ownerLogin, projectName, ...rest] = it.split('/');
+        return ownerLogin && projectName && rest.length === 0 ? [{ownerLogin, projectName}] : [];
+    });
 }

@@ -1,16 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { projectSearchResult } from '@/test/fixtures';
 import ProjectCard from '@/app/ui/project-card';
 import CompareProvider from './index';
 
+const push = vi.fn();
+
+vi.mock('next/navigation', () => ({
+    useRouter: () => ({ push }),
+}));
+
 function renderCards() {
     render(
         <CompareProvider>
             <ProjectCard featuredProject={projectSearchResult({ id: 1, name: 'Arrow' })} />
-            <ProjectCard featuredProject={projectSearchResult({ id: 2, name: 'Koin' })} />
+            <ProjectCard featuredProject={projectSearchResult({ id: 2, ownerLogin: 'InsertKoinIO', name: 'Koin' })} />
         </CompareProvider>,
     );
 }
@@ -36,5 +42,16 @@ describe('CompareProvider', () => {
 
         expect(screen.queryByRole('button', { name: /^Compare \(/ })).not.toBeInTheDocument();
         expect(screen.getAllByRole('checkbox', { name: 'Compare' })).toHaveLength(2);
+    });
+
+    test('opens the comparison page with the selected libraries', async () => {
+        renderCards();
+        const [arrow, koin] = screen.getAllByRole('checkbox', { name: 'Compare' });
+        await userEvent.click(arrow);
+        await userEvent.click(koin);
+
+        await userEvent.click(screen.getByRole('button', { name: 'Compare (2/10)' }));
+
+        expect(push).toHaveBeenCalledWith('/compare?projects=arrow-kt%2FArrow&projects=InsertKoinIO%2FKoin');
     });
 });

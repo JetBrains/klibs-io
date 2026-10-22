@@ -46,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <html lang="en" data-bs-theme="light">
             <GoogleTagManager gtmId="GTM-5P98"/>
 
-            <body className="d-flex flex-column">
+            <body className="d-flex flex-column min-vh-100">
                 <Navbar />
                 <CompareProvider>{children}</CompareProvider>
             </body>

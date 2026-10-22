@@ -1,9 +1,11 @@
 'use client'
 
 import {createContext, ReactNode, useCallback, useContext, useMemo, useState} from 'react';
+import {useRouter} from 'next/navigation';
 
 import CompareBar, {CompareBarItem} from '@/app/ui/compare-bar';
 import {MAX_COMPARE_ITEMS} from '@/app/constants';
+import {getCompareLink} from '@/app/helpers';
 
 import styles from './styles.module.css';
 
@@ -21,6 +23,7 @@ export function useCompare(): CompareContextValue | undefined {
 }
 
 export default function CompareProvider({children}: { children: ReactNode }) {
+    const router = useRouter();
     const [items, setItems] = useState<CompareBarItem[]>([]);
 
     const remove = useCallback((id: number) => setItems(current => current.filter(item => item.id !== id)), []);
@@ -37,6 +40,8 @@ export default function CompareProvider({children}: { children: ReactNode }) {
         toggle,
     }), [items, toggle]);
 
+    const compareLink = getCompareLink(items.map(it => ({ownerLogin: it.ownerLogin, projectName: it.name})));
+
     return (
         <CompareContext.Provider value={value}>
             {children}
@@ -47,7 +52,7 @@ export default function CompareProvider({children}: { children: ReactNode }) {
                         maxItems={MAX_COMPARE_ITEMS}
                         onRemove={remove}
                         onClear={() => setItems([])}
-                        onCompare={() => {}}
+                        onCompare={() => router.push(compareLink)}
                     />
                 </div>
             }

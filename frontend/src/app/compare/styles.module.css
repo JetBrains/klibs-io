@@ -1,0 +1,24 @@
+.title {
+    margin-bottom: 24px;
+}
+
+.table th,
+.table td {
+    min-width: 140px;
+    vertical-align: top;
+}
+
+/* Keeps labels visible while scrolling through up to 10 projects */
+.table .labelColumn {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 120px;
+    background: var(--w);
+}
+
+.platforms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}

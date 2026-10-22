@@ -160,7 +160,11 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 								{featuredProject.licenseName || 'Unknown license'}
 							</p>
 							<div className={styles.compareToggle}>
-								<CompareToggle id={featuredProject.id} name={featuredProject.name} />
+								<CompareToggle
+									id={featuredProject.id}
+									ownerLogin={featuredProject.ownerLogin}
+									name={featuredProject.name}
+								/>
 							</div>
 						</div>
 					</div>
