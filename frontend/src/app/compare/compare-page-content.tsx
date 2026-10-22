@@ -26,7 +26,8 @@ interface ComparePageContentProps {
 interface CompareRow {
     label: string;
     render: (project: CompareProjectResponse) => ReactNode;
-    isGood?: (project: CompareProjectResponse) => boolean;
+    // `now` is null until mount, so time-based checks don't differ between server and client
+    isGood?: (project: CompareProjectResponse, now: number | null) => boolean;
 }
 
 const sortedPlatforms = (platforms: string[]) =>
@@ -56,7 +57,7 @@ const PERMISSIVE_LICENSES = new Set([
 
 const FRESH_PERIOD_MILLIS = 3 * 30 * 24 * 60 * 60 * 1000;
 
-const isRecent = (timestamp: number) => Date.now() - timestamp < FRESH_PERIOD_MILLIS;
+const isRecent = (timestamp: number, now: number | null) => now !== null && now - timestamp < FRESH_PERIOD_MILLIS;
 
 const ROWS: CompareRow[] = [
     {label: 'Description', render: project => truncate(project.description, DESCRIPTION_MAX_LENGTH)},
@@ -79,13 +80,16 @@ const ROWS: CompareRow[] = [
     {label: 'Open issues', render: project => project.openIssues},
     {
         label: 'Last activity', render: project => <TimeAgo timestamp={project.lastActivityAtMillis} strictMode/>,
-        isGood: project => isRecent(project.lastActivityAtMillis),
+        isGood: (project, now) => isRecent(project.lastActivityAtMillis, now),
     },
     {label: 'Created', render: project => <TimeAgo timestamp={project.createdAtMillis} strictMode/>},
     {label: 'Tags', render: project => project.tags.length > 0 ? project.tags.map(tag => `#${tag}`).join(', ') : null},
 ];
 
 function CompareTable({projects, rows}: { projects: CompareProjectResponse[], rows: CompareRow[] }) {
+    const [now, setNow] = useState<number | null>(null);
+    useEffect(() => setNow(Date.now()), []);
+
     return (
         <div className={tableOverflowWrapperCn()}>
             <table className={cn(tableCn({isWide: true, size: 's'}), styles.table)}>
@@ -111,7 +115,7 @@ function CompareTable({projects, rows}: { projects: CompareProjectResponse[], ro
                             </td>
                             {projects.map(project => (
                                 <td key={`${project.ownerLogin}/${project.projectName}`}
-                                    className={cn({[styles.status_good]: row.isGood?.(project)})}>
+                                    className={cn({[styles.status_good]: row.isGood?.(project, now)})}>
                                     {row.render(project) ?? '—'}
                                 </td>
                             ))}
@@ -145,11 +149,9 @@ export default function ComparePageContent(props: ComparePageContentProps) {
         return () => focusManager.destroy();
     }, []);
 
-    // Restores the compare bar from the URL after a reload or when opened via a link
+    // Syncs the compare bar with the URL, so a reload or link restores it and an empty URL clears it
     useEffect(() => {
-        if (projects && projects.length > 0) {
-            replaceCompared?.(projects.map(it => ({ownerLogin: it.ownerLogin, name: it.projectName})));
-        }
+        if (projects) replaceCompared?.(projects.map(it => ({ownerLogin: it.ownerLogin, name: it.projectName})));
     }, [projects, replaceCompared]);
 
     if (projects === null) return <ContentFailed/>;

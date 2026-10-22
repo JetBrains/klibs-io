@@ -28,7 +28,8 @@ export default function CompareToggle({ownerLogin, name}: CompareToggleProps) {
         if (!disabled) compare.toggle({ownerLogin, name});
     };
 
-    // A native keyboard click would be cancelled by onClick and revert the checkbox, so toggle here instead
+    // A native keyboard click would be cancelled by onClick and revert the checkbox, so toggle here instead.
+    // Space also clicks on keyup in some browsers, which onKeyUp cancels
     const onKeyDown = (e: KeyboardEvent) => {
         if (e.key !== ' ' && e.key !== 'Enter') return;
         e.preventDefault();
@@ -37,7 +38,7 @@ export default function CompareToggle({ownerLogin, name}: CompareToggleProps) {
 
     return (
         <label className={styles.toggle} onClick={onClick} onKeyDown={onKeyDown}
-               onMouseDown={e => e.preventDefault()}>
+               onKeyUp={e => e.key === ' ' && e.preventDefault()} onMouseDown={e => e.preventDefault()}>
             <span className={cn(textCn('rs-text-3'), {[styles.checkedLabel]: checked})}>
                 {checked ? `Compare (${compare.items.length})` : 'Compare'}
             </span>

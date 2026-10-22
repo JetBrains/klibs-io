@@ -1,6 +1,6 @@
 'use client'
 
-import {createContext, ReactNode, useCallback, useContext, useMemo, useState} from 'react';
+import {createContext, ReactNode, useCallback, useContext, useMemo, useRef, useState} from 'react';
 import {usePathname, useRouter} from 'next/navigation';
 
 import CompareBar, {CompareBarItem} from '@/app/ui/compare-bar';
@@ -27,7 +27,12 @@ const PROJECT_PATH = /^\/project\/([^/]+)\/([^/]+)$/;
 
 const toProjectItem = (pathname: string): CompareBarItem | undefined => {
     const match = PROJECT_PATH.exec(pathname);
-    return match ? {ownerLogin: decodeURIComponent(match[1]), name: decodeURIComponent(match[2])} : undefined;
+    if (!match) return undefined;
+    try {
+        return {ownerLogin: decodeURIComponent(match[1]), name: decodeURIComponent(match[2])};
+    } catch {
+        return undefined;
+    }
 };
 
 const CompareContext = createContext<CompareContextValue | undefined>(undefined);
@@ -40,6 +45,7 @@ export default function CompareProvider({children}: { children: ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const [items, setItems] = useState<CompareBarItem[]>([]);
+    const returnUrl = useRef<string>();
 
     const toggle = useCallback((item: CompareBarItem) => setItems(current => {
         if (current.some(it => isSame(it, item))) return current.filter(it => !isSame(it, item));
@@ -64,12 +70,17 @@ export default function CompareProvider({children}: { children: ReactNode }) {
         if (isComparePage) router.push('/');
     };
 
-    // On the compare page the table follows the URL; pushState updates it without a server round-trip
+    const compare = () => {
+        returnUrl.current = window.location.pathname + window.location.search;
+        router.push(toCompareLink(items));
+    };
+
+    // On the compare page the table follows the URL; replaceState updates it without a server round-trip
     const remove = (item: CompareBarItem) => {
         const next = items.filter(it => !isSame(it, item));
         setItems(next);
         if (!isComparePage) return;
-        if (next.length > 1) window.history.pushState(null, '', toCompareLink(next));
+        if (next.length > 1) window.history.replaceState(null, '', toCompareLink(next));
         else router.push('/');
     };
 
@@ -84,9 +95,9 @@ export default function CompareProvider({children}: { children: ReactNode }) {
                         maxItems={MAX_COMPARE_ITEMS}
                         onRemove={remove}
                         onClear={clear}
-                        onCompare={() => router.push(toCompareLink(items))}
+                        onCompare={compare}
                         onAdd={canAddCurrent ? () => toggle(currentProject) : undefined}
-                        onEditSelection={isComparePage ? () => router.back() : undefined}
+                        onEditSelection={isComparePage ? () => router.push(returnUrl.current ?? '/') : undefined}
                         showCompare={!isComparePage}
                     />
                 </div>

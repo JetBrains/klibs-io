@@ -18,9 +18,10 @@ export function getCompareLink(projects: ProjectReference[]): string {
     return `/compare?${params}`;
 }
 
-// Parses `projects=owner/name,owner/name` search params, skipping malformed values
+// Parses `projects=owner/name,owner/name` search params, skipping malformed and duplicate values
 export function parseCompareParams(value: string | string[] | undefined): ProjectReference[] {
-    return [value ?? []].flat().flatMap(it => it.split(',')).flatMap(it => {
+    const values = new Set([value ?? []].flat().flatMap(it => it.split(',')));
+    return Array.from(values).flatMap(it => {
         const [ownerLogin, projectName, ...rest] = it.split('/');
         return ownerLogin && projectName && rest.length === 0 ? [{ownerLogin, projectName}] : [];
     });
