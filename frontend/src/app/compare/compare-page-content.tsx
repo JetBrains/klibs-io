@@ -40,8 +40,13 @@ const PLATFORM_COLORS: Record<Platform, string> = {
     [Platform.common]: 'var(--common)',
 };
 
+const DESCRIPTION_MAX_LENGTH = 300;
+
+const truncate = (text: string | null, maxLength: number) =>
+    text && text.length > maxLength ? `${text.slice(0, maxLength).trimEnd()}…` : text;
+
 const ROWS: CompareRow[] = [
-    {label: 'Description', render: project => project.description},
+    {label: 'Description', render: project => truncate(project.description, DESCRIPTION_MAX_LENGTH)},
     {label: 'Stars', render: project => kFormatter(project.scmStars)},
     {label: 'License', render: project => project.licenseName},
     {label: 'Latest release', render: project => project.latestReleaseVersion && <>
