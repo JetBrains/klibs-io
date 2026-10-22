@@ -145,7 +145,12 @@ export default function ComparePageContent(props: ComparePageContentProps) {
                                    className={styles.rowFilter}>
                         {ROWS.map(row => <Chip key={row.label} value={row.label}>{row.label}</Chip>)}
                     </ChipListMulti>
-                    <CompareTable projects={projects} rows={ROWS.filter(row => visibleLabels.includes(row.label))}/>
+                    {visibleLabels.length > 0 ?
+                        <CompareTable projects={projects} rows={ROWS.filter(row => visibleLabels.includes(row.label))}/> :
+                        <p className={textCn('rs-text-3', {hardness: 'hard'})}>
+                            No properties selected. Pick the ones you want to compare.
+                        </p>
+                    }
                 </> :
                     <p className={textCn('rs-text-2', {hardness: 'hard'})}>
                         Nothing to compare yet. Use the Compare toggle on project cards
