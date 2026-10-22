@@ -26,10 +26,8 @@ The `klibs-io-notifier` plugin notifies [klibs.io](https://klibs.io) when a Kotl
 To use the klibs-io-notifier plugin in your project, it needs to:
 
 - be a Kotlin Multiplatform library
-- use Gradle (Kotlin Toolchain support coming soon)
+- use Gradle (for Kotlin Toolchain support see [documentation](https://kotlin-toolchain.org/dev/user-guide/publishing/#notifying-klibsio))
 - publish to Maven Central with a plugin based on Gradle's `maven-publish` (i.e. one that applies `MavenPublishPlugin`), such as `com.vanniktech.maven.publish`
-
-<!-- TODO: KTL-4938 update information about Kotlin Toolchain-->
 
 ### Minimum supported versions
 
@@ -51,8 +49,6 @@ For your library to be listed on klibs.io, it must meet the [klibs.io criteria](
 
 ### 2. Configure plugin resolution
 
-<!-- TODO: KTL-4909 Update the section according to the actual deployment -->
-
 The klibs-io-notifier plugin is shared via the [Gradle Plugin Portal](https://plugins.gradle.org/plugin/org.jetbrains.kotlin.klibs-io-notifier).
 
 To use the klibs-io-notifier, add the Gradle Plugin Portal to `pluginManagement.repositories` in `settings.gradle.kts`:
@@ -66,8 +62,6 @@ pluginManagement {
 ```
 
 ### 3. Apply the plugin
-
-<!-- TODO: KTL-4909 Update the section according to the actual deployment -->
 
 Add the klibs-io-notifier to the `plugins` block in the `build.gradle.kts` of the module you want to publish:
 
