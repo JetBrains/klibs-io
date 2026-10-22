@@ -27,6 +27,7 @@ import {KotlinEcosystemDropdown} from "@/app/ui/kotlin-ecosystem-dropdown/kotlin
 import {KotlinEcosystemMobileMenu} from "@/app/ui/kotlin-ecosystem-dropdown/kotlin-ecosystem-mobile-menu";
 
 import {trackEvent, GAEvent} from "@/app/analytics";
+import {HOME_RESET_EVENT} from "@/app/constants";
 
 const ISSUES_LINK = "https://github.com/JetBrains/klibs-io-issue-management/issues/new/choose"
 
@@ -120,16 +121,16 @@ export default function Navbar() {
                     </ThemeProvider>
 
                     {/*Logo*/}
-                    {/* intentionally not using Link to easily refresh the index page */}
-                    <a
+                    <Link
                         href="/"
                         className={cn(styles.navItem, styles.logoWrapper)}
                         onClick={() => {
                             trackEvent(GAEvent.LOGO_CLICK, {})
+                            if (isIndex) window.dispatchEvent(new Event(HOME_RESET_EVENT));
                         }}
                     >
                         <Image className={styles.navbarLogo} src={klibsLogo} priority alt="Klibs.io wordmark"/>
-                    </a>
+                    </Link>
 
                     {/*Main page nav */}
                     {(isIndex || isSearchPage) &&
