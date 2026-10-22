@@ -1,6 +1,7 @@
 'use client'
 
 import {Button} from '@rescui/button';
+import {PlusIcon} from '@rescui/icons';
 import {RemovableTag} from '@rescui/tag';
 
 import styles from './styles.module.css';
@@ -16,11 +17,12 @@ interface CompareBarProps {
     onRemove: (item: CompareBarItem) => void;
     onClear: () => void;
     onCompare: () => void;
+    onAdd?: () => void;
     showCompare?: boolean;
 }
 
 export default function CompareBar(
-    {items, maxItems, onRemove, onClear, onCompare, showCompare = true}: CompareBarProps
+    {items, maxItems, onRemove, onClear, onCompare, onAdd, showCompare = true}: CompareBarProps
 ) {
     return (
         <div className={styles.compareBar}>
@@ -35,6 +37,12 @@ export default function CompareBar(
             </ul>
             <div className={styles.actions}>
                 <Button size={'s'} mode={'outline'} onClick={onClear}>{showCompare ? 'Clear' : 'Clear all'}</Button>
+                {onAdd &&
+                    <Button size={'s'} mode={'outline'} icon={<PlusIcon/>} disabled={items.length >= maxItems}
+                            onClick={onAdd}>
+                        Add to comparison
+                    </Button>
+                }
                 {showCompare &&
                     <Button size={'s'} disabled={items.length < 2} onClick={onCompare}>
                         Compare ({items.length}/{maxItems})

@@ -22,6 +22,13 @@ const isSame = (a: CompareBarItem, b: CompareBarItem) => a.ownerLogin === b.owne
 const toCompareLink = (items: CompareBarItem[]) =>
     getCompareLink(items.map(it => ({ownerLogin: it.ownerLogin, projectName: it.name})));
 
+const PROJECT_PATH = /^\/project\/([^/]+)\/([^/]+)$/;
+
+const toProjectItem = (pathname: string): CompareBarItem | undefined => {
+    const match = PROJECT_PATH.exec(pathname);
+    return match ? {ownerLogin: decodeURIComponent(match[1]), name: decodeURIComponent(match[2])} : undefined;
+};
+
 const CompareContext = createContext<CompareContextValue | undefined>(undefined);
 
 export function useCompare(): CompareContextValue | undefined {
@@ -49,6 +56,8 @@ export default function CompareProvider({children}: { children: ReactNode }) {
     }), [items, toggle, replace]);
 
     const isComparePage = pathname === '/compare';
+    const currentProject = toProjectItem(pathname);
+    const canAddCurrent = currentProject !== undefined && !value.isSelected(currentProject);
     const clear = () => {
         setItems([]);
         if (isComparePage) router.push('/');
@@ -74,6 +83,7 @@ export default function CompareProvider({children}: { children: ReactNode }) {
                         onRemove={remove}
                         onClear={clear}
                         onCompare={() => router.push(toCompareLink(items))}
+                        onAdd={canAddCurrent ? () => toggle(currentProject) : undefined}
                         showCompare={!isComparePage}
                     />
                 </div>
