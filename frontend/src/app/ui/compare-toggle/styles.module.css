@@ -12,6 +12,6 @@
     cursor: pointer;
 }
 
-.checkedLabel {
+.toggle .checkedLabel {
     color: #0067FF;
 }
