@@ -18,11 +18,12 @@ interface CompareBarProps {
     onClear: () => void;
     onCompare: () => void;
     onAdd?: () => void;
+    onEditSelection?: () => void;
     showCompare?: boolean;
 }
 
 export default function CompareBar(
-    {items, maxItems, onRemove, onClear, onCompare, onAdd, showCompare = true}: CompareBarProps
+    {items, maxItems, onRemove, onClear, onCompare, onAdd, onEditSelection, showCompare = true}: CompareBarProps
 ) {
     return (
         <div className={styles.compareBar}>
@@ -47,6 +48,9 @@ export default function CompareBar(
                     <Button size={'s'} disabled={items.length < 2} onClick={onCompare}>
                         Compare ({items.length}/{maxItems})
                     </Button>
+                }
+                {onEditSelection &&
+                    <Button size={'s'} mode={'outline'} onClick={onEditSelection}>Edit selection</Button>
                 }
             </div>
         </div>

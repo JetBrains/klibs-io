@@ -86,6 +86,7 @@ export default function CompareProvider({children}: { children: ReactNode }) {
                         onClear={clear}
                         onCompare={() => router.push(toCompareLink(items))}
                         onAdd={canAddCurrent ? () => toggle(currentProject) : undefined}
+                        onEditSelection={isComparePage ? () => router.back() : undefined}
                         showCompare={!isComparePage}
                     />
                 </div>
