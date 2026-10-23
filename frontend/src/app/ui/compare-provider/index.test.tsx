@@ -29,7 +29,7 @@ describe('CompareProvider', () => {
 
         await userEvent.click(screen.getAllByText('Compare')[0]);
 
-        expect(screen.getByRole('button', { name: 'Compare (1/10)' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Compare (1/4)' })).toBeInTheDocument();
         expect(screen.getByRole('checkbox', { name: 'Compare (1)' })).toBeChecked();
     });
 
@@ -51,7 +51,7 @@ describe('CompareProvider', () => {
         await userEvent.click(arrow);
         await userEvent.click(koin);
 
-        await userEvent.click(screen.getByRole('button', { name: 'Compare (2/10)' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Compare (2/4)' }));
 
         expect(push).toHaveBeenCalledWith('/compare?projects=arrow-kt%2FArrow%2CInsertKoinIO%2FKoin');
     });

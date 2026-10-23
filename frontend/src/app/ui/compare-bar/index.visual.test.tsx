@@ -12,7 +12,7 @@ test('compare bar with selected libraries', async () => {
                     { ownerLogin: 'InsertKoinIO', name: 'koin' },
                     { ownerLogin: 'ktorio', name: 'ktor' },
                 ]}
-                maxItems={10}
+                maxItems={4}
                 onRemove={() => {}}
                 onClear={() => {}}
                 onCompare={() => {}}
