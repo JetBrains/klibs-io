@@ -171,6 +171,10 @@
 }
 
 
+.compareToggle {
+    margin-left: auto;
+}
+
 .licenseIcon {
     opacity: 0.3;
 }

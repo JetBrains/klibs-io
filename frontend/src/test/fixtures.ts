@@ -1,5 +1,6 @@
 import {
     CategoryWithProjects,
+    CompareProjectResponse,
     OwnerAuthor,
     OwnerOrganization,
     PackageDetails,
@@ -329,3 +330,38 @@ export const platformFilters = (): SearchParams => ({
     query: '',
     tags: [],
 });
+
+export const compareProjectResponse = (
+    overrides: Partial<CompareProjectResponse> = {},
+): CompareProjectResponse => ({
+    ownerLogin: 'arrow-kt',
+    projectName: 'arrow',
+    description: 'Functional companion to Kotlin standard library',
+    scmStars: 6_582,
+    licenseName: 'Apache License 2.0',
+    latestReleaseVersion: '2.0.0',
+    latestReleasePublishedAtMillis: 1_700_000_000_000,
+    lastActivityAtMillis: 1_710_000_000_000,
+    createdAtMillis: 1_490_000_000_000,
+    openIssues: 32,
+    targetGroups: allPlatformTargets(),
+    tags: ['functional-programming', 'typed-errors'],
+    markers: [],
+    kotlinVersion: '2.1.0',
+    ...overrides,
+});
+
+export const comparedProjects = (): CompareProjectResponse[] => [
+    compareProjectResponse(),
+    compareProjectResponse({
+        ownerLogin: 'InsertKoinIO',
+        projectName: 'koin',
+        description: 'Pragmatic lightweight dependency injection framework',
+        scmStars: 10_021,
+        latestReleaseVersion: '4.0.0',
+        openIssues: 73,
+        targetGroups: cardTargetGroups(),
+        tags: ['dependency-injection'],
+        kotlinVersion: null,
+    }),
+];
