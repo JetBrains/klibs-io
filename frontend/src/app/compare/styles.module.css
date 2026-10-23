@@ -39,27 +39,6 @@
     background: #F3F1F3;
 }
 
-/* Project columns stay at least 200px wide: label 140px + 200px per project, scrolls from 6 projects on */
-.table:has(thead th:nth-child(7)) {
-    min-width: 1340px;
-}
-
-.table:has(thead th:nth-child(8)) {
-    min-width: 1540px;
-}
-
-.table:has(thead th:nth-child(9)) {
-    min-width: 1740px;
-}
-
-.table:has(thead th:nth-child(10)) {
-    min-width: 1940px;
-}
-
-.table:has(thead th:nth-child(11)) {
-    min-width: 2140px;
-}
-
 .table .status_good {
     color: #1a7f37;
 }

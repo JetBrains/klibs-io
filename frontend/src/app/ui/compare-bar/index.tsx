@@ -40,8 +40,8 @@ export default function CompareBar(
                 <Button size={'s'} mode={'outline'} onClick={onClear}>{showCompare ? 'Clear' : 'Clear all'}</Button>
                 {onAdd &&
                     <Button size={'s'} mode={'outline'} icon={<PlusIcon/>} disabled={items.length >= maxItems}
-                            onClick={onAdd}>
-                        Add to comparison
+                            onClick={onAdd} aria-label={'Add to comparison'}>
+                        Add<span className={styles.longLabel}> to comparison</span>
                     </Button>
                 }
                 {showCompare &&

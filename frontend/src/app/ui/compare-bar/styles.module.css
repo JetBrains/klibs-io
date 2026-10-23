@@ -34,10 +34,20 @@
 @media (max-width: 640px) {
     .compareBar {
         flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px 16px;
     }
 
     .items {
         width: 100%;
         gap: 4px;
+    }
+
+    .actions {
+        gap: 8px;
+    }
+
+    .longLabel {
+        display: none;
     }
 }
