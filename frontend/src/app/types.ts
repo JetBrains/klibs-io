@@ -45,7 +45,7 @@ export interface CompareProjectResponse extends ProjectReference {
 	lastActivityAtMillis: number;
 	createdAtMillis: number;
 	openIssues: null | number;
-	platforms: string[];
+	targetGroups: TargetGroups;
 	tags: string[];
 	markers: string[];
 	kotlinVersion: null | string;

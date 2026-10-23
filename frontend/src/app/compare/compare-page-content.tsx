@@ -7,14 +7,14 @@ import cn from "classnames";
 import {Chip, ChipListMulti} from "@rescui/chip-list";
 import FocusManager from "@rescui/focus-manager";
 import {tableCn, tableOverflowWrapperCn} from "@rescui/table";
-import {Tag} from "@rescui/tag";
 import {textCn} from "@rescui/typography";
 
 import {parseCompareParams} from "@/app/helpers";
-import {CompareProjectResponse, getPlatformName, kFormatter, Platform, platformOrder} from "@/app/types";
+import {CompareProjectResponse, getTargetGroupNames, kFormatter} from "@/app/types";
 import {useCompare} from "@/app/ui/compare-provider";
 import Container from "@/app/ui/container";
 import {ContentFailed} from "@/app/ui/content-failed";
+import PlatformTag from "@/app/ui/platform-tag";
 import TimeAgo from "@/app/ui/time-ago";
 
 import styles from './styles.module.css';
@@ -29,19 +29,6 @@ interface CompareRow {
     // `now` is null until mount, so time-based checks don't differ between server and client
     isGood?: (project: CompareProjectResponse, now: number | null) => boolean;
 }
-
-const sortedPlatforms = (platforms: string[]) =>
-    platformOrder.filter(platform => platforms.includes(platform));
-
-// Same platform colors as the project page
-const PLATFORM_COLORS: Record<Platform, string> = {
-    [Platform.androidJvm]: 'var(--jvm)',
-    [Platform.jvm]: 'var(--jvm)',
-    [Platform.native]: 'var(--kotlin-native)',
-    [Platform.wasm]: 'var(--wasm)',
-    [Platform.js]: 'var(--js)',
-    [Platform.common]: 'var(--common)',
-};
 
 const DESCRIPTION_MAX_LENGTH = 300;
 
@@ -73,9 +60,7 @@ const ROWS: CompareRow[] = [
         isGood: project => project.kotlinVersion?.startsWith('2.') ?? false,
     },
     {label: 'Platforms', render: project => <div className={styles.platforms}>
-        {sortedPlatforms(project.platforms).map((platform: Platform) =>
-            <Tag key={platform} backgroundColor={PLATFORM_COLORS[platform]}>{getPlatformName(platform)}</Tag>
-        )}
+        {getTargetGroupNames(project.targetGroups).map(group => <PlatformTag key={group}>{group}</PlatformTag>)}
     </div>},
     {label: 'Open issues', render: project => project.openIssues},
     {
