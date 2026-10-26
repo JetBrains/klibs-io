@@ -15,6 +15,10 @@
     border-width: 1px;
 }
 
+.rowFilter [data-rs-internal='chip-list__chip'] {
+    --_rs-cl-chip-selected-border-color: #4D00FF;
+}
+
 /* Fixed layout gives every project column the same width */
 .table {
     table-layout: fixed;
