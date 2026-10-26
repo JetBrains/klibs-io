@@ -37,11 +37,11 @@ export default function CompareBar(
                 ))}
             </ul>
             <div className={styles.actions}>
-                <Button size={'s'} mode={'outline'} onClick={onClear}>{showCompare ? 'Clear' : 'Clear all'}</Button>
+                <Button size={'s'} mode={'outline'} onClick={onClear}>Clear all</Button>
                 {onAdd &&
                     <Button size={'s'} mode={'outline'} icon={<PlusIcon/>} disabled={items.length >= maxItems}
                             onClick={onAdd} aria-label={'Add to comparison'}>
-                        Add<span className={styles.longLabel}> to comparison</span>
+                        <span>Add<span className={styles.longLabel}> to comparison</span></span>
                     </Button>
                 }
                 {showCompare &&

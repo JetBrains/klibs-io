@@ -39,7 +39,7 @@ describe('CompareProvider', () => {
         await userEvent.click(arrow);
         await userEvent.click(koin);
 
-        await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Clear all' }));
 
         expect(screen.queryByRole('button', { name: /^Compare \(/ })).not.toBeInTheDocument();
         expect(screen.getAllByRole('checkbox', { name: 'Compare' })).toHaveLength(2);
