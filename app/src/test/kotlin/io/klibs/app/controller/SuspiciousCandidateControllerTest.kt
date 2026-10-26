@@ -1,9 +1,12 @@
 package io.klibs.app.controller
 
 import BaseUnitWithDbLayerTest
-import io.klibs.app.api.BanSuspiciousCandidateRequest
-import io.klibs.app.api.KeepSuspiciousCandidateRequest
+import io.klibs.app.api.ReviewSuspiciousCandidateDecision
+import io.klibs.app.api.ReviewSuspiciousCandidatesRequest
 import io.klibs.app.api.SuspiciousCandidateResponse
+import io.klibs.app.api.SuspiciousCandidateDecision
+import io.klibs.app.api.SuspiciousCandidateReviewOutcome
+import io.klibs.app.api.SuspiciousCandidateReviewResult
 import io.klibs.core.pckg.entity.SuspiciousPackageCandidateKey
 import io.klibs.core.pckg.enums.CandidateStatus
 import io.klibs.core.pckg.repository.SuspiciousPackageCandidateRepository
@@ -69,56 +72,122 @@ class SuspiciousCandidateControllerTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql(SEED)
-    fun `keep resolves every pending row of the groupId and bans nothing`() {
-        keep(SUSPECT, "same author").andExpect { status { isOk() } }
-
-        assertEquals(CandidateStatus.RESOLVED to "same author", candidate("loader", SUSPECT))
-        assertEquals(CandidateStatus.RESOLVED to "same author", candidate("runtime", SUSPECT))
-        assertEquals(CandidateStatus.RESOLVED to "kept by reviewer", candidate("reviewed", SUSPECT))
-        assertEquals(CandidateStatus.PENDING to null, candidate("loader", "app.cash.zipline"))
-        assertEquals(0, bannedCount())
-    }
-
-    @Test
-    @Sql(SEED)
-    fun `keep of a groupId without pending rows is a conflict`() {
-        keep("io.github.unknown", "same author").andExpect { status { isConflict() } }
-    }
-
-    @Test
-    @Sql(SEED)
-    fun `ban bans one artifact and resolves only its row`() {
-        ban("runtime", "fork").andExpect { status { isOk() } }
-
-        assertEquals(CandidateStatus.RESOLVED to "fork", candidate("runtime", SUSPECT))
-        assertEquals(CandidateStatus.PENDING to null, candidate("loader", SUSPECT))
-        assertEquals(listOf("runtime"), bannedArtifacts())
-    }
-
-    @Test
-    @Sql(SEED)
-    fun `ban of an already resolved row is a conflict and bans nothing`() {
-        ban("reviewed", "fork").andExpect { status { isConflict() } }
-
-        assertEquals(CandidateStatus.RESOLVED to "kept by reviewer", candidate("reviewed", SUSPECT))
-        assertEquals(0, bannedCount())
-    }
-
-    @Test
-    @Sql(SEED)
-    fun `ban without an artifactId is rejected`() {
-        post("ban", mapOf("projectId" to 60001, "groupId" to SUSPECT, "note" to "fork"))
-            .andExpect { status { isBadRequest() } }
-
-        assertEquals(0, bannedCount())
-    }
-
-    @Test
-    @Sql(SEED)
     fun `blank or too long notes are rejected`() {
-        keep(SUSPECT, " ").andExpect { status { isBadRequest() } }
-        ban("runtime", "x".repeat(256)).andExpect { status { isBadRequest() } }
+        reviewRequest(listOf(decision(SUSPECT, SuspiciousCandidateDecision.BAN, listOf("runtime"), " ")))
+            .andExpect { status { isBadRequest() } }
+        reviewRequest(
+            listOf(decision(SUSPECT, SuspiciousCandidateDecision.BAN, listOf("runtime"), "x".repeat(256)))
+        ).andExpect { status { isBadRequest() } }
 
+        assertEquals(CandidateStatus.PENDING to null, candidate("runtime", SUSPECT))
+        assertEquals(0, bannedCount())
+    }
+
+    @Test
+    @Sql(SEED)
+    fun `review keep skips when an unreviewed pending artifact exists`() {
+        val results = review(
+            listOf(decision(SUSPECT, SuspiciousCandidateDecision.KEEP, listOf("loader")))
+        )
+
+        assertEquals(listOf(SuspiciousCandidateReviewOutcome.SKIP), results.map { it.outcome })
+        assertEquals("runtime", results.single().message.substringAfter("[").substringBefore("]"))
+        assertEquals(CandidateStatus.PENDING to null, candidate("loader", SUSPECT))
+        assertEquals(CandidateStatus.PENDING to null, candidate("runtime", SUSPECT))
+    }
+
+    @Test
+    @Sql(SEED)
+    fun `review keep resolves only reviewed group pending artifacts`() {
+        val body = """
+            {
+              "generatedAt": "2026-01-01T00:00:00Z",
+              "decisions": [{
+                "projectId": 60001, "groupId": "$SUSPECT", "decision": "KEEP",
+                "artifacts": ["loader", "runtime"], "note": "Reviewed keep",
+                "source": "human", "reviewerNote": "Reviewed keep", "repo": "cashapp/zipline"
+              }]
+            }
+        """.trimIndent()
+        val results = reviewJson(body)
+
+        assertEquals(SuspiciousCandidateReviewOutcome.OK, results.single().outcome)
+        assertEquals(CandidateStatus.RESOLVED to "Reviewed keep", candidate("loader", SUSPECT))
+        assertEquals(CandidateStatus.RESOLVED to "Reviewed keep", candidate("runtime", SUSPECT))
+        assertEquals(0, bannedCount())
+    }
+
+    @Test
+    @Sql(SEED)
+    fun `review ban applies once per artifact`() {
+        val results = review(
+            listOf(decision(SUSPECT, SuspiciousCandidateDecision.BAN, listOf("loader", "runtime")))
+        )
+
+        assertEquals(listOf("loader", "runtime"), results.map { it.artifactId })
+        assertEquals(listOf(SuspiciousCandidateReviewOutcome.OK, SuspiciousCandidateReviewOutcome.OK), results.map { it.outcome })
+        assertEquals(listOf("loader", "runtime"), bannedArtifacts().filterNotNull().sorted())
+        assertEquals(CandidateStatus.RESOLVED to "Reviewed by human", candidate("loader", SUSPECT))
+    }
+
+    @Test
+    @Sql(SEED)
+    fun `review ban skips resolved artifacts and reports new pending artifacts`() {
+        val results = review(
+            listOf(decision(SUSPECT, SuspiciousCandidateDecision.BAN, listOf("reviewed")))
+        )
+
+        assertEquals(
+            listOf("reviewed", "loader", "runtime"), results.map { it.artifactId }
+        )
+        assertEquals(List(3) { SuspiciousCandidateReviewOutcome.SKIP }, results.map { it.outcome })
+        assertEquals(CandidateStatus.RESOLVED to "kept by reviewer", candidate("reviewed", SUSPECT))
+        assertEquals(CandidateStatus.PENDING to null, candidate("loader", SUSPECT))
+        assertEquals(CandidateStatus.PENDING to null, candidate("runtime", SUSPECT))
+        assertEquals(0, bannedCount())
+    }
+
+    @Test
+    @Sql(SEED)
+    fun `review processes keeps before bans and returns per artifact results`() {
+        val results = review(
+            listOf(
+                decision(SUSPECT, SuspiciousCandidateDecision.BAN, listOf("loader", "runtime")),
+                decision("app.cash.zipline", SuspiciousCandidateDecision.KEEP, listOf("loader")),
+            )
+        )
+
+        assertEquals(
+            listOf(
+                SuspiciousCandidateDecision.KEEP,
+                SuspiciousCandidateDecision.BAN,
+                SuspiciousCandidateDecision.BAN,
+            ),
+            results.map { it.decision },
+        )
+        assertEquals(
+            listOf("app.cash.zipline", SUSPECT, SUSPECT), results.map { it.groupId }
+        )
+        assertEquals(List(3) { SuspiciousCandidateReviewOutcome.OK }, results.map { it.outcome })
+    }
+
+    @Test
+    @Sql(SEED)
+    fun `review rejects duplicate groups and invalid artifacts or notes before writing`() {
+        reviewRequest(
+            listOf(
+                decision(SUSPECT, SuspiciousCandidateDecision.KEEP, listOf("loader", "runtime")),
+                decision(SUSPECT, SuspiciousCandidateDecision.BAN, listOf("loader")),
+            )
+        ).andExpect { status { isBadRequest() } }
+        reviewRequest(
+            listOf(decision(SUSPECT, SuspiciousCandidateDecision.BAN, emptyList()))
+        ).andExpect { status { isBadRequest() } }
+        reviewRequest(
+            listOf(decision(SUSPECT, SuspiciousCandidateDecision.BAN, listOf("loader"), "x".repeat(256)))
+        ).andExpect { status { isBadRequest() } }
+
+        assertEquals(CandidateStatus.PENDING to null, candidate("loader", SUSPECT))
         assertEquals(CandidateStatus.PENDING to null, candidate("runtime", SUSPECT))
         assertEquals(0, bannedCount())
     }
@@ -129,16 +198,38 @@ class SuspiciousCandidateControllerTest : BaseUnitWithDbLayerTest() {
             .andReturn().response.contentAsString
             .let { objectMapper.readValue(it, Array<SuspiciousCandidateResponse>::class.java).toList() }
 
-    private fun keep(groupId: String, note: String) =
-        post("keep", KeepSuspiciousCandidateRequest(60001, groupId, note))
+    private fun decision(
+        groupId: String,
+        decision: SuspiciousCandidateDecision,
+        artifacts: List<String>,
+        note: String = "Reviewed by human",
+    ) = ReviewSuspiciousCandidateDecision(60001, groupId, decision, artifacts, note)
 
-    private fun ban(artifactId: String, note: String) =
-        post("ban", BanSuspiciousCandidateRequest(60001, SUSPECT, artifactId, note))
+    private fun review(decisions: List<ReviewSuspiciousCandidateDecision>): List<SuspiciousCandidateReviewResult> =
+        reviewRequest(decisions)
+            .andExpect { status { isOk() } }
+            .andReturn().response.contentAsString
+            .let { objectMapper.readValue(it, Array<SuspiciousCandidateReviewResult>::class.java).toList() }
+
+    private fun reviewRequest(decisions: List<ReviewSuspiciousCandidateDecision>) =
+        post("review", ReviewSuspiciousCandidatesRequest(decisions))
+
+    private fun reviewJson(body: String): List<SuspiciousCandidateReviewResult> =
+        postJson("review", body)
+            .andExpect { status { isOk() } }
+            .andReturn().response.contentAsString
+            .let { objectMapper.readValue(it, Array<SuspiciousCandidateReviewResult>::class.java).toList() }
 
     private fun post(action: String, body: Any) =
         mockMvc.post("/suspicious-candidates/$action") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(body)
+        }
+
+    private fun postJson(action: String, body: String) =
+        mockMvc.post("/suspicious-candidates/$action") {
+            contentType = MediaType.APPLICATION_JSON
+            content = body
         }
 
     private fun candidate(artifactId: String, groupId: String): Pair<CandidateStatus, String?> =
