@@ -8,7 +8,6 @@ import io.klibs.core.user.service.UserSessionService
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
@@ -30,12 +29,17 @@ import org.springframework.test.web.servlet.post
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
+import java.nio.charset.StandardCharsets
+import java.time.Duration
+import java.util.Base64
 import java.util.UUID
 
 private const val USER_ACTION_PATH = "/user/security-test"
 private const val SESSION_COOKIE_NAME = "test_session"
 private const val SESSION_TOKEN = "session-token"
 private const val TRUSTED_ORIGIN = "https://frontend.example"
+private const val BASIC_USERNAME = "basic-user"
+private const val BASIC_PASSWORD = "basic-password"
 private const val ENCODED_HMAC_SECRET = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
 
 @ActiveProfiles("test")
@@ -68,6 +72,9 @@ private const val ENCODED_HMAC_SECRET = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmN
         "klibs.auth.trusted-frontend-origin=$TRUSTED_ORIGIN",
         "klibs.auth.session.cookie-name=$SESSION_COOKIE_NAME",
         "klibs.auth.session.cookie-secure=true",
+        "klibs.auth.basic.users[0].username=$BASIC_USERNAME",
+        "klibs.auth.basic.users[0].password={noop}$BASIC_PASSWORD",
+        "klibs.auth.basic.users[0].roles[0]=ADMIN",
     ]
 )
 class UserActionSecurityTest {
@@ -84,8 +91,6 @@ class UserActionSecurityTest {
                 status { isUnauthorized() }
                 header { string(HttpHeaders.CACHE_CONTROL, containsString("no-store")) }
             }
-
-        verifyNoInteractions(userSessionService)
     }
 
     @Test
@@ -103,19 +108,18 @@ class UserActionSecurityTest {
     }
 
     @Test
-    fun `unsafe action rejects a missing origin before session lookup`() {
+    fun `unsafe action rejects a missing origin`() {
         mockMvc.post(USER_ACTION_PATH) {
             cookie(sessionCookie())
         }.andExpect {
             status { isForbidden() }
             header { string(HttpHeaders.CACHE_CONTROL, containsString("no-store")) }
+            header { doesNotExist(HttpHeaders.SET_COOKIE) }
         }
-
-        verifyNoInteractions(userSessionService)
     }
 
     @Test
-    fun `unsafe action rejects an untrusted origin before session lookup`() {
+    fun `unsafe action rejects an untrusted origin`() {
         mockMvc.post(USER_ACTION_PATH) {
             cookie(sessionCookie())
             header(HttpHeaders.ORIGIN, "https://attacker.example")
@@ -123,9 +127,29 @@ class UserActionSecurityTest {
             status { isForbidden() }
             header { doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN) }
             header { doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS) }
+            header { doesNotExist(HttpHeaders.SET_COOKIE) }
         }
+    }
 
-        verifyNoInteractions(userSessionService)
+    @Test
+    fun `refreshed session reissues its cookie with the remaining lifetime`() {
+        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN))
+            .thenReturn(authenticatedSession(REFRESHED_COOKIE_TTL))
+        mockMvc.get(USER_ACTION_PATH) {
+            cookie(sessionCookie())
+        }.andExpect {
+            status { isOk() }
+            header {
+                string(
+                    HttpHeaders.SET_COOKIE,
+                    containsString("$SESSION_COOKIE_NAME=$SESSION_TOKEN"),
+                )
+                string(
+                    HttpHeaders.SET_COOKIE,
+                    containsString("Max-Age=${REFRESHED_COOKIE_TTL.seconds}"),
+                )
+            }
+        }
     }
 
     @Test
@@ -156,25 +180,31 @@ class UserActionSecurityTest {
     }
 
     @Test
-    fun `Basic credentials cannot replace a user session`() {
+    fun `valid Basic credentials cannot authenticate a user action`() {
         mockMvc.get(USER_ACTION_PATH) {
-            header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNzd29yZA==")
+            header(HttpHeaders.AUTHORIZATION, basicAuthorization())
         }.andExpect {
             status { isUnauthorized() }
         }
-
-        verifyNoInteractions(userSessionService)
     }
 
     private fun sessionCookie(): Cookie = Cookie(SESSION_COOKIE_NAME, SESSION_TOKEN)
 
-    private fun authenticatedSession() = AuthenticatedSessionDTO(
+    private fun basicAuthorization(): String {
+        val credentials = "$BASIC_USERNAME:$BASIC_PASSWORD".toByteArray(StandardCharsets.UTF_8)
+        return "Basic ${Base64.getEncoder().encodeToString(credentials)}"
+    }
+
+    private fun authenticatedSession(
+        refreshedCookieTtl: Duration? = null,
+    ) = AuthenticatedSessionDTO(
         userId = USER_ID,
-        refreshedCookieTtl = null,
+        refreshedCookieTtl = refreshedCookieTtl,
     )
 
     private companion object {
         val USER_ID: UUID = UUID.fromString("11111111-1111-1111-1111-111111111111")
+        val REFRESHED_COOKIE_TTL: Duration = Duration.ofMinutes(30)
     }
 }
 

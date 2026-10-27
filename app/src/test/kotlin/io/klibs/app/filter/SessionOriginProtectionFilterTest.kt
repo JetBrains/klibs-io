@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletResponse
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.http.HttpHeaders
-import org.springframework.mock.env.MockEnvironment
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import java.time.Duration
@@ -26,7 +25,7 @@ class SessionOriginProtectionFilterTest {
         ),
     )
     private val filter = SessionOriginProtectionFilter(
-        SessionCookieService(properties, MockEnvironment()),
+        SessionCookieService(properties),
         properties.trustedFrontendOrigin,
     )
 

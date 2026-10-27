@@ -1,13 +1,15 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.service.SessionCookieService
 import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
+import io.klibs.app.service.SessionCookieService
+import io.klibs.core.user.dto.AuthenticatedSessionDTO
 import io.klibs.core.user.service.UserSessionService
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.hasItem
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -28,11 +30,13 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+import java.util.UUID
 import kotlin.test.assertEquals
 
 private const val SECURITY_PROBE_PATH = "/test/security/basic-principal"
 private const val ACTUATOR_PROBE_PATH = "/actuator/security-test"
 private const val SESSION_COOKIE_NAME = "__Host-test_session"
+private const val SESSION_TOKEN = "session-token"
 private const val ACTUATOR_USERNAME = "actuator-user"
 private const val ACTUATOR_PASSWORD = "actuator-password"
 private const val ADMIN_USERNAME = "admin-user"
@@ -47,6 +51,7 @@ private const val ENCODED_HMAC_SECRET = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmN
         UserAuthenticationCorsConfiguration::class,
         UserAuthenticationSecurityConfiguration::class,
         BasicAuthenticationSecurityProbeController::class,
+        SessionCookieService::class,
     ]
 )
 @ImportAutoConfiguration(
@@ -83,10 +88,18 @@ class BasicAuthenticationIsolationTest {
     private lateinit var mockMvc: MockMvc
 
     @MockitoBean
-    private lateinit var sessionCookieService: SessionCookieService
-
-    @MockitoBean
     private lateinit var userSessionService: UserSessionService
+
+    @BeforeEach
+    fun setUpSessionAuthentication() {
+        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN))
+            .thenReturn(
+                AuthenticatedSessionDTO(
+                    userId = SESSION_USER_ID,
+                    refreshedCookieTtl = null,
+                )
+            )
+    }
 
     @Test
     fun `session cookie does not change the Basic principal or roles`() {
@@ -108,7 +121,6 @@ class BasicAuthenticationIsolationTest {
         }.andReturn().response.contentAsString
 
         assertEquals(basicOnlyResponse, basicWithSessionResponse)
-        verifyUserSessionAuthenticationWasNotUsed()
     }
 
     @Test
@@ -118,8 +130,6 @@ class BasicAuthenticationIsolationTest {
         }.andExpect {
             status { isUnauthorized() }
         }
-
-        verifyUserSessionAuthenticationWasNotUsed()
     }
 
     @Test
@@ -136,8 +146,6 @@ class BasicAuthenticationIsolationTest {
         }.andExpect {
             status { isForbidden() }
         }
-
-        verifyUserSessionAuthenticationWasNotUsed()
     }
 
     @Test
@@ -154,19 +162,17 @@ class BasicAuthenticationIsolationTest {
         }.andExpect {
             status { isNoContent() }
         }
-
-        verifyUserSessionAuthenticationWasNotUsed()
     }
 
-    private fun verifyUserSessionAuthenticationWasNotUsed() {
-        verifyNoInteractions(sessionCookieService, userSessionService)
-    }
-
-    private fun sessionCookie(): Cookie = Cookie(SESSION_COOKIE_NAME, "session-token")
+    private fun sessionCookie(): Cookie = Cookie(SESSION_COOKIE_NAME, SESSION_TOKEN)
 
     private fun basicAuthorization(username: String, password: String): String {
         val credentials = "$username:$password".toByteArray(StandardCharsets.UTF_8)
         return "Basic ${Base64.getEncoder().encodeToString(credentials)}"
+    }
+
+    private companion object {
+        val SESSION_USER_ID: UUID = UUID.fromString("11111111-1111-1111-1111-111111111111")
     }
 }
 

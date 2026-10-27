@@ -1,11 +1,11 @@
 package io.klibs.app.configuration
 
+import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.app.filter.AUTHENTICATED_USER_AUTHORITY
 import io.klibs.app.filter.SessionOriginProtectionFilter
 import io.klibs.app.filter.UserSessionAuthenticationFilter
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
-import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -41,6 +41,8 @@ class UserAuthenticationSecurityConfiguration {
         userAuthenticationProperties: UserAuthenticationProperties,
         userSessionService: UserSessionService,
     ): SecurityFilterChain {
+        http.configureStatelessAuthentication()
+
         http {
             securityMatcher(AUTHENTICATION_ENDPOINTS_PATH)
 
@@ -88,6 +90,8 @@ class UserAuthenticationSecurityConfiguration {
         userAuthenticationProperties: UserAuthenticationProperties,
         userSessionService: UserSessionService,
     ): SecurityFilterChain {
+        http.configureStatelessAuthentication()
+
         http {
             securityMatcher(USER_ACTIONS_PATH)
 
@@ -97,18 +101,6 @@ class UserAuthenticationSecurityConfiguration {
 
             cors {
                 configurationSource = authenticationCorsConfigurationSource
-            }
-
-            requestCache {
-                requestCache = NullRequestCache()
-            }
-
-            sessionManagement {
-                sessionCreationPolicy = SessionCreationPolicy.STATELESS
-            }
-
-            exceptionHandling {
-                authenticationEntryPoint = HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
             }
 
             authorizeHttpRequests {
@@ -126,5 +118,21 @@ class UserAuthenticationSecurityConfiguration {
             AnonymousAuthenticationFilter::class.java,
         )
         return http.build()
+    }
+
+    private fun HttpSecurity.configureStatelessAuthentication() {
+        this {
+            requestCache {
+                requestCache = NullRequestCache()
+            }
+
+            sessionManagement {
+                sessionCreationPolicy = SessionCreationPolicy.STATELESS
+            }
+
+            exceptionHandling {
+                authenticationEntryPoint = HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
+            }
+        }
     }
 }
