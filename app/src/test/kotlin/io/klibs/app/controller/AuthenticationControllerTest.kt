@@ -104,9 +104,12 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    fun `sign-out deletes the session and expires its cookie`() {
+    fun `sign-out deletes only the current session and expires its cookie`() {
         val user = userService.findOrCreate(IDENTITY)
         val session = userSessionService.createSession(user)
+        val sameUserSession = userSessionService.createSession(user)
+        val otherUser = userService.findOrCreate(OTHER_IDENTITY)
+        val otherUserSession = userSessionService.createSession(otherUser)
 
         val response = mockMvc.post("/auth/sign-out") {
             cookie(Cookie(SESSION_COOKIE_NAME, session.token))
@@ -126,6 +129,8 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
         assertTrue(setCookie.contains("HttpOnly"))
         assertTrue(setCookie.contains("SameSite=Lax"))
         assertNull(userSessionService.authenticateAndRefreshSessionIfAlive(session.token))
+        assertNotNull(userSessionService.authenticateAndRefreshSessionIfAlive(sameUserSession.token))
+        assertNotNull(userSessionService.authenticateAndRefreshSessionIfAlive(otherUserSession.token))
     }
 
     @Test
@@ -203,8 +208,20 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
         }
     }
 
+    @Test
+    fun `unknown auth endpoint is unauthorized without creating an HTTP session`() {
+        val result = mockMvc.get("/auth/unknown")
+            .andExpect {
+                status { isUnauthorized() }
+            }
+            .andReturn()
+
+        assertNull(result.request.getSession(false))
+    }
+
     private companion object {
         val IDENTITY = ExternalUserIdentity("hub-user-42")
+        val OTHER_IDENTITY = ExternalUserIdentity("another-hub-user")
     }
 }
 
