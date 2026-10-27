@@ -16,31 +16,11 @@ class UserService(
     private val hashingService: AuthenticationHashingService,
 ) {
     fun findOrCreate(identity: ExternalUserIdentity): UserEntity {
-        val externalUserIdHash = hashingService.hashExternalIdentity(identity)
-
-        val existingUser = userRepository.findByExternalUserIdHash(externalUserIdHash)
-        if (existingUser != null) {
-            return existingUser
+        val hash = hashingService.hashExternalIdentity(identity)
+        userRepository.findByExternalUserIdHash(hash)?.let { return it }
+        userRepository.saveIfAbsent(id = UUID.randomUUID(), externalUserIdHash = hash)
+        return checkNotNull(userRepository.findByExternalUserIdHash(hash)) {
+            "User is still missing after insert"
         }
-
-        val newUser = UserEntity(
-            id = UUID.randomUUID(),
-            externalUserIdHash = externalUserIdHash,
-        )
-        val wasInserted = userRepository.saveIfAbsent(
-            id = newUser.id,
-            externalUserIdHash = newUser.externalUserIdHash,
-        ) > 0
-
-        if (wasInserted) {
-            return newUser
-        }
-
-        val createdUser = userRepository.findByExternalUserIdHash(externalUserIdHash)
-        if (createdUser == null) {
-            throw IllegalStateException("User is still missing after insert")
-        }
-
-        return createdUser
     }
 }

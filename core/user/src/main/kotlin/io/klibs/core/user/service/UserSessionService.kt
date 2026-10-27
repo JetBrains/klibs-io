@@ -49,7 +49,7 @@ class UserSessionService(
 
         // Reject sessions that exceeded either the idle or absolute lifetime.
         if (!session.expiresAt.isAfter(now) || !absoluteExpiresAt.isAfter(now)) {
-            sessionRepository.delete(session)
+            sessionRepository.deleteByTokenHash(tokenHash)
             return null
         }
 
@@ -67,9 +67,9 @@ class UserSessionService(
     }
 
     fun deleteSession(token: String) {
-        val tokenHash = hashingService.hashSessionToken(token)
-        val session = sessionRepository.findByTokenHash(tokenHash) ?: return
-        sessionRepository.delete(session)
+        sessionRepository.deleteByTokenHash(
+            hashingService.hashSessionToken(token),
+        )
     }
 
     private fun calculateRefreshedExpiration(
@@ -97,7 +97,6 @@ class UserSessionService(
     ): Duration? {
         val expirationRefreshed = sessionRepository.updateExpiration(
             id = session.id,
-            currentExpiresAt = session.expiresAt,
             newExpiresAt = refreshedExpiresAt,
         ) > 0
 

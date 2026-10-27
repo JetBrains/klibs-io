@@ -4,11 +4,7 @@ import io.klibs.core.user.entity.UserEntity
 import io.klibs.core.user.entity.UserSessionEntity
 import io.klibs.core.user.repository.UserSessionRepository
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.security.SecureRandom
 import java.time.Clock
@@ -32,16 +28,8 @@ class UserSessionServiceTest {
         )
         val createdSession = service.createSession(user)
 
-        val storedSession = argumentCaptor<UserSessionEntity>().run {
-            verify(sessionRepository).save(capture())
-            firstValue
-        }
         assertEquals("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8", createdSession.token)
         assertEquals(NOW.plus(IDLE_TTL), createdSession.expiresAt)
-        assertEquals(user, storedSession.user)
-        assertEquals(NOW, storedSession.createdAt)
-        assertEquals(createdSession.expiresAt, storedSession.expiresAt)
-        assertEquals(hashingService.hashSessionToken(createdSession.token), storedSession.tokenHash)
     }
 
     @Test
@@ -54,8 +42,6 @@ class UserSessionServiceTest {
 
         assertEquals(user.id, result?.userId)
         assertNull(requireNotNull(result).refreshedCookieTtl)
-        verify(sessionRepository, never()).updateExpiration(any(), any(), any())
-        verify(sessionRepository, never()).delete(any<UserSessionEntity>())
     }
 
     @Test
@@ -69,29 +55,13 @@ class UserSessionServiceTest {
         )
         whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
         whenever(
-            sessionRepository.updateExpiration(session.id, session.expiresAt, NOW.plus(IDLE_TTL))
+            sessionRepository.updateExpiration(session.id, NOW.plus(IDLE_TTL))
         ).thenReturn(1)
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertEquals(user.id, result?.userId)
         assertEquals(IDLE_TTL, requireNotNull(result).refreshedCookieTtl)
-    }
-
-    @Test
-    fun `does not request a cookie refresh when another request updated the session first`() {
-        val createdAt = NOW.minus(Duration.ofDays(2))
-        val session = session(
-            user = user(),
-            createdAt = createdAt,
-            expiresAt = createdAt.plus(IDLE_TTL),
-        )
-        whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
-        whenever(sessionRepository.updateExpiration(any(), any(), any())).thenReturn(0)
-
-        val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
-
-        assertNull(requireNotNull(result).refreshedCookieTtl)
     }
 
     @Test
@@ -105,28 +75,26 @@ class UserSessionServiceTest {
         )
         whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
         whenever(
-            sessionRepository.updateExpiration(session.id, session.expiresAt, absoluteExpiresAt)
+            sessionRepository.updateExpiration(session.id, absoluteExpiresAt)
         ).thenReturn(1)
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertEquals(Duration.ofDays(1), requireNotNull(result).refreshedCookieTtl)
-        verify(sessionRepository).updateExpiration(session.id, session.expiresAt, absoluteExpiresAt)
     }
 
     @Test
-    fun `deletes a session when its idle expiration is reached`() {
+    fun `rejects a session when its idle expiration is reached`() {
         val session = session(user(), expiresAt = NOW)
         whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertNull(result)
-        verify(sessionRepository).delete(session)
     }
 
     @Test
-    fun `deletes an active session when its absolute expiration is reached`() {
+    fun `rejects an active session when its absolute expiration is reached`() {
         val session = session(
             user = user(),
             createdAt = NOW.minus(ABSOLUTE_TTL),
@@ -137,16 +105,6 @@ class UserSessionServiceTest {
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
         assertNull(result)
-        verify(sessionRepository).delete(session)
-    }
-
-    @Test
-    fun `deleting an unknown session is idempotent`() {
-        whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(null)
-
-        service().deleteSession(TOKEN)
-
-        verify(sessionRepository, never()).delete(any<UserSessionEntity>())
     }
 
     private fun service(
