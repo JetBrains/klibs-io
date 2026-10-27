@@ -76,3 +76,9 @@ databaseChangeLog:
                   type: TIMESTAMP
                   constraints:
                     nullable: false
+        - createIndex:
+            indexName: idx_klibs_user_session_user_id
+            tableName: klibs_user_session
+            columns:
+              - column:
+                  name: user_id

@@ -16,12 +16,17 @@ interface UserSessionRepository : CrudRepository<UserSessionEntity, UUID> {
         """
             UPDATE UserSessionEntity
             SET expiresAt = :newExpiresAt
-            WHERE id = :id AND expiresAt = :currentExpiresAt
+            WHERE id = :id
         """
     )
     fun updateExpiration(
         @Param("id") id: UUID,
-        @Param("currentExpiresAt") currentExpiresAt: Instant,
         @Param("newExpiresAt") newExpiresAt: Instant,
     ): Long
+
+    @Modifying
+    @Query("DELETE FROM UserSessionEntity WHERE tokenHash = :tokenHash")
+    fun deleteByTokenHash(
+        @Param("tokenHash") tokenHash: String,
+    ): Int
 }
