@@ -6,8 +6,8 @@ import io.klibs.core.user.model.ExternalUserIdentity
 import io.klibs.core.user.repository.UserRepository
 import io.klibs.core.user.repository.UserSessionRepository
 import org.junit.jupiter.api.Test
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.test.context.TestPropertySource
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
@@ -15,6 +15,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
@@ -38,6 +39,9 @@ import kotlin.test.assertNull
     ]
 )
 class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
+
+    @Autowired
+    private lateinit var sessionSettings: UserSessionSettings
 
     @Autowired
     private lateinit var userService: UserService
@@ -117,8 +121,7 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
         val storedUser = userRepository.findById(user.id).orElseThrow()
         val storedSession = sessionRepository.findByTokenHash(tokenHash)
 
-        assertNotEquals(IDENTITY.externalUserId, storedUser.externalUserIdHash)
-        assertEquals(64, storedUser.externalUserIdHash.length)
+        assertEquals(hashingService.hashExternalIdentity(IDENTITY), storedUser.externalUserIdHash)
         assertNotNull(storedSession)
         assertNotEquals(session.token, storedSession.tokenHash)
         assertNull(sessionRepository.findByTokenHash(session.token))
@@ -127,14 +130,39 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `expired database session does not authenticate and is deleted`() {
         val user = userService.findOrCreate(IDENTITY)
+        val now = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+        val controlSessions = saveControlSessions(user.id, now)
         val rawToken = "expired-token"
         val tokenHash = hashingService.hashSessionToken(rawToken)
         sessionRepository.save(
             UserSessionEntity(
                 user = user,
                 tokenHash = tokenHash,
-                createdAt = Instant.now().minusSeconds(60),
-                expiresAt = Instant.now().minusSeconds(1),
+                createdAt = now.minusSeconds(60),
+                expiresAt = now.minusSeconds(1),
+            )
+        )
+
+        assertNull(userSessionService.authenticateAndRefreshSessionIfAlive(rawToken))
+        assertNull(sessionRepository.findByTokenHash(tokenHash))
+        assertSessionsUnchanged(controlSessions)
+    }
+
+    @Test
+    fun `session past absolute lifetime does not authenticate and is deleted`() {
+        val user = userService.findOrCreate(IDENTITY)
+        val rawToken = "absolute-ttl-expired-token"
+        val tokenHash = hashingService.hashSessionToken(rawToken)
+        val now = Instant.now()
+
+        sessionRepository.save(
+            UserSessionEntity(
+                user = user,
+                tokenHash = tokenHash,
+                createdAt = now
+                    .minus(sessionSettings.absoluteTtl)
+                    .minusSeconds(1),
+                expiresAt = now.plus(Duration.ofDays(1)),
             )
         )
 
@@ -145,10 +173,11 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `refreshing a session persists its extended expiration`() {
         val user = userService.findOrCreate(IDENTITY)
+        val controlSessions = saveControlSessions(user.id, NOW)
         val rawToken = "renewable-token"
         val tokenHash = hashingService.hashSessionToken(rawToken)
         val createdAt = NOW.minus(Duration.ofDays(2))
-        val expiresAt = createdAt.plus(SESSION_IDLE_TTL)
+        val expiresAt = createdAt.plus(sessionSettings.idleTtl)
         sessionRepository.save(
             UserSessionEntity(
                 user = user,
@@ -165,23 +194,27 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
             )
         }
 
-        assertEquals(SESSION_IDLE_TTL, result.refreshedCookieTtl)
+        assertEquals(sessionSettings.idleTtl, result.refreshedCookieTtl)
         assertEquals(
-            NOW.plus(SESSION_IDLE_TTL),
+            NOW.plus(sessionSettings.idleTtl),
             sessionRepository.findByTokenHash(tokenHash)?.expiresAt,
         )
+        assertSessionsUnchanged(controlSessions)
     }
 
     @Test
-    fun `deleting a user cascades to all of their sessions`() {
+    fun `deleting a user cascades only to their sessions`() {
         val user = userService.findOrCreate(IDENTITY)
+        val otherUser = userService.findOrCreate(OTHER_IDENTITY)
         userSessionService.createSession(user)
         userSessionService.createSession(user)
-        assertEquals(2, sessionRepository.count())
+        val otherUserSession = userSessionService.createSession(otherUser)
+        assertEquals(3, sessionRepository.count())
 
         userRepository.deleteById(user.id)
 
-        assertEquals(0, sessionRepository.count())
+        assertEquals(1, sessionRepository.count())
+        assertNotNull(userSessionService.authenticateAndRefreshSessionIfAlive(otherUserSession.token))
     }
 
     private fun saveSession(
@@ -201,14 +234,39 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
         )
     }
 
+    private fun saveControlSessions(
+        userId: UUID,
+        createdAt: Instant,
+    ): List<UserSessionEntity> {
+        val otherUser = userService.findOrCreate(OTHER_IDENTITY)
+        return listOf(
+            saveSession(
+                userId = userId,
+                tokenHash = hashingService.hashSessionToken("same-user-control-token"),
+                createdAt = createdAt,
+                expiresAt = createdAt.plus(Duration.ofDays(10)),
+            ),
+            saveSession(
+                userId = otherUser.id,
+                tokenHash = hashingService.hashSessionToken("other-user-control-token"),
+                createdAt = createdAt,
+                expiresAt = createdAt.plus(Duration.ofDays(20)),
+            ),
+        )
+    }
+
+    private fun assertSessionsUnchanged(sessions: List<UserSessionEntity>) {
+        sessions.forEach { expected ->
+            val actual = assertNotNull(sessionRepository.findByTokenHash(expected.tokenHash))
+            assertEquals(expected.id, actual.id)
+            assertEquals(expected.expiresAt, actual.expiresAt)
+        }
+    }
+
     private fun sessionService() = UserSessionService(
         sessionRepository = sessionRepository,
         hashingService = hashingService,
-        sessionSettings = UserSessionSettings(
-            idleTtl = SESSION_IDLE_TTL,
-            refreshInterval = Duration.ofDays(1),
-            absoluteTtl = Duration.ofDays(180),
-        ),
+        sessionSettings = sessionSettings,
         clock = Clock.fixed(NOW, ZoneOffset.UTC),
     )
 
@@ -217,8 +275,8 @@ class UserPersistenceIntegrationTest : BaseUnitWithDbLayerTest() {
 
     private companion object {
         val NOW: Instant = Instant.parse("2026-09-23T10:15:30Z")
-        val SESSION_IDLE_TTL: Duration = Duration.ofDays(30)
         val IDENTITY = ExternalUserIdentity("concurrent-hub-user")
+        val OTHER_IDENTITY = ExternalUserIdentity("other-hub-user")
     }
 }
 

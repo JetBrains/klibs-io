@@ -5,7 +5,6 @@ import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.springframework.mock.env.MockEnvironment
 import org.springframework.mock.web.MockHttpServletRequest
 import java.time.Duration
 import kotlin.test.assertEquals
@@ -101,92 +100,31 @@ class SessionCookieServiceTest {
     }
 
     @Test
-    fun `allows an insecure cookie outside production`() {
+    fun `creates an insecure cookie when configured`() {
         val localSessionProperties = sessionProperties.copy(
             cookieName = LOCAL_SESSION_COOKIE_NAME,
             cookieSecure = false,
         )
-        val service = createService(localSessionProperties, "local")
+        val service = createService(localSessionProperties)
 
         assertFalse(service.createSessionCookie("token", localSessionProperties.idleTtl).isSecure)
     }
 
-    @Test
-    fun `rejects an insecure cookie in production`() {
-        assertFailsWith<IllegalArgumentException> {
-            createService(
-                sessionProperties.copy(
-                    cookieName = PRODUCTION_SESSION_COOKIE_NAME,
-                    cookieSecure = false,
-                ),
-                "prod",
-            )
-        }
-    }
-
-    @Test
-    fun `rejects a session cookie without the host prefix in production`() {
-        assertFailsWith<IllegalArgumentException> {
-            createService(
-                sessionProperties.copy(
-                    cookieName = LOCAL_SESSION_COOKIE_NAME,
-                    cookieSecure = true,
-                ),
-                "prod",
-            )
-        }
-    }
-
-    @Test
-    fun `rejects an invalid session cookie name`() {
-        assertFailsWith<IllegalArgumentException> {
-            createService(
-                sessionProperties.copy(
-                    cookieName = "__Host-invalid cookie name",
-                    cookieSecure = true,
-                ),
-                "prod",
-            )
-        }
-    }
-
-    @Test
-    fun `creates a host-prefixed session cookie in production`() {
-        val productionSessionProperties = sessionProperties.copy(
-            cookieName = PRODUCTION_SESSION_COOKIE_NAME,
-            cookieSecure = true,
-        )
-        val service = createService(productionSessionProperties, "prod")
-
-        val cookie = service.createSessionCookie("token", productionSessionProperties.idleTtl)
-
-        assertEquals(PRODUCTION_SESSION_COOKIE_NAME, cookie.name)
-        assertEquals("/", cookie.path)
-        assertNull(cookie.domain)
-        assertTrue(cookie.isSecure)
-    }
-
     private fun createService(
         sessionProperties: UserAuthenticationProperties.Session,
-        vararg profiles: String,
-    ): SessionCookieService {
-        val environment = MockEnvironment()
-        environment.setActiveProfiles(*profiles)
-        return SessionCookieService(
+    ): SessionCookieService =
+        SessionCookieService(
             UserAuthenticationProperties(
                 hmacSecret = ENCODED_HMAC_SECRET,
                 trustedFrontendOrigin = TRUSTED_ORIGIN,
                 session = sessionProperties,
             ),
-            environment,
         )
-    }
 
     private companion object {
         const val ENCODED_HMAC_SECRET = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
         const val TRUSTED_ORIGIN = "https://frontend.example"
         const val SESSION_COOKIE_NAME = "test_session"
         const val LOCAL_SESSION_COOKIE_NAME = "klibs_session"
-        const val PRODUCTION_SESSION_COOKIE_NAME = "__Host-klibs_session"
     }
 }
