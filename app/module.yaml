@@ -17,6 +17,7 @@ dependencies:
   - ../core/scm-repository
   - ../core/search
   - ../core/storage
+  - ../core/user
   - ../integrations/ai
   - ../integrations/maven
   - ../integrations/github
