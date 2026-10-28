@@ -174,9 +174,11 @@ object OpenSearchQueryBuilder {
         platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
+        ownerLogins: List<String>? = null,
     ): List<Query> = buildList {
         platforms.distinct().forEach { add(term(ProjectFields.PLATFORMS, it.name)) }
         ownerLogin?.let { add(term(ProjectFields.OWNER_LOGIN.keyword, it)) }
+        ownerLogins?.let { add(termsAny(ProjectFields.OWNER_LOGIN.keyword, it)) }
         addAll(targetGroupFiltersClauses(targetGroupFilters))
     }
 

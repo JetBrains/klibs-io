@@ -73,6 +73,50 @@ class SearchControllerValidationTest : SmokeTestBase() {
     }
 
     @Test
+    @DisplayName("Should return a validation message for an invalid category selector")
+    fun testInvalidCategorySelector() {
+        val searchRequest = SearchProjectsRequest(categorySelector = "UNKNOWN_CATEGORY")
+
+        mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
+            param("page", "1")
+            param("limit", "10")
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.categorySelector") {
+                value("Category selector must be one of: JETBRAINS_AND_GOOGLE")
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Should accept a documented category selector")
+    fun testValidCategorySelector() {
+        val searchRequest = SearchProjectsRequest(categorySelector = "JETBRAINS_AND_GOOGLE")
+
+        mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
+            param("page", "1")
+            param("limit", "10")
+        }.andExpect {
+            status { isOk() }
+        }
+    }
+
+    @Test
+    @DisplayName("Category response exposes the selector as a stable API string")
+    fun testCategorySelectorResponse() {
+        mockMvc.get("/categories/projects") {
+            param("limit", "1")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.categories[0].category.selector") { value("JETBRAINS_AND_GOOGLE") }
+        }
+    }
+
+    @Test
     @DisplayName("Should return 400 Bad Request when page exceeds 50")
     fun testPageAboveCap() {
         mockMvc.get("/search/projects") {

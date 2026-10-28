@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.time.Instant
@@ -36,7 +37,7 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `project search returns OpenSearch results while OpenSearch is healthy`() {
-        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()))
+        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any(), anyOrNull()))
             .thenReturn(listOf(project(1)))
 
         assertEquals(listOf(project(1)), findProjects())
@@ -45,9 +46,9 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `project search falls back to PostgreSQL when OpenSearch fails`() {
-        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()))
+        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any(), anyOrNull()))
             .thenThrow(RuntimeException("connection refused"))
-        whenever(postgresProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()))
+        whenever(postgresProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any(), anyOrNull()))
             .thenReturn(listOf(project(2)))
 
         assertEquals(listOf(project(2)), findProjects())
@@ -56,12 +57,23 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `project search propagates sorts OpenSearch cannot serve instead of masking them`() {
-        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()))
+        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any(), anyOrNull()))
             .thenThrow(UnsupportedOperationException("MOST_HEALTHY is not supported by OpenSearch"))
 
         assertThrows<UnsupportedOperationException> { findProjects(SearchSort.MOST_HEALTHY) }
         // A sort OpenSearch cannot serve is not degraded serving.
         assertNull(fallbacks("project"))
+    }
+
+    @Test
+    fun `project search preserves owner login filters when falling back`() {
+        val ownerLogins = listOf("Kotlin", "JetBrains")
+        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any(), eq(ownerLogins)))
+            .thenThrow(RuntimeException("connection refused"))
+        whenever(postgresProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any(), eq(ownerLogins)))
+            .thenReturn(listOf(project(3)))
+
+        assertEquals(listOf(project(3)), findProjects(ownerLogins = ownerLogins))
     }
 
     @Test
@@ -92,7 +104,10 @@ class SearchRepositoryFallbackTest {
         sql = "select 1",
     ) { it.toString() }
 
-    private fun findProjects(sortBy: SearchSort = SearchSort.RELEVANCY) = projects.find(
+    private fun findProjects(
+        sortBy: SearchSort = SearchSort.RELEVANCY,
+        ownerLogins: List<String>? = null,
+    ) = projects.find(
         query = "ktor",
         platforms = emptyList(),
         targetGroupFilters = emptyList(),
@@ -102,6 +117,7 @@ class SearchRepositoryFallbackTest {
         markers = emptyList(),
         page = 1,
         limit = 10,
+        ownerLogins = ownerLogins,
     )
 
     private fun findPackages() = packages.find(

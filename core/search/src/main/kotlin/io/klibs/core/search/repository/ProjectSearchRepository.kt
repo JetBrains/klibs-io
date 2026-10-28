@@ -16,6 +16,7 @@ interface ProjectSearchRepository {
         tags: List<String>,
         markers: List<String>,
         page: Int,
-        limit: Int
+        limit: Int,
+        ownerLogins: List<String>? = null,
     ): List<SearchProjectResult>
 }

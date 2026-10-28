@@ -80,6 +80,21 @@ class OpenSearchQueryBuilderTest {
     }
 
     @Test
+    fun `common filters keep owner login lists as exact terms`() {
+        val filters = OpenSearchQueryBuilder.commonFilters(
+            platforms = emptyList(),
+            targetGroupFilters = emptyList(),
+            ownerLogin = null,
+            ownerLogins = listOf("Kotlin", "JetBrains"),
+        )
+
+        assertEquals(
+            """[{"terms":{"owner_login.keyword":["Kotlin","JetBrains"]}}]""",
+            filters.joinToString(",", "[", "]") { json(it) },
+        )
+    }
+
+    @Test
     fun `iOS target group expands to native target terms`() {
         val out = json(
             OpenSearchQueryBuilder.bool(

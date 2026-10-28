@@ -311,6 +311,8 @@ export interface OwnerOrganization extends Owner{
 
 export type SearchSort = 'most-stars' | 'relevance'| 'most-dependents';
 
+export type CategoryProjectSelector = 'JETBRAINS_AND_GOOGLE';
+
 export type SearchMode = 'projects' | 'packages';
 
 export type TargetGroupFilter = 'ios' | 'android' | 'jvm' | 'js' | 'wasm' | 'other';
@@ -371,6 +373,7 @@ export interface SearchParams {
 	tags?: string[];
 	mode?: SearchMode;
 	markers?: string[];
+	categorySelector?: CategoryProjectSelector;
 }
 
 // The non-nullable fields below are non-nullable on the backend and have no effective
@@ -382,6 +385,7 @@ export interface SearchProjectsRequest {
 	tags: string[];
 	markers: string[];
 	targetGroupFilters: TargetGroupFilters;
+	categorySelector?: CategoryProjectSelector;
 }
 
 export interface SearchPackagesRequest {
@@ -403,7 +407,9 @@ export interface TagsStatsItem {
 
 export interface Category {
 	name: string;
+	subtitle?: string | null;
 	markers: string[];
+	selector?: CategoryProjectSelector | null;
 }
 
 export interface CategoriesResponse {

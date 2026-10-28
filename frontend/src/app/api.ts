@@ -192,6 +192,7 @@ function toSearchProjectsRequest(searchParams: SearchParams): SearchProjectsRequ
     // Only the nullable fields may be omitted.
     if (searchParams.query) request.query = searchParams.query;
     if (searchParams.owner) request.owner = searchParams.owner;
+    if (searchParams.categorySelector) request.categorySelector = searchParams.categorySelector;
 
     return request;
 }

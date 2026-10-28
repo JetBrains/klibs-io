@@ -17,6 +17,8 @@ import { GRANT_WINNERS_SLUG } from "@/app/constants";
 import styles from './styles.module.css';
 
 const CATEGORY_ITEMS_LIMIT = 6;
+// Feature this curated entry point first while preserving the server's order for the other categories.
+const PRIORITY_CATEGORY_NAME = "JetBrains and Google";
 
 interface CategorySectionProps {
     category: Category;
@@ -41,8 +43,11 @@ function CategorySection({ category, projects }: CategorySectionProps) {
 
     return (
         <div className={styles.categoryWrapper} data-testid={`category-section-${categorySlug}`}>
-            <div className={styles.categoryHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className={textCn('rs-h2')}>{category.name}</h2>
+            <div className={styles.categoryHeader}>
+                <div className={styles.categoryTitle}>
+                    <h2 className={textCn('rs-h2')}>{category.name}</h2>
+                    {category.subtitle && <p className={textCn('rs-text-3')}>{category.subtitle}</p>}
+                </div>
                 {projects.length > CATEGORY_ITEMS_LIMIT && (
                     <Link href={`/?category=${categorySlug}`}>
                         <Button
@@ -77,9 +82,14 @@ export default function CategoriesView({ categoryWithProjects }: CategoriesViewP
         return null;
     }
 
+    const orderedCategories = [
+        ...categoryWithProjects.filter(({ category }) => category.name === PRIORITY_CATEGORY_NAME),
+        ...categoryWithProjects.filter(({ category }) => category.name !== PRIORITY_CATEGORY_NAME),
+    ];
+
     return (
         <div>
-            {categoryWithProjects.map(({ category, projects }) => (
+            {orderedCategories.map(({ category, projects }) => (
                 <CategorySection
                     key={category.name}
                     category={category}

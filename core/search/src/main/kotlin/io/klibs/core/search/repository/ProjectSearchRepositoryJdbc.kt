@@ -30,7 +30,8 @@ class ProjectSearchRepositoryJdbc(
         tags: List<String>,
         markers: List<String>,
         page: Int,
-        limit: Int
+        limit: Int,
+        ownerLogins: List<String>?,
     ): List<SearchProjectResult> {
         val isQueryPresent = rawQuery?.isBlank() == false
         val offset = limit * (page - 1)
@@ -91,6 +92,12 @@ class ProjectSearchRepositoryJdbc(
                 prefix = "AND"
             }
 
+            if (ownerLogins != null) {
+                appendLine(" $prefix owner_login = ANY(:ownerLogins::text[])")
+
+                prefix = "AND"
+            }
+
             if (tags.isNotEmpty()) {
                 appendLine(" $prefix tags @> ARRAY[:tags]::text[]")
 
@@ -104,8 +111,6 @@ class ProjectSearchRepositoryJdbc(
 
             if (targetCondition != null) {
                 appendLine(" $prefix $targetCondition")
-
-                prefix = "AND"
             }
 
             appendLine(" ORDER BY $orderBy")
@@ -120,6 +125,7 @@ class ProjectSearchRepositoryJdbc(
             .param("wildcardQueryWithSpecialSymbols", wildcardQueryWithSpecialSymbols)
             .param("wildcardQueryWithoutSpecialSymbols", wildcardQueryWithoutSpecialSymbols)
             .param("ownerLogin", ownerLogin)
+            .param("ownerLogins", ownerLogins?.toTypedArray())
             .param("tags", tags.toTypedArray())
             .param("markers", markers.toTypedArray())
             .query(PROJECT_OVERVIEW_ROW_MAPPER)
@@ -197,8 +203,55 @@ class ProjectSearchRepositoryJdbc(
 
     private fun String.addWildcardPostfix(): String = "$this:*"
 
-    fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
+    fun findCategoriesWithProjects(
+        limit: Int,
+        ownerCategories: Map<String, List<String>> = emptyMap(),
+    ): Map<Category, List<SearchProjectResult>> {
+        val ownerCategoryEntries = ownerCategories.flatMap { (categoryName, ownerLogins) ->
+            ownerLogins.map { ownerLogin -> categoryName to ownerLogin }
+        }
+        val ownerCategoryCte = ownerCategoryEntries.takeIf { it.isNotEmpty() }?.let { entries ->
+            """
+                WITH selector_owners(category_name, owner_login) AS (
+                    VALUES ${entries.indices.joinToString(", ") { index ->
+                        "(:selectorCategory$index::text, :selectorOwner$index::text)"
+                    }}
+                )
+            """.trimIndent()
+        }.orEmpty()
+        val hasOwnerSelector = ownerCategoryEntries.isNotEmpty()
+        val selectorExists = "EXISTS (SELECT 1 FROM selector_owners WHERE category_name = c.name)"
+        val projectFilter = if (hasOwnerSelector) {
+            """(
+                ($selectorExists AND project_index.owner_login IN (
+                    SELECT owner_login FROM selector_owners WHERE category_name = c.name
+                ))
+                OR (NOT $selectorExists AND project_index.markers && c.markers)
+            )""".trimIndent()
+        } else {
+            "project_index.markers && c.markers"
+        }
+        val projectOrder = if (hasOwnerSelector) {
+            """
+                CASE WHEN $selectorExists THEN dependent_count END DESC NULLS LAST,
+                CASE WHEN NOT $selectorExists THEN stars END DESC NULLS LAST,
+                project_id ASC
+            """.trimIndent()
+        } else {
+            "stars DESC, project_id ASC"
+        }
+        val categoryOrder = if (hasOwnerSelector) {
+            """
+                CASE WHEN $selectorExists THEN pi.dependent_count END DESC NULLS LAST,
+                CASE WHEN NOT $selectorExists THEN pi.stars END DESC NULLS LAST,
+                pi.project_id NULLS LAST
+            """.trimIndent()
+        } else {
+            "pi.stars DESC NULLS LAST, pi.project_id NULLS LAST"
+        }
+
         val sql = """
+            $ownerCategoryCte
             SELECT c.id AS category_id, c.name AS category_name, c.markers AS category_markers,
                    pi.project_id, pi.owner_type, pi.owner_login, pi.repo_name, pi.name,
                    pi.stars, pi.license_name, pi.latest_version, pi.latest_version_ts,
@@ -207,22 +260,29 @@ class ProjectSearchRepositoryJdbc(
             FROM category c
             LEFT JOIN LATERAL (
                 SELECT * FROM project_index
-                WHERE project_index.markers && c.markers
-                ORDER BY stars DESC, project_id
+                WHERE $projectFilter
+                ORDER BY $projectOrder
                 LIMIT :limit
             ) pi ON true
-            ORDER BY c.id, pi.stars DESC NULLS LAST, pi.project_id NULLS LAST
+            ORDER BY c.id, $categoryOrder
         """.trimIndent()
 
         val result = linkedMapOf<Category, MutableList<SearchProjectResult>>()
 
-        jdbcClient.sql(sql)
-            .param("limit", limit)
+        var statement = jdbcClient.sql(sql).param("limit", limit)
+        ownerCategoryEntries.forEachIndexed { index, (categoryName, ownerLogin) ->
+            statement = statement
+                .param("selectorCategory$index", categoryName)
+                .param("selectorOwner$index", ownerLogin)
+        }
+
+        statement
             .query { rs, _ ->
+                val categoryName = rs.getString("category_name")
                 val category = Category(
-                    name = rs.getString("category_name"),
+                    name = categoryName,
                     markers = rs.getArray("category_markers")?.array
-                        ?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList()
+                        ?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList(),
                 )
                 val project = if (rs.getObject("project_id") != null) {
                     PROJECT_OVERVIEW_ROW_MAPPER.mapRow(rs, 0)

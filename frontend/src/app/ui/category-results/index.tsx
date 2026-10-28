@@ -37,6 +37,7 @@ export default function CategoryResults({ category, searchQuery }: CategoryResul
                 page,
                 limit: SEARCH_LIMIT,
                 markers: category.markers,
+                categorySelector: category.selector ?? undefined,
                 query: searchQuery || undefined
             });
 
@@ -51,7 +52,7 @@ export default function CategoryResults({ category, searchQuery }: CategoryResul
         } finally {
             setLoading(false);
         }
-    }, [category.markers, searchQuery]);
+    }, [category.markers, category.selector, searchQuery]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -92,7 +93,14 @@ export default function CategoryResults({ category, searchQuery }: CategoryResul
 
     return (
         <>
-            <h1 className={cn(textCn("rs-h1"))} style={{ margin: '24px 0' }}>{category.name}</h1>
+            <div style={{ margin: '24px 0' }}>
+                <h1 className={cn(textCn("rs-h1"))} style={{ margin: 0 }}>{category.name}</h1>
+                {category.subtitle && (
+                    <p className={textCn("rs-text-3")} style={{ margin: '8px 0 0' }}>
+                        {category.subtitle}
+                    </p>
+                )}
+            </div>
 
             {loading && projects.length === 0 ? (
                 <div className="row w-100 justify-content-center py-5">

@@ -30,6 +30,8 @@ beforeEach(() => {
 test('home page categories view without search filters', async () => {
     await renderHome('');
 
+    await expect.element(page.getByTestId('category-section-jetbrains-and-google')).toBeVisible();
+    await expect.element(page.getByText('Essential libraries from the JetBrains and Google ecosystem')).toBeVisible();
     await expect.element(page.getByText('serialization', { exact: false }).first()).toBeVisible();
     await expect.element(page.getByTestId('category-section-networking')).toBeVisible();
     await expect.element(page.getByRole('heading', { name: 'Apollo Kotlin' })).toBeVisible();

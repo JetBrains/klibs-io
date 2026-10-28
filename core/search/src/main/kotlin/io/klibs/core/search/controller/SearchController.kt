@@ -1,6 +1,7 @@
 package io.klibs.core.search.controller
 
 import io.klibs.core.pckg.model.PackagePlatform
+import io.klibs.core.search.enums.CategoryProjectSelector
 import io.klibs.core.search.dto.api.SearchPackageResultDTO
 import io.klibs.core.search.dto.api.SearchPackageResultDTOTargetList
 import io.klibs.core.search.dto.api.SearchPackagesRequest
@@ -150,6 +151,7 @@ class SearchController(
                 sort = SearchSort.findBySerializableName(sortBy),
                 markers = markers,
                 tags = tags,
+                categorySelector = categorySelector?.let(CategoryProjectSelector::valueOf),
                 page = page,
                 limit = limit
             )
@@ -297,4 +299,3 @@ internal fun SearchPackageResult.toDTOTargetList(): SearchPackageResultDTOTarget
         targets = this.targetsList.map { "${it.platform}:${it.target}" },
     )
 }
-
