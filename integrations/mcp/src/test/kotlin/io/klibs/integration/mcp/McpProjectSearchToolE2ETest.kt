@@ -93,7 +93,7 @@ class McpProjectSearchToolE2ETest {
 
     @Test
     fun `searchProjects tolerates an omitted maxPackagesPerProject over a real MCP call`() {
-        whenever(mcpProjectSearchService.mcpProjectSearch(anyOrNull(), any(), any(), any()))
+        whenever(mcpProjectSearchService.mcpProjectSearch(anyOrNull(), any(), any()))
             .thenReturn(McpProjectSearchResultDto(projects = emptyList()))
 
         val result = client.callTool(CallToolRequest("searchProjects", mapOf("query" to "kotlin")))
@@ -101,7 +101,6 @@ class McpProjectSearchToolE2ETest {
         assertFalse(result.isError, "tool call returned an error: ${result.content()}")
         verify(mcpProjectSearchService).mcpProjectSearch(
             query = "kotlin",
-            platforms = emptyList(),
             targetFilters = emptyList(),
             maxPackagesPerProject = DEFAULT_MAX_PACKAGES_PER_PROJECT,
         )
@@ -109,7 +108,7 @@ class McpProjectSearchToolE2ETest {
 
     @Test
     fun `logs tool failure at ERROR before surfacing it as an error result`() {
-        whenever(mcpProjectSearchService.mcpProjectSearch(anyOrNull(), any(), any(), any()))
+        whenever(mcpProjectSearchService.mcpProjectSearch(anyOrNull(), any(), any()))
             .thenThrow(RuntimeException("boom"))
 
         val result = client.callTool(CallToolRequest("searchProjects", mapOf("query" to "kotlin")))
