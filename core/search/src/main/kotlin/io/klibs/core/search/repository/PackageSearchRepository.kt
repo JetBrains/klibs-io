@@ -1,6 +1,5 @@
 package io.klibs.core.search.repository
 
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchPackageResult
@@ -10,7 +9,6 @@ interface PackageSearchRepository {
      * Search for packages based on the given criteria.
      *
      * @param query The search query to match against package fields
-     * @param platforms Filter by supported platforms
      * @param ownerLogin Filter by owner login
      * @param sortBy Sort order
      * @param page Page number (1-based)
@@ -19,7 +17,6 @@ interface PackageSearchRepository {
      */
     fun find(
         query: String?,
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,

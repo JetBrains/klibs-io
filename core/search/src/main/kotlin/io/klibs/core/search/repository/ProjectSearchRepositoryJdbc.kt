@@ -23,7 +23,6 @@ class ProjectSearchRepositoryJdbc(
      */
     override fun find(
         rawQuery: String?,
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
@@ -75,13 +74,6 @@ class ProjectSearchRepositoryJdbc(
                 appendLine(
                     " WHERE (:wildcardQueryWithSpecialSymbols ::tsquery || wildcardQueryWithoutSpecialSymbols || :exactMatchWildcardQuery ::tsquery) @@ fts"
                 )
-                prefix = "AND"
-            }
-
-            if (platforms.isNotEmpty()) {
-                val platformsQuery = platforms.distinct().joinToString(separator = " & ") { it.name }
-                appendLine(" $prefix platforms_vector @@ '$platformsQuery'")
-
                 prefix = "AND"
             }
 

@@ -1,6 +1,5 @@
 package io.klibs.core.search.service
 
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.repository.PackageSearchRepository
 import io.klibs.core.search.repository.PackageSearchRepositoryJdbc
@@ -54,7 +53,6 @@ class SearchService(
     @Timed(value = "klibs.project.search.time", description = "Klibs: Time taken to search projects")
     fun search(
         query: String?,
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sort: SearchSort,
@@ -66,7 +64,6 @@ class SearchService(
         validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
         return projectSearchRepository.find(
             query = query,
-            platforms = platforms,
             targetGroupFilters = targetGroupFilters,
             ownerLogin = ownerLogin,
             sortBy = sort,
@@ -81,7 +78,6 @@ class SearchService(
     @Timed(value = "klibs.package.search.time", description = "Klibs: Time taken to search packages")
     fun searchPackage(
         query: String?,
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sort: SearchSort,
@@ -91,7 +87,6 @@ class SearchService(
         validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
         return packageSearchRepository.find(
             query = query,
-            platforms = platforms,
             ownerLogin = ownerLogin,
             targetGroupFilters = targetGroupFilters,
             sortBy = sort,

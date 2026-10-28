@@ -1,6 +1,5 @@
 package io.klibs.core.search.repository
 
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
@@ -26,7 +25,6 @@ class ProjectSearchRepositoryFallback(
 
     override fun find(
         query: String?,
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
@@ -35,7 +33,7 @@ class ProjectSearchRepositoryFallback(
         page: Int,
         limit: Int,
     ): List<SearchProjectResult> = try {
-        openSearch.find(query, platforms, targetGroupFilters, ownerLogin, sortBy, tags, markers, page, limit)
+        openSearch.find(query, targetGroupFilters, ownerLogin, sortBy, tags, markers, page, limit)
     } catch (e: UnsupportedOperationException) {
         // rethrow if deliberately skipped (i.e. oss health sort parameter)
         throw e
@@ -44,7 +42,7 @@ class ProjectSearchRepositoryFallback(
     } catch (e: Exception) {
         metrics.recordFallback(projectIndexSpec)
         log.warn("OpenSearch project search failed, falling back to PostgreSQL FTS (sort={})", sortBy, e)
-        postgres.find(query, platforms, targetGroupFilters, ownerLogin, sortBy, tags, markers, page, limit)
+        postgres.find(query, targetGroupFilters, ownerLogin, sortBy, tags, markers, page, limit)
     }
 
     private companion object {

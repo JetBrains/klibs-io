@@ -1,6 +1,5 @@
 package io.klibs.core.search.opensearch
 
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -66,7 +65,6 @@ class OpenSearchQueryBuilderTest {
             OpenSearchQueryBuilder.bool(
                 shoulds = emptyList(),
                 filters = OpenSearchQueryBuilder.commonFilters(
-                    platforms = listOf(PackagePlatform.JVM),
                     targetGroupFilters = listOf(mapOf(TargetGroup.JavaScript to emptySet())),
                     ownerLogin = "jetbrains",
                 ),
@@ -85,7 +83,6 @@ class OpenSearchQueryBuilderTest {
             OpenSearchQueryBuilder.bool(
                 shoulds = emptyList(),
                 filters = OpenSearchQueryBuilder.commonFilters(
-                    platforms = emptyList(),
                     targetGroupFilters = listOf(mapOf(TargetGroup.IOS to emptySet())),
                     ownerLogin = null,
                 ),
@@ -219,7 +216,7 @@ class OpenSearchQueryBuilderTest {
 
     // Each entry becomes its own single-group map, i.e. AND between groups (equivalent to the old Map behavior).
     private fun targetJson(targetFilters: Map<TargetGroup, Set<String>>): String =
-        OpenSearchQueryBuilder.commonFilters(emptyList(), targetFilters.map { mapOf(it.key to it.value) }, null)
+        OpenSearchQueryBuilder.commonFilters( targetFilters.map { mapOf(it.key to it.value) }, null)
             .joinToString(",", "[", "]") { json(it) }
 
     @Test
@@ -228,7 +225,6 @@ class OpenSearchQueryBuilderTest {
             OpenSearchQueryBuilder.bool(
                 shoulds = emptyList(),
                 filters = OpenSearchQueryBuilder.commonFilters(
-                    platforms = emptyList(),
                     targetGroupFilters = listOf(mapOf(TargetGroup.IOS to emptySet(), TargetGroup.MacOS to emptySet())),
                     ownerLogin = null,
                 ),
@@ -243,7 +239,6 @@ class OpenSearchQueryBuilderTest {
     @Test
     fun `separate maps are combined with AND as separate filters`() {
         val filters = OpenSearchQueryBuilder.commonFilters(
-            platforms = emptyList(),
             targetGroupFilters = listOf(mapOf(TargetGroup.JVM to setOf("17")), mapOf(TargetGroup.IOS to emptySet())),
             ownerLogin = null,
         )
@@ -253,7 +248,6 @@ class OpenSearchQueryBuilderTest {
     @Test
     fun `MacOS and Windows as separate maps become OR within group and AND between groups`() {
         val out = OpenSearchQueryBuilder.commonFilters(
-            platforms = emptyList(),
             targetGroupFilters = listOf(
                 mapOf(TargetGroup.MacOS to emptySet()),
                 mapOf(TargetGroup.Windows to emptySet()),
@@ -273,14 +267,12 @@ class OpenSearchQueryBuilderTest {
     @Test
     fun `Unknown group is skipped instead of producing an empty terms clause`() {
         val onlyUnknown = OpenSearchQueryBuilder.commonFilters(
-            platforms = emptyList(),
             targetGroupFilters = listOf(mapOf(TargetGroup.Unknown to emptySet())),
             ownerLogin = null,
         )
         assertEquals(0, onlyUnknown.size)
 
         val macosAndUnknown = OpenSearchQueryBuilder.commonFilters(
-            platforms = emptyList(),
             targetGroupFilters = listOf(mapOf(TargetGroup.MacOS to emptySet(), TargetGroup.Unknown to emptySet())),
             ownerLogin = null,
         ).joinToString(",", "[", "]") { json(it) }

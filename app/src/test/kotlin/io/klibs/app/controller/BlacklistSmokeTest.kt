@@ -21,13 +21,15 @@ import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
+import io.klibs.core.search.dto.api.SearchProjectsRequest
 import io.klibs.core.search.service.SearchService
 import io.klibs.integration.maven.ScraperType
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import java.time.Instant
 import kotlin.test.AfterTest
 import kotlin.test.assertTrue
@@ -210,9 +212,13 @@ class BlacklistSmokeTest : SmokeTestBase() {
         searchService.refreshSearchViews()
 
         // Verify the project is searchable using the unique repository name
-        val result = mockMvc.get("/search/projects") {
-            param("query", uniqueRepoName)
-            param("sort", "relevance")
+        val searchRequest = SearchProjectsRequest(
+            query = uniqueRepoName,
+            sortBy = "relevance",
+        )
+        val result = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
         }.andExpect {
             status { isOk() }
         }.andReturn()
@@ -237,9 +243,9 @@ class BlacklistSmokeTest : SmokeTestBase() {
         searchService.refreshSearchViews()
 
         // Verify the project is no longer searchable
-        val resultAfterBan = mockMvc.get("/search/projects") {
-            param("query", uniqueRepoName)
-            param("sort", "relevance")
+        val resultAfterBan = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
         }.andExpect {
             status { isOk() }
         }.andReturn()

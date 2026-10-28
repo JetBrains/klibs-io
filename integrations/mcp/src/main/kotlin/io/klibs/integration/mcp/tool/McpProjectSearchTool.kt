@@ -1,6 +1,5 @@
 package io.klibs.integration.mcp.tool
 
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.dto.validation.validateTargetGroupFilters
 import io.klibs.integration.mcp.dto.api.ProjectSearchResponse
@@ -51,11 +50,6 @@ class McpProjectSearchTool(
         @ToolParam(description = "Free text search keywords (e.g. 'serialization', 'state machine', 'compose ui').")
         query: String? = null,
         @ToolParam(
-            description = "List of platform filters. Allowed values: common, jvm, androidJvm, native, wasm, js.",
-            required = false
-        )
-        platforms: List<String>? = emptyList(),
-        @ToolParam(
             description = "List of target-group maps. Groups within the same map are combined with OR; " +
                     "separate maps in the list are combined with AND. " +
                     "Keys are target groups (e.g. 'JVM', 'IOS'), " +
@@ -72,16 +66,13 @@ class McpProjectSearchTool(
         )
         maxPackagesPerProject: Int? = null,
     ): ProjectSearchResponse {
-        logger.info("MCP: Searching for projects with query: $query, platforms: $platforms, targetFilters: $targetGroupFilters")
+        logger.info("MCP: Searching for projects with query: $query, targetFilters: $targetGroupFilters")
 
         validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
 
-        val parsedPlatforms =
-            platforms?.map { PackagePlatform.findBySerializableName(it) }.orEmpty()
-
         val maxPackages = maxPackagesPerProject ?: DEFAULT_MAX_PACKAGES_PER_PROJECT
 
-        return mcpProjectSearchService.mcpProjectSearch(query, parsedPlatforms, targetGroupFilters.orEmpty(), maxPackages)
+        return mcpProjectSearchService.mcpProjectSearch(query, targetGroupFilters.orEmpty(), maxPackages)
             .let { mcpToolMapper.mapToProjectSearchResponse(it) }
     }
 }

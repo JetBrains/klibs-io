@@ -34,7 +34,7 @@ class McpProjectSearchServiceTest {
 
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(listOf(projectResult))
 
@@ -50,7 +50,6 @@ class McpProjectSearchServiceTest {
 
         val result = uut.mcpProjectSearch(
             query = "state machine",
-            platforms = emptyList(),
             targetFilters = emptyList(),
         )
 
@@ -72,13 +71,12 @@ class McpProjectSearchServiceTest {
     fun `searchProjects returns empty list when no projects found`() {
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(emptyList())
 
         val result = uut.mcpProjectSearch(
             query = "nonexistent",
-            platforms = emptyList(),
             targetFilters = emptyList(),
         )
 
@@ -91,7 +89,7 @@ class McpProjectSearchServiceTest {
 
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(listOf(projectResult))
 
@@ -102,7 +100,6 @@ class McpProjectSearchServiceTest {
 
         val result = uut.mcpProjectSearch(
             query = "big",
-            platforms = emptyList(),
             targetFilters = emptyList(),
         )
 
@@ -117,7 +114,7 @@ class McpProjectSearchServiceTest {
 
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(listOf(projectResult))
 
@@ -128,7 +125,6 @@ class McpProjectSearchServiceTest {
 
         val result = uut.mcpProjectSearch(
             query = "big",
-            platforms = emptyList(),
             targetFilters = emptyList(),
             maxPackagesPerProject = 3,
         )
@@ -143,7 +139,7 @@ class McpProjectSearchServiceTest {
 
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(listOf(projectResult))
 
@@ -155,7 +151,6 @@ class McpProjectSearchServiceTest {
 
         val result = uut.mcpProjectSearch(
             query = "proj",
-            platforms = emptyList(),
             targetFilters = emptyList(),
         )
 

@@ -5,14 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.core.project.ProjectDetailsDTO
 import io.klibs.core.project.enums.MarkerType
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
+import io.klibs.core.search.dto.api.SearchProjectsRequest
 import io.klibs.core.search.service.SearchService
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import kotlin.collections.List
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -37,10 +40,15 @@ class SearchTest : SmokeTestBase() {
 
         val expectedProjectNamesList = listOf("kotlin-wrappers", "kotlinx-atomicfu", "coil")
 
+        val searchRequest = SearchProjectsRequest(
+            query = prefix,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/projects") {
-            param("query", prefix)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
         }.andExpect {
             status { isOk() }
         }.andExpect {
@@ -70,10 +78,15 @@ class SearchTest : SmokeTestBase() {
 
         val expectedProjectNamesList = listOf("aws-sdk-kotlin")
 
+        val searchRequest = SearchProjectsRequest(
+            query = prefix,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/projects") {
-            param("query", prefix)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
             param("limit", "5")
         }.andExpect {
             status { isOk() }
@@ -102,10 +115,15 @@ class SearchTest : SmokeTestBase() {
             "kmp-commons",
         )
 
+        val searchRequest = SearchProjectsRequest(
+            query = prefix,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/projects") {
-            param("query", prefix)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
             param("limit", "5")
         }.andExpect {
             status { isOk() }
@@ -130,10 +148,15 @@ class SearchTest : SmokeTestBase() {
 
         val expectedProjectNamesList = listOf("smithy-kotlin")
 
+        val searchRequest = SearchProjectsRequest(
+            query = query,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/projects") {
-            param("query", query)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
             param("limit", "10")
         }.andExpect {
             status { isOk() }
@@ -156,10 +179,15 @@ class SearchTest : SmokeTestBase() {
 
         val expectedProjectNamesList = listOf("aws-sdk-kotlin")
 
+        val searchRequest = SearchProjectsRequest(
+            query = query,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/projects") {
-            param("query", query)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
             param("limit", "5")
         }.andExpect {
             status { isOk() }
@@ -182,10 +210,15 @@ class SearchTest : SmokeTestBase() {
 
         val expectedProjectNamesList = listOf("kotlin-wrappers")
 
+        val searchRequest = SearchProjectsRequest(
+            query = query,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/projects") {
-            param("query", query)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
             param("limit", "5")
         }.andExpect {
             status { isOk() }
@@ -207,10 +240,15 @@ class SearchTest : SmokeTestBase() {
         // Arrange
         val query = "coil-"
 
+        val searchRequest = SearchProjectsRequest(
+            query = query,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/projects") {
-            param("query", query)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
             param("limit", "10")
         }.andExpect {
             status { isOk() }
@@ -224,7 +262,7 @@ class SearchTest : SmokeTestBase() {
             result.response.contentAsString,
             objectMapper.typeFactory.constructCollectionType(List::class.java, SearchProjectResultDTO::class.java)
         )
-        assertEquals(foundProjects.first().ownerLogin, "coil-kt")
+        assertEquals("coil-kt", foundProjects.first().ownerLogin)
     }
 
     @DisplayName("KTL-2004: search results should include project markers")
@@ -232,9 +270,15 @@ class SearchTest : SmokeTestBase() {
     fun testSearchResultsIncludeProjectMarkers() {
         val query = "kotlinx-atomicfu"
 
-        val result = mockMvc.get("/search/projects") {
-            param("query", query)
-            param("sort", "relevance")
+        val searchRequest = SearchProjectsRequest(
+            query = query,
+            sortBy = "relevance",
+        )
+
+        // Act & Assert
+        val result = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
             param("limit", "1")
         }.andExpect {
             status { isOk() }
@@ -269,9 +313,15 @@ class SearchTest : SmokeTestBase() {
             ProjectDetailsDTO::class.java
         )
 
-        val projectSearchResponse = mockMvc.get("/search/projects") {
-            param("query", projectName)
-            param("sort", "relevance")
+        val searchRequest = SearchProjectsRequest(
+            query = projectName,
+            sortBy = "relevance",
+        )
+
+        // Act & Assert
+        val projectSearchResponse = mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
             param("limit", "1")
         }.andExpect {
             status { isOk() }
