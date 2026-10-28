@@ -1,15 +1,20 @@
 package io.klibs.core.project
 
 import BaseUnitWithDbLayerTest
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.klibs.core.search.dto.api.SearchPackagesRequest
+import io.klibs.core.search.dto.api.SearchProjectsRequest
 import io.klibs.core.search.service.SearchService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -32,6 +37,9 @@ class ProjectVisibilityTest : BaseUnitWithDbLayerTest() {
 
     @Autowired
     private lateinit var projectService: ProjectService
+
+    @Autowired
+    private lateinit var objectMapper: ObjectMapper
 
     @BeforeEach
     fun setup() {
@@ -89,8 +97,23 @@ class ProjectVisibilityTest : BaseUnitWithDbLayerTest() {
     @Test
     @Sql(scripts = [SEED, HIDE])
     fun `project and package search return no hit for a hidden project`() {
-        listOf("/search/projects?query=atomicfu", "/search/packages?query=atomicfu").forEach { path ->
-            val body = mockMvc.get(path)
+        val query = "atomicfu"
+
+        listOf(
+            Pair(
+                "/search/projects",
+                SearchProjectsRequest(query = query)
+            ),
+            Pair(
+                "/search/packages",
+                SearchPackagesRequest(query = query)
+            )
+        ).forEach { (path, request) ->
+
+            val body = mockMvc.post(path) {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }
                 .andExpect { status { isOk() } }
                 .andReturn().response.contentAsString
 

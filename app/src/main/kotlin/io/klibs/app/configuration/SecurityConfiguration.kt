@@ -49,7 +49,6 @@ class SecurityConfiguration(
                 authorize(HttpMethod.GET, "/project/**", permitAll)
                 authorize(HttpMethod.OPTIONS, "/project/**", permitAll)
 
-                authorize(HttpMethod.GET, "/search/**", permitAll)
                 authorize(HttpMethod.POST, "/search/**", permitAll)
                 authorize(HttpMethod.OPTIONS, "/search/**", permitAll)
 

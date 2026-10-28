@@ -36,7 +36,6 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         // Act
         val searchResults = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = targetFilters,
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
@@ -68,7 +67,6 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         // Act
         val searchResults = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = targetFilters,
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
@@ -105,7 +103,6 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         // Act
         val searchResults = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = targetFilters,
             ownerLogin = null,
             sortBy = SearchSort.MOST_STARS,

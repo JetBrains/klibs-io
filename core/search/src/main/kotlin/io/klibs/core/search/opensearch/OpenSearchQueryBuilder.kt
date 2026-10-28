@@ -1,6 +1,5 @@
 package io.klibs.core.search.opensearch
 
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import org.opensearch.client.opensearch._types.FieldValue
 import org.opensearch.client.opensearch._types.Script
@@ -171,11 +170,9 @@ object OpenSearchQueryBuilder {
         }
 
     fun commonFilters(
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
     ): List<Query> = buildList {
-        platforms.distinct().forEach { add(term(ProjectFields.PLATFORMS, it.name)) }
         ownerLogin?.let { add(term(ProjectFields.OWNER_LOGIN.keyword, it)) }
         addAll(targetGroupFiltersClauses(targetGroupFilters))
     }
