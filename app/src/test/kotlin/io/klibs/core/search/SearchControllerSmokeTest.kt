@@ -2,6 +2,7 @@ package io.klibs.core.search
 
 import SmokeTestBase
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
 import io.klibs.core.search.dto.api.SearchProjectsRequest
@@ -60,7 +61,7 @@ class SearchControllerSmokeTest : SmokeTestBase() {
 
         // Verify that all returned projects support JavaScript platform
         foundProjects.forEach { project ->
-            assertTrue(project.platforms.contains("js"), 
+            assertTrue(project.targetGroups.keys.any { it.platform == PackagePlatform.JS },
                 "Project ${project.name} does not support JavaScript platform")
         }
     }
@@ -96,7 +97,7 @@ class SearchControllerSmokeTest : SmokeTestBase() {
 
         // Verify that all returned projects support JavaScript platform
         foundProjects.forEach { project ->
-            assertTrue(project.platforms.contains("js"), 
+            assertTrue(project.targetGroups.keys.any { it.platform == PackagePlatform.JS },
                 "Project ${project.name} does not support JavaScript platform")
         }
     }
@@ -133,7 +134,7 @@ class SearchControllerSmokeTest : SmokeTestBase() {
 
         // Verify that all returned projects support JavaScript platform and match the query
         foundProjects.forEach { project ->
-            assertTrue(project.platforms.contains("js"), 
+            assertTrue(project.targetGroups.keys.any { it.platform == PackagePlatform.JS },
                 "Project ${project.name} does not support JavaScript platform")
         }
     }
@@ -170,9 +171,9 @@ class SearchControllerSmokeTest : SmokeTestBase() {
 
         // Verify that all returned projects support both JavaScript platform and JVM
         foundProjects.forEach { project ->
-            assertTrue(project.platforms.contains("js"), 
+            assertTrue(project.targetGroups.keys.any { it.platform == PackagePlatform.JS },
                 "Project ${project.name} does not support JavaScript platform")
-            assertTrue(project.platforms.contains("jvm"), 
+            assertTrue(project.targetGroups.keys.any { it.platform == PackagePlatform.JVM },
                 "Project ${project.name} does not support JVM platform")
         }
     }
@@ -208,7 +209,7 @@ class SearchControllerSmokeTest : SmokeTestBase() {
 
         // Verify that all returned projects support JVM platform
         foundProjects.forEach { project ->
-            assertTrue(project.platforms.contains("jvm"), 
+            assertTrue(project.targetGroups.keys.any { it.platform == PackagePlatform.JVM },
                 "Project ${project.name} does not support JVM platform")
         }
         foundProjects.forEach { project ->

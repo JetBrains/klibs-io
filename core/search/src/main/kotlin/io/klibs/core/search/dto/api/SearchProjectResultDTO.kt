@@ -71,12 +71,6 @@ data class SearchProjectResultDTO(
     val latestReleasePublishedAtMillis: Long?,
 
     @Schema(
-        description = "Platforms supported by the project's packages. Predefined values.",
-        allowableValues = ["common", "jvm", "androidJvm", "native", "wasm", "js"]
-    )
-    val platforms: List<String>,
-
-    @Schema(
         description = "Targets supported by the project's packages. Map where keys are target groups (e.g. 'JVM', 'IOS') and values are sets of specific targets within that group.",
         type = "object",
         example = """{"JVM": ["11", "17"], "IOS": ["ios_arm64", "ios_x64"]}"""
@@ -121,7 +115,6 @@ fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
         licenseName = this.licenseName,
         latestReleaseVersion = this.latestVersion,
         latestReleasePublishedAtMillis = this.latestVersionPublishedAt.toEpochMilli(),
-        platforms = this.platforms.map { it.serializableName },
         targetGroups = TargetGroup.getTargetGroupsFromTargets(this.targets),
         tags = this.tags,
         markers = markers,

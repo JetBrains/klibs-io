@@ -298,7 +298,7 @@ class SearchTest : SmokeTestBase() {
     }
 
     @Test
-    fun `the number of platforms should be consistent for the project details and project search`() {
+    fun `target groups should be consistent for the project details and project search`() {
         val projectName = "kotlin-wrappers"
 
         val projectDetailsResponse = mockMvc.get("/project/JetBrains/${projectName}/details")
@@ -335,8 +335,6 @@ class SearchTest : SmokeTestBase() {
             projectSearchResponse.response.contentAsString,
             objectMapper.typeFactory.constructCollectionType(List::class.java, SearchProjectResultDTO::class.java)
         )
-
-        assertEquals(projectSearchDto.first().platforms.sorted(), projectDetailsDto.platforms.sorted())
 
         // The grouped targets map must be consistent between project search and project details
         assertEquals(projectSearchDto.first().targetGroups, projectDetailsDto.targetGroups)
