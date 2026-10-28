@@ -34,6 +34,6 @@ plugins:
   jib:
     enabled: true
     baseImage:
-      fullName:  eclipse-temurin:21-jre
+      fullName: eclipse-temurin:21.0.12.1_1-jre
     container:
       mainClass: io.klibs.app.ApplicationKt
