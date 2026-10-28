@@ -7,7 +7,6 @@ data class ProjectSearchResponse(
         val projectName: String,
         val projectAuthor: String,
         val description: String?,
-        val platforms: List<String>,
         val targets: List<String>,
         val packages: List<ProjectPackage>,
         val totalPackages: Int,

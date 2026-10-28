@@ -1,6 +1,5 @@
 package io.klibs.core.search.repository
 
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
@@ -24,14 +23,13 @@ class PackageSearchRepositoryFallback(
 
     override fun find(
         query: String?,
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
         page: Int,
         limit: Int,
     ): List<SearchPackageResult> = try {
-        openSearch.find(query, platforms, targetGroupFilters, ownerLogin, sortBy, page, limit)
+        openSearch.find(query, targetGroupFilters, ownerLogin, sortBy, page, limit)
     } catch (e: UnsupportedOperationException) {
         throw e
     } catch (e: IllegalArgumentException) {
@@ -39,7 +37,7 @@ class PackageSearchRepositoryFallback(
     } catch (e: Exception) {
         metrics.recordFallback(packageIndexSpec)
         log.warn("OpenSearch package search failed, falling back to PostgreSQL FTS (sort={})", sortBy, e)
-        postgres.find(query, platforms, targetGroupFilters, ownerLogin, sortBy, page, limit)
+        postgres.find(query, targetGroupFilters, ownerLogin, sortBy, page, limit)
     }
 
     private companion object {

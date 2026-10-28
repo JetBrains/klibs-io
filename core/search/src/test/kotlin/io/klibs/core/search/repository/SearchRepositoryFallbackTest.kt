@@ -36,7 +36,7 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `project search returns OpenSearch results while OpenSearch is healthy`() {
-        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()))
+        whenever(openSearchProjects.find(anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()))
             .thenReturn(listOf(project(1)))
 
         assertEquals(listOf(project(1)), findProjects())
@@ -45,9 +45,9 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `project search falls back to PostgreSQL when OpenSearch fails`() {
-        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()))
+        whenever(openSearchProjects.find(anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()))
             .thenThrow(RuntimeException("connection refused"))
-        whenever(postgresProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()))
+        whenever(postgresProjects.find(anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()))
             .thenReturn(listOf(project(2)))
 
         assertEquals(listOf(project(2)), findProjects())
@@ -56,7 +56,7 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `project search propagates sorts OpenSearch cannot serve instead of masking them`() {
-        whenever(openSearchProjects.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()))
+        whenever(openSearchProjects.find(anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()))
             .thenThrow(UnsupportedOperationException("MOST_HEALTHY is not supported by OpenSearch"))
 
         assertThrows<UnsupportedOperationException> { findProjects(SearchSort.MOST_HEALTHY) }
@@ -66,7 +66,7 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `package search returns OpenSearch results while OpenSearch is healthy`() {
-        whenever(openSearchPackages.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any()))
+        whenever(openSearchPackages.find(anyOrNull(), any(), anyOrNull(), any(), any(), any()))
             .thenReturn(listOf(pckg("a")))
 
         assertEquals(listOf(pckg("a")), findPackages())
@@ -74,9 +74,9 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `package search falls back to PostgreSQL when OpenSearch fails`() {
-        whenever(openSearchPackages.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any()))
+        whenever(openSearchPackages.find(anyOrNull(), any(), anyOrNull(), any(), any(), any()))
             .thenThrow(RuntimeException("connection refused"))
-        whenever(postgresPackages.find(anyOrNull(), any(), any(), anyOrNull(), any(), any(), any()))
+        whenever(postgresPackages.find(anyOrNull(), any(), anyOrNull(), any(), any(), any()))
             .thenReturn(listOf(pckg("b")))
 
         assertEquals(listOf(pckg("b")), findPackages())
@@ -94,7 +94,6 @@ class SearchRepositoryFallbackTest {
 
     private fun findProjects(sortBy: SearchSort = SearchSort.RELEVANCY) = projects.find(
         query = "ktor",
-        platforms = emptyList(),
         targetGroupFilters = emptyList(),
         ownerLogin = null,
         sortBy = sortBy,
@@ -106,7 +105,6 @@ class SearchRepositoryFallbackTest {
 
     private fun findPackages() = packages.find(
         query = "ktor",
-        platforms = emptyList(),
         targetGroupFilters = emptyList(),
         ownerLogin = null,
         sortBy = SearchSort.RELEVANCY,
@@ -125,7 +123,6 @@ class SearchRepositoryFallbackTest {
         licenseName = null,
         latestVersion = "1.0.0",
         latestVersionPublishedAt = Instant.EPOCH,
-        platforms = emptyList(),
         targets = emptyList(),
         tags = emptyList(),
         markers = emptyList(),
@@ -142,8 +139,6 @@ class SearchRepositoryFallbackTest {
         licenseName = null,
         latestVersion = "1.0.0",
         releaseTs = Instant.EPOCH,
-        platforms = emptyList(),
-        targetsList = emptyList(),
         targetGroups = emptyMap(),
     )
 }

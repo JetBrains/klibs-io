@@ -35,7 +35,6 @@ class PackageSearchRepositoryOpenSearch(
 
     override fun find(
         query: String?,
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
@@ -43,7 +42,6 @@ class PackageSearchRepositoryOpenSearch(
         limit: Int,
     ): List<SearchPackageResult> = doFind(
         query = query,
-        platforms = platforms,
         targetGroupFilters = targetGroupFilters,
         ownerLogin = ownerLogin,
         sortBy = sortBy,
@@ -93,8 +91,6 @@ class PackageSearchRepositoryOpenSearch(
             licenseName = src.textOrNull(PackageFields.LATEST_LICENSE_NAME),
             latestVersion = src.get(PackageFields.LATEST_VERSION).asText(),
             releaseTs = LocalDateTime.parse(src.get(PackageFields.RELEASE_TS).asText()).toInstant(ZoneOffset.UTC),
-            platforms = src.stringList(PackageFields.PLATFORMS).map { PackagePlatform.valueOf(it) },
-            targetsList = packageTargets,
             targetGroups = TargetGroup.gatherTargetGroupsFromTargets(packageTargets)
         )
     }

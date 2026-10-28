@@ -2,14 +2,16 @@ package io.klibs.core.search
 
 import SmokeTestBase
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.klibs.core.search.dto.api.SearchPackageResultDTOTargetList
+import io.klibs.core.search.dto.api.SearchPackageResultDTO
+import io.klibs.core.search.dto.api.SearchPackagesRequest
 import io.klibs.core.search.service.SearchService
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -33,7 +35,9 @@ class PackageSearchTest : SmokeTestBase() {
         val limit = 18
 
         // Act & Assert
-        val result = mockMvc.get("/search/packages") {
+        val result = mockMvc.post("/search/packages") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(SearchPackagesRequest())
             param("page", page.toString())
             param("limit", limit.toString())
         }.andExpect {
@@ -44,9 +48,9 @@ class PackageSearchTest : SmokeTestBase() {
             }
         }.andReturn()
 
-        val foundPackages: List<SearchPackageResultDTOTargetList> = objectMapper.readValue(
+        val foundPackages: List<SearchPackageResultDTO> = objectMapper.readValue(
             result.response.contentAsString,
-            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTOTargetList::class.java)
+            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTO::class.java)
         )
 
         assertTrue(foundPackages.isNotEmpty(), "Response should not be empty")
@@ -58,10 +62,15 @@ class PackageSearchTest : SmokeTestBase() {
         // Arrange
         val query = "kotlinx"
 
+        val searchRequest = SearchPackagesRequest(
+            query = query,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/packages") {
-            param("query", query)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/packages") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
         }.andExpect {
             status { isOk() }
         }.andExpect {
@@ -70,9 +79,9 @@ class PackageSearchTest : SmokeTestBase() {
             }
         }.andReturn()
 
-        val foundPackages: List<SearchPackageResultDTOTargetList> = objectMapper.readValue(
+        val foundPackages: List<SearchPackageResultDTO> = objectMapper.readValue(
             result.response.contentAsString,
-            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTOTargetList::class.java)
+            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTO::class.java)
         )
 
         // Verify that all found packages have "kotlinx" in their group id
@@ -86,10 +95,15 @@ class PackageSearchTest : SmokeTestBase() {
         // Arrange
         val query = "atomicfu"
 
+        val searchRequest = SearchPackagesRequest(
+            query = query,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/packages") {
-            param("query", query)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/packages") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
         }.andExpect {
             status { isOk() }
         }.andExpect {
@@ -98,9 +112,9 @@ class PackageSearchTest : SmokeTestBase() {
             }
         }.andReturn()
 
-        val foundPackages: List<SearchPackageResultDTOTargetList> = objectMapper.readValue(
+        val foundPackages: List<SearchPackageResultDTO> = objectMapper.readValue(
             result.response.contentAsString,
-            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTOTargetList::class.java)
+            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTO::class.java)
         )
 
         // Verify that all found packages have "atomicfu" in their artifact id
@@ -114,10 +128,15 @@ class PackageSearchTest : SmokeTestBase() {
         // Arrange
         val query = "multiplatform"
 
+        val searchRequest = SearchPackagesRequest(
+            query = query,
+            sortBy = "relevance",
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/packages") {
-            param("query", query)
-            param("sort", "relevance")
+        val result = mockMvc.post("/search/packages") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
         }.andExpect {
             status { isOk() }
         }.andExpect {
@@ -126,9 +145,9 @@ class PackageSearchTest : SmokeTestBase() {
             }
         }.andReturn()
 
-        val foundPackages: List<SearchPackageResultDTOTargetList> = objectMapper.readValue(
+        val foundPackages: List<SearchPackageResultDTO> = objectMapper.readValue(
             result.response.contentAsString,
-            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTOTargetList::class.java)
+            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTO::class.java)
         )
 
         // Verify that at least one package has "multiplatform" in its description
@@ -137,40 +156,18 @@ class PackageSearchTest : SmokeTestBase() {
     }
 
     @Test
-    fun `should filter packages by platform`() {
-        // Arrange
-        val platform = "jvm"
-
-        // Act & Assert
-        val result = mockMvc.get("/search/packages") {
-            param("platforms", platform)
-        }.andExpect {
-            status { isOk() }
-        }.andExpect {
-            content {
-                jsonPath("$", hasSize<Int>(greaterThan(0)))
-            }
-        }.andReturn()
-
-        val foundPackages: List<SearchPackageResultDTOTargetList> = objectMapper.readValue(
-            result.response.contentAsString,
-            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTOTargetList::class.java)
-        )
-
-        // Verify that all found packages support the JVM platform
-        foundPackages.forEach { pkg ->
-            assertTrue(pkg.platforms.contains("jvm"), "Package should support JVM platform: ${pkg.artifactId}")
-        }
-    }
-
-    @Test
     fun `should filter packages by owner`() {
         // Arrange
         val owner = "Kotlin"
 
+        val searchRequest = SearchPackagesRequest(
+            owner = owner,
+        )
+
         // Act & Assert
-        val result = mockMvc.get("/search/packages") {
-            param("owner", owner)
+        val result = mockMvc.post("/search/packages") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
         }.andExpect {
             status { isOk() }
         }.andExpect {
@@ -179,9 +176,9 @@ class PackageSearchTest : SmokeTestBase() {
             }
         }.andReturn()
 
-        val foundPackages: List<SearchPackageResultDTOTargetList> = objectMapper.readValue(
+        val foundPackages: List<SearchPackageResultDTO> = objectMapper.readValue(
             result.response.contentAsString,
-            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTOTargetList::class.java)
+            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTO::class.java)
         )
 
         // Verify that all found packages are owned by "Kotlin"
@@ -196,7 +193,9 @@ class PackageSearchTest : SmokeTestBase() {
         val limit = 5
 
         // Act & Assert - Page 1
-        val result1 = mockMvc.get("/search/packages") {
+        val result1 = mockMvc.post("/search/packages") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(SearchPackagesRequest())
             param("page", "1")
             param("limit", limit.toString())
         }.andExpect {
@@ -207,22 +206,24 @@ class PackageSearchTest : SmokeTestBase() {
             }
         }.andReturn()
 
-        val packagesPage1: List<SearchPackageResultDTOTargetList> = objectMapper.readValue(
+        val packagesPage1: List<SearchPackageResultDTO> = objectMapper.readValue(
             result1.response.contentAsString,
-            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTOTargetList::class.java)
+            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTO::class.java)
         )
 
         // Act & Assert - Page 2
-        val result2 = mockMvc.get("/search/packages") {
+        val result2 = mockMvc.post("/search/packages") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(SearchPackagesRequest())
             param("page", "2")
             param("limit", limit.toString())
         }.andExpect {
             status { isOk() }
         }.andReturn()
 
-        val packagesPage2: List<SearchPackageResultDTOTargetList> = objectMapper.readValue(
+        val packagesPage2: List<SearchPackageResultDTO> = objectMapper.readValue(
             result2.response.contentAsString,
-            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTOTargetList::class.java)
+            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTO::class.java)
         )
 
         // Verify that page 1 and page 2 contain different packages
@@ -235,11 +236,15 @@ class PackageSearchTest : SmokeTestBase() {
     @Test
     fun `should return targets in search results`() {
         // Arrange
-        val platform = "jvm"  // JVM platform typically has targets
+        val query = "compose-multiplatform"  // compose-multiplatform has targets
 
+        val searchRequest = SearchPackagesRequest(
+            query = query,
+        )
         // Act
-        val result = mockMvc.get("/search/packages") {
-            param("platforms", platform)
+        val result = mockMvc.post("/search/packages") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(searchRequest)
             param("limit", "10")
         }.andExpect {
             status { isOk() }
@@ -249,9 +254,9 @@ class PackageSearchTest : SmokeTestBase() {
             }
         }.andReturn()
 
-        val foundPackages: List<SearchPackageResultDTOTargetList> = objectMapper.readValue(
+        val foundPackages: List<SearchPackageResultDTO> = objectMapper.readValue(
             result.response.contentAsString,
-            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTOTargetList::class.java)
+            objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTO::class.java)
         )
 
         // Assert

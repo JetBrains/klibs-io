@@ -36,7 +36,6 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         // Act
         val searchResults = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = targetFilters,
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
@@ -51,7 +50,7 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
 
         // Assert that at least one project has the JVM platform
         assertTrue(
-            searchResults.all { project -> project.platforms.any { it.serializableName == "jvm" } },
+            searchResults.all { project -> project.targets.any { it.startsWith("JVM") } },
             "No projects found with JVM platform. At least one project should have the JVM platform."
         )
     }
@@ -68,7 +67,6 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         // Act
         val searchResults = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = targetFilters,
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
@@ -105,7 +103,6 @@ class ProjectSearchRepositoryJdbcSmokeTest : SmokeTestBase() {
         // Act
         val searchResults = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = targetFilters,
             ownerLogin = null,
             sortBy = SearchSort.MOST_STARS,

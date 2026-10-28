@@ -34,21 +34,18 @@ class McpProjectSearchToolTest {
         whenever(
             mcpProjectSearchService.mcpProjectSearch(
                 query = "kotlin",
-                platforms = listOf(PackagePlatform.JVM, PackagePlatform.NATIVE),
                 targetFilters = targetFilters,
             )
         ).thenReturn(serviceResponse)
 
         val result = uut.searchProjects(
             query = "kotlin",
-            platforms = listOf("jvm", "native"),
             targetGroupFilters = targetFilters,
         )
 
         assertTrue(result.projects.isEmpty())
         verify(mcpProjectSearchService).mcpProjectSearch(
             query = "kotlin",
-            platforms = listOf(PackagePlatform.JVM, PackagePlatform.NATIVE),
             targetFilters = targetFilters,
         )
     }
@@ -58,12 +55,11 @@ class McpProjectSearchToolTest {
         val filters = listOf(mapOf(TargetGroup.Unknown to emptySet<String>()))
 
         assertThrows(IllegalArgumentException::class.java) {
-            uut.searchProjects(query = "kotlin", platforms = emptyList(), targetGroupFilters = filters)
+            uut.searchProjects(query = "kotlin", targetGroupFilters = filters)
         }
 
         verify(mcpProjectSearchService, never()).mcpProjectSearch(
             query = org.mockito.kotlin.any(),
-            platforms = org.mockito.kotlin.any(),
             targetFilters = org.mockito.kotlin.any(),
             maxPackagesPerProject = org.mockito.kotlin.any(),
         )
@@ -91,16 +87,15 @@ class McpProjectSearchToolTest {
             )
         )
 
-        whenever(mcpProjectSearchService.mcpProjectSearch(query = "state machine", platforms = emptyList(), targetFilters = emptyList()))
+        whenever(mcpProjectSearchService.mcpProjectSearch(query = "state machine", targetFilters = emptyList()))
             .thenReturn(serviceResponse)
 
-        val result = uut.searchProjects(query = "state machine", platforms = emptyList(), targetGroupFilters = emptyList())
+        val result = uut.searchProjects(query = "state machine", targetGroupFilters = emptyList())
 
         val mappedProject = result.projects.single()
         assertEquals("kstatemachine", mappedProject.projectName)
         assertEquals("KStateMachine", mappedProject.projectAuthor)
         assertEquals("Test project", mappedProject.description)
-        assertEquals(listOf("common"), mappedProject.platforms)
         assertEquals(emptyList<String>(), mappedProject.targets)
         assertEquals(1, mappedProject.totalPackages)
 
@@ -123,7 +118,6 @@ class McpProjectSearchToolTest {
         licenseName = "Apache-2.0",
         latestVersion = "0.32.0-alpha",
         latestVersionPublishedAt = Instant.now(),
-        platforms = listOf(PackagePlatform.COMMON),
         targets = emptyList(),
         tags = emptyList(),
         markers = emptyList()

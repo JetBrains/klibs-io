@@ -29,12 +29,11 @@ class McpProjectSearchServiceTest {
             id = 1,
             name = "kstatemachine",
             ownerLogin = "KStateMachine",
-            platforms = listOf(PackagePlatform.JVM, PackagePlatform.NATIVE)
         )
 
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(listOf(projectResult))
 
@@ -50,7 +49,6 @@ class McpProjectSearchServiceTest {
 
         val result = uut.mcpProjectSearch(
             query = "state machine",
-            platforms = emptyList(),
             targetFilters = emptyList(),
         )
 
@@ -58,7 +56,6 @@ class McpProjectSearchServiceTest {
         val project = result.projects[0]
         assertEquals("kstatemachine", project.project.name)
         assertEquals("KStateMachine", project.project.ownerLogin)
-        assertEquals(listOf(PackagePlatform.JVM, PackagePlatform.NATIVE), project.project.platforms)
         assertEquals(1, project.packages.size)
         assertEquals(1, project.totalPackages)
         assertEquals("io.github.kstatemachine", project.packages[0].groupId)
@@ -72,13 +69,12 @@ class McpProjectSearchServiceTest {
     fun `searchProjects returns empty list when no projects found`() {
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(emptyList())
 
         val result = uut.mcpProjectSearch(
             query = "nonexistent",
-            platforms = emptyList(),
             targetFilters = emptyList(),
         )
 
@@ -91,7 +87,7 @@ class McpProjectSearchServiceTest {
 
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(listOf(projectResult))
 
@@ -102,7 +98,6 @@ class McpProjectSearchServiceTest {
 
         val result = uut.mcpProjectSearch(
             query = "big",
-            platforms = emptyList(),
             targetFilters = emptyList(),
         )
 
@@ -117,7 +112,7 @@ class McpProjectSearchServiceTest {
 
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(listOf(projectResult))
 
@@ -128,7 +123,6 @@ class McpProjectSearchServiceTest {
 
         val result = uut.mcpProjectSearch(
             query = "big",
-            platforms = emptyList(),
             targetFilters = emptyList(),
             maxPackagesPerProject = 3,
         )
@@ -143,7 +137,7 @@ class McpProjectSearchServiceTest {
 
         whenever(
             searchService.search(
-                anyOrNull(), any(), any(), anyOrNull(), any(), any(), any(), any(), any()
+                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
             )
         ).thenReturn(listOf(projectResult))
 
@@ -155,7 +149,6 @@ class McpProjectSearchServiceTest {
 
         val result = uut.mcpProjectSearch(
             query = "proj",
-            platforms = emptyList(),
             targetFilters = emptyList(),
         )
 
@@ -167,7 +160,6 @@ class McpProjectSearchServiceTest {
         id: Int = 1,
         name: String = "test-project",
         ownerLogin: String = "test-owner",
-        platforms: List<PackagePlatform> = listOf(PackagePlatform.COMMON)
     ) = SearchProjectResult(
         id = id,
         name = name,
@@ -179,7 +171,6 @@ class McpProjectSearchServiceTest {
         licenseName = "Apache-2.0",
         latestVersion = "1.0.0",
         latestVersionPublishedAt = Instant.now(),
-        platforms = platforms,
         targets = emptyList(),
         tags = emptyList(),
         markers = emptyList()

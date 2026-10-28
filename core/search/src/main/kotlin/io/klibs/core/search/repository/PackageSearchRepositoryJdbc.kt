@@ -47,11 +47,6 @@ class PackageSearchRepositoryJdbc(
             licenseName = rs.getString("latest_license_name"),
             latestVersion = rs.getString("latest_version"),
             releaseTs = rs.getTimestamp("release_ts").toInstant(),
-            platforms = rs.getString("platforms")
-                .split(",")
-                .filter { it.isNotBlank() }
-                .map { PackagePlatform.valueOf(it) },
-            targetsList = packageTargets,
             targetGroups = TargetGroup.gatherTargetGroupsFromTargets(packageTargets)
         )
     }
@@ -63,7 +58,6 @@ class PackageSearchRepositoryJdbc(
      */
     override fun find(
         rawQuery: String?,
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
@@ -85,7 +79,7 @@ class PackageSearchRepositoryJdbc(
 
         val sql = buildString {
             append("SELECT group_id, artifact_id, latest_version, latest_description, release_ts, ")
-            append("owner_type, owner_login, latest_license_name, array_to_string(platforms, ',') AS platforms, ")
+            append("owner_type, owner_login, latest_license_name, ")
             append("targets")
 
             // For debugging and testing purposes
@@ -106,13 +100,6 @@ class PackageSearchRepositoryJdbc(
                 appendLine(
                     " WHERE (:wildcardQueryWithSpecialSymbols ::tsquery || wildcardQueryWithoutSpecialSymbols || :exactMatchWildcardQuery ::tsquery) @@ fts"
                 )
-                prefix = "AND"
-            }
-
-            if (platforms.isNotEmpty()) {
-                val platformsQuery = platforms.distinct().joinToString(separator = " & ") { it.name }
-                appendLine(" $prefix platforms_vector @@ '$platformsQuery'")
-
                 prefix = "AND"
             }
 
