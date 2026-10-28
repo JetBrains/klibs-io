@@ -64,12 +64,6 @@ data class SearchPackageResultDTO(
     val releaseTsMillis: Long,
 
     @Schema(
-        description = "Platforms supported by the package. Predefined values.",
-        allowableValues = ["common", "jvm", "androidJvm", "native", "wasm", "js"]
-    )
-    val platforms: List<String>,
-
-    @Schema(
         description = "Targets supported by the package. Map where keys are target groups (e.g. 'JVM', 'IOS') and values are sets of specific targets within that group.",
         type = "object",
         example = """{"JVM": ["11", "17"], "IOS": ["ios_arm64", "ios_x64"]}"""

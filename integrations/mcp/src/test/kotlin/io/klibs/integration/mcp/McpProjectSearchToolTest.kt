@@ -96,7 +96,6 @@ class McpProjectSearchToolTest {
         assertEquals("kstatemachine", mappedProject.projectName)
         assertEquals("KStateMachine", mappedProject.projectAuthor)
         assertEquals("Test project", mappedProject.description)
-        assertEquals(listOf("common"), mappedProject.platforms)
         assertEquals(emptyList<String>(), mappedProject.targets)
         assertEquals(1, mappedProject.totalPackages)
 
@@ -119,7 +118,6 @@ class McpProjectSearchToolTest {
         licenseName = "Apache-2.0",
         latestVersion = "0.32.0-alpha",
         latestVersionPublishedAt = Instant.now(),
-        platforms = listOf(PackagePlatform.COMMON),
         targets = emptyList(),
         tags = emptyList(),
         markers = emptyList()

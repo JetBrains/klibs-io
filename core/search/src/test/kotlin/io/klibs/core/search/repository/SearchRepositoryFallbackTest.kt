@@ -123,7 +123,6 @@ class SearchRepositoryFallbackTest {
         licenseName = null,
         latestVersion = "1.0.0",
         latestVersionPublishedAt = Instant.EPOCH,
-        platforms = emptyList(),
         targets = emptyList(),
         tags = emptyList(),
         markers = emptyList(),
@@ -140,7 +139,6 @@ class SearchRepositoryFallbackTest {
         licenseName = null,
         latestVersion = "1.0.0",
         releaseTs = Instant.EPOCH,
-        platforms = emptyList(),
         targetGroups = emptyMap(),
     )
 }

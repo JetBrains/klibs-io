@@ -81,7 +81,10 @@ data class EvalCase(
      * so `{IOS: [], JVM: []}` asks for libs supporting both iOS and the JVM.
      */
     val targetFilters: Map<TargetGroup, Set<String>> = emptyMap(),
-    /** Coarse platforms every top-k result must report back — what [PassSpec.AllSupportPlatform] checks. */
+    /**
+     * Coarse platforms every top-k result must report back — what [PassSpec.AllSupportPlatform] checks.
+     * Derived from target groups via [TargetGroup.platform].
+     */
     val platforms: List<String> = emptyList(),
     val pass: PassSpec,
 ) {
