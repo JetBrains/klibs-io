@@ -1,7 +1,6 @@
 package io.klibs.integration.mcp.service
 
 import io.klibs.core.pckg.model.PackageOverview
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.search.controller.SearchSort
@@ -22,13 +21,11 @@ class McpProjectSearchService(
 
     fun mcpProjectSearch(
         query: String?,
-        platforms: List<PackagePlatform>,
         targetFilters: List<Map<TargetGroup, Set<String>>>,
         maxPackagesPerProject: Int = DEFAULT_MAX_PACKAGES_PER_PROJECT,
     ): McpProjectSearchResultDto {
         val searchResults = searchService.search(
             query = query,
-            platforms = platforms,
             targetGroupFilters = targetFilters,
             ownerLogin = null,
             sort = SearchSort.RELEVANCY,

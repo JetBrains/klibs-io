@@ -68,7 +68,6 @@ class ProjectSearchPartialMatchTest : BaseOpenSearchTest() {
 
     private fun search(query: String): List<String> = repository.find(
         query = query,
-        platforms = emptyList(),
         targetGroupFilters = emptyList(),
         ownerLogin = null,
         sortBy = SearchSort.RELEVANCY,

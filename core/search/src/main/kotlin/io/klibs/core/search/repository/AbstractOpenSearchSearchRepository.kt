@@ -1,7 +1,6 @@
 package io.klibs.core.search.repository
 
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
@@ -30,7 +29,6 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
 
     protected fun doFind(
         query: String?,
-        platforms: List<PackagePlatform>,
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
         ownerLogin: String?,
         sortBy: SearchSort,
@@ -48,7 +46,7 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
 
         val isQueryPresent = !query.isNullOrBlank()
         val trimmed = query?.trim().orEmpty()
-        val filters = OpenSearchQueryBuilder.commonFilters(platforms, targetGroupFilters, ownerLogin) + extraFilters
+        val filters = OpenSearchQueryBuilder.commonFilters(targetGroupFilters, ownerLogin) + extraFilters
         val shoulds = if (isQueryPresent) shouldClauses(trimmed) else emptyList()
         val boolQuery = OpenSearchQueryBuilder.bool(shoulds, filters)
         val finalQuery = if (popularityScored && isQueryPresent && sortBy == SearchSort.RELEVANCY) {

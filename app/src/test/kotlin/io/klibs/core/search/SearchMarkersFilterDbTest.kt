@@ -33,7 +33,6 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
     fun `filter by single marker`() {
         val results = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
@@ -53,7 +52,6 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
     fun `filter by multiple markers uses OR`() {
         val results = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
@@ -80,7 +78,6 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
     fun `unknown marker yields empty`() {
         val results = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
@@ -99,7 +96,6 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
     fun `one of markers when list contains non existing`() {
         val results = projectSearchRepository.find(
             rawQuery = null,
-            platforms = emptyList(),
             targetGroupFilters = emptyList(),
             ownerLogin = null,
             sortBy = SearchSort.RELEVANCY,
