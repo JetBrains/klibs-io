@@ -120,7 +120,6 @@ internal fun SearchPackageResult.toDTO(): SearchPackageResultDTO {
         licenseName = this.licenseName,
         latestVersion = this.latestVersion,
         releaseTsMillis = this.releaseTs.toEpochMilli(),
-        platforms = this.platforms.map { it.serializableName },
         targets = this.targetGroups,
         targetGroups = this.targetGroups,
     )
