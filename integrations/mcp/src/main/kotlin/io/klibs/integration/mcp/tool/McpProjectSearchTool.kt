@@ -41,7 +41,6 @@ class McpProjectSearchTool(
             - projectName: Name of the project
             - projectAuthor: Owner/author login
             - description: Short summary of what the project does, or null if unavailable
-            - platforms: List of supported platforms
             - targets: List of supported targets
             - packages: The project's packages (newest first), capped at maxPackagesPerProject, each with groupId, artifactId, latestVersion, latestStableVersion (or null if the package has no stable release), and description
             - totalPackages: Total number of packages the project publishes (may exceed the returned count; raise maxPackagesPerProject to retrieve more)"""

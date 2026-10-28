@@ -25,7 +25,7 @@ fun MockMvc.searchProjects(case: EvalCase): List<SearchResult> {
     return mapper.readValue<List<SearchProjectResultDTO>>(responseBody).map { dto ->
         SearchResult(
             key = "${dto.ownerLogin}/${dto.name}".lowercase(),
-            platforms = dto.platforms.map { it.lowercase() }.toSet(),
+            platforms = dto.targetGroups.keys.mapNotNull { it.platform?.serializableName?.lowercase() }.toSet(),
         )
     }
 }

@@ -29,7 +29,6 @@ class McpProjectSearchServiceTest {
             id = 1,
             name = "kstatemachine",
             ownerLogin = "KStateMachine",
-            platforms = listOf(PackagePlatform.JVM, PackagePlatform.NATIVE)
         )
 
         whenever(
@@ -57,7 +56,6 @@ class McpProjectSearchServiceTest {
         val project = result.projects[0]
         assertEquals("kstatemachine", project.project.name)
         assertEquals("KStateMachine", project.project.ownerLogin)
-        assertEquals(listOf(PackagePlatform.JVM, PackagePlatform.NATIVE), project.project.platforms)
         assertEquals(1, project.packages.size)
         assertEquals(1, project.totalPackages)
         assertEquals("io.github.kstatemachine", project.packages[0].groupId)
@@ -162,7 +160,6 @@ class McpProjectSearchServiceTest {
         id: Int = 1,
         name: String = "test-project",
         ownerLogin: String = "test-owner",
-        platforms: List<PackagePlatform> = listOf(PackagePlatform.COMMON)
     ) = SearchProjectResult(
         id = id,
         name = name,
@@ -174,7 +171,6 @@ class McpProjectSearchServiceTest {
         licenseName = "Apache-2.0",
         latestVersion = "1.0.0",
         latestVersionPublishedAt = Instant.now(),
-        platforms = platforms,
         targets = emptyList(),
         tags = emptyList(),
         markers = emptyList()

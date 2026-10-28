@@ -91,7 +91,6 @@ class PackageSearchRepositoryOpenSearch(
             licenseName = src.textOrNull(PackageFields.LATEST_LICENSE_NAME),
             latestVersion = src.get(PackageFields.LATEST_VERSION).asText(),
             releaseTs = LocalDateTime.parse(src.get(PackageFields.RELEASE_TS).asText()).toInstant(ZoneOffset.UTC),
-            platforms = src.stringList(PackageFields.PLATFORMS).map { PackagePlatform.valueOf(it) },
             targetGroups = TargetGroup.gatherTargetGroupsFromTargets(packageTargets)
         )
     }

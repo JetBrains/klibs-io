@@ -2,6 +2,7 @@ package io.klibs.core.search
 
 import SmokeTestBase
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.dto.api.SearchPackageResultDTO
 import io.klibs.core.search.dto.api.SearchPackagesRequest
@@ -60,7 +61,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
 
         // Verify that all returned packages support JavaScript platform
         foundPackages.forEach { pkg ->
-            assertTrue(pkg.platforms.contains("js"), 
+            assertTrue(pkg.targetGroups.keys.any { it.platform == PackagePlatform.JS },
                 "Package ${pkg.artifactId} does not support JavaScript platform")
         }
     }
@@ -97,7 +98,7 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
 
         // Verify that all returned packages support JavaScript platform and match the query
         foundPackages.forEach { pkg ->
-            assertTrue(pkg.platforms.contains("js"), 
+            assertTrue(pkg.targetGroups.keys.any { it.platform == PackagePlatform.JS },
                 "Package ${pkg.artifactId} does not support JavaScript platform")
 
             // Check if the package matches the query (in groupId, artifactId, or description)
@@ -141,15 +142,10 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
 
         // Verify that all returned packages support both JavaScript platform and JVM
         foundPackages.forEach { pkg ->
-            assertTrue(pkg.platforms.contains("js"), 
+            assertTrue(pkg.targetGroups.keys.any { it.platform == PackagePlatform.JS },
                 "Package ${pkg.artifactId} does not support JavaScript platform")
-            assertTrue(pkg.platforms.contains("jvm"), 
+            assertTrue(pkg.targetGroups.keys.any { it.platform == PackagePlatform.JVM },
                 "Package ${pkg.artifactId} does not support JVM platform")
-
-            // Note: Some packages might have the platform but not specific targets in the targets map
-            // At least one of the target groups should be present
-            assertTrue(pkg.targets.containsKey(TargetGroup.JVM),
-                "Package ${pkg.artifactId} does not have JVM targets")
         }
     }
 
@@ -184,15 +180,11 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
 
         // Verify that all returned packages support JVM platform
         foundPackages.forEach { pkg ->
-            assertTrue(pkg.platforms.contains("jvm"), 
+            assertTrue(pkg.targetGroups.keys.any { it.platform == PackagePlatform.JVM },
                 "Package ${pkg.artifactId} does not support JVM platform")
 
-            // Verify that the package has JVM targets
-            assertTrue(pkg.targets.containsKey(TargetGroup.JVM),
-                "Package ${pkg.artifactId} does not have JVM targets")
-
             // Verify that the package has at least one of the specified JVM targets
-            val jvmTargets = pkg.targets[TargetGroup.JVM] ?: emptySet()
+            val jvmTargets = pkg.targetGroups[TargetGroup.JVM] ?: emptySet()
             assertTrue(jvmTargets.any { it == "11" || it == "17" },
                 "Package ${pkg.artifactId} does not support JVM 11 or 17")
         }
@@ -229,15 +221,15 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
 
         // Verify that all returned packages support Native platform
         foundPackages.forEach { pkg ->
-            assertTrue(pkg.platforms.contains("native"), 
+            assertTrue(pkg.targetGroups.keys.any { it.platform == PackagePlatform.NATIVE },
                 "Package ${pkg.artifactId} does not support Native platform")
 
             // Verify that the package has IOS targets
-            assertTrue(pkg.targets.containsKey(TargetGroup.IOS),
+            assertTrue(pkg.targetGroups.containsKey(TargetGroup.IOS),
                 "Package ${pkg.artifactId} does not have IOS targets")
 
             // Verify that the package has at least one of the specified IOS targets
-            val iosTargets = pkg.targets[TargetGroup.IOS] ?: emptySet()
+            val iosTargets = pkg.targetGroups[TargetGroup.IOS] ?: emptySet()
             assertTrue(iosTargets.any { it == "ios_arm64" || it == "ios_x64" },
                 "Package ${pkg.artifactId} does not support ios_arm64 or ios_x64")
         }
@@ -275,22 +267,22 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
 
         // Verify that all returned packages support Native platform
         foundPackages.forEach { pkg ->
-            assertTrue(pkg.platforms.contains("native"), 
+            assertTrue(pkg.targetGroups.keys.any { it.platform == PackagePlatform.NATIVE },
                 "Package ${pkg.artifactId} does not support Native platform")
 
             // Verify that the package has both IOS and MacOS targets
-            assertTrue(pkg.targets.containsKey(TargetGroup.IOS),
+            assertTrue(pkg.targetGroups.containsKey(TargetGroup.IOS),
                 "Package ${pkg.artifactId} does not have IOS targets")
-            assertTrue(pkg.targets.containsKey(TargetGroup.MacOS),
+            assertTrue(pkg.targetGroups.containsKey(TargetGroup.MacOS),
                 "Package ${pkg.artifactId} does not have MacOS targets")
 
             // Verify that the package has the specified IOS target
-            val iosTargets = pkg.targets[TargetGroup.IOS] ?: emptySet()
+            val iosTargets = pkg.targetGroups[TargetGroup.IOS] ?: emptySet()
             assertTrue(iosTargets.contains("ios_arm64"),
                 "Package ${pkg.artifactId} does not support ios_arm64")
 
             // Verify that the package has at least one of the specified MacOS targets
-            val macosTargets = pkg.targets[TargetGroup.MacOS] ?: emptySet()
+            val macosTargets = pkg.targetGroups[TargetGroup.MacOS] ?: emptySet()
             assertTrue(macosTargets.any { it == "macos_arm64" || it == "macos_x64" },
                 "Package ${pkg.artifactId} does not support macos_arm64 or macos_x64")
         }
@@ -361,6 +353,6 @@ class SearchPackagesWithTargetFiltersTest : SmokeTestBase() {
             objectMapper.typeFactory.constructCollectionType(List::class.java, SearchPackageResultDTO::class.java)
         )
 
-        assertTrue(foundPackages.any { it.targets.containsKey(TargetGroup.JVM) })
+        assertTrue(foundPackages.any { it.targetGroups.containsKey(TargetGroup.JVM) })
     }
 }

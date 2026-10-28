@@ -2,7 +2,6 @@ package io.klibs.integration.mcp.mapper
 
 import io.klibs.core.pckg.model.PackageDetails
 import io.klibs.core.pckg.model.PackageOverview
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.integration.mcp.dto.api.PackageLatestVersionResponse
 import io.klibs.integration.mcp.dto.api.ProjectSearchResponse
 import io.klibs.integration.mcp.dto.service.McpPackageLatestVersionResultDto
@@ -48,7 +47,6 @@ private object ProjectInfoMapper :
         to::projectName fromProperty from.project::name
         to::projectAuthor fromProperty from.project::ownerLogin
         to::description fromProperty from.project::description
-        to::platforms fromProperty from.project::platforms via IterableToListMapper(PackagePlatformMapper)
         to::targets fromProperty from.project::targets
         to::packages fromProperty from::packages via IterableToListMapper(ProjectPackageMapper)
         to::totalPackages fromProperty from::totalPackages
@@ -60,9 +58,4 @@ private object ProjectSearchResponseMapper : ObjectMappie<McpProjectSearchResult
     override fun map(from: McpProjectSearchResultDto): ProjectSearchResponse = mapping {
         to::projects fromProperty from::projects via IterableToListMapper(ProjectInfoMapper)
     }
-}
-
-private object PackagePlatformMapper : ObjectMappie<PackagePlatform, String>() {
-
-    override fun map(from: PackagePlatform): String = from.serializableName
 }

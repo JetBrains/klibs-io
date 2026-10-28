@@ -2,7 +2,6 @@ package io.klibs.core.search.repository
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.klibs.core.owner.ScmOwnerType
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchProjectResult
@@ -140,7 +139,6 @@ class ProjectSearchRepositoryOpenSearch(
         latestVersion = src.get(ProjectFields.LATEST_VERSION).asText(),
         latestVersionPublishedAt = LocalDateTime.parse(src.get(ProjectFields.LATEST_VERSION_TS).asText())
             .toInstant(ZoneOffset.UTC),
-        platforms = src.stringList(ProjectFields.PLATFORMS).map { PackagePlatform.valueOf(it) },
         targets = src.stringList(ProjectFields.TARGETS),
         tags = src.stringList(ProjectFields.TAGS),
         markers = src.stringList(ProjectFields.MARKERS),
