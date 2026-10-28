@@ -47,10 +47,6 @@ class PackageSearchRepositoryJdbc(
             licenseName = rs.getString("latest_license_name"),
             latestVersion = rs.getString("latest_version"),
             releaseTs = rs.getTimestamp("release_ts").toInstant(),
-            platforms = rs.getString("platforms")
-                .split(",")
-                .filter { it.isNotBlank() }
-                .map { PackagePlatform.valueOf(it) },
             targetGroups = TargetGroup.gatherTargetGroupsFromTargets(packageTargets)
         )
     }
@@ -83,7 +79,7 @@ class PackageSearchRepositoryJdbc(
 
         val sql = buildString {
             append("SELECT group_id, artifact_id, latest_version, latest_description, release_ts, ")
-            append("owner_type, owner_login, latest_license_name, array_to_string(platforms, ',') AS platforms, ")
+            append("owner_type, owner_login, latest_license_name, ")
             append("targets")
 
             // For debugging and testing purposes

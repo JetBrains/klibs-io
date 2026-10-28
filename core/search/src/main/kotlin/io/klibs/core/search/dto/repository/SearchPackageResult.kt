@@ -1,7 +1,6 @@
 package io.klibs.core.search.dto.repository
 
 import io.klibs.core.owner.ScmOwnerType
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import java.time.Instant
 
@@ -17,8 +16,6 @@ data class SearchPackageResult(
 
     val latestVersion: String,
     val releaseTs: Instant,
-
-    val platforms: List<PackagePlatform>,
 
     val targetGroups: Map<TargetGroup, Set<String>>
 )

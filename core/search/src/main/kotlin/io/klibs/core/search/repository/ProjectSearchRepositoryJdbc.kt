@@ -1,7 +1,6 @@
 package io.klibs.core.search.repository
 
 import io.klibs.core.owner.ScmOwnerType
-import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.pckg.util.getTargetsVector
 import io.klibs.core.search.controller.SearchSort
@@ -53,7 +52,7 @@ class ProjectSearchRepositoryJdbc(
 
         val sql = buildString {
             append("SELECT project_id, owner_type, owner_login, repo_name, name, stars, license_name, latest_version")
-            append(", latest_version_ts, array_to_string(platforms, ',') AS platforms, plain_description, tags, markers, dependent_count, health_score")
+            append(", latest_version_ts, plain_description, tags, markers, dependent_count, health_score")
 
             // For debugging and testing purposes
             append(", targets_vector")
@@ -194,7 +193,6 @@ class ProjectSearchRepositoryJdbc(
             SELECT c.id AS category_id, c.name AS category_name, c.markers AS category_markers,
                    pi.project_id, pi.owner_type, pi.owner_login, pi.repo_name, pi.name,
                    pi.stars, pi.license_name, pi.latest_version, pi.latest_version_ts,
-                   array_to_string(pi.platforms, ',') AS platforms,
                    pi.plain_description, pi.tags, pi.markers, pi.targets_vector, pi.dependent_count, pi.health_score
             FROM category c
             LEFT JOIN LATERAL (
@@ -247,10 +245,6 @@ class ProjectSearchRepositoryJdbc(
                 licenseName = rs.getString("license_name"),
                 latestVersion = rs.getString("latest_version"),
                 latestVersionPublishedAt = rs.getTimestamp("latest_version_ts").toInstant(),
-                platforms = rs.getString("platforms")
-                    .let {
-                        if (it.isNullOrEmpty()) emptyList() else it.split(",").map { p -> PackagePlatform.valueOf(p) }
-                    },
                 markers = rs.getArray("markers")?.array?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList(),
                 targets = rs.getTargetsVector("targets_vector"),
                 tags = rs.getArray("tags")?.array?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList(),
