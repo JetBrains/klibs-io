@@ -4,6 +4,7 @@ import styles from './styles.module.css';
 import {textCn} from "@rescui/typography";
 import {Button} from "@rescui/button";
 import Image from "next/image";
+import Link from "next/link";
 import kodeeGrantWinner from "./kodee-grant-winner.svg";
 import cn from "classnames";
 import {BackgroundSquares} from "./background-squares";
@@ -24,7 +25,9 @@ export default function GrantWinnerBanner({ categorySlug }: GrantWinnerBannerPro
                 </p>
 
                 <div className={cn(styles.buttonsBlock)}>
-                    <Button href={`/?category=${categorySlug}`} data-testid="grant-winners-discover-button">Discover</Button>
+                    <Link href={`/?category=${categorySlug}`}>
+                        <Button data-testid="grant-winners-discover-button" tabIndex={-1}>Discover</Button>
+                    </Link>
                     <Button href={'https://kotlinfoundation.org/grants/'} mode={'outline'} data-testid="grant-winners-submit-button">Learn about grants</Button>
                 </div>
             </div>
