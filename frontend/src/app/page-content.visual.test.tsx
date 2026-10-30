@@ -1,14 +1,14 @@
 import { render } from 'vitest-browser-react';
 import { page } from 'vitest/browser';
-import { beforeEach, expect, test, vi } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { searchPackages, searchProjects } from '@/app/api';
 import { homeCategories, networkingProjects, serializationPackages } from '@/test/fixtures';
 import { setNavigation } from '@/test/next-navigation';
-import { renderSingleAnimationFrame } from '@/test/visual';
 import PageContent from './page-content';
 
 vi.mock('@/app/api', () => import('@/test/api'));
+vi.mock('@/app/ui/grant-winner-banner/background-squares', () => ({ BackgroundSquares: () => null }));
 
 const renderHome = async (search: string) => {
     const categoryWithProjects = homeCategories();
@@ -22,10 +22,6 @@ const renderHome = async (search: string) => {
         />,
     );
 };
-
-beforeEach(() => {
-    renderSingleAnimationFrame();
-});
 
 test('home page categories view without search filters', async () => {
     await renderHome('');
