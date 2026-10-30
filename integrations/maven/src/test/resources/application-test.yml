@@ -6,4 +6,3 @@ klibs:
         rate-limit-refill-amount: 100
         rate-limit-refill-period-sec: 5
         indexDir: /tmp/maven-index
-        content-endpoint: http://localhost:8080/content/

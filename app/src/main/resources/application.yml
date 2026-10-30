@@ -122,7 +122,7 @@ klibs:
       regen-ttl: ${KLIBS_DESCRIPTION_REGEN_TTL:90d}
     central-sonatype:
       enabled: ${KLIBS_ENABLE_INDEXING_CENTRAL_SONATYPE:false}
-      type: ${KLIBS_CENTRAL_SONATYPE_TYPE:ORIGIN}
+      type: ${KLIBS_CENTRAL_SONATYPE_TYPE:GOOGLE_MIRROR}
     gmaven:
       enabled: ${KLIBS_ENABLE_INDEXING_GMAVEN:false}
       s3:

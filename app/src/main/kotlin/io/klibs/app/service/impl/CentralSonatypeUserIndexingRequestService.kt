@@ -1,5 +1,7 @@
 package io.klibs.app.service.impl
 
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties
+import io.klibs.app.configuration.properties.IndexingConfigurationProperties.MavenCentralProperties.MavenCentralType
 import io.klibs.app.exceptions.UserRequestProcessingException
 import io.klibs.app.service.UserIndexingRequestService
 import io.klibs.app.util.toIndexRequest
@@ -9,6 +11,8 @@ import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.core.pckg.repository.BlacklistRepository
 import io.klibs.integration.maven.MavenArtifact
+import io.klibs.integration.maven.service.impl.BaseMavenCentralStaticDataProvider
+import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
@@ -16,15 +20,24 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+// TODO(Dmitrii Krasnov): in KTL-4027 rename it
 @Service
 class CentralSonatypeUserIndexingRequestService(
-    // User requests should go through real Maven Central
-    private val centralSearchClient: SonatypeCentralStaticDataProvider,
+    centralSearchClient: SonatypeCentralStaticDataProvider,
     private val indexingRequestRepository: IndexingRequestRepository,
     private val packageRepository: PackageRepository,
     private val userRequestIssueRepository: UserRequestIssueRepository,
     private val blacklistRepository: BlacklistRepository,
+    googleMavenCentralMirrorStaticDataProvider: GoogleMavenCentralMirrorStaticDataProvider,
+    indexingConfigurationProperties: IndexingConfigurationProperties,
 ) : UserIndexingRequestService {
+
+    // TODO(Dmitrii Krasnov): in KTL-4027 make it a separate bean
+    private val centralSearchClient: BaseMavenCentralStaticDataProvider =
+        when (indexingConfigurationProperties.centralSonatype.type) {
+            MavenCentralType.ORIGIN -> centralSearchClient
+            MavenCentralType.GOOGLE_MIRROR -> googleMavenCentralMirrorStaticDataProvider
+        }
 
     @Transactional
     override fun discoverAndSaveRequest(userRequestId: UUID) {
@@ -101,7 +114,7 @@ class CentralSonatypeUserIndexingRequestService(
 
         centralSearchClient.getKotlinToolingMetadata(artifact)
             ?: throw UserRequestProcessingException(
-                "Artifact $groupId:$artifactId:$version is not a valid Kotlin Multiplatform library " +
+                "Artifact $groupId:$artifactId:$version unavailable from the selected Maven Central source " +
                         "(kotlin-tooling-metadata.json not found)"
             )
 

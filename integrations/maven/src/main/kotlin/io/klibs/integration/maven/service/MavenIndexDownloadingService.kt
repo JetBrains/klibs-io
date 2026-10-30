@@ -1,5 +1,6 @@
 package io.klibs.integration.maven.service
 
+import io.klibs.integration.maven.service.impl.BaseMavenCentralStaticDataProvider
 import org.apache.maven.index.updater.IndexUpdateRequest
 import org.apache.maven.index.updater.IndexUpdater
 import org.apache.maven.index.updater.ResourceFetcher
@@ -26,13 +27,13 @@ class MavenIndexDownloadingService(
 
     suspend fun downloadIndexIfNewer(
         localIndexTimestamp: Instant,
-        fetchRemoteIndexTimestamp: () -> Instant?,
+        provider: BaseMavenCentralStaticDataProvider,
     ): Instant? {
         logger.info("Checking for Maven Central index updates")
 
         var resultTimestamp: Instant? = null
-        indexingContextManager.useCentralContext("maven-central-context") { context ->
-            val remoteIndexTimestamp = fetchRemoteIndexTimestamp()
+        indexingContextManager.useCentralContext("maven-central-context", provider.contentEndpoint) { context ->
+            val remoteIndexTimestamp = provider.fetchRemoteIndexTimestamp()
 
             if (remoteIndexTimestamp == null) {
                 logger.warn("Local index was not updated because we couldn't extract timestamp for remote index")
