@@ -44,6 +44,9 @@ class CompareControllerTest : SmokeTestBase() {
             status { isOk() }
         }.andReturn().response
 
+        val responseJson = objectMapper.readTree(response.contentAsString)
+        assertTrue(responseJson.all { it.has("targetGroups") })
+
         val results: List<CompareProjectResponse> = objectMapper.readValue(
             response.contentAsString,
             objectMapper.typeFactory.constructCollectionType(List::class.java, CompareProjectResponse::class.java)
@@ -58,7 +61,6 @@ class CompareControllerTest : SmokeTestBase() {
         assertEquals("JetBrains", kotlinWrappersProject.ownerLogin)
         assertTrue(kotlinWrappersProject.lastActivityAtMillis > 0)
         assertTrue(kotlinWrappersProject.createdAtMillis > 0)
-        assertTrue(kotlinWrappersProject.platforms.isNotEmpty())
         assertNotNull(kotlinWrappersProject.kotlinVersion)
 
         val atomicfuProject = projectsByName["kotlinx-atomicfu"]
@@ -66,7 +68,6 @@ class CompareControllerTest : SmokeTestBase() {
         assertEquals("Kotlin", atomicfuProject.ownerLogin)
         assertTrue(atomicfuProject.lastActivityAtMillis > 0)
         assertTrue(atomicfuProject.createdAtMillis > 0)
-        assertTrue(atomicfuProject.platforms.isNotEmpty())
         assertNotNull(atomicfuProject.kotlinVersion)
     }
 

@@ -19,7 +19,7 @@ class CompareProjectMapper {
             lastActivityAtMillis = details.lastActivityAt.toEpochMilli(),
             createdAtMillis = details.createdAt.toEpochMilli(),
             openIssues = details.openIssues,
-            platforms = details.platforms.map { it.serializableName },
+            targetGroups = details.targetGroups,
             tags = details.tags,
             markers = details.markers.map { it.name },
             kotlinVersion = kotlinVersion,
