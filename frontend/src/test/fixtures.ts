@@ -164,7 +164,22 @@ export const networkingProjects = (): ProjectSearchResults[] => [
     }),
 ];
 
+export const ecosystemProjects = (): ProjectSearchResults[] => [
+    projectSearchResult({ id: 101, name: 'Kotlin Multiplatform', ownerLogin: 'Kotlin' }),
+    projectSearchResult({ id: 102, name: 'Compose Multiplatform', ownerLogin: 'JetBrains' }),
+    projectSearchResult({ id: 103, name: 'AndroidX Core', ownerLogin: 'androidx' }),
+];
+
 export const homeCategories = (): CategoryWithProjects[] => [
+    {
+        category: {
+            name: 'JetBrains and Google',
+            subtitle: 'Essential libraries from the JetBrains and Google ecosystem',
+            markers: [],
+            selector: 'JETBRAINS_AND_GOOGLE',
+        },
+        projects: ecosystemProjects(),
+    },
     { category: { name: 'Grant winners', markers: [] }, projects: [] },
     { category: { name: 'Networking', markers: [] }, projects: networkingProjects() },
 ];

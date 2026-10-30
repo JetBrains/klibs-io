@@ -2,6 +2,7 @@ package io.klibs.core.search.dto.api
 
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.dto.validation.ValidTargetGroupValues
+import jakarta.validation.constraints.Pattern
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(
@@ -48,5 +49,16 @@ data class SearchProjectsRequest(
         type = "array",
         example = "\"FEATURED_DEPRECATED\", \"GRANT_WINNER_2024\""
     )
-    val markers: List<String> = emptyList()
+    val markers: List<String> = emptyList(),
+
+    @field:Schema(
+        description = "Select a predefined owner-based category while searching",
+        allowableValues = ["JETBRAINS_AND_GOOGLE"],
+        example = "JETBRAINS_AND_GOOGLE",
+    )
+    @field:Pattern(
+        regexp = "JETBRAINS_AND_GOOGLE",
+        message = "Category selector must be one of: JETBRAINS_AND_GOOGLE",
+    )
+    val categorySelector: String? = null
 )

@@ -42,6 +42,7 @@ class ProjectSearchRepositoryOpenSearch(
         markers: List<String>,
         page: Int,
         limit: Int,
+        ownerLogins: List<String>?,
     ): List<SearchProjectResult> = doFind(
         query = query,
         platforms = platforms,
@@ -52,6 +53,7 @@ class ProjectSearchRepositoryOpenSearch(
         limit = limit,
         extraFilters = extraFilters(tags, markers),
         popularityScored = true,
+        ownerLogins = ownerLogins,
     )
 
     override fun shouldClauses(query: String): List<Query> = buildList {

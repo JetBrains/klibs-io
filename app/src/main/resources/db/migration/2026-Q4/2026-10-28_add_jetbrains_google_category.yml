@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: add JetBrains and Google category
+      author: Dmitrii Krasnov
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT COUNT(*) FROM category WHERE id = 0
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO category (id, name, markers)
+              VALUES (0, 'JetBrains and Google', ARRAY[]::VARCHAR[]);

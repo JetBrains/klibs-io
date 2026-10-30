@@ -6,6 +6,7 @@ import io.klibs.core.search.repository.PackageSearchRepository
 import io.klibs.core.search.repository.PackageSearchRepositoryJdbc
 import io.klibs.core.search.repository.ProjectSearchRepository
 import io.klibs.core.search.repository.ProjectSearchRepositoryJdbc
+import io.klibs.core.search.enums.CategoryProjectSelector
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchPackageResult
 import io.klibs.core.search.dto.repository.SearchProjectResult
@@ -61,19 +62,23 @@ class SearchService(
         markers: List<String>,
         tags: List<String>,
         page: Int,
-        limit: Int
+        limit: Int,
+        categorySelector: CategoryProjectSelector? = null,
     ): List<SearchProjectResult> {
+        validatePagination(page, limit)
         validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
+
         return projectSearchRepository.find(
             query = query,
             platforms = platforms,
             targetGroupFilters = targetGroupFilters,
             ownerLogin = ownerLogin,
-            sortBy = sort,
+            sortBy = if (categorySelector != null) SearchSort.MOST_DEPENDENTS else sort,
             markers = markers,
             tags = tags,
             page = page,
-            limit = limit
+            limit = limit,
+            ownerLogins = categorySelector?.ownerLogins,
         )
     }
 
@@ -88,6 +93,7 @@ class SearchService(
         page: Int,
         limit: Int
     ): List<SearchPackageResult> {
+        validatePagination(page, limit)
         validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
         return packageSearchRepository.find(
             query = query,
@@ -103,14 +109,27 @@ class SearchService(
 
     @Transactional(readOnly = true)
     fun searchByCategories(limit: Int): List<CategoryWithProjects> {
-        return projectIndexJdbc.findCategoriesWithProjects(limit)
+        validatePagination(page = 1, limit = limit)
+        val ownerCategories = CategoryProjectSelector.entries.associate { it.categoryName to it.ownerLogins }
+        return projectIndexJdbc.findCategoriesWithProjects(limit, ownerCategories)
             .map { (category, projects) ->
+                val selector = CategoryProjectSelector.forCategoryName(category.name)
+
                 CategoryWithProjects(
                     categoryName = category.name,
                     categoryMarkers = category.markers,
+                    selector = selector,
                     projects = projects,
                 )
             }
+    }
+
+    private fun validatePagination(page: Int, limit: Int) {
+        if (page < 1 || limit < 1) {
+            logger.warn("Discarding search request: page={}, limit={}", page, limit)
+        }
+        require(page >= 1) { "Page must be >= 1" }
+        require(limit >= 1) { "Limit must be >= 1" }
     }
 
     private fun refreshProjectIndexView() {

@@ -38,6 +38,7 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
         limit: Int,
         extraFilters: List<Query> = emptyList(),
         popularityScored: Boolean = false,
+        ownerLogins: List<String>? = null,
     ): List<T> {
         require(page >= 1) { "Page must be >= 1, but was $page" }
         require(limit >= 1) { "Limit must be >= 1, but was $limit" }
@@ -48,7 +49,7 @@ abstract class AbstractOpenSearchSearchRepository<T : Any>(
 
         val isQueryPresent = !query.isNullOrBlank()
         val trimmed = query?.trim().orEmpty()
-        val filters = OpenSearchQueryBuilder.commonFilters(platforms, targetGroupFilters, ownerLogin) + extraFilters
+        val filters = OpenSearchQueryBuilder.commonFilters(platforms, targetGroupFilters, ownerLogin, ownerLogins) + extraFilters
         val shoulds = if (isQueryPresent) shouldClauses(trimmed) else emptyList()
         val boolQuery = OpenSearchQueryBuilder.bool(shoulds, filters)
         val finalQuery = if (popularityScored && isQueryPresent && sortBy == SearchSort.RELEVANCY) {

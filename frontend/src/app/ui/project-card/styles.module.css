@@ -161,6 +161,22 @@
     }
 }
 
+.jetbrainsProject {
+    background: #F3F1F3 radial-gradient(70.71% 70.71% at 0% 0%, rgba(67, 119, 255, 0.28) 0%, rgba(255, 255, 255, 0.00) 100%) !important;
+
+    .title {
+        color: #174EA6;
+    }
+}
+
+.androidxProject {
+    background: #F3F1F3 radial-gradient(70.71% 70.71% at 0% 0%, rgba(61, 220, 132, 0.28) 0%, rgba(255, 255, 255, 0.00) 100%) !important;
+
+    .title {
+        color: #137A45;
+    }
+}
+
 .featuredLabel {
     display: flex;
     align-items: center;
