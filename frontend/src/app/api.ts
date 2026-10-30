@@ -1,9 +1,11 @@
 import {
     CategoriesResponse,
+    CompareProjectResponse,
     PackageDetails,
     PackageOverview,
     PackageSearchResults,
     ProjectDetails,
+    ProjectReference,
     ProjectSearchResults,
     SearchPackagesRequest,
     SearchParams,
@@ -118,6 +120,22 @@ export const searchPackages = async(searchParams: SearchParams) => {
     });
 
     return await res.json() as PackageSearchResults[];
+}
+
+// Returns projects in the requested order, or null if any of them can't be compared
+export const compareProjects = async(projects: ProjectReference[]): Promise<CompareProjectResponse[] | null> => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compare/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projects }),
+        next: { revalidate: 600 }
+    });
+    if (!res.ok) return null;
+
+    const compared = await res.json() as CompareProjectResponse[];
+    return projects.flatMap(ref => compared.filter(
+        it => it.ownerLogin === ref.ownerLogin && it.projectName === ref.projectName
+    ));
 }
 
 export const getTagsStats = async ({ limit }: { limit?: number}) => {

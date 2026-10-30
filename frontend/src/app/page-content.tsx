@@ -19,6 +19,7 @@ import Container from "@/app/ui/container";
 
 import FocusManager from '@rescui/focus-manager';
 import {useDebouncedCallback} from "@/app/hooks/use-debounced-callback";
+import {HOME_RESET_EVENT} from "@/app/constants";
 
 interface PageContentProps {
     categories: Category[];
@@ -61,6 +62,17 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
             router.replace('/');
         }
     }, [categorySlug, selectedCategory, router]);
+
+    // Logo click on the index page: drop filters and remount the search field to clear its input
+    const [resetKey, setResetKey] = useState(0);
+    useEffect(() => {
+        const onReset = () => {
+            setFilters({page: 1});
+            setResetKey(k => k + 1);
+        };
+        window.addEventListener(HOME_RESET_EVENT, onReset);
+        return () => window.removeEventListener(HOME_RESET_EVENT, onReset);
+    }, []);
 
     const showCategoriesView = !hasActiveFilters(filters) && !categorySlug;
 
@@ -136,6 +148,7 @@ function FilterWithResults({ categories, categoryWithProjects, projectsCount }: 
     return (
         <>
             <SearchContainer
+                key={resetKey}
                 filters={filters}
                 setFilters={setFilters}
                 updateURLFromState={updateURLFromState}

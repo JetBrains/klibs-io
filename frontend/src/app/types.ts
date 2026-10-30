@@ -31,6 +31,26 @@ export interface ProjectDetails extends ProjectSearchResults {
 	updatedAtMillis: number;
 }
 
+export interface ProjectReference {
+	ownerLogin: string;
+	projectName: string;
+}
+
+export interface CompareProjectResponse extends ProjectReference {
+	description: null | string;
+	scmStars: number;
+	licenseName: null | string;
+	latestReleaseVersion: null | string;
+	latestReleasePublishedAtMillis: null | number;
+	lastActivityAtMillis: number;
+	createdAtMillis: number;
+	openIssues: null | number;
+	targetGroups: TargetGroups;
+	tags: string[];
+	markers: string[];
+	kotlinVersion: null | string;
+}
+
 export interface PackageSearchResults {
 	id: number;
 	groupId: string;

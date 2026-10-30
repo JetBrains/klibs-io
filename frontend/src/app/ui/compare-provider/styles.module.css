@@ -1,0 +1,17 @@
+.barWrapper {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    z-index: 10;
+}
+
+/* Keep keyboard-focused elements above the bar: bar height + 30px safety margin */
+:global(html):has(.barWrapper) {
+    scroll-padding-bottom: 94px;
+}
+
+@media (max-width: 640px) {
+    :global(html):has(.barWrapper) {
+        scroll-padding-bottom: 122px;
+    }
+}

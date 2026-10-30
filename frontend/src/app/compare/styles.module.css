@@ -1,0 +1,54 @@
+.pageContainer {
+    margin: 72px 0 144px 0;
+}
+
+.title {
+    margin-bottom: 64px;
+}
+
+.rowFilter {
+    margin-bottom: 24px;
+}
+
+/* Rescui draws the chip border on ::before and makes it 2px when selected */
+.rowFilter [data-rs-internal='chip-list__chip']::before {
+    border-width: 1px;
+}
+
+.rowFilter [data-rs-internal='chip-list__chip'] {
+    --_rs-cl-chip-selected-border-color: #4D00FF;
+}
+
+/* Fixed layout gives every project column the same width */
+.table {
+    table-layout: fixed;
+}
+
+.table th,
+.table td {
+    padding-left: 12px;
+    vertical-align: top;
+}
+
+.table thead th {
+    background: #F3F1F3;
+}
+
+/* Keeps labels visible while scrolling through many projects */
+.table .labelColumn {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    width: 140px;
+    background: #F3F1F3;
+}
+
+.table .status_good {
+    color: #1a7f37;
+}
+
+.platforms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}

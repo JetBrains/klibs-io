@@ -1,0 +1,17 @@
+.toggle {
+    --rs-color-primary-light-theme: #0067FF;
+    --rs-color-primary-dim-light-theme: #3385FF;
+    --rs-color-primary-fog-light-theme: #CCE1FF;
+    --rs-color-primary-t-dim-light-theme: rgba(0, 103, 255, 0.8);
+    --rs-color-primary-t-fog-light-theme: rgba(0, 103, 255, 0.2);
+
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.toggle .checkedLabel {
+    color: #0067FF;
+}

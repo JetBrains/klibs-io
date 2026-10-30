@@ -38,6 +38,7 @@
     "@rescui/tab-list": "^0.12.10",
     "@rescui/table": "^0.8.7",
     "@rescui/tag": "^0.13.0",
+    "@rescui/toggle": "0.4.3",
     "@rescui/tooltip": "^0.8.13",
     "@rescui/typography": "^0.16.4",
     "@rescui/ui-contexts": "^0.5.4",

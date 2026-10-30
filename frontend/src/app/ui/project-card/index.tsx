@@ -7,6 +7,7 @@ import { cardCn } from '@rescui/card';
 import { textCn } from '@rescui/typography';
 import { StarIcon, ReadIcon, WinIcon, RocketIcon } from '@rescui/icons';
 import PlatformTag from "@/app/ui/platform-tag";
+import CompareToggle from "@/app/ui/compare-toggle";
 
 import styles from './styles.module.css';
 import { trackEvent, GAEvent } from "@/app/analytics";
@@ -158,6 +159,12 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 							<p className={cn(textCn('rs-text-3'))}>
 								{featuredProject.licenseName || 'Unknown license'}
 							</p>
+							<div className={styles.compareToggle}>
+								<CompareToggle
+									ownerLogin={featuredProject.ownerLogin}
+									name={featuredProject.name}
+								/>
+							</div>
 						</div>
 					</div>
 				</>
