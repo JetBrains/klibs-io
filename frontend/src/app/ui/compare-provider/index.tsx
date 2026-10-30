@@ -63,6 +63,8 @@ export default function CompareProvider({children}: { children: ReactNode }) {
     }), [items, toggle, replace]);
 
     const isComparePage = pathname === '/compare';
+    // Query variants (?categories=, ?search=) share the '/' pathname
+    const isMainPage = pathname === '/';
     const currentProject = toProjectItem(pathname);
     const canAddCurrent = currentProject !== undefined && !value.isSelected(currentProject);
     const clear = () => {
@@ -87,7 +89,7 @@ export default function CompareProvider({children}: { children: ReactNode }) {
     return (
         <CompareContext.Provider value={value}>
             {children}
-            {items.length === 0 && <CompareHint/>}
+            {isMainPage && items.length === 0 && <CompareHint/>}
             {items.length > 0 &&
                 <div className={styles.barWrapper}>
                     <CompareBar
