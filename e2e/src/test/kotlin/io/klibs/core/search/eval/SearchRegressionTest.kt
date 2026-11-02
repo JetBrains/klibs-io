@@ -1,5 +1,6 @@
 package io.klibs.core.search.eval
 
+import com.ninjasquad.springmockk.MockkBean
 import io.awspring.cloud.s3.S3Template
 import io.klibs.app.Application
 import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
@@ -25,7 +26,6 @@ import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 
 /**
@@ -51,10 +51,10 @@ import org.springframework.test.web.servlet.MockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SearchRegressionTest : SearchEvalTestBase() {
 
-    @MockitoBean
+    @MockkBean
     private lateinit var aiService: AiService
 
-    @MockitoBean
+    @MockkBean
     private lateinit var s3Template: S3Template
 
     @Autowired
