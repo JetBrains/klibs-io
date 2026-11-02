@@ -31,6 +31,8 @@ maven-indexer = "7.1.6"
 opensearch-java = "3.9.0"
 
 mockito = "5.1.0"
+mockk = "1.14.11"
+springmockk = "5.0.1"
 testcontainers = "1.21.4"
 
 markdown = "0.7.3"
@@ -86,6 +88,8 @@ opensearch-java = { module = "org.opensearch.client:opensearch-java", version.re
 
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
+mockk = { module = "io.mockk:mockk-jvm", version.ref = "mockk" }
+springmockk = { module = "com.ninja-squad:springmockk", version.ref = "springmockk" }
 
 spring-boot-starter-liquibase = { module = "org.springframework.boot:spring-boot-starter-liquibase" }
 postgresql = { module = "org.postgresql:postgresql" }

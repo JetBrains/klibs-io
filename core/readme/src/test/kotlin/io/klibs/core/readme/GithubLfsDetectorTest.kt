@@ -1,6 +1,8 @@
 package io.klibs.core.readme
 
 import io.klibs.core.readme.service.GithubLfsDetector
+import io.mockk.every
+import io.mockk.mockk
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
@@ -11,14 +13,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import java.io.IOException
 
 class GithubLfsDetectorTest {
 
-    private val okHttpClient: OkHttpClient = mock()
+    private val okHttpClient = mockk<OkHttpClient>()
     private val url = "https://example.com/file.png"
 
     @Test
@@ -38,8 +37,8 @@ class GithubLfsDetectorTest {
             body = lfsPointerBody()
         )
 
-        whenever(okHttpClient.newCall(any())).thenAnswer { invocation ->
-            val request = invocation.getArgument<Request>(0)
+        every { okHttpClient.newCall(any()) } answers {
+            val request = firstArg<Request>()
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
                 "GET" -> {
@@ -71,8 +70,8 @@ class GithubLfsDetectorTest {
             body = lfsPointerBody()
         )
 
-        whenever(okHttpClient.newCall(any())).thenAnswer { invocation ->
-            val request = invocation.getArgument<Request>(0)
+        every { okHttpClient.newCall(any()) } answers {
+            val request = firstArg<Request>()
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
                 "GET" -> mockCallReturning(getResponse)
@@ -96,8 +95,8 @@ class GithubLfsDetectorTest {
             )
         )
 
-        whenever(okHttpClient.newCall(any())).thenAnswer { invocation ->
-            val request = invocation.getArgument<Request>(0)
+        every { okHttpClient.newCall(any()) } answers {
+            val request = firstArg<Request>()
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
                 "GET" -> error("GET should not be executed when HEAD content type mismatches")
@@ -121,8 +120,8 @@ class GithubLfsDetectorTest {
             )
         )
 
-        whenever(okHttpClient.newCall(any())).thenAnswer { invocation ->
-            val request = invocation.getArgument<Request>(0)
+        every { okHttpClient.newCall(any()) } answers {
+            val request = firstArg<Request>()
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
                 "GET" -> error("GET should not be executed when HEAD content length exceeds limit")
@@ -148,8 +147,8 @@ class GithubLfsDetectorTest {
             body = lfsPointerBody()
         )
 
-        whenever(okHttpClient.newCall(any())).thenAnswer { invocation ->
-            val request = invocation.getArgument<Request>(0)
+        every { okHttpClient.newCall(any()) } answers {
+            val request = firstArg<Request>()
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
                 "GET" -> mockCallReturning(getResponse)
@@ -175,8 +174,8 @@ class GithubLfsDetectorTest {
             body = lfsPointerBody()
         )
 
-        whenever(okHttpClient.newCall(any())).thenAnswer { invocation ->
-            val request = invocation.getArgument<Request>(0)
+        every { okHttpClient.newCall(any()) } answers {
+            val request = firstArg<Request>()
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
                 "GET" -> mockCallReturning(getResponse)
@@ -191,10 +190,10 @@ class GithubLfsDetectorTest {
 
     @Test
     fun `isLfsFile returns false when http call throws exception`() {
-        val failedHeadCall: Call = mock()
+        val failedHeadCall = mockk<Call>()
 
-        whenever(okHttpClient.newCall(any())).thenReturn(failedHeadCall)
-        whenever(failedHeadCall.execute()).thenThrow(IOException("Network failure"))
+        every { okHttpClient.newCall(any()) } returns failedHeadCall
+        every { failedHeadCall.execute() } throws IOException("Network failure")
 
         val result = GithubLfsDetector(okHttpClient).isLfsFile(url)
 
@@ -215,8 +214,8 @@ class GithubLfsDetectorTest {
             .build()
 
     private fun mockCallReturning(response: Response): Call {
-        val call: Call = mock()
-        whenever(call.execute()).thenReturn(response)
+        val call = mockk<Call>()
+        every { call.execute() } returns response
         return call
     }
 
