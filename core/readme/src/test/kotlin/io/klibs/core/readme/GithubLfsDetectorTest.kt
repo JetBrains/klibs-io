@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 import java.io.IOException
 
 class GithubLfsDetectorTest {
@@ -45,7 +46,7 @@ class GithubLfsDetectorTest {
                     assertEquals("bytes=0-1023", request.header("Range"))
                     mockCallReturning(getResponse)
                 }
-                else -> error("Unexpected request method: ${request.method}")
+                else -> fail("Unexpected request method: ${request.method}")
             }
         }
 
@@ -75,7 +76,7 @@ class GithubLfsDetectorTest {
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
                 "GET" -> mockCallReturning(getResponse)
-                else -> error("Unexpected request method: ${request.method}")
+                else -> fail("Unexpected request method: ${request.method}")
             }
         }
 
@@ -99,8 +100,8 @@ class GithubLfsDetectorTest {
             val request = firstArg<Request>()
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
-                "GET" -> error("GET should not be executed when HEAD content type mismatches")
-                else -> error("Unexpected request method: ${request.method}")
+                "GET" -> fail("GET should not be executed when HEAD content type mismatches")
+                else -> fail("Unexpected request method: ${request.method}")
             }
         }
 
@@ -124,8 +125,8 @@ class GithubLfsDetectorTest {
             val request = firstArg<Request>()
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
-                "GET" -> error("GET should not be executed when HEAD content length exceeds limit")
-                else -> error("Unexpected request method: ${request.method}")
+                "GET" -> fail("GET should not be executed when HEAD content length exceeds limit")
+                else -> fail("Unexpected request method: ${request.method}")
             }
         }
 
@@ -152,7 +153,7 @@ class GithubLfsDetectorTest {
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
                 "GET" -> mockCallReturning(getResponse)
-                else -> error("Unexpected request method: ${request.method}")
+                else -> fail("Unexpected request method: ${request.method}")
             }
         }
 
@@ -179,7 +180,7 @@ class GithubLfsDetectorTest {
             when (request.method) {
                 "HEAD" -> mockCallReturning(headResponse)
                 "GET" -> mockCallReturning(getResponse)
-                else -> error("Unexpected request method: ${request.method}")
+                else -> fail("Unexpected request method: ${request.method}")
             }
         }
 
