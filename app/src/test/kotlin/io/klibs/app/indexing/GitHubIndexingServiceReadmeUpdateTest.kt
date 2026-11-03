@@ -1,16 +1,17 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.readme.service.S3ReadmeCRUDService
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.ReadmeFetchResult
+import io.mockk.every
+import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import java.time.Instant
 
@@ -25,10 +26,10 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
 
-    @MockitoBean
+    @MockkBean(relaxed = true)
     private lateinit var gitHubIntegration: GitHubIntegration
 
-    @MockitoBean
+    @MockkBean(relaxUnitFun = true)
     private lateinit var s3ReadmeService: S3ReadmeCRUDService
 
     @Test
@@ -52,17 +53,15 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
             archived = repo.archived
         )
 
-        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()))
-            .thenReturn(ReadmeFetchResult.NotModified)
-        whenever(s3ReadmeService.readReadmeRaw(projectId, repoId))
-            .thenReturn("# Old Content")
-        whenever(gitHubIntegration.markdownToHtml(any(), any())).thenReturn("<html></html>")
-        whenever(gitHubIntegration.markdownRender(any(), any())).thenReturn("Rendered")
+        every { gitHubIntegration.getRepository(repo.nativeId) } returns ghRepo
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) } returns ReadmeFetchResult.NotModified
+        every { s3ReadmeService.readReadmeRaw(projectId, repoId) } returns "# Old Content"
+        every { gitHubIntegration.markdownToHtml(any(), any()) } returns "<html></html>"
+        every { gitHubIntegration.markdownRender(any(), any()) } returns "Rendered"
 
         uut.updateRepo(repo)
 
-        verify(s3ReadmeService).readReadmeRaw(projectId, repo.idNotNull)
+        verify(exactly = 1) { s3ReadmeService.readReadmeRaw(projectId, repo.idNotNull) }
 
         val readmeMetadataAfter = readmeMetadataRepository.findByScmRepoId(repo.idNotNull)!!
         assert(readmeMetadataAfter.lastProcessedAt.isAfter(readmeMetadataBefore.lastProcessedAt))
@@ -90,15 +89,13 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
             archived = repo.archived
         )
 
-        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()))
-            .thenReturn(ReadmeFetchResult.NotModified)
-        whenever(s3ReadmeService.readReadmeRaw(projectId, repoId))
-            .thenReturn("# Old Content")
+        every { gitHubIntegration.getRepository(repo.nativeId) } returns ghRepo
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) } returns ReadmeFetchResult.NotModified
+        every { s3ReadmeService.readReadmeRaw(projectId, repoId) } returns "# Old Content"
 
         uut.updateRepo(repo)
 
-        verify(s3ReadmeService, never()).readReadmeRaw(projectId, repo.idNotNull)
+        verify(exactly = 0) { s3ReadmeService.readReadmeRaw(projectId, repo.idNotNull) }
 
         val readmeMetadataAfter = readmeMetadataRepository.findByScmRepoId(repo.idNotNull)!!
         assert(readmeMetadataAfter.lastProcessedAt == readmeMetadataBefore.lastProcessedAt)
@@ -126,18 +123,17 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
             archived = repo.archived
         )
 
-        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()))
-            .thenReturn(ReadmeFetchResult.Content("New Content"))
-        whenever(s3ReadmeService.readReadmeRaw(projectId, repoId))
-            .thenReturn("# Old Content")
-        whenever(gitHubIntegration.markdownToHtml(any(), any())).thenReturn("<html></html>")
-        whenever(gitHubIntegration.markdownRender(any(), any())).thenReturn("Rendered")
+        every { gitHubIntegration.getRepository(repo.nativeId) } returns ghRepo
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) } returns
+            ReadmeFetchResult.Content("New Content")
+        every { s3ReadmeService.readReadmeRaw(projectId, repoId) } returns "# Old Content"
+        every { gitHubIntegration.markdownToHtml(any(), any()) } returns "<html></html>"
+        every { gitHubIntegration.markdownRender(any(), any()) } returns "Rendered"
 
         uut.updateRepo(repo)
 
-        verify(s3ReadmeService, never()).readReadmeRaw(projectId, repo.idNotNull)
-        verify(gitHubIntegration).markdownToHtml(any(), any())
+        verify(exactly = 0) { s3ReadmeService.readReadmeRaw(projectId, repo.idNotNull) }
+        verify(exactly = 1) { gitHubIntegration.markdownToHtml(any(), any()) }
 
         val readmeMetadataAfter = readmeMetadataRepository.findByScmRepoId(repo.idNotNull)!!
         assert(readmeMetadataAfter.lastSyncedAt.isAfter(readmeMetadataBefore.lastSyncedAt))
@@ -167,16 +163,16 @@ class GitHubIndexingServiceReadmeUpdateTest : BaseUnitWithDbLayerTest() {
             archived = repo.archived
         )
 
-        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()))
-            .thenReturn(ReadmeFetchResult.Content("New Content"))
-        whenever(gitHubIntegration.markdownToHtml(any(), any())).thenReturn("<html></html>")
-        whenever(gitHubIntegration.markdownRender(any(), any())).thenReturn("Rendered")
+        every { gitHubIntegration.getRepository(repo.nativeId) } returns ghRepo
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) } returns
+            ReadmeFetchResult.Content("New Content")
+        every { gitHubIntegration.markdownToHtml(any(), any()) } returns "<html></html>"
+        every { gitHubIntegration.markdownRender(any(), any()) } returns "Rendered"
 
         uut.updateRepo(repo)
 
-        verify(s3ReadmeService, never()).readReadmeRaw(projectId, repo.idNotNull)
-        verify(gitHubIntegration).markdownToHtml(any(), any())
+        verify(exactly = 0) { s3ReadmeService.readReadmeRaw(projectId, repo.idNotNull) }
+        verify(exactly = 1) { gitHubIntegration.markdownToHtml(any(), any()) }
 
         val readmeMetadataAfter = readmeMetadataRepository.findByScmRepoId(repo.idNotNull)
         assert(readmeMetadataAfter != null)

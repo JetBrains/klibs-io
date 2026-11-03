@@ -1,6 +1,7 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.configuration.properties.IndexingConfigurationProperties.MavenCentralProperties.MavenCentralType
 import io.klibs.app.indexing.discoverer.impl.CentralSonatypePackageDiscoverer
@@ -21,6 +22,7 @@ import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.GitHubUser
 import io.klibs.integration.github.model.ReadmeFetchResult
+import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.androidx.GradleMetadata
 import io.klibs.integration.maven.androidx.Variant
@@ -31,6 +33,9 @@ import io.klibs.integration.maven.service.MavenStaticDataProvider
 import io.klibs.integration.maven.service.PomWithReleaseDate
 import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import java.time.Instant
 import java.time.Duration
 import java.time.temporal.ChronoUnit
@@ -46,19 +51,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.TestPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import java.sql.Timestamp
 
@@ -95,22 +92,22 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var indexingConfigurationProperties: IndexingConfigurationProperties
 
-    @MockitoBean
+    @MockkBean
     private lateinit var mavenStaticDataProvider: SonatypeCentralStaticDataProvider
 
-    @MockitoBean
+    @MockkBean
     private lateinit var googleMavenStaticDataProvider: GoogleMavenCentralMirrorStaticDataProvider
 
-    @MockitoBean
+    @MockkBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
 
-    @MockitoBean
+    @MockkBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
-    @MockitoBean
+    @MockkBean
     private lateinit var readmeContentBuilder: ReadmeContentBuilder
 
-    @MockitoBean
+    @MockkBean
     private lateinit var discoverer: CentralSonatypePackageDiscoverer
 
     @ParameterizedTest
@@ -128,8 +125,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(0L, packageRepository.count())
         assertEquals(0L, rejectedMavenCoordinateRepository.count())
         assertEquals(0L, userRequestReportRepository.count())
-        verify(mavenStaticDataProvider, never()).getPomWithReleaseDate(any())
-        verify(mavenStaticDataProvider, never()).getKotlinToolingMetadata(any())
+        verify(exactly = 0) { mavenStaticDataProvider.getPomWithReleaseDate(any()) }
+        verify(exactly = 0) { mavenStaticDataProvider.getKotlinToolingMetadata(any()) }
         assertFalse(uut.processPackageQueue())
     }
 
@@ -144,8 +141,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         assertEquals(0L, indexingRequestRepository.count())
         assertEquals(0L, packageRepository.count())
-        verify(mavenStaticDataProvider, never()).getPomWithReleaseDate(any())
-        verify(mavenStaticDataProvider, never()).getKotlinToolingMetadata(any())
+        verify(exactly = 0) { mavenStaticDataProvider.getPomWithReleaseDate(any()) }
+        verify(exactly = 0) { mavenStaticDataProvider.getKotlinToolingMetadata(any()) }
         val report = userRequestReportRepository.findAll().single()
         assertEquals(UserRequestIndexingStatus.FAILURE, report.indexingStatus)
         assertEquals("Artifact com.example:lib is banned", report.statusDetails)
@@ -168,8 +165,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
     @BeforeEach
     fun setUp() {
-        whenever(mavenStaticDataProvider.scraperType).thenReturn(ScraperType.CENTRAL_SONATYPE)
-        whenever(googleMavenStaticDataProvider.scraperType).thenReturn(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
+        every { mavenStaticDataProvider.scraperType } returns ScraperType.CENTRAL_SONATYPE
+        every { googleMavenStaticDataProvider.scraperType } returns ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR
     }
 
     @Test
@@ -188,7 +185,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val packageIndexRequestBeforeProcessing = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(packageIndexRequestBeforeProcessing)
 
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenThrow(RuntimeException("Mocked getPom exception"))
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } throws RuntimeException("Mocked getPom exception")
 
         val result = uut.processPackageQueue()
 
@@ -215,8 +212,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val requestBeforeProcessing = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(requestBeforeProcessing)
 
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
-            .thenThrow(MavenRateLimitedException("https://repo1.maven.org/maven2/x/y/1.0.0/y-1.0.0.pom"))
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } throws
+            MavenRateLimitedException("https://repo1.maven.org/maven2/x/y/1.0.0/y-1.0.0.pom")
 
         val result = uut.processPackageQueue()
 
@@ -238,20 +235,18 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(packageIndexRequestBeforeProcessing)
         assertEquals(ScraperType.CENTRAL_SONATYPE, packageIndexRequestBeforeProcessing.repo)
 
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn(packageIndexRequestBeforeProcessing.groupId)
-        whenever(pom.artifactId).thenReturn(packageIndexRequestBeforeProcessing.artifactId)
-        whenever(pom.version).thenReturn(packageIndexRequestBeforeProcessing.version)
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns packageIndexRequestBeforeProcessing.groupId
+        every { pom.artifactId } returns packageIndexRequestBeforeProcessing.artifactId
+        every { pom.version } returns packageIndexRequestBeforeProcessing.version!!
+        val kotlinToolingMetadata = mockk<GradleMetadata>(relaxed = true)
+        every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
-            PomWithReleaseDate(
-                pom,
-                Instant.now()
-            )
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(
+            pom,
+            Instant.now()
         )
-        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         val result = uut.processPackageQueue()
 
@@ -270,10 +265,10 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(foundPackages.get(0).groupId, packageIndexRequestBeforeProcessing.groupId)
         assertEquals(foundPackages.get(0).artifactId, packageIndexRequestBeforeProcessing.artifactId)
         assertEquals(foundPackages.get(0).version, packageIndexRequestBeforeProcessing.version)
-        verify(mavenStaticDataProvider).getPomWithReleaseDate(argThat { scraperType == ScraperType.CENTRAL_SONATYPE })
-        verify(mavenStaticDataProvider).getKotlinToolingMetadata(argThat { scraperType == ScraperType.CENTRAL_SONATYPE })
-        verify(googleMavenStaticDataProvider, never()).getPomWithReleaseDate(any())
-        verify(googleMavenStaticDataProvider, never()).getKotlinToolingMetadata(any())
+        verify(exactly = 1) { mavenStaticDataProvider.getPomWithReleaseDate(match<MavenArtifact> { it.scraperType == ScraperType.CENTRAL_SONATYPE }) }
+        verify(exactly = 1) { mavenStaticDataProvider.getKotlinToolingMetadata(match<MavenArtifact> { it.scraperType == ScraperType.CENTRAL_SONATYPE }) }
+        verify(exactly = 0) { googleMavenStaticDataProvider.getPomWithReleaseDate(any()) }
+        verify(exactly = 0) { googleMavenStaticDataProvider.getKotlinToolingMetadata(any()) }
     }
 
     @ParameterizedTest
@@ -286,15 +281,14 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
 
         val releaseTs = Instant.parse("2026-09-01T12:00:00Z")
         val scmUrl = if (hasMetadata) "https://gitlab.com/example/test-artifact" else null
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn(indexRequest.groupId)
-        whenever(pom.artifactId).thenReturn(indexRequest.artifactId)
-        whenever(pom.version).thenReturn(indexRequest.version)
-        whenever(pom.scm).thenReturn(scmUrl?.let { Scm().apply { url = it } })
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
-            .thenReturn(PomWithReleaseDate(pom, releaseTs))
-        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any()))
-            .thenAnswer { null }
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns indexRequest.groupId
+        every { pom.artifactId } returns indexRequest.artifactId
+        every { pom.version } returns indexRequest.version!!
+        every { pom.scm } returns scmUrl?.let { Scm().apply { url = it } }
+
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(pom, releaseTs)
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns null
 
         val beforeProcessing = Instant.now().truncatedTo(ChronoUnit.MILLIS)
         val result = uut.processPackageQueue()
@@ -330,7 +324,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     fun `missing pom keeps the request pending for retry`() {
         val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(indexRequest)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(null)
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns null
 
         assertTrue(uut.processPackageQueue())
 
@@ -349,7 +343,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     fun `missing pom on the last attempt rejects the coordinate`() {
         val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(indexRequest)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(null)
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns null
 
         assertTrue(uut.processPackageQueue())
 
@@ -400,33 +394,28 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val indexRequest = indexingRequestRepository.findFirstForIndexing(indexingConfigurationProperties.retry.maxAttempts)
         assertNotNull(indexRequest)
 
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn(indexRequest.groupId)
-        whenever(pom.artifactId).thenReturn(indexRequest.artifactId)
-        whenever(pom.version).thenReturn(indexRequest.version)
-
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns indexRequest.groupId
+        every { pom.artifactId } returns indexRequest.artifactId
+        every { pom.version } returns indexRequest.version!!
         // Gradle metadata stub that mimics KMP Android target reported under JVM with AGP class name
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        whenever(kotlinToolingMetadata.variants).thenReturn(
-            listOf(
-                Variant(
-                    mapOf(
-                        "org.jetbrains.kotlin.platform.type" to "jvm",
-                        // This value should be copied into KotlinToolingMetadata.ProjectTargetMetadata.target by the stub
-                        "org.jetbrains.kotlin.native.target" to "com.android.build.api.variant.impl.KotlinMultiplatformAndroidLibraryTargetImpl"
-                    )
+        val kotlinToolingMetadata = mockk<GradleMetadata>(relaxed = true)
+        every { kotlinToolingMetadata.variants } returns listOf(
+            Variant(
+                mapOf(
+                    "org.jetbrains.kotlin.platform.type" to "jvm",
+                    // This value should be copied into KotlinToolingMetadata.ProjectTargetMetadata.target by the stub
+                    "org.jetbrains.kotlin.native.target" to "com.android.build.api.variant.impl.KotlinMultiplatformAndroidLibraryTargetImpl"
                 )
             )
         )
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
 
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
-            PomWithReleaseDate(
-                pom,
-                Instant.now()
-            )
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(
+            pom,
+            Instant.now()
         )
-        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         // Act
         val result = uut.processPackageQueue()
@@ -469,7 +458,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val generatedDescription = "This is a generated description for testing"
 
         // Mock the AI service to return a predictable description
-        whenever(
+        every {
             packageDescriptionGenerator.generatePackageDescription(
                 any(), // groupId
                 any(), // artifactId
@@ -477,7 +466,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
                 any(), // minDescriptionWordCount
                 any()  // maxDescriptionWordCount
             )
-        ).thenReturn(generatedDescription)
+        } returns generatedDescription
 
         // Generate a description for the existing package
         packageDescriptionService.generateDescription(groupId, artifactId, version1)
@@ -502,20 +491,18 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(artifactId, packageIndexRequest.artifactId)
         assertEquals(version2, packageIndexRequest.version)
 
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn(groupId)
-        whenever(pom.artifactId).thenReturn(artifactId)
-        whenever(pom.version).thenReturn(version2)
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns groupId
+        every { pom.artifactId } returns artifactId
+        every { pom.version } returns version2
+        val kotlinToolingMetadata = mockk<GradleMetadata>(relaxed = true)
+        every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
-            PomWithReleaseDate(
-                pom,
-                Instant.now()
-            )
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(
+            pom,
+            Instant.now()
         )
-        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         // Process the indexing request
         val result = uut.processPackageQueue()
@@ -562,8 +549,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(generatedAtBefore, "Precondition: seeded package has a generated timestamp")
 
         // If the AI generator were ever invoked its result would be this sentinel; it must never reach the DB.
-        whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
-            .thenReturn("AI SENTINEL - must not be persisted on reindex")
+        every { packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()) } returns
+            "AI SENTINEL - must not be persisted on reindex"
 
         stubMavenFetch(groupId, artifactId, version, pomDescription = "Fresh POM description")
 
@@ -587,8 +574,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val olderVersion = "1.0.0"
 
         // Sentinel that would only appear if a regeneration wrongly fired for this non-latest version.
-        whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
-            .thenReturn("AI SENTINEL - must not be persisted for a non-latest version")
+        every { packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()) } returns
+            "AI SENTINEL - must not be persisted for a non-latest version"
 
         stubMavenFetch(groupId, artifactId, olderVersion, pomDescription = "Original POM description", releasedAt = Instant.now().minus(Duration.ofDays(30)))
 
@@ -619,8 +606,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(previousGeneratedAt, "Precondition: previous latest was generated recently (within TTL)")
 
         // Sentinel that must not be persisted: a regen within the TTL window is disallowed.
-        whenever(packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()))
-            .thenReturn("AI SENTINEL - must not be persisted within TTL")
+        every { packageDescriptionGenerator.generatePackageDescription(any(), any(), any(), any(), any()) } returns
+            "AI SENTINEL - must not be persisted within TTL"
 
         stubMavenFetch(groupId, artifactId, newVersion, pomDescription = "Fresh POM description")
 
@@ -648,18 +635,17 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         releasedAt: Instant = Instant.now(),
         provider: MavenStaticDataProvider = mavenStaticDataProvider,
     ) {
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn(groupId)
-        whenever(pom.artifactId).thenReturn(artifactId)
-        whenever(pom.version).thenReturn(version)
-        whenever(pom.description).thenReturn(pomDescription)
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        whenever(kotlinToolingMetadata.variants)
-            .thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns groupId
+        every { pom.artifactId } returns artifactId
+        every { pom.version } returns version
+        every { pom.description } returns pomDescription
+        val kotlinToolingMetadata = mockk<GradleMetadata>(relaxed = true)
+        every { kotlinToolingMetadata.variants } returns
+            listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        whenever(provider.getPomWithReleaseDate(any()))
-            .thenReturn(PomWithReleaseDate(pom, releasedAt))
-        whenever(provider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { provider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(pom, releasedAt)
+        every { provider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
     }
 
     @Test
@@ -674,24 +660,20 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val repoNativeId = 12345L
         val ownerNativeId = 67890L
 
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn(packageIndexRequest.groupId)
-        whenever(pom.artifactId).thenReturn(packageIndexRequest.artifactId)
-        whenever(pom.version).thenReturn(packageIndexRequest.version)
-        val scm = Scm()
-        scm.url = "https://github.com/$ownerLogin/$repoName"
-        whenever(pom.scm).thenReturn(scm)
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns packageIndexRequest.groupId
+        every { pom.artifactId } returns packageIndexRequest.artifactId
+        every { pom.version } returns packageIndexRequest.version!!
+        every { pom.scm } returns Scm().apply { url = "https://github.com/$ownerLogin/$repoName" }
 
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val kotlinToolingMetadata = mockk<GradleMetadata>(relaxed = true)
+        every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
-            PomWithReleaseDate(
-                pom,
-                Instant.now()
-            )
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(
+            pom,
+            Instant.now()
         )
-        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         // Mock GitHub integration to successfully create SCM entities
         val ghRepo = GitHubRepository(
@@ -707,29 +689,27 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             stars = 10,
             lastActivity = Instant.now(),
         )
-        whenever(gitHubIntegration.getRepository(ownerLogin, repoName)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getUser(ownerLogin)).thenReturn(
-            GitHubUser(
-                id = ownerNativeId,
-                login = ownerLogin,
-                type = "User",
-                name = "Test Owner",
-                company = null,
-                blog = null,
-                location = null,
-                email = null,
-                bio = null,
-                twitterUsername = null,
-                followers = 0,
-            )
+        every { gitHubIntegration.getRepository(ownerLogin, repoName) } returns ghRepo
+        every { gitHubIntegration.getUser(ownerLogin) } returns GitHubUser(
+            id = ownerNativeId,
+            login = ownerLogin,
+            type = "User",
+            name = "Test Owner",
+            company = null,
+            blog = null,
+            location = null,
+            email = null,
+            bio = null,
+            twitterUsername = null,
+            followers = 0,
         )
-        whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(null)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(repoNativeId), any()))
-            .thenReturn(ReadmeFetchResult.Content("# Test README"))
+        every { gitHubIntegration.getLicense(repoNativeId) } returns null
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, any()) } returns
+            ReadmeFetchResult.Content("# Test README")
 
         // Mock ReadmeContentBuilder to throw an exception
-        whenever(readmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()))
-            .thenThrow(RuntimeException("Mocked buildFromMarkdown exception"))
+        every { readmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()) } throws
+            RuntimeException("Mocked buildFromMarkdown exception")
 
         val result = uut.processPackageQueue()
 
@@ -769,24 +749,20 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         val repoNativeId = 12345L
         val ownerNativeId = 67890L
 
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn(packageIndexRequest.groupId)
-        whenever(pom.artifactId).thenReturn(packageIndexRequest.artifactId)
-        whenever(pom.version).thenReturn(packageIndexRequest.version)
-        val scm = Scm()
-        scm.url = "https://github.com/$ownerLogin/$repoName"
-        whenever(pom.scm).thenReturn(scm)
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns packageIndexRequest.groupId
+        every { pom.artifactId } returns packageIndexRequest.artifactId
+        every { pom.version } returns packageIndexRequest.version!!
+        every { pom.scm } returns Scm().apply { url = "https://github.com/$ownerLogin/$repoName" }
 
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val kotlinToolingMetadata = mockk<GradleMetadata>(relaxed = true)
+        every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(
-            PomWithReleaseDate(
-                pom,
-                Instant.now()
-            )
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(
+            pom,
+            Instant.now()
         )
-        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         // Mock GitHub integration to successfully create SCM entities
         val ghRepo = GitHubRepository(
@@ -802,29 +778,27 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
             stars = 10,
             lastActivity = Instant.now(),
         )
-        whenever(gitHubIntegration.getRepository(ownerLogin, repoName)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getUser(ownerLogin)).thenReturn(
-            GitHubUser(
-                id = ownerNativeId,
-                login = ownerLogin,
-                type = "User",
-                name = "Test Owner",
-                company = null,
-                blog = null,
-                location = null,
-                email = null,
-                bio = null,
-                twitterUsername = null,
-                followers = 0,
-            )
+        every { gitHubIntegration.getRepository(ownerLogin, repoName) } returns ghRepo
+        every { gitHubIntegration.getUser(ownerLogin) } returns GitHubUser(
+            id = ownerNativeId,
+            login = ownerLogin,
+            type = "User",
+            name = "Test Owner",
+            company = null,
+            blog = null,
+            location = null,
+            email = null,
+            bio = null,
+            twitterUsername = null,
+            followers = 0,
         )
-        whenever(gitHubIntegration.getLicense(repoNativeId)).thenReturn(null)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(repoNativeId), any()))
-            .thenReturn(ReadmeFetchResult.Content("# Test README"))
+        every { gitHubIntegration.getLicense(repoNativeId) } returns null
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, any()) } returns
+            ReadmeFetchResult.Content("# Test README")
 
         // Mock ReadmeContentBuilder to throw an exception
-        whenever(readmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()))
-            .thenThrow(RuntimeException("Mocked buildFromMarkdown exception"))
+        every { readmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()) } throws
+            RuntimeException("Mocked buildFromMarkdown exception")
 
         val result = uut.processPackageQueue()
 
@@ -854,17 +828,15 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     fun `should save SUCCESS report when indexing a user-originated request`() {
         val issue = saveUserOriginatedRequest(failedAttempts = 0)
 
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn("com.example")
-        whenever(pom.artifactId).thenReturn("test-artifact")
-        whenever(pom.version).thenReturn("1.0.0")
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns "com.example"
+        every { pom.artifactId } returns "test-artifact"
+        every { pom.version } returns "1.0.0"
+        val kotlinToolingMetadata = mockk<GradleMetadata>(relaxed = true)
+        every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
-            .thenReturn(PomWithReleaseDate(pom, Instant.now()))
-        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any()))
-            .thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(pom, Instant.now())
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         uut.processPackageQueue()
 
@@ -886,8 +858,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `should save FAILURE report when a user-originated request fails terminally`() {
         val issue = saveUserOriginatedRequest(failedAttempts = indexingConfigurationProperties.retry.maxAttempts - 1)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
-            .thenThrow(RuntimeException("Mocked getPom exception"))
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } throws RuntimeException("Mocked getPom exception")
 
         uut.processPackageQueue()
 
@@ -910,8 +881,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     @Test
     fun `should not save report when a user-originated request fails but can be retried`() {
         saveUserOriginatedRequest(failedAttempts = 0)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any()))
-            .thenThrow(RuntimeException("Mocked getPom exception"))
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } throws RuntimeException("Mocked getPom exception")
 
         uut.processPackageQueue()
 
@@ -928,15 +898,15 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(request)
         assertEquals("PENDING", request.status.name)
 
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn(request.groupId)
-        whenever(pom.artifactId).thenReturn(request.artifactId)
-        whenever(pom.version).thenReturn(request.version)
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        whenever(kotlinToolingMetadata.variants).thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns request.groupId
+        every { pom.artifactId } returns request.artifactId
+        every { pom.version } returns request.version!!
+        val kotlinToolingMetadata = mockk<GradleMetadata>(relaxed = true)
+        every { kotlinToolingMetadata.variants } returns listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        whenever(mavenStaticDataProvider.getPomWithReleaseDate(any())).thenReturn(PomWithReleaseDate(pom, Instant.now()))
-        whenever(mavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { mavenStaticDataProvider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(pom, Instant.now())
+        every { mavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         val processed = uut.processPackageQueue()
         assertTrue(processed)
@@ -1003,29 +973,29 @@ class OriginSelection : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var packageRepository: PackageRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var mavenStaticDataProvider: SonatypeCentralStaticDataProvider
 
-    @MockitoBean
+    @MockkBean
     private lateinit var googleMavenStaticDataProvider: GoogleMavenCentralMirrorStaticDataProvider
 
-    @MockitoBean
+    @MockkBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
 
-    @MockitoBean
+    @MockkBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
-    @MockitoBean
+    @MockkBean
     private lateinit var readmeContentBuilder: ReadmeContentBuilder
 
-    @MockitoBean
+    @MockkBean
     private lateinit var discoverer: CentralSonatypePackageDiscoverer
 
     @Test
     fun `stored Google request uses Google when origin is selected for new work`() {
         assertEquals(MavenCentralType.ORIGIN, indexingConfigurationProperties.centralSonatype.type)
-        whenever(mavenStaticDataProvider.scraperType).thenReturn(ScraperType.CENTRAL_SONATYPE)
-        whenever(googleMavenStaticDataProvider.scraperType).thenReturn(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
+        every { mavenStaticDataProvider.scraperType } returns ScraperType.CENTRAL_SONATYPE
+        every { googleMavenStaticDataProvider.scraperType } returns ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR
         val groupId = "com.example"
         val artifactId = "google-artifact"
         val version = "1.0.0"
@@ -1041,30 +1011,26 @@ class OriginSelection : BaseUnitWithDbLayerTest() {
             ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR,
             indexingRequestRepository.findById(request.idNotNull).orElseThrow().repo,
         )
-        val pom = mock<MavenPom>()
-        whenever(pom.groupId).thenReturn(groupId)
-        whenever(pom.artifactId).thenReturn(artifactId)
-        whenever(pom.version).thenReturn(version)
-        whenever(pom.description).thenReturn(null)
-        val kotlinToolingMetadata = mock<GradleMetadata>()
-        whenever(kotlinToolingMetadata.variants)
-            .thenReturn(listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js"))))
+        val pom = mockk<MavenPom>(relaxed = true)
+        every { pom.groupId } returns groupId
+        every { pom.artifactId } returns artifactId
+        every { pom.version } returns version
+        val kotlinToolingMetadata = mockk<GradleMetadata>(relaxed = true)
+        every { kotlinToolingMetadata.variants } returns
+            listOf(Variant(mapOf("org.jetbrains.kotlin.platform.type" to "js")))
         val kotlinToolingMetadataDelegate = KotlinToolingMetadataDelegateStubImpl(kotlinToolingMetadata)
-        whenever(googleMavenStaticDataProvider.getPomWithReleaseDate(any()))
-            .thenReturn(PomWithReleaseDate(pom, Instant.now()))
-        whenever(googleMavenStaticDataProvider.getKotlinToolingMetadata(any())).thenReturn(kotlinToolingMetadataDelegate)
+        every { googleMavenStaticDataProvider.getPomWithReleaseDate(any()) } returns PomWithReleaseDate(pom, Instant.now())
+        every { googleMavenStaticDataProvider.getKotlinToolingMetadata(any()) } returns kotlinToolingMetadataDelegate
 
         assertTrue(uut.processPackageQueue())
 
         assertFalse(indexingRequestRepository.existsById(request.idNotNull))
         assertNotNull(packageRepository.findByGroupIdAndArtifactIdAndVersion(groupId, artifactId, version))
-        verify(googleMavenStaticDataProvider).getPomWithReleaseDate(
-            argThat { scraperType == ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR }
-        )
-        verify(googleMavenStaticDataProvider).getKotlinToolingMetadata(
-            argThat { scraperType == ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR }
-        )
-        verify(mavenStaticDataProvider, never()).getPomWithReleaseDate(any())
-        verify(mavenStaticDataProvider, never()).getKotlinToolingMetadata(any())
+        verify(exactly = 1) { googleMavenStaticDataProvider.getPomWithReleaseDate(
+            match<MavenArtifact> { it.scraperType == ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR }) }
+        verify(exactly = 1) { googleMavenStaticDataProvider.getKotlinToolingMetadata(
+            match<MavenArtifact> { it.scraperType == ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR }) }
+        verify(exactly = 0) { mavenStaticDataProvider.getPomWithReleaseDate(any()) }
+        verify(exactly = 0) { mavenStaticDataProvider.getKotlinToolingMetadata(any()) }
     }
 }

@@ -1,6 +1,7 @@
 package io.klibs.app.service.impl
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.app.api.PluginNotifierIndexingRequest
 import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.configuration.properties.IndexingConfigurationProperties.MavenCentralProperties.MavenCentralType
@@ -15,18 +16,14 @@ import io.klibs.integration.maven.delegate.KotlinToolingMetadataDelegateStubImpl
 import io.klibs.integration.maven.dto.MavenMetadata
 import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
-import org.junit.jupiter.api.AfterEach
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.TestPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.transaction.annotation.Transactional
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -51,25 +48,25 @@ class GoogleMirrorUserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var userRequestIssueRepository: UserRequestIssueRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var googleMirrorSearchClient: GoogleMavenCentralMirrorStaticDataProvider
 
-    @MockitoBean
+    @MockkBean
     private lateinit var centralSonatypeSearchClient: SonatypeCentralStaticDataProvider
 
     @BeforeEach
     fun setUp() {
         assertEquals(MavenCentralType.GOOGLE_MIRROR, properties.centralSonatype.type)
         assertFalse(properties.centralSonatype.enabled)
-        whenever(googleMirrorSearchClient.scraperType).thenReturn(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
+        every { googleMirrorSearchClient.scraperType } returns ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR
     }
 
     @Test
     @Transactional
     fun `should validate a specific version and link its mirror request to the issue`() {
         val artifact = MavenArtifact("com.example", "lib", "1.0.0", ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
-        whenever(googleMirrorSearchClient.getKotlinToolingMetadata(artifact))
-            .thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
+        every { googleMirrorSearchClient.getKotlinToolingMetadata(artifact) } returns
+            mockk<KotlinToolingMetadataDelegateStubImpl>()
         val issue = saveIssue("1.0.0")
 
         uut.discoverAndSaveRequest(requireNotNull(issue.id))
@@ -78,7 +75,7 @@ class GoogleMirrorUserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(saved)
         assertEquals(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR, saved.repo)
         assertEquals(issue.id, saved.userRequestIssue?.id)
-        verify(googleMirrorSearchClient).getKotlinToolingMetadata(artifact)
+        verify(exactly = 1) { googleMirrorSearchClient.getKotlinToolingMetadata(artifact) }
     }
 
     @Test
@@ -91,16 +88,15 @@ class GoogleMirrorUserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
                 repo = ScraperType.CENTRAL_SONATYPE,
             )
         )
-        whenever(googleMirrorSearchClient.getMavenMetadata("com.example", "lib")).thenReturn(
+        every { googleMirrorSearchClient.getMavenMetadata("com.example", "lib") } returns
             MavenMetadata(
                 "com.example", "lib",
                 MavenMetadata.Versioning(versions = listOf("1.0.0", "2.0.0", "3.0.0"))
             )
-        )
-        whenever(googleMirrorSearchClient.getKotlinToolingMetadata(any())).thenAnswer { invocation ->
-            val artifact = invocation.getArgument<MavenArtifact>(0)
+        every { googleMirrorSearchClient.getKotlinToolingMetadata(any()) } answers {
+            val artifact = firstArg<MavenArtifact>()
             assertEquals(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR, artifact.scraperType)
-            if (artifact.version == "3.0.0") null else mock<KotlinToolingMetadataDelegateStubImpl>()
+            if (artifact.version == "3.0.0") null else mockk<KotlinToolingMetadataDelegateStubImpl>()
         }
 
         uut.discoverAndSaveRequest(requireNotNull(saveIssue(null).id))
@@ -110,7 +106,7 @@ class GoogleMirrorUserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(existing.id, requests.single { it.version == "1.0.0" }.id)
         assertEquals(ScraperType.CENTRAL_SONATYPE, requests.single { it.version == "1.0.0" }.repo)
         assertEquals(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR, requests.single { it.version == "2.0.0" }.repo)
-        verify(googleMirrorSearchClient).getMavenMetadata("com.example", "lib")
+        verify(exactly = 1) { googleMirrorSearchClient.getMavenMetadata("com.example", "lib") }
     }
 
     @Test
@@ -121,14 +117,15 @@ class GoogleMirrorUserIndexingRequestServiceTest : BaseUnitWithDbLayerTest() {
         assertNotNull(saved)
         assertEquals(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR, saved.repo)
         assertNull(saved.userRequestIssue)
-        verify(googleMirrorSearchClient, never()).getMavenMetadata(any(), any())
-        verify(googleMirrorSearchClient, never()).getKotlinToolingMetadata(any())
+        verify(exactly = 0) { googleMirrorSearchClient.getMavenMetadata(any(), any()) }
+        verify(exactly = 0) { googleMirrorSearchClient.getKotlinToolingMetadata(any()) }
     }
 
     @Test
     fun `missing mirror metadata should fail without falling back to origin`() {
-        whenever(centralSonatypeSearchClient.getKotlinToolingMetadata(any()))
-            .thenReturn(mock<KotlinToolingMetadataDelegateStubImpl>())
+        every { googleMirrorSearchClient.getKotlinToolingMetadata(any()) } returns null
+        every { centralSonatypeSearchClient.getKotlinToolingMetadata(any()) } returns
+            mockk<KotlinToolingMetadataDelegateStubImpl>()
 
         val exception = assertThrows<UserRequestProcessingException> {
             uut.discoverAndSaveRequest(requireNotNull(saveIssue("1.0.0").id))
