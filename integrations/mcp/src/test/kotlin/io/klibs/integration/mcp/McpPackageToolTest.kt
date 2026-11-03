@@ -5,16 +5,16 @@ import io.klibs.integration.mcp.dto.service.McpPackageLatestVersionResultDto
 import io.klibs.integration.mcp.mapper.McpToolMapper
 import io.klibs.integration.mcp.service.McpPackageService
 import io.klibs.integration.mcp.tool.McpPackageTool
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class McpPackageToolTest {
 
-    private val mcpPackageService = mock<McpPackageService>()
+    private val mcpPackageService = mockk<McpPackageService>()
     private val mcpToolMapper = McpToolMapper()
     private val mcpPackageTool = McpPackageTool(mcpPackageService, mcpToolMapper)
 
@@ -30,8 +30,7 @@ class McpPackageToolTest {
             packageFound = false
         )
 
-        whenever(mcpPackageService.getLatestVersion(groupId, artifactId))
-            .thenReturn(serviceResult)
+        every { mcpPackageService.getLatestVersion(groupId, artifactId) } returns serviceResult
 
         val result = mcpPackageTool.getLatestVersion(groupId, artifactId)
 
@@ -40,7 +39,7 @@ class McpPackageToolTest {
         assertEquals(false, result.packageFound)
         assertEquals(null, result.latestVersion)
         assertEquals(null, result.latestStableVersion)
-        verify(mcpPackageService).getLatestVersion(groupId, artifactId)
+        verify(exactly = 1) { mcpPackageService.getLatestVersion(groupId, artifactId) }
     }
 
     @Test
@@ -55,8 +54,7 @@ class McpPackageToolTest {
             packageFound = true
         )
 
-        whenever(mcpPackageService.getLatestVersion(groupId, artifactId))
-            .thenReturn(serviceResult)
+        every { mcpPackageService.getLatestVersion(groupId, artifactId) } returns serviceResult
 
         val result = mcpPackageTool.getLatestVersion(groupId, artifactId)
 

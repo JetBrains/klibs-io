@@ -2,20 +2,20 @@ package io.klibs.integration.maven.search.impl
 
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.service.impl.BaseMavenStaticDataProvider
+import io.mockk.mockk
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.time.Instant
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
 
 class BaseMavenStaticDataProviderURLBuilderTest {
 
     private val client = object : BaseMavenStaticDataProvider(
-        xmlMapper = mock(),
-        rateLimiter = mock(),
-        logger = mock(),
-        objectMapper = mock(),
-        clientTransport = mock(),
+        xmlMapper = mockk(),
+        rateLimiter = mockk(),
+        logger = mockk(),
+        objectMapper = mockk(),
+        clientTransport = mockk(),
     ) {
         override fun getContentUrlPrefix(): String = "https://example.com/repo/"
         override fun parseReleasedAt(value: Map<String, String>): Instant {

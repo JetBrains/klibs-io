@@ -8,19 +8,17 @@ import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.core.search.service.SearchService
 import io.klibs.integration.mcp.service.McpProjectSearchService
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class McpProjectSearchServiceTest {
 
-    private val searchService = mock<SearchService>()
-    private val packageService = mock<PackageService>()
+    private val searchService = mockk<SearchService>()
+    private val packageService = mockk<PackageService>()
     private val uut = McpProjectSearchService(searchService, packageService)
 
     @Test
@@ -31,11 +29,9 @@ class McpProjectSearchServiceTest {
             ownerLogin = "KStateMachine",
         )
 
-        whenever(
-            searchService.search(
-                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
-            )
-        ).thenReturn(listOf(projectResult))
+        every {
+            searchService.search(any(), any(), any(), any(), any(), any(), any(), any())
+        } returns listOf(projectResult)
 
         val packageOverview = createPackageOverview(
             groupId = "io.github.kstatemachine",
@@ -44,8 +40,7 @@ class McpProjectSearchServiceTest {
             latestStableVersion = "0.31.1",
             description = "KStateMachine core module"
         )
-        whenever(packageService.getLatestPackagesByProjectId(1))
-            .thenReturn(listOf(packageOverview))
+        every { packageService.getLatestPackagesByProjectId(1) } returns listOf(packageOverview)
 
         val result = uut.mcpProjectSearch(
             query = "state machine",
@@ -67,11 +62,9 @@ class McpProjectSearchServiceTest {
 
     @Test
     fun `searchProjects returns empty list when no projects found`() {
-        whenever(
-            searchService.search(
-                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
-            )
-        ).thenReturn(emptyList())
+        every {
+            searchService.search(any(), any(), any(), any(), any(), any(), any(), any())
+        } returns emptyList()
 
         val result = uut.mcpProjectSearch(
             query = "nonexistent",
@@ -85,16 +78,14 @@ class McpProjectSearchServiceTest {
     fun `searchProjects caps packages at the default limit and reports totalPackages`() {
         val projectResult = createSearchProjectResult(id = 1, name = "big-project", ownerLogin = "owner")
 
-        whenever(
-            searchService.search(
-                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
-            )
-        ).thenReturn(listOf(projectResult))
+        every {
+            searchService.search(any(), any(), any(), any(), any(), any(), any(), any())
+        } returns listOf(projectResult)
 
         val packages = (1..25).map { i ->
             createPackageOverview("group", "artifact-$i", "1.0.0")
         }
-        whenever(packageService.getLatestPackagesByProjectId(1)).thenReturn(packages)
+        every { packageService.getLatestPackagesByProjectId(1) } returns packages
 
         val result = uut.mcpProjectSearch(
             query = "big",
@@ -110,16 +101,14 @@ class McpProjectSearchServiceTest {
     fun `searchProjects honours an explicit maxPackagesPerProject`() {
         val projectResult = createSearchProjectResult(id = 1, name = "big-project", ownerLogin = "owner")
 
-        whenever(
-            searchService.search(
-                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
-            )
-        ).thenReturn(listOf(projectResult))
+        every {
+            searchService.search(any(), any(), any(), any(), any(), any(), any(), any())
+        } returns listOf(projectResult)
 
         val packages = (1..25).map { i ->
             createPackageOverview("group", "artifact-$i", "1.0.0")
         }
-        whenever(packageService.getLatestPackagesByProjectId(1)).thenReturn(packages)
+        every { packageService.getLatestPackagesByProjectId(1) } returns packages
 
         val result = uut.mcpProjectSearch(
             query = "big",
@@ -135,17 +124,15 @@ class McpProjectSearchServiceTest {
     fun `searchProjects orders packages by dependent count then newest first`() {
         val projectResult = createSearchProjectResult(id = 1, name = "proj", ownerLogin = "owner")
 
-        whenever(
-            searchService.search(
-                anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()
-            )
-        ).thenReturn(listOf(projectResult))
+        every {
+            searchService.search(any(), any(), any(), any(), any(), any(), any(), any())
+        } returns listOf(projectResult)
 
         // popular is older but most-depended; newerNiche is newest but unused; oldNiche ties on 0 dependents
         val popular = createPackageOverview("group", "popular", "1.0.0", dependentCount = 42, releasedAt = Instant.parse("2020-01-01T00:00:00Z"))
         val newerNiche = createPackageOverview("group", "newer-niche", "2.0.0", dependentCount = 0, releasedAt = Instant.parse("2024-01-01T00:00:00Z"))
         val oldNiche = createPackageOverview("group", "old-niche", "1.0.0", dependentCount = 0, releasedAt = Instant.parse("2019-01-01T00:00:00Z"))
-        whenever(packageService.getLatestPackagesByProjectId(1)).thenReturn(listOf(oldNiche, newerNiche, popular))
+        every { packageService.getLatestPackagesByProjectId(1) } returns listOf(oldNiche, newerNiche, popular)
 
         val result = uut.mcpProjectSearch(
             query = "proj",

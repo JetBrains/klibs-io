@@ -7,14 +7,14 @@ import io.klibs.integration.maven.service.impl.CentralSonatypeScraper
 import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorScraper
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
 import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -29,8 +29,8 @@ class CentralSonatypeScraperTest {
 
     @BeforeEach
     fun setUp() {
-        mockCentralSonatypeClient = mock<SonatypeCentralStaticDataProvider>()
-        mockGoogleMirrorClient = mock<GoogleMavenCentralMirrorStaticDataProvider>()
+        mockCentralSonatypeClient = mockk<SonatypeCentralStaticDataProvider>()
+        mockGoogleMirrorClient = mockk<GoogleMavenCentralMirrorStaticDataProvider>()
         centralSonatypeScraper = CentralSonatypeScraper(mockCentralSonatypeClient)
         googleMirrorScraper = GoogleMavenCentralMirrorScraper(mockGoogleMirrorClient)
         errorChannel = Channel(Channel.UNLIMITED)
@@ -54,8 +54,7 @@ class CentralSonatypeScraperTest {
             )
         )
 
-        whenever(mockCentralSonatypeClient.getMavenMetadata("org.example", "example-artifact"))
-            .thenReturn(metadata)
+        every { mockCentralSonatypeClient.getMavenMetadata("org.example", "example-artifact") } returns metadata
 
         // Act
         val result = centralSonatypeScraper.findNewVersions(knownArtifacts, errorChannel).toList()
@@ -88,8 +87,7 @@ class CentralSonatypeScraperTest {
             )
         )
 
-        whenever(mockCentralSonatypeClient.getMavenMetadata("org.example", "example-artifact"))
-            .thenReturn(metadata)
+        every { mockCentralSonatypeClient.getMavenMetadata("org.example", "example-artifact") } returns metadata
 
         // Act
         val result = centralSonatypeScraper.findNewVersions(knownArtifacts, errorChannel).toList()
@@ -106,8 +104,7 @@ class CentralSonatypeScraperTest {
             "org.example:example-artifact" to setOf("1.0.0")
         )
 
-        whenever(mockCentralSonatypeClient.getMavenMetadata("org.example", "example-artifact"))
-            .thenReturn(null)
+        every { mockCentralSonatypeClient.getMavenMetadata("org.example", "example-artifact") } returns null
 
         // Act
         val result = centralSonatypeScraper.findNewVersions(knownArtifacts, errorChannel).toList()
@@ -130,8 +127,7 @@ class CentralSonatypeScraperTest {
             )
         )
 
-        whenever(mockGoogleMirrorClient.getMavenMetadata("org.example", "example-artifact"))
-            .thenReturn(metadata)
+        every { mockGoogleMirrorClient.getMavenMetadata("org.example", "example-artifact") } returns metadata
 
         val result = googleMirrorScraper.findNewVersions(knownArtifacts, errorChannel).toList()
 
@@ -145,8 +141,8 @@ class CentralSonatypeScraperTest {
             "org.example:example-artifact" to setOf("1.0.0")
         )
 
-        whenever(mockCentralSonatypeClient.getMavenMetadata("org.example", "example-artifact"))
-            .thenThrow(RuntimeException("Network error"))
+        every { mockCentralSonatypeClient.getMavenMetadata("org.example", "example-artifact") } throws
+                RuntimeException("Network error")
 
         // Act
         val result = centralSonatypeScraper.findNewVersions(knownArtifacts, errorChannel).toList()

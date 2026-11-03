@@ -2,6 +2,9 @@ package io.klibs.integration.github
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -11,8 +14,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.kohsuke.github.GitHub
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
 
 /**
  * Per-HTTP-request counting (`klibs.github.requests`) lives on an OkHttp interceptor and is
@@ -20,12 +21,12 @@ import org.mockito.junit.jupiter.MockitoExtension
  * library-level metrics — the `klibs.github.request.time` timer and the
  * `klibs.github.lastSuccessfulRequestTime` gauge.
  */
-@ExtendWith(MockitoExtension::class)
+@ExtendWith(MockKExtension::class)
 class GitHubMetricsTest {
 
     private lateinit var meterRegistry: SimpleMeterRegistry
 
-    @Mock
+    @MockK
     private lateinit var githubApi: GitHub
 
     private lateinit var gitHubIntegration: GitHubIntegration
@@ -50,6 +51,8 @@ class GitHubMetricsTest {
 
     @Test
     fun `records request time timer for kohsuke-backed call`() {
+        every { githubApi.getRepository("kotlin/dokka") } returns null
+
         gitHubIntegration.getRepository("kotlin", "dokka")
 
         val timer = meterRegistry.timer("klibs.github.request.time")
@@ -66,6 +69,8 @@ class GitHubMetricsTest {
         Thread.sleep(10)
         val initialValue = gauge.value()
         assertTrue(initialValue >= 10, "Initial gauge value should be at least 10ms. Actual: $initialValue")
+
+        every { githubApi.getRepository("kotlin/dokka") } returns null
 
         gitHubIntegration.getRepository("kotlin", "dokka")
 
