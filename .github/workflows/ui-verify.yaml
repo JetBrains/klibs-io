@@ -38,7 +38,7 @@ jobs:
       - run: npm run test:visual
       - name: Upload to UI Verify
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-        run: npx -y uiverify@1.7.0 upload --static-dir ./uiverify-archive --only-changed
+        run: npx -y uiverify@1.8.1 upload --static-dir ./uiverify-archive --only-changed
         env:
           UIVERIFY_API_KEY: ${{ secrets.UIVERIFY_API_KEY }}
       - name: Save the capture for the upload workflow
