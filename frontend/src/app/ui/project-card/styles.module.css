@@ -124,10 +124,6 @@
     gap: 4px;
 }
 
-.highlight {
-    display: inline;
-    background-color: #ffd603;
-}
 
 .featuredProject {
     background: #F3F1F3 radial-gradient(70.71% 70.71% at 0% 0%, rgba(161, 170, 255, 0.33) 0%, rgba(255, 255, 255, 0.00) 100%) !important;

@@ -12,9 +12,10 @@ import styles from './styles.module.css';
 interface CompareToggleProps {
     ownerLogin: string;
     name: string;
+    className?: string;
 }
 
-export default function CompareToggle({ownerLogin, name}: CompareToggleProps) {
+export default function CompareToggle({ownerLogin, name, className}: CompareToggleProps) {
     const compare = useCompare();
     if (!compare) return null;
 
@@ -37,7 +38,7 @@ export default function CompareToggle({ownerLogin, name}: CompareToggleProps) {
     };
 
     return (
-        <label className={styles.toggle} onClick={onClick} onKeyDown={onKeyDown}
+        <label className={cn(styles.toggle, className)} onClick={onClick} onKeyDown={onKeyDown}
                onKeyUp={e => e.key === ' ' && e.preventDefault()} onMouseDown={e => e.preventDefault()}>
             <span className={cn(textCn('rs-text-3'), {[styles.checkedLabel]: checked})}>
                 {checked ? `Compare (${compare.items.length})` : 'Compare'}

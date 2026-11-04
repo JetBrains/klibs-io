@@ -1,6 +1,6 @@
 import { render } from 'vitest-browser-react';
 import { page } from 'vitest/browser';
-import { expect, test, vi } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
 
 import { searchPackages, searchProjects } from '@/app/api';
 import { homeCategories, networkingProjects, serializationPackages } from '@/test/fixtures';
@@ -9,6 +9,12 @@ import PageContent from './page-content';
 
 vi.mock('@/app/api', () => import('@/test/api'));
 vi.mock('@/app/ui/grant-winner-banner/background-squares', () => ({ BackgroundSquares: () => null }));
+
+beforeEach(() => {
+    // Search result cards render the latest release date relative to now
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.UTC(2025, 2, 1));
+});
 
 const renderHome = async (search: string) => {
     const categoryWithProjects = homeCategories();

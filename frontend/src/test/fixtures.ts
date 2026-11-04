@@ -29,6 +29,7 @@ export const projectSearchResult = (
     targetGroups: { JVM: ['11', '17'] },
     tags: ['functional-programming'],
     markers: [],
+    dependentCount: 100,
     ...overrides,
 });
 

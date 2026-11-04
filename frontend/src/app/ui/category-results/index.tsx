@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Category, ProjectSearchResults } from "@/app/types";
 import { searchProjects } from "@/app/api";
 import Container from "@/app/ui/container";
-import ProjectCard from "@/app/ui/project-card";
+import ProjectCardHorizontal from "@/app/ui/project-card-horizontal";
 import KodeeSpinner from "@/app/ui/kodee-spinner";
 import KodeeSad from "@/app/img/kodee/kodee-sad.png";
 import { textCn } from "@rescui/typography";
@@ -101,9 +101,9 @@ export default function CategoryResults({ category, searchQuery }: CategoryResul
                     </div>
                 </div>
             ) : projects.length > 0 ? (
-                <Container mode="wrapper" cardGrid>
+                <Container mode="wrapper" cardColumn>
                     {projects.map((project) => (
-                        <ProjectCard key={project.id} featuredProject={project} />
+                        <ProjectCardHorizontal key={project.id} project={project} search={searchQuery} />
                     ))}
                     <div ref={loadMoreRef}></div>
                 </Container>

@@ -1,0 +1,27 @@
+.details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+}
+
+.row {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+    padding: 8px 12px;
+    background: #f4f4f4;
+}
+
+.label {
+    flex-shrink: 0;
+    width: 107px;
+    margin: 0;
+    font-weight: 400;
+}
+
+.value {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+}

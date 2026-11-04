@@ -52,6 +52,7 @@ const project = (id: number): ProjectSearchResults => ({
     targetGroups: {},
     tags: [],
     markers: [],
+    dependentCount: 0,
 });
 
 const category = (name: string, projectCount: number): CategoryWithProjects => ({

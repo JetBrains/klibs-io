@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from 'next/link';
 import cn from 'classnames';
-import ProjectCard from "@/app/ui/project-card";
-import PackageCard from "@/app/ui/package-card";
+import ProjectCardHorizontal from "@/app/ui/project-card-horizontal";
+import PackageCardHorizontal from "@/app/ui/package-card-horizontal";
 import KodeeSpinner from "@/app/ui/kodee-spinner";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { PackageSearchResults, ProjectSearchResults, SearchParams } from "@/app/types";
@@ -140,14 +140,14 @@ export function SearchResults({ filters, setFilters, updateURLFromState, isPacka
                         updateURLFromState={updateURLFromState}
                     />
                 }
-                <Container mode="wrapper" cardGrid>
+                <Container mode="wrapper" cardColumn>
                     {/*Search results cards*/}
                     {isPackageSearch
                         ? packages?.map((item) => (
-                            <PackageCard search={filters?.query} featuredPackage={item} key={item.id} />
+                            <PackageCardHorizontal search={filters?.query} pkg={item} key={item.id} />
                         ))
                         : projects?.map((item) => (
-                            <ProjectCard search={filters?.query} featuredProject={item} key={item.id} />
+                            <ProjectCardHorizontal search={filters?.query} project={item} key={item.id} />
                         ))
                     }
 
