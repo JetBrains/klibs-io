@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import cn from 'classnames';
 import { isFeaturedProject, isGrantWinner, kFormatter } from "@/app/types";
 import { getProjectLink, getTargetGroupNames, ProjectSearchResults } from "@/app/types";
@@ -22,10 +23,10 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 	const projectLink = featuredProject ? getProjectLink(featuredProject) : null;
 
 	const hasTags = featuredProject && featuredProject.tags && featuredProject.tags.length > 0;
-	const tagsContent = featuredProject && featuredProject.tags && featuredProject.tags.map((tag, i) => <>
+	const tagsContent = featuredProject && featuredProject.tags && featuredProject.tags.map((tag, i) => <Fragment key={tag}>
 		{i !== 0 ? ', ' : null}
-		<SearchTextWrap key={tag} search={search}>{`#${tag}`}</SearchTextWrap>
-	</>);
+		<SearchTextWrap search={search}>{`#${tag}`}</SearchTextWrap>
+	</Fragment>);
 
 	const showGrantWinner = featuredProject && isGrantWinner(featuredProject);
 	const showFeaturedProject = featuredProject && isFeaturedProject(featuredProject);
