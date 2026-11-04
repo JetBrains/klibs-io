@@ -16,7 +16,6 @@ dependencies:
 
 test-dependencies:
   - $libs.mockk
-  - $libs.mockito.kotlin
 
 settings:
   kotlin:

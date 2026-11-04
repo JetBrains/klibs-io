@@ -30,7 +30,6 @@ maven-indexer = "7.1.6"
 # Search engine
 opensearch-java = "3.9.0"
 
-mockito = "5.1.0"
 mockk = "1.14.11"
 springmockk = "5.0.1"
 testcontainers = "1.21.4"
@@ -86,8 +85,6 @@ maven-indexer-search-backend-indexer = {module="org.apache.maven.indexer:search-
 
 opensearch-java = { module = "org.opensearch.client:opensearch-java", version.ref = "opensearch-java" }
 
-mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito" }
 mockk = { module = "io.mockk:mockk-jvm", version.ref = "mockk" }
 springmockk = { module = "com.ninja-squad:springmockk", version.ref = "springmockk" }
 

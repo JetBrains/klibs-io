@@ -2,7 +2,5 @@ apply:
   - ./spring.module-template.yaml
 
 test-dependencies:
-  - $libs.mockito
-  - $libs.mockito.kotlin
   - $libs.mockk
   - $libs.springmockk
