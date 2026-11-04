@@ -36,7 +36,7 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 		// Solution for <Link> href error: https://stackoverflow.com/questions/66821351/nextjs-error-message-failed-prop-type-the-prop-href-expects-a-string-or-o
 		<Link
 			className={cn(cardCn({
-				isClickable: true, paddings: 16,
+				isClickable: true, paddings: 16, disableBorder: true
 			}), styles.card, className, {
 				[styles.featuredProject]: showFeaturedProject,
 				[styles.grantProject]: showGrantWinner
@@ -73,14 +73,14 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 											{showGrantWinner &&
 												<div className={styles.featuredWrapper}>
 													<WinIcon size={'m'} className={styles.featuredIcon} />
-													<span className={cn('rs-h5', styles.featuredTitle)}>Kotlin grant winner</span>
+													<span className={cn(textCn('rs-h5'), styles.featuredTitle)}>Kotlin grant winner</span>
 												</div>
 											}
 
 											{showFeaturedProject && !showGrantWinner &&
 												<div className={styles.featuredWrapper}>
 													<RocketIcon size={'m'} className={styles.featuredIcon} />
-													<span className={cn('rs-h5', styles.featuredTitle)}>Featured</span>
+													<span className={cn(textCn('rs-h5'), styles.featuredTitle)}>Featured</span>
 												</div>
 											}
 										</div>

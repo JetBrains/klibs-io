@@ -1,4 +1,4 @@
-import type {ResolvingMetadata} from "next";
+import type {Metadata, ResolvingMetadata} from "next";
 import {socialMetadata} from "@/app/helpers";
 import AuthorPageContent from './author-page-content'
 import {getOwnerDetails, searchProjects} from "@/app/api";
@@ -8,10 +8,12 @@ type MetadataParamsProps = {
     login: string;
 };
 
-export async function generateMetadata({params}: { params: MetadataParamsProps }, parent: ResolvingMetadata) {
-    const author = await getOwnerDetails<OwnerAuthor>(params.login);
+export async function generateMetadata({params}: { params: Promise<MetadataParamsProps> }, parent: ResolvingMetadata): Promise<Metadata> {
+    const {login} = await params;
 
-    const title = author?.name || params.login;
+    const author = await getOwnerDetails<OwnerAuthor>(login);
+
+    const title = author?.name || login;
     const description = author?.description || '';
 
     return {
@@ -21,10 +23,12 @@ export async function generateMetadata({params}: { params: MetadataParamsProps }
     };
 }
 
-export default async function Page({params}: { params: MetadataParamsProps }) {
+export default async function Page({params}: { params: Promise<MetadataParamsProps> }) {
+    const {login} = await params;
+
     const [author, projects] = await Promise.all([
-        getOwnerDetails<OwnerAuthor>(params.login),
-        searchProjects({owner: params.login, page: 1}),
+        getOwnerDetails<OwnerAuthor>(login),
+        searchProjects({owner: login, page: 1}),
     ]);
 
     return (

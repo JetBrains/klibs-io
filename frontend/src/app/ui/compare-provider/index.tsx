@@ -45,7 +45,7 @@ export default function CompareProvider({children}: { children: ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const [items, setItems] = useState<CompareBarItem[]>([]);
-    const returnUrl = useRef<string>();
+    const returnUrl = useRef<string>(undefined);
 
     const toggle = useCallback((item: CompareBarItem) => setItems(current => {
         if (current.some(it => isSame(it, item))) return current.filter(it => !isSame(it, item));
