@@ -3,9 +3,9 @@ package io.klibs.core.search.opensearch.metrics
 import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
 import io.klibs.core.search.opensearch.OpenSearchIndexer
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 class SearchIndexMetricsTest {
 
     private val registry = SimpleMeterRegistry()
-    private val indexer = mock<OpenSearchIndexer>()
+    private val indexer = mockk<OpenSearchIndexer>()
 
     private val project = spec("project")
     private val packages = spec("package")
@@ -25,7 +25,7 @@ class SearchIndexMetricsTest {
 
     @Test
     fun `freshness is the age of the index the alias serves, not of this pod's last rebuild`() {
-        whenever(indexer.servingIndexCreatedAt(project)).thenReturn(Instant.now().minusSeconds(120))
+        every { indexer.servingIndexCreatedAt(project) } returns Instant.now().minusSeconds(120)
 
         // No rebuild happened on this pod: the pod that lost the ShedLock race still reports the age.
         assertEquals(120.0, gauge("klibs.search.index.age.seconds", "project"))
@@ -33,9 +33,9 @@ class SearchIndexMetricsTest {
 
     @Test
     fun `a failed read reports no freshness, and the next scrape reads the cluster again`() {
-        whenever(indexer.servingIndexCreatedAt(project))
-            .thenThrow(RuntimeException("cluster is down"))
-            .thenReturn(Instant.now().minusSeconds(30))
+        every {
+            indexer.servingIndexCreatedAt(project)
+        } throws RuntimeException("cluster is down") andThen Instant.now().minusSeconds(30)
 
         assertTrue(gauge("klibs.search.index.age.seconds", "project").isNaN())
         assertEquals(30.0, gauge("klibs.search.index.age.seconds", "project"))
@@ -43,14 +43,14 @@ class SearchIndexMetricsTest {
 
     @Test
     fun `an alias serving no index reports no freshness`() {
-        whenever(indexer.servingIndexCreatedAt(project)).thenReturn(null)
+        every { indexer.servingIndexCreatedAt(project) } returns null
 
         assertTrue(gauge("klibs.search.index.age.seconds", "project").isNaN())
     }
 
     @Test
     fun `the document count is the one the alias serves, not of this pod's last rebuild`() {
-        whenever(indexer.servingDocCount(project)).thenReturn(1_234)
+        every { indexer.servingDocCount(project) } returns 1_234
 
         // No rebuild happened on this pod: the pod that lost the ShedLock race still reports the count.
         assertEquals(1_234.0, gauge("klibs.search.index.docs", "project"))
@@ -60,7 +60,7 @@ class SearchIndexMetricsTest {
 
     @Test
     fun `an unreadable document count reports no value rather than zero`() {
-        whenever(indexer.servingDocCount(project)).thenThrow(RuntimeException("cluster is down"))
+        every { indexer.servingDocCount(project) } throws RuntimeException("cluster is down")
 
         assertTrue(gauge("klibs.search.index.docs", "project").isNaN())
     }
@@ -75,8 +75,8 @@ class SearchIndexMetricsTest {
 
     @Test
     fun `indices are reported separately`() {
-        whenever(indexer.servingDocCount(project)).thenReturn(10)
-        whenever(indexer.servingDocCount(packages)).thenReturn(20)
+        every { indexer.servingDocCount(project) } returns 10
+        every { indexer.servingDocCount(packages) } returns 20
         metrics.recordSuccess(project, took = Duration.ofSeconds(1))
         metrics.recordFailure(packages)
 

@@ -1,17 +1,13 @@
 package io.klibs.app.controller
 
 import SmokeTestBase
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.app.service.UserIssueNotifier
 import io.klibs.app.service.impl.UserRequestService
-import io.klibs.core.pckg.dto.UserIndexingRequestDto
+import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.post
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -23,10 +19,10 @@ import javax.crypto.spec.SecretKeySpec
 )
 class GitHubWebhookControllerTest : SmokeTestBase() {
 
-    @MockitoBean
+    @MockkBean(relaxUnitFun = true)
     private lateinit var userRequestService: UserRequestService
 
-    @MockitoBean
+    @MockkBean(relaxUnitFun = true)
     private lateinit var userIssueNotifier: UserIssueNotifier
 
     @Test
@@ -48,9 +44,11 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
             status { isAccepted() }
         }
 
-        verify(userRequestService).processRequest(argThat<UserIndexingRequestDto> {
-            githubIssueNumber == 42 && groupId == "org.example" && artifactId == "lib"
-        })
+        verify(exactly = 1) {
+            userRequestService.processRequest(match {
+                it.githubIssueNumber == 42 && it.groupId == "org.example" && it.artifactId == "lib"
+            })
+        }
     }
 
     @Test
@@ -66,7 +64,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
             status { isUnauthorized() }
         }
 
-        verify(userRequestService, never()).processRequest(any())
+        verify(exactly = 0) { userRequestService.processRequest(any()) }
     }
 
     @Test
@@ -82,7 +80,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
             status { isOk() }
         }
 
-        verify(userRequestService, never()).processRequest(any())
+        verify(exactly = 0) { userRequestService.processRequest(any()) }
     }
 
     @Test
@@ -103,7 +101,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
             status { isNoContent() }
         }
 
-        verify(userRequestService, never()).processRequest(any())
+        verify(exactly = 0) { userRequestService.processRequest(any()) }
     }
 
     @Test
@@ -119,7 +117,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
             status { isNoContent() }
         }
 
-        verify(userRequestService, never()).processRequest(any())
+        verify(exactly = 0) { userRequestService.processRequest(any()) }
     }
 
     @Test
@@ -140,7 +138,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
             status { isNoContent() }
         }
 
-        verify(userRequestService, never()).processRequest(any())
+        verify(exactly = 0) { userRequestService.processRequest(any()) }
     }
 
     @Test
@@ -156,7 +154,7 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
             status { isBadRequest() }
         }
 
-        verify(userRequestService, never()).processRequest(any())
+        verify(exactly = 0) { userRequestService.processRequest(any()) }
     }
 
     @Test
@@ -178,8 +176,8 @@ class GitHubWebhookControllerTest : SmokeTestBase() {
             status { isBadRequest() }
         }
 
-        verify(userRequestService, never()).processRequest(any())
-        verify(userIssueNotifier).notifyFailure(99, null)
+        verify(exactly = 0) { userRequestService.processRequest(any()) }
+        verify(exactly = 1) { userIssueNotifier.notifyFailure(99, null) }
     }
 
     private fun labeledPayload(number: Int, labels: List<String>, addedLabel: String, body: String): ByteArray {

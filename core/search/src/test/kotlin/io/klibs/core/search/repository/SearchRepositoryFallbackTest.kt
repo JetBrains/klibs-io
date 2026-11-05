@@ -8,14 +8,12 @@ import io.klibs.core.search.dto.repository.SearchPackageResult
 import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.core.search.opensearch.metrics.SearchQueryMetrics
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class SearchRepositoryFallbackTest {
@@ -26,18 +24,19 @@ class SearchRepositoryFallbackTest {
     private val projectSpec = spec("project")
     private val packageSpec = spec("package")
 
-    private val openSearchProjects = mock<ProjectSearchRepositoryOpenSearch>()
-    private val postgresProjects = mock<ProjectSearchRepositoryJdbc>()
+    private val openSearchProjects = mockk<ProjectSearchRepositoryOpenSearch>()
+    private val postgresProjects = mockk<ProjectSearchRepositoryJdbc>()
     private val projects = ProjectSearchRepositoryFallback(openSearchProjects, postgresProjects, projectSpec, metrics)
 
-    private val openSearchPackages = mock<PackageSearchRepositoryOpenSearch>()
-    private val postgresPackages = mock<PackageSearchRepositoryJdbc>()
+    private val openSearchPackages = mockk<PackageSearchRepositoryOpenSearch>()
+    private val postgresPackages = mockk<PackageSearchRepositoryJdbc>()
     private val packages = PackageSearchRepositoryFallback(openSearchPackages, postgresPackages, packageSpec, metrics)
 
     @Test
     fun `project search returns OpenSearch results while OpenSearch is healthy`() {
-        whenever(openSearchProjects.find(anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()))
-            .thenReturn(listOf(project(1)))
+        every {
+            openSearchProjects.find(any(), any(), any(), any(), any(), any(), any(), any())
+        } returns listOf(project(1))
 
         assertEquals(listOf(project(1)), findProjects())
         assertNull(fallbacks("project"))
@@ -45,10 +44,12 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `project search falls back to PostgreSQL when OpenSearch fails`() {
-        whenever(openSearchProjects.find(anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()))
-            .thenThrow(RuntimeException("connection refused"))
-        whenever(postgresProjects.find(anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()))
-            .thenReturn(listOf(project(2)))
+        every {
+            openSearchProjects.find(any(), any(), any(), any(), any(), any(), any(), any())
+        } throws RuntimeException("connection refused")
+        every {
+            postgresProjects.find(any(), any(), any(), any(), any(), any(), any(), any())
+        } returns listOf(project(2))
 
         assertEquals(listOf(project(2)), findProjects())
         assertEquals(1.0, fallbacks("project")?.count())
@@ -56,8 +57,9 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `project search propagates sorts OpenSearch cannot serve instead of masking them`() {
-        whenever(openSearchProjects.find(anyOrNull(), any(), anyOrNull(), any(), any(), any(), any(), any()))
-            .thenThrow(UnsupportedOperationException("MOST_HEALTHY is not supported by OpenSearch"))
+        every {
+            openSearchProjects.find(any(), any(), any(), any(), any(), any(), any(), any())
+        } throws UnsupportedOperationException("MOST_HEALTHY is not supported by OpenSearch")
 
         assertThrows<UnsupportedOperationException> { findProjects(SearchSort.MOST_HEALTHY) }
         // A sort OpenSearch cannot serve is not degraded serving.
@@ -66,18 +68,21 @@ class SearchRepositoryFallbackTest {
 
     @Test
     fun `package search returns OpenSearch results while OpenSearch is healthy`() {
-        whenever(openSearchPackages.find(anyOrNull(), any(), anyOrNull(), any(), any(), any()))
-            .thenReturn(listOf(pckg("a")))
+        every {
+            openSearchPackages.find(any(), any(), any(), any(), any(), any())
+        } returns listOf(pckg("a"))
 
         assertEquals(listOf(pckg("a")), findPackages())
     }
 
     @Test
     fun `package search falls back to PostgreSQL when OpenSearch fails`() {
-        whenever(openSearchPackages.find(anyOrNull(), any(), anyOrNull(), any(), any(), any()))
-            .thenThrow(RuntimeException("connection refused"))
-        whenever(postgresPackages.find(anyOrNull(), any(), anyOrNull(), any(), any(), any()))
-            .thenReturn(listOf(pckg("b")))
+        every {
+            openSearchPackages.find(any(), any(), any(), any(), any(), any())
+        } throws RuntimeException("connection refused")
+        every {
+            postgresPackages.find(any(), any(), any(), any(), any(), any())
+        } returns listOf(pckg("b"))
 
         assertEquals(listOf(pckg("b")), findPackages())
         assertEquals(1.0, fallbacks("package")?.count())

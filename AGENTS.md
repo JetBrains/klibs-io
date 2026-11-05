@@ -71,7 +71,7 @@ Module structure follows "module by feature". Each core module has its own entit
 ./kotlin test --include-test=io.klibs.app.example.SimpleExampleTest
 ```
 
-- **Framework:** JUnit 5, Spring Boot Test, MockMvc, Testcontainers (PostgreSQL), Mockito Kotlin
+- **Framework:** JUnit 5, Spring Boot Test, MockMvc, Testcontainers (PostgreSQL), MockK + springmockk
 - **Base test classes:**
   - `BaseUnitWithDbLayerTest` — database integration tests
   - `SmokeTestBase` — web/API endpoint tests

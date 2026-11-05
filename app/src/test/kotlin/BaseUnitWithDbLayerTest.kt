@@ -1,3 +1,4 @@
+import com.ninjasquad.springmockk.MockkBean
 import io.awspring.cloud.s3.S3Template
 import io.klibs.app.Application
 import io.klibs.integration.ai.AiService
@@ -13,7 +14,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.TestPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase
 import org.springframework.test.context.jdbc.SqlMergeMode
@@ -35,22 +35,22 @@ import org.testcontainers.containers.PostgreSQLContainer
 @AutoConfigureMockMvc
 abstract class BaseUnitWithDbLayerTest {
 
-    @MockitoBean
+    @MockkBean
     protected lateinit var aiService: AiService
 
-    @MockitoBean
+    @MockkBean
     protected lateinit var s3Template: S3Template
 
-    @MockitoBean
+    @MockkBean
     private lateinit var s3StorageService: S3StorageService
 
-    @MockitoBean
+    @MockkBean
     private lateinit var mavenIndexDownloadingService: MavenIndexDownloadingService
 
-    @MockitoBean(name = "centralSonatypeMavenIndexScannerService")
+    @MockkBean(name = "centralSonatypeMavenIndexScannerService")
     private lateinit var mavenIndexScannerService: MavenIndexScannerService
 
-    @MockitoBean(name = "centralSonatypeScraper")
+    @MockkBean(name = "centralSonatypeScraper")
     private lateinit var mavenCentralScraper: MavenCentralScraper
 
     companion object {

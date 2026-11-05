@@ -7,13 +7,10 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.ScmRepositorySchedulingRepository
 import io.klibs.core.scm.repository.health.OssHealthIssueOrPrSyncService
 import io.klibs.core.scm.repository.health.OssHealthScoreService
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.time.Instant
 
 /**
@@ -23,11 +20,11 @@ import java.time.Instant
  */
 class GitHubRepositoryUpdatingServiceTest {
 
-    private val scmRepositoryRepository: ScmRepositoryRepository = mock()
-    private val schedulingRepository: ScmRepositorySchedulingRepository = mock()
-    private val githubIndexingService: GitHubIndexingService = mock()
-    private val ossHealthIssueOrPrSyncService: OssHealthIssueOrPrSyncService = mock()
-    private val ossHealthScoreService: OssHealthScoreService = mock()
+    private val scmRepositoryRepository = mockk<ScmRepositoryRepository>()
+    private val schedulingRepository = mockk<ScmRepositorySchedulingRepository>(relaxed = true)
+    private val githubIndexingService = mockk<GitHubIndexingService>(relaxed = true)
+    private val ossHealthIssueOrPrSyncService = mockk<OssHealthIssueOrPrSyncService>(relaxUnitFun = true)
+    private val ossHealthScoreService = mockk<OssHealthScoreService>(relaxUnitFun = true)
 
     private val uut = GitHubRepositoryUpdatingService(
         scmRepositoryRepository = scmRepositoryRepository,
@@ -41,84 +38,84 @@ class GitHubRepositoryUpdatingServiceTest {
     @Test
     fun `skips both OSS sub-steps when neither is due`() {
         val repo = repo(id = 1)
-        whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(repo))
-        whenever(ossHealthIssueOrPrSyncService.isDue(eq(repo), any())).thenReturn(false)
-        whenever(ossHealthScoreService.isDue(eq(repo), any())).thenReturn(false)
+        every { scmRepositoryRepository.findMultipleForUpdate(any()) } returns listOf(repo)
+        every { ossHealthIssueOrPrSyncService.isDue(repo, any()) } returns false
+        every { ossHealthScoreService.isDue(repo, any()) } returns false
 
         uut.syncRepositoryWithGitHub()
 
-        verify(githubIndexingService).updateRepo(repo)
-        verify(schedulingRepository).clearSchedule(repo.idNotNull)
-        verify(ossHealthIssueOrPrSyncService, never()).syncOne(any(), any())
-        verify(ossHealthScoreService, never()).computeOne(any(), any())
+        verify(exactly = 1) { githubIndexingService.updateRepo(repo) }
+        verify(exactly = 1) { schedulingRepository.clearSchedule(repo.idNotNull) }
+        verify(exactly = 0) { ossHealthIssueOrPrSyncService.syncOne(any(), any()) }
+        verify(exactly = 0) { ossHealthScoreService.computeOne(any(), any()) }
     }
 
     @Test
     fun `runs both OSS sub-steps when both are due`() {
         val repo = repo(id = 1)
-        whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(repo))
-        whenever(ossHealthIssueOrPrSyncService.isDue(eq(repo), any())).thenReturn(true)
-        whenever(ossHealthScoreService.isDue(eq(repo), any())).thenReturn(true)
+        every { scmRepositoryRepository.findMultipleForUpdate(any()) } returns listOf(repo)
+        every { ossHealthIssueOrPrSyncService.isDue(repo, any()) } returns true
+        every { ossHealthScoreService.isDue(repo, any()) } returns true
 
         uut.syncRepositoryWithGitHub()
 
-        verify(githubIndexingService).updateRepo(repo)
-        verify(ossHealthIssueOrPrSyncService).syncOne(eq(repo), any())
-        verify(ossHealthScoreService).computeOne(eq(repo), any())
+        verify(exactly = 1) { githubIndexingService.updateRepo(repo) }
+        verify(exactly = 1) { ossHealthIssueOrPrSyncService.syncOne(repo, any()) }
+        verify(exactly = 1) { ossHealthScoreService.computeOne(repo, any()) }
     }
 
     @Test
     fun `records failure and skips both OSS sub-steps when updateRepo throws`() {
         val repo = repo(id = 1)
-        whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(repo))
-        whenever(githubIndexingService.updateRepo(repo)).thenThrow(RuntimeException("boom"))
+        every { scmRepositoryRepository.findMultipleForUpdate(any()) } returns listOf(repo)
+        every { githubIndexingService.updateRepo(repo) } throws RuntimeException("boom")
 
         uut.syncRepositoryWithGitHub()
 
-        verify(schedulingRepository).scheduleNextRetry(eq(repo.idNotNull), any(), any())
-        verify(schedulingRepository, never()).clearSchedule(any())
-        verify(ossHealthIssueOrPrSyncService, never()).isDue(any(), any())
-        verify(ossHealthScoreService, never()).isDue(any(), any())
+        verify(exactly = 1) { schedulingRepository.scheduleNextRetry(repo.idNotNull, any(), any()) }
+        verify(exactly = 0) { schedulingRepository.clearSchedule(any()) }
+        verify(exactly = 0) { ossHealthIssueOrPrSyncService.isDue(any(), any()) }
+        verify(exactly = 0) { ossHealthScoreService.isDue(any(), any()) }
     }
 
     @Test
     fun `score sub-step still runs when issue-or-pr sync throws`() {
         val repo = repo(id = 1)
-        whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(repo))
-        whenever(ossHealthIssueOrPrSyncService.isDue(eq(repo), any())).thenReturn(true)
-        whenever(ossHealthScoreService.isDue(eq(repo), any())).thenReturn(true)
-        whenever(ossHealthIssueOrPrSyncService.syncOne(eq(repo), any())).thenThrow(RuntimeException("sync boom"))
+        every { scmRepositoryRepository.findMultipleForUpdate(any()) } returns listOf(repo)
+        every { ossHealthIssueOrPrSyncService.isDue(repo, any()) } returns true
+        every { ossHealthScoreService.isDue(repo, any()) } returns true
+        every { githubIndexingService.updateRepo(repo) } answers { firstArg<ScmRepositoryEntity>() }
 
         uut.syncRepositoryWithGitHub()
 
-        verify(ossHealthScoreService).computeOne(eq(repo), any())
+        verify(exactly = 1) { ossHealthScoreService.computeOne(repo, any()) }
     }
 
     @Test
     fun `next repo is processed when previous sub-step throws`() {
         val r1 = repo(id = 1)
         val r2 = repo(id = 2)
-        whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(listOf(r1, r2))
-        whenever(ossHealthScoreService.isDue(eq(r1), any())).thenReturn(true)
-        whenever(ossHealthScoreService.isDue(eq(r2), any())).thenReturn(false)
-        whenever(ossHealthIssueOrPrSyncService.isDue(any(), any())).thenReturn(false)
-        whenever(ossHealthScoreService.computeOne(eq(r1), any())).thenThrow(RuntimeException("score boom"))
+        every { scmRepositoryRepository.findMultipleForUpdate(any()) } returns listOf(r1, r2)
+        every { ossHealthScoreService.isDue(r1, any()) } returns true
+        every { ossHealthScoreService.isDue(r2, any()) } returns false
+        every { ossHealthIssueOrPrSyncService.isDue(any(), any()) } returns false
+        every { githubIndexingService.updateRepo(any()) } answers { firstArg<ScmRepositoryEntity>() }
 
         uut.syncRepositoryWithGitHub()
 
-        verify(githubIndexingService).updateRepo(r1)
-        verify(githubIndexingService).updateRepo(r2)
+        verify(exactly = 1) { githubIndexingService.updateRepo(r1) }
+        verify(exactly = 1) { githubIndexingService.updateRepo(r2) }
     }
 
     @Test
     fun `does nothing when no repo is selected for update`() {
-        whenever(scmRepositoryRepository.findMultipleForUpdate(any())).thenReturn(emptyList())
+        every { scmRepositoryRepository.findMultipleForUpdate(any()) } returns emptyList()
 
         uut.syncRepositoryWithGitHub()
 
-        verify(githubIndexingService, never()).updateRepo(any())
-        verify(schedulingRepository, never()).clearSchedule(any())
-        verify(schedulingRepository, never()).scheduleNextRetry(any(), any(), any())
+        verify(exactly = 0) { githubIndexingService.updateRepo(any()) }
+        verify(exactly = 0) { schedulingRepository.clearSchedule(any()) }
+        verify(exactly = 0) { schedulingRepository.scheduleNextRetry(any(), any(), any()) }
     }
 
     private fun repo(id: Int) = ScmRepositoryEntity(

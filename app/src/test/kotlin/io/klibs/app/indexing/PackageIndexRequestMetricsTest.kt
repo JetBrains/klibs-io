@@ -8,6 +8,8 @@ import io.klibs.core.pckg.enums.IndexingRequestStatus
 import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.integration.maven.ScraperType
 import io.micrometer.core.instrument.MeterRegistry
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.JdbcTemplate
@@ -60,9 +62,9 @@ class PackageIndexRequestMetricsTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `should return NaN when repository throws exception`() {
-        val failingRepo = org.mockito.kotlin.mock<IndexingRequestRepository> {
-            org.mockito.kotlin.whenever(it.count()).thenThrow(RuntimeException("DB error"))
-            org.mockito.kotlin.whenever(it.countByStatus(IndexingRequestStatus.FAILED)).thenThrow(RuntimeException("DB error"))
+        val failingRepo = mockk<IndexingRequestRepository> {
+            every { count() } throws RuntimeException("DB error")
+            every { countByStatus(IndexingRequestStatus.FAILED) } throws RuntimeException("DB error")
         }
         val registry = io.micrometer.core.instrument.simple.SimpleMeterRegistry()
         PackageIndexRequestMetrics(failingRepo, registry)

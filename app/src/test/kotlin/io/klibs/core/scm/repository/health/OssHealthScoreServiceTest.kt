@@ -1,18 +1,15 @@
 package io.klibs.core.scm.repository.health
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
 import io.klibs.integration.github.GitHubIntegration
+import io.mockk.every
+import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -36,7 +33,7 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var healthComponentsRepository: ScmRepoHealthComponentsRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
     private val now: Instant = Instant.parse("2026-04-29T12:00:00Z")
@@ -104,24 +101,24 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne writes nothing when getCommitsByWeek throws`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId))
-            .thenThrow(RuntimeException("simulated 202 from /stats/participation"))
+        every { gitHubIntegration.getCommitsByWeek(repo.nativeId) } throws
+            RuntimeException("simulated 202 from /stats/participation")
 
         uut.computeOne(repo, now)
 
         // No components row created; nothing to retry-schedule — next repo update tick re-checks.
         assertNull(healthComponentsRepository.findByScmRepoId(repo.idNotNull))
         // GraphQL is never called when the commits-by-week call fails.
-        verify(gitHubIntegration, org.mockito.kotlin.never()).getCommitAuthorCounts(any(), any(), any())
+        verify(exactly = 0) { gitHubIntegration.getCommitAuthorCounts(any(), any(), any()) }
     }
 
     @Test
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne writes nothing when getCommitAuthorCounts throws`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
-        whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenThrow(RuntimeException("simulated GraphQL failure"))
+        every { gitHubIntegration.getCommitsByWeek(repo.nativeId) } returns List(52) { 5 }
+        every { gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo) } throws
+            RuntimeException("simulated GraphQL failure")
 
         uut.computeOne(repo, now)
 
@@ -140,9 +137,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
             iScore = 0.7, pScore = 0.6,
         )
 
-        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
-        whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(mapOf("alice" to 8, "bob" to 7, "carol" to 5))
+        every { gitHubIntegration.getCommitsByWeek(repo.nativeId) } returns List(52) { 5 }
+        every { gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo) } returns
+            mapOf("alice" to 8, "bob" to 7, "carol" to 5)
 
         uut.computeOne(repo, now)
 
@@ -166,9 +163,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     fun `computeOne writes null healthScore when no prior I or P components exist`() {
         val repo = seededRepo()
         // No upsertIssuePrComponents call → I and P remain null → composeScore returns null.
-        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
-        whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(mapOf("alice" to 5))
+        every { gitHubIntegration.getCommitsByWeek(repo.nativeId) } returns List(52) { 5 }
+        every { gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo) } returns
+            mapOf("alice" to 5)
 
         uut.computeOne(repo, now)
 
@@ -183,9 +180,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne writes topContributorShare equal to 1_0 when a single author owns all commits`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
-        whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(mapOf("alice" to 30))
+        every { gitHubIntegration.getCommitsByWeek(repo.nativeId) } returns List(52) { 5 }
+        every { gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo) } returns
+            mapOf("alice" to 30)
 
         uut.computeOne(repo, now)
 
@@ -198,9 +195,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne writes zero activeContributors and null topShare when author counts are empty`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 5 })
-        whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(emptyMap())
+        every { gitHubIntegration.getCommitsByWeek(repo.nativeId) } returns List(52) { 5 }
+        every { gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo) } returns
+            emptyMap()
 
         uut.computeOne(repo, now)
 
@@ -215,9 +212,9 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne writes null cScore when every week has zero commits`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 0 })
-        whenever(gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo))
-            .thenReturn(mapOf("alice" to 1))
+        every { gitHubIntegration.getCommitsByWeek(repo.nativeId) } returns List(52) { 0 }
+        every { gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, twelveWeeksAgo) } returns
+            mapOf("alice" to 1)
 
         uut.computeOne(repo, now)
 
@@ -229,14 +226,14 @@ class OssHealthScoreServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthScoreServiceTest/seed-repo.sql")
     fun `computeOne calls getCommitAuthorCounts with now minus 12 weeks as the cutoff`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.getCommitsByWeek(repo.nativeId)).thenReturn(List(52) { 1 })
-        whenever(gitHubIntegration.getCommitAuthorCounts(eq(repo.ownerLogin), eq(repo.name), any())).thenReturn(emptyMap())
+        every { gitHubIntegration.getCommitsByWeek(repo.nativeId) } returns List(52) { 1 }
+        every { gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, any()) } returns emptyMap()
 
         uut.computeOne(repo, now)
 
-        val sinceCaptor = argumentCaptor<Instant>()
-        verify(gitHubIntegration).getCommitAuthorCounts(eq(repo.ownerLogin), eq(repo.name), sinceCaptor.capture())
-        assertEquals(twelveWeeksAgo, sinceCaptor.firstValue)
+        val sinceCaptor = mutableListOf<Instant>()
+        verify(exactly = 1) { gitHubIntegration.getCommitAuthorCounts(repo.ownerLogin, repo.name, capture(sinceCaptor)) }
+        assertEquals(twelveWeeksAgo, sinceCaptor.first())
     }
 
     private fun seededRepo() = ScmRepositoryEntity(

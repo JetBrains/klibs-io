@@ -1,5 +1,6 @@
 package io.klibs.core.project
 
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.model.PackagePlatform
@@ -15,14 +16,11 @@ import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
+import io.mockk.every
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
-import org.mockito.ArgumentMatchers.anyInt
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -35,34 +33,34 @@ class ProjectServiceSmokeTest {
     @Autowired
     private lateinit var uut: ProjectService
 
-    @MockitoBean
+    @MockkBean
     private lateinit var packageService: PackageService
 
-    @MockitoBean
+    @MockkBean
     private lateinit var readmeService: ReadmeService
 
-    @MockitoBean
+    @MockkBean(relaxed = true)
     private lateinit var projectRepository: ProjectRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var scmRepositoryRepository: ScmRepositoryRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var markerRepository: MarkerRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var tagRepository: TagRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var projectTagRepository: ProjectTagRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var allowedProjectTagsRepository: AllowedProjectTagsRepository
 
-    @MockitoBean
+    @MockkBean(relaxed = true)
     private lateinit var scmRepoHealthComponentsRepository: ScmRepoHealthComponentsRepository
 
-    @MockitoBean
+    @MockkBean(relaxed = true)
     private lateinit var projectHiddenRepository: ProjectHiddenRepository
 
     @Test
@@ -109,10 +107,10 @@ class ProjectServiceSmokeTest {
         )
 
         // Mock repository responses
-        `when`(projectRepository.findManyByProjectNameAndOwnerLogin(any())).thenReturn(listOf(projectEntity))
-        `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
+        every { projectRepository.findManyByProjectNameAndOwnerLogin(any()) } returns listOf(projectEntity)
+        every { scmRepositoryRepository.findById(scmRepoId) } returns scmRepositoryEntity
         // Return null to simulate project not in project_index (no packages)
-        `when`(projectRepository.findPlatformsById(projectEntity.idNotNull)).thenReturn(null)
+        every { projectRepository.findPlatformsById(projectEntity.idNotNull) } returns null
 
         // Act
         val result = uut.getProjectDetailsByName(ownerLogin, projectName)
@@ -169,12 +167,12 @@ class ProjectServiceSmokeTest {
 
         val platforms = listOf(PackagePlatform.JVM, PackagePlatform.JS)
 
-        `when`(projectRepository.findById(projectId)).thenReturn(projectEntity)
-        `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
-        `when`(projectRepository.findPlatformsById(projectId)).thenReturn(platforms)
-        `when`(markerRepository.findAllByProjectId(projectId)).thenReturn(projectMarkers)
+        every { projectRepository.findById(projectId) } returns projectEntity
+        every { scmRepositoryRepository.findById(scmRepoId) } returns scmRepositoryEntity
+        every { projectRepository.findPlatformsById(projectId) } returns platforms
+        every { markerRepository.findAllByProjectId(projectId) } returns projectMarkers
 
-        `when`(tagRepository.getTagsByProjectId(anyInt())).thenReturn(emptyList())
+        every { tagRepository.getTagsByProjectId(any()) } returns emptyList()
 
         val foundProject = uut.getProjectDetailsById(projectId)
 
@@ -236,11 +234,11 @@ class ProjectServiceSmokeTest {
         val platforms = listOf(PackagePlatform.JVM, PackagePlatform.JS)
 
         // Mock repository responses
-        `when`(projectRepository.findManyByProjectNameAndOwnerLogin(any())).thenReturn(listOf(projectEntity))
-        `when`(scmRepositoryRepository.findById(scmRepoId)).thenReturn(scmRepositoryEntity)
-        `when`(projectRepository.findPlatformsById(projectEntity.idNotNull)).thenReturn(platforms)
-        `when`(markerRepository.findAllByProjectId(projectEntity.idNotNull)).thenReturn(projectMarkers)
-        `when`(tagRepository.getTagsByProjectId(anyInt())).thenReturn(emptyList())
+        every { projectRepository.findManyByProjectNameAndOwnerLogin(any()) } returns listOf(projectEntity)
+        every { scmRepositoryRepository.findById(scmRepoId) } returns scmRepositoryEntity
+        every { projectRepository.findPlatformsById(projectEntity.idNotNull) } returns platforms
+        every { markerRepository.findAllByProjectId(projectEntity.idNotNull) } returns projectMarkers
+        every { tagRepository.getTagsByProjectId(any()) } returns emptyList()
 
         val result = uut.getProjectDetailsByName(ownerLogin, projectName)
 

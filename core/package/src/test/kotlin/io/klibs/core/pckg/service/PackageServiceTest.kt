@@ -8,35 +8,35 @@ import io.klibs.core.pckg.repository.IndexingRequestRepository
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.PackageRepository
 import io.klibs.integration.maven.ScraperType
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.Mock
-import org.mockito.Mockito.*
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import java.time.Instant
 import kotlin.test.assertEquals
 
-@ExtendWith(MockitoExtension::class)
+@ExtendWith(MockKExtension::class)
 class PackageServiceTest {
 
-    @Mock
+    @MockK
     private lateinit var packageRepository: PackageRepository
 
-    @Mock
+    @MockK
     private lateinit var packageIndexRepository: PackageIndexRepository
 
-    @Mock
+    @MockK
     private lateinit var indexingRequestRepository: IndexingRequestRepository
 
-    @Mock
+    @MockK
     private lateinit var blacklistRepository: BlacklistRepository
 
-    @Mock
+    @MockK
     private lateinit var selfProvider: ObjectProvider<PackageService>
 
     private lateinit var uut: PackageService
@@ -60,7 +60,7 @@ class PackageServiceTest {
         val result = uut.fillNullVersionTypes(100)
 
         assertEquals(0, result)
-        verify(packageRepository, never()).saveAll(anyList())
+        verify(exactly = 0) { packageRepository.saveAll(any<List<PackageEntity>>()) }
     }
 
     @Test
@@ -81,7 +81,7 @@ class PackageServiceTest {
         val result = uut.fillNullVersionTypes(100)
 
         assertEquals(3, result)
-        verify(packageRepository).saveAll(anyList())
+        verify(exactly = 1) { packageRepository.saveAll(any<List<PackageEntity>>()) }
     }
 
     @Test
@@ -97,7 +97,7 @@ class PackageServiceTest {
         val result = uut.fillNullVersionTypes(5)
 
         assertEquals(5, result)
-        verify(packageRepository).findByVersionTypeIsNull(pageable)
+        verify(exactly = 1) { packageRepository.findByVersionTypeIsNull(pageable) }
     }
 
     @Test
@@ -105,27 +105,25 @@ class PackageServiceTest {
         val pageable = PageRequest.ofSize(100)
         val packages = listOf(createTestPackageEntity(id = 1L, version = "1.0.0"))
 
-        whenever(selfProvider.getObject()).thenReturn(uut)
-        whenever(packageRepository.findByVersionTypeIsNull(pageable))
-            .thenReturn(packages)
-            .thenReturn(emptyList())
+        every { selfProvider.getObject() } returns uut
+        every { packageRepository.findByVersionTypeIsNull(pageable) } returns packages andThen emptyList()
         stubSaveAllAndCapture { }
 
         val result = uut.fillAllNullVersionTypes(100)
 
         assertEquals(1, result)
-        verify(packageRepository, times(1)).findByVersionTypeIsNull(pageable)
+        verify(exactly = 1) { packageRepository.findByVersionTypeIsNull(pageable) }
     }
 
     @Test
     fun `fillAllNullVersionTypes uses default batch size`() {
         val pageable = PageRequest.ofSize(1000)
-        whenever(selfProvider.getObject()).thenReturn(uut)
+        every { selfProvider.getObject() } returns uut
         stubFindByVersionTypeIsNull(pageable, emptyList())
 
         uut.fillAllNullVersionTypes()
 
-        verify(packageRepository).findByVersionTypeIsNull(pageable)
+        verify(exactly = 1) { packageRepository.findByVersionTypeIsNull(pageable) }
     }
 
     private fun createTestPackageEntity(
@@ -162,16 +160,15 @@ class PackageServiceTest {
     }
 
     private fun stubFindByVersionTypeIsNull(pageable: Pageable, result: List<PackageEntity>) {
-        whenever(packageRepository.findByVersionTypeIsNull(pageable)).thenReturn(result)
+        every { packageRepository.findByVersionTypeIsNull(pageable) } returns result
     }
 
     /**
      * Stubs saveAll to capture the saved entities and return them, then runs [verification] on the captured list.
      */
     private fun stubSaveAllAndCapture(verification: (List<PackageEntity>) -> Unit) {
-        whenever(packageRepository.saveAll(anyList())).thenAnswer { invocation ->
-            @Suppress("UNCHECKED_CAST")
-            val saved = invocation.arguments[0] as List<PackageEntity>
+        every { packageRepository.saveAll(any<List<PackageEntity>>()) } answers {
+            val saved = firstArg<List<PackageEntity>>()
             verification(saved)
             saved
         }

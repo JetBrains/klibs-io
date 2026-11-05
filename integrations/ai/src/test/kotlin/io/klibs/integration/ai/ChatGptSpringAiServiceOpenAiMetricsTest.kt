@@ -1,11 +1,10 @@
 package io.klibs.integration.ai
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
 import org.springframework.ai.chat.messages.SystemMessage
 import org.springframework.ai.chat.messages.UserMessage
 import org.springframework.ai.chat.metadata.ChatResponseMetadata
@@ -36,25 +35,25 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
         meterRegistry = SimpleMeterRegistry()
 
         // Mock the OpenAI chat model
-        chatModel = mock()
+        chatModel = mockk()
 
         // Create the service with mocked dependencies
         chatGptSpringAiService = ChatGptSpringAiService(
             meterRegistry = meterRegistry,
             chatModel = chatModel,
-            openAiClient = mock()
+            openAiClient = mockk()
         )
     }
 
     @Test
     fun `should record token usage, rate limit metrics and timer when making OpenAI requests`() {
-        val testUsage = mock<Usage>()
-        `when`(testUsage.getPromptTokens()).thenReturn(100)
-        `when`(testUsage.getCompletionTokens()).thenReturn(50)
-        `when`(testUsage.getTotalTokens()).thenReturn(150)
+        val testUsage = mockk<Usage>()
+        every { testUsage.getPromptTokens() } returns 100
+        every { testUsage.getCompletionTokens() } returns 50
+        every { testUsage.getTotalTokens() } returns 150
 
         // Create a simple mock response
-        val mockResponse = mock<ChatResponse>()
+        val mockResponse = mockk<ChatResponse>(relaxed = true)
 
         val metadata = ChatResponseMetadata.builder()
             .usage(testUsage)
@@ -71,33 +70,28 @@ class ChatGptSpringAiServiceOpenAiMetricsTest {
             .build()
 
         // Set up the mock to return our response
-        `when`(chatModel.call(any<Prompt>())).thenReturn(mockResponse)
-        `when`(mockResponse.metadata).thenReturn(metadata)
+        every { chatModel.call(any<Prompt>()) } returns mockResponse
+        every { mockResponse.metadata } returns metadata
 
         // Act - Call the service method
-        try {
-            val model = "gpt-4o"
-            val systemMessage = "You are a helpful assistant"
-            val userMessage = "Tell me about Kotlin"
-            val temperature = 0.7
+        val model = "gpt-4o"
+        val systemMessage = "You are a helpful assistant"
+        val userMessage = "Tell me about Kotlin"
+        val temperature = 0.7
 
-            val messages = listOf(
-                SystemMessage(systemMessage),
-                UserMessage(userMessage)
-            )
+        val messages = listOf(
+            SystemMessage(systemMessage),
+            UserMessage(userMessage)
+        )
 
-            val options = OpenAiChatOptions.builder()
-                .model(model)
-                .temperature(temperature)
-                .build()
+        val options = OpenAiChatOptions.builder()
+            .model(model)
+            .temperature(temperature)
+            .build()
 
-            val prompt = Prompt(messages, options)
+        val prompt = Prompt(messages, options)
 
-            chatGptSpringAiService.executeOpenAiRequest(prompt, "ask", model)
-        } catch (e: Exception) {
-            // We expect an exception because our mock is incomplete
-            // but the timer metrics should still be recorded
-        }
+        chatGptSpringAiService.executeOpenAiRequest(prompt, "ask", model)
 
         // Assert - Verify token metrics were collected
         val promptTokensCounter = meterRegistry.find("klibs.openai.tokens.prompt").counter()

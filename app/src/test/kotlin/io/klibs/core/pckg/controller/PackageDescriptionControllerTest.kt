@@ -1,19 +1,17 @@
 package io.klibs.core.pckg.controller
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
+import com.ninjasquad.springmockk.MockkSpyBean
 import io.klibs.core.pckg.service.PackageDescriptionService
 import io.klibs.core.search.service.SearchService
 import io.klibs.integration.ai.PackageDescriptionGenerator
+import io.mockk.every
+import io.mockk.justRun
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.doNothing
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.timeout
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.bean.override.mockito.MockitoBean
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.servlet.MockMvc
@@ -31,10 +29,10 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    @MockitoSpyBean
+    @MockkSpyBean
     private lateinit var packageDescriptionService: PackageDescriptionService
 
-    @MockitoBean
+    @MockkBean
     private lateinit var packageDescriptionGenerator: PackageDescriptionGenerator
 
     @BeforeEach
@@ -50,11 +48,13 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
         val version = "1.0.0"
         val expectedDescription = "This is a test library for demonstration purposes."
 
-        `when`(packageDescriptionGenerator.generatePackageDescription(
-            groupId,
-            artifactId,
-            version
-        )).thenReturn(expectedDescription)
+        every {
+            packageDescriptionGenerator.generatePackageDescription(
+                groupId,
+                artifactId,
+                version
+            )
+        } returns expectedDescription
 
         val result = mockMvc.get("/package-description/$groupId/$artifactId/$version")
             .andExpect {
@@ -75,17 +75,21 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
         val version = "1.0.0"
         val expectedDescription = "This is a description for the org.example group."
 
-        `when`(packageDescriptionGenerator.generatePackageDescription(
-            groupId,
-            artifactId1,
-            version
-        )).thenReturn(expectedDescription)
+        every {
+            packageDescriptionGenerator.generatePackageDescription(
+                groupId,
+                artifactId1,
+                version
+            )
+        } returns expectedDescription
 
-        `when`(packageDescriptionGenerator.generatePackageDescription(
-            groupId,
-            artifactId2,
-            version
-        )).thenReturn(expectedDescription)
+        every {
+            packageDescriptionGenerator.generatePackageDescription(
+                groupId,
+                artifactId2,
+                version
+            )
+        } returns expectedDescription
 
         val result = mockMvc.get("/package-description/$groupId")
             .andExpect {
@@ -107,11 +111,13 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
         val version = "2.0.0" // Latest version
         val expectedDescription = "This is a description for the org.example:test-library package."
 
-        `when`(packageDescriptionGenerator.generatePackageDescription(
-            groupId,
-            artifactId,
-            version
-        )).thenReturn(expectedDescription)
+        every {
+            packageDescriptionGenerator.generatePackageDescription(
+                groupId,
+                artifactId,
+                version
+            )
+        } returns expectedDescription
 
         val result = mockMvc.get("/package-description/$groupId/$artifactId")
             .andExpect {
@@ -127,7 +133,7 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
     @Sql(value = ["classpath:sql/PackageDescriptionServiceTest/insert-packages-with-duplicate-descriptions.sql"])
     fun `should start generating unique descriptions asynchronously and return success message immediately`() {
         // Stub the coroutine method
-        doNothing().whenever(packageDescriptionService).generateUniqueDescriptions()
+        justRun { packageDescriptionService.generateUniqueDescriptions() }
 
         val result = mockMvc.post("/package-description/generate-unique")
             .andExpect {
@@ -140,6 +146,6 @@ class PackageDescriptionControllerTest : BaseUnitWithDbLayerTest() {
 
         // We use timeout(1000) to wait up to 1 second for the method to be called
         // This is necessary because the method is called in a separate thread
-        verify(packageDescriptionService, timeout(1000)).generateUniqueDescriptions()
+        verify(exactly = 1, timeout = 1000) { packageDescriptionService.generateUniqueDescriptions() }
     }
 }

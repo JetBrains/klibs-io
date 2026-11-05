@@ -3,19 +3,19 @@ package io.klibs.app.indexing.discoverer.impl
 import io.klibs.app.configuration.properties.IndexingConfigurationProperties
 import io.klibs.app.service.impl.S3GoogleMavenCacheService
 import io.klibs.core.storage.S3StorageService
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 
 class GoogleMavenCacheServiceTest {
 
     @Test
     fun `S3GoogleMavenCacheService should read and write from S3`() {
-        val s3StorageService: S3StorageService = mock()
+        val s3StorageService = mockk<S3StorageService>(relaxUnitFun = true)
         val properties = IndexingConfigurationProperties(
             gmaven = IndexingConfigurationProperties.GoogleMavenProperties(
                 s3 = IndexingConfigurationProperties.GoogleMavenProperties.S3Properties(
@@ -30,11 +30,11 @@ class GoogleMavenCacheServiceTest {
         val key = "gmaven/group-index-com-example.xml"
 
         // Mock download not exists
-        whenever(s3StorageService.readText("test-bucket", key)).thenReturn(null)
+        every { s3StorageService.readText("test-bucket", key) } returns null
         assertNull(service.readGroupIndexFromCache(groupId))
 
         // Mock download exists
-        whenever(s3StorageService.readText("test-bucket", key)).thenReturn(content)
+        every { s3StorageService.readText("test-bucket", key) } returns content
         val cached = service.readGroupIndexFromCache(groupId)
         assertNotNull(cached)
         assertEquals(1, cached.elements.size)
@@ -42,6 +42,6 @@ class GoogleMavenCacheServiceTest {
 
         // Test write
         service.writeGroupIndexToCache(groupId, content)
-        verify(s3StorageService).writeText("test-bucket", key, content)
+        verify(exactly = 1) { s3StorageService.writeText("test-bucket", key, content) }
     }
 }

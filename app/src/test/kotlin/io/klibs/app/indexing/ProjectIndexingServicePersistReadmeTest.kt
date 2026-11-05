@@ -2,6 +2,7 @@ package io.klibs.app.indexing
 
 import io.klibs.app.service.TagsGenerationService
 import io.klibs.app.util.BackoffProvider
+import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
@@ -18,31 +19,28 @@ import org.junit.jupiter.api.Test
 import io.klibs.core.readme.AndroidxReadmeProvider
 import io.klibs.core.readme.GitHubIndexingReadmeContent
 import io.klibs.core.readme.ReadmeContentBuilder
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class ProjectIndexingServicePersistReadmeTest {
 
-    private val readmeService: ReadmeService = mock()
-    private val projectDescriptionGenerator: ProjectDescriptionGenerator = mock()
-    private val projectRepository: ProjectRepository = mock()
-    private val scmRepositoryRepository: ScmRepositoryRepository = mock()
-    private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
-    private val tagsGenerator: TagsGenerationService = mock()
-    private val projectTagRepository: ProjectTagRepository = mock()
-    private val gitHubIntegration: GitHubIntegration = mock()
-    private val readmeContentBuilder: ReadmeContentBuilder = mock()
-    private val androidxReadmeProvider: AndroidxReadmeProvider = mock()
-    private val readmeMinimizer: ReadmeMinimizationProcessor = mock()
-    private val descriptionBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
-    private val tagsBackoffProvider: BackoffProvider = BackoffProvider("tagsBackoff", mock())
+    private val readmeService = mockk<ReadmeService>(relaxUnitFun = true)
+    private val projectDescriptionGenerator = mockk<ProjectDescriptionGenerator>()
+    private val projectRepository = mockk<ProjectRepository>()
+    private val scmRepositoryRepository = mockk<ScmRepositoryRepository>()
+    private val scmOwnerRepository = mockk<ScmOwnerRepository>()
+    private val tagsGenerator = mockk<TagsGenerationService>()
+    private val projectTagRepository = mockk<ProjectTagRepository>()
+    private val gitHubIntegration = mockk<GitHubIntegration>()
+    private val readmeContentBuilder = mockk<ReadmeContentBuilder>()
+    private val androidxReadmeProvider = mockk<AndroidxReadmeProvider>()
+    private val readmeMinimizer = mockk<ReadmeMinimizationProcessor>()
+    private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
+    private val tagsBackoffProvider = BackoffProvider("tagsBackoff", mockk(relaxed = true))
 
     private fun uut() = ProjectIndexingService(
         readmeService = readmeService,
@@ -105,11 +103,12 @@ class ProjectIndexingServicePersistReadmeTest {
             latestVersionTs = requireNotNull(mavenArtifact.releasedAt)
         )
 
-        whenever(projectRepository.findByNameAndScmRepoId(repoName, scmRepoId)).thenReturn(null)
-        whenever(projectRepository.insert(any())).thenReturn(persistedProject)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, Instant.EPOCH))
-            .thenReturn(ReadmeFetchResult.Content("# Title"))
-        whenever(
+        every { projectRepository.findByNameAndScmRepoId(repoName, scmRepoId) } returns null
+        every { projectRepository.insert(any()) } returns persistedProject
+        every { scmRepositoryRepository.update(any()) } answers { firstArg<ScmRepositoryEntity>() }
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, Instant.EPOCH) } returns
+            ReadmeFetchResult.Content("# Title")
+        every {
             readmeContentBuilder.buildFromMarkdown(
                 readmeMd = "# Title",
                 nativeId = repoNativeId,
@@ -117,34 +116,34 @@ class ProjectIndexingServicePersistReadmeTest {
                 repoName = repoName,
                 defaultBranch = defaultBranch,
             )
-        ).thenReturn(
-            GitHubIndexingReadmeContent(
-                raw = "# Title",
-                markdown = "# Title",
-                html = "<h1>Title</h1>",
-                minimized = "# Title",
-            )
+        } returns GitHubIndexingReadmeContent(
+            raw = "# Title",
+            markdown = "# Title",
+            html = "<h1>Title</h1>",
+            minimized = "# Title",
         )
 
         val result = uut().save(mavenArtifact, scmRepositoryEntity)
 
         assertEquals(persistedProject.idNotNull, result.idNotNull)
-        verify(readmeService).writeReadmeFiles(
-            projectId = persistedProject.idNotNull,
-            scmRepositoryId = scmRepositoryEntity.idNotNull,
-            readmeMetadataEntity = null,
-            rawContent = "# Title",
-            mdContent = "# Title",
-            htmlContent = "<h1>Title</h1>"
-        )
+        verify(exactly = 1) {
+            readmeService.writeReadmeFiles(
+                projectId = persistedProject.idNotNull,
+                scmRepositoryId = scmRepositoryEntity.idNotNull,
+                readmeMetadataEntity = null,
+                rawContent = "# Title",
+                mdContent = "# Title",
+                htmlContent = "<h1>Title</h1>"
+            )
+        }
 
-        val repoCaptor = argumentCaptor<ScmRepositoryEntity>()
-        verify(scmRepositoryRepository).update(repoCaptor.capture())
-        assertEquals(true, repoCaptor.firstValue.hasReadme)
-        assertEquals(defaultBranch, repoCaptor.firstValue.defaultBranch)
-        assertEquals(repoNativeId, repoCaptor.firstValue.nativeId)
-        assertEquals(repoName, repoCaptor.firstValue.name)
-        assertEquals(scmRepoId, repoCaptor.firstValue.idNotNull)
+        val repoCaptor = mutableListOf<ScmRepositoryEntity>()
+        verify(exactly = 1) { scmRepositoryRepository.update(capture(repoCaptor)) }
+        assertEquals(true, repoCaptor.first().hasReadme)
+        assertEquals(defaultBranch, repoCaptor.first().defaultBranch)
+        assertEquals(repoNativeId, repoCaptor.first().nativeId)
+        assertEquals(repoName, repoCaptor.first().name)
+        assertEquals(scmRepoId, repoCaptor.first().idNotNull)
     }
 
     @Test
@@ -169,17 +168,17 @@ class ProjectIndexingServicePersistReadmeTest {
             latestVersionTs = requireNotNull(mavenArtifact.releasedAt)
         )
 
-        whenever(projectRepository.findByNameAndScmRepoId("paging", scmRepoId)).thenReturn(null)
-        whenever(androidxReadmeProvider.resolve("paging", "md.raw")).thenReturn(null)
-        whenever(projectRepository.insert(any())).thenReturn(persistedProject)
+        every { projectRepository.findByNameAndScmRepoId("paging", scmRepoId) } returns null
+        every { androidxReadmeProvider.resolve("paging", "md.raw") } returns null
+        every { projectRepository.insert(any()) } returns persistedProject
 
         val result = uut().save(mavenArtifact, scmRepositoryEntity)
 
         assertEquals(405, result.idNotNull)
 
-        val projectCaptor = argumentCaptor<ProjectEntity>()
-        verify(projectRepository).insert(projectCaptor.capture())
-        val inserted = projectCaptor.firstValue
+        val projectCaptor = mutableListOf<ProjectEntity>()
+        verify(exactly = 1) { projectRepository.insert(capture(projectCaptor)) }
+        val inserted = projectCaptor.first()
         assertEquals("paging", inserted.name)
         assertNull(inserted.minimizedReadme)
         assertEquals(
@@ -187,10 +186,10 @@ class ProjectIndexingServicePersistReadmeTest {
             inserted.description
         )
 
-        verify(readmeMinimizer, never()).process(any(), any(), any(), any())
-        verify(readmeService, never()).writeReadmeFiles(any(), any(), any(), any(), any(), any())
-        verify(scmRepositoryRepository, never()).update(any())
-        verify(gitHubIntegration, never()).getReadmeWithModifiedSinceCheck(any(), any())
+        verify(exactly = 0) { readmeMinimizer.process(any(), any(), any(), any()) }
+        verify(exactly = 0) { readmeService.writeReadmeFiles(any(), any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { scmRepositoryRepository.update(any()) }
+        verify(exactly = 0) { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) }
     }
 
     @Test
@@ -219,14 +218,14 @@ class ProjectIndexingServicePersistReadmeTest {
             latestVersionTs = requireNotNull(mavenArtifact.releasedAt)
         )
 
-        whenever(projectRepository.findByNameAndScmRepoId("compose", scmRepoId)).thenReturn(existingProject)
-        whenever(
+        every { projectRepository.findByNameAndScmRepoId("compose", scmRepoId) } returns existingProject
+        every {
             projectRepository.updateLatestVersion(
                 id = existingProject.idNotNull,
                 latestVersion = mavenArtifact.version,
                 latestVersionTs = requireNotNull(mavenArtifact.releasedAt)
             )
-        ).thenReturn(updatedProject)
+        } returns updatedProject
 
         val result = uut().save(mavenArtifact, scmRepositoryEntity)
 
@@ -234,15 +233,17 @@ class ProjectIndexingServicePersistReadmeTest {
         assertEquals("1.7.0", result.latestVersion)
         assertEquals(Instant.parse("2025-03-01T00:00:00Z"), result.latestVersionTs)
 
-        verify(projectRepository).findByNameAndScmRepoId("compose", scmRepoId)
-        verify(projectRepository).updateLatestVersion(
-            id = existingProject.idNotNull,
-            latestVersion = "1.7.0",
-            latestVersionTs = Instant.parse("2025-03-01T00:00:00Z")
-        )
-        verify(projectRepository, never()).insert(any())
-        verify(androidxReadmeProvider, never()).resolve(any(), any())
-        verify(projectRepository, never()).updateMinimizedReadme(any(), any())
+        verify(exactly = 1) { projectRepository.findByNameAndScmRepoId("compose", scmRepoId) }
+        verify(exactly = 1) {
+            projectRepository.updateLatestVersion(
+                id = existingProject.idNotNull,
+                latestVersion = "1.7.0",
+                latestVersionTs = Instant.parse("2025-03-01T00:00:00Z")
+            )
+        }
+        verify(exactly = 0) { projectRepository.insert(any()) }
+        verify(exactly = 0) { androidxReadmeProvider.resolve(any(), any()) }
+        verify(exactly = 0) { projectRepository.updateMinimizedReadme(any(), any()) }
     }
 
     private fun androidxScmRepoEntity(scmRepoId: Int) = ScmRepositoryEntity(

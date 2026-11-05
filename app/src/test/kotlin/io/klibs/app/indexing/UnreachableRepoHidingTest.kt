@@ -1,6 +1,7 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.core.project.ProjectService
 import io.klibs.core.project.enums.HideOrigin
 import io.klibs.core.project.repository.ProjectHiddenRepository
@@ -13,11 +14,10 @@ import io.klibs.integration.github.health.GitHubRateLimitInfo
 import io.klibs.integration.github.model.GitHubLicense
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.ReadmeFetchResult
+import io.mockk.every
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.DisplayName
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import java.time.Duration
 import java.time.Instant
@@ -40,13 +40,13 @@ class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var projectHiddenRepository: ProjectHiddenRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
-    @MockitoBean
+    @MockkBean
     private lateinit var s3ReadmeService: S3ReadmeCRUDService
 
-    @MockitoBean
+    @MockkBean(relaxed = true)
     private lateinit var projectService: ProjectService
 
     @Test
@@ -140,7 +140,7 @@ class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
     )
     fun `an unanswering GitHub API blocks hiding`() {
         val repo = unreachableFor(Duration.ofDays(8))
-        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenThrow(RuntimeException("401 Bad credentials"))
+        every { gitHubIntegration.getRepository(repo.nativeId) } throws RuntimeException("401 Bad credentials")
 
         assertFailsWith<RuntimeException> { uut.updateRepo(repo) }
 
@@ -155,9 +155,9 @@ class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
     ])
     fun `failed name lookup does not hide a repository missing by id`() {
         val repo = unreachableFor(Duration.ofDays(8))
-        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(null)
-        whenever(gitHubIntegration.getRepository(repo.ownerLogin, repo.name))
-            .thenThrow(RuntimeException("503 Service unavailable"))
+        every { gitHubIntegration.getRepository(repo.nativeId) } returns null
+        every { gitHubIntegration.getRepository(repo.ownerLogin, repo.name) } throws
+            RuntimeException("503 Service unavailable")
 
         assertFailsWith<RuntimeException> { uut.updateRepo(repo) }
 
@@ -173,7 +173,7 @@ class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
     fun `confirmed missing repository is hidden without a separate health probe`() {
         val repo = unreachableFor(Duration.ofDays(8))
         repoNotFoundOnGitHub(repo)
-        whenever(gitHubIntegration.getRateLimitInfo()).thenThrow(RuntimeException("Health probe unavailable"))
+        every { gitHubIntegration.getRateLimitInfo() } throws RuntimeException("Health probe unavailable")
 
         uut.updateRepo(repo)
 
@@ -213,18 +213,18 @@ class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
     }
 
     private fun gitHubAnswering() {
-        whenever(gitHubIntegration.getRateLimitInfo()).thenReturn(rateLimit(limit = 5000))
+        every { gitHubIntegration.getRateLimitInfo() } returns rateLimit(limit = 5000)
     }
 
     private fun repoNotFoundOnGitHub(repo: ScmRepositoryEntity) {
-        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(null)
-        whenever(gitHubIntegration.getRepository(repo.ownerLogin, repo.name)).thenReturn(null)
+        every { gitHubIntegration.getRepository(repo.nativeId) } returns null
+        every { gitHubIntegration.getRepository(repo.ownerLogin, repo.name) } returns null
     }
 
     private fun repoFoundOnGitHub(repo: ScmRepositoryEntity) {
         val readmeMetadata = requireNotNull(readmeMetadataRepository.findByScmRepoId(repo.idNotNull))
 
-        whenever(gitHubIntegration.getRepository(repo.nativeId)).thenReturn(
+        every { gitHubIntegration.getRepository(repo.nativeId) } returns
             GitHubRepository(
                 nativeId = repo.nativeId,
                 name = repo.name,
@@ -241,12 +241,11 @@ class UnreachableRepoHidingTest : BaseUnitWithDbLayerTest() {
                 openIssues = repo.openIssues,
                 lastActivity = repo.lastActivityTs
             )
-        )
-        whenever(gitHubIntegration.getLicense(repo.nativeId))
-            .thenReturn(GitHubLicense(repo.licenseKey!!, repo.licenseName!!))
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(repo.nativeId, readmeMetadata.lastSyncedAt))
-            .thenReturn(ReadmeFetchResult.NotModified)
-        whenever(gitHubIntegration.getRepositoryTopics(repo.nativeId)).thenReturn(emptyList())
+        every { gitHubIntegration.getLicense(repo.nativeId) } returns
+            GitHubLicense(repo.licenseKey!!, repo.licenseName!!)
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(repo.nativeId, readmeMetadata.lastSyncedAt) } returns
+            ReadmeFetchResult.NotModified
+        every { gitHubIntegration.getRepositoryTopics(repo.nativeId) } returns emptyList()
     }
 
     private companion object {

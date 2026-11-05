@@ -1,5 +1,6 @@
 package io.klibs.app.indexing
 
+import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.ProjectService
@@ -15,23 +16,25 @@ import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
 import io.klibs.integration.github.model.ReadmeFetchResult
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.*
 import java.time.Instant
 
 class GitHubIndexingServiceTopicsTest {
 
-    private val gitHubIntegration: GitHubIntegration = mock()
-    private val scmRepositoryRepository: ScmRepositoryRepository = mock()
-    private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
-    private val readmeMetadataRepository: ReadmeMetadataRepository = mock()
-    private val readmeService: ReadmeService = mock()
-    private val projectRepository: ProjectRepository = mock()
-    private val projectTagRepository: ProjectTagRepository = mock()
-    private val readmeContentBuilder: ReadmeContentBuilder = mock()
-    private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mock()
-    private val projectService: ProjectService = mock()
-    private val unreachableRepoHidingService: UnreachableRepoHidingService = mock()
+    private val gitHubIntegration = mockk<GitHubIntegration>()
+    private val scmRepositoryRepository = mockk<ScmRepositoryRepository>()
+    private val scmOwnerRepository = mockk<ScmOwnerRepository>()
+    private val readmeMetadataRepository = mockk<ReadmeMetadataRepository>()
+    private val readmeService = mockk<ReadmeService>()
+    private val projectRepository = mockk<ProjectRepository>()
+    private val projectTagRepository = mockk<ProjectTagRepository>()
+    private val readmeContentBuilder = mockk<ReadmeContentBuilder>()
+    private val allowedProjectTagsRepository = mockk<AllowedProjectTagsRepository>()
+    private val projectService = mockk<ProjectService>(relaxed = true)
+    private val unreachableRepoHidingService = mockk<UnreachableRepoHidingService>()
     private val readmeReprocessPeriodDays: Long = 7
 
     private fun uut() = GitHubIndexingService(
@@ -109,30 +112,29 @@ class GitHubIndexingServiceTopicsTest {
         // Topics with mixed case, blanks, and duplicates
         val topicsFromGh = listOf("Kotlin", "kotlin", "  SPRING  ", "", "Web", "compose UI", "flow")
 
-        whenever(gitHubIntegration.getRepository(ghNativeId)).thenReturn(ghRepo)
-        whenever(gitHubIntegration.getLicense(ghNativeId)).thenReturn(null)
-        whenever(gitHubIntegration.getReadmeWithModifiedSinceCheck(eq(ghNativeId), any()))
-            .thenReturn(ReadmeFetchResult.NotFound)
+        every { readmeMetadataRepository.findByScmRepoId(repoId) } returns null
+        every { gitHubIntegration.getRepository(ghNativeId) } returns ghRepo
+        every { gitHubIntegration.getLicense(ghNativeId) } returns null
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(ghNativeId, any()) } returns ReadmeFetchResult.NotFound
 
-        whenever(scmRepositoryRepository.findByName(ownerLogin, repoName)).thenReturn(existingRepo)
-        whenever(scmRepositoryRepository.update(any())).thenAnswer { invocation ->
-            val arg = invocation.getArgument<ScmRepositoryEntity>(0)
-            arg.copy(id = repoId)
+        every { scmRepositoryRepository.findByName(ownerLogin, repoName) } returns existingRepo
+        every { scmRepositoryRepository.update(any()) } answers {
+            firstArg<ScmRepositoryEntity>().copy(id = repoId)
         }
 
-        whenever(projectRepository.findByNameAndScmRepoId(any(), eq(repoId))).thenReturn(project)
-        whenever(gitHubIntegration.getRepositoryTopics(ghNativeId)).thenReturn(topicsFromGh)
-        whenever(projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB)).thenReturn(emptyList())
+        every { projectRepository.findByNameAndScmRepoId(any(), repoId) } returns project
+        every { gitHubIntegration.getRepositoryTopics(ghNativeId) } returns topicsFromGh
+        every { projectTagRepository.findAllByProjectIdAndOrigin(project.idNotNull, TagOrigin.GITHUB) } returns emptyList()
 
-        whenever(allowedProjectTagsRepository.existsById(any<String>())).thenReturn(false)
-        whenever(allowedProjectTagsRepository.existsById("kotlin")).thenReturn(true)
-        whenever(allowedProjectTagsRepository.existsById("spring")).thenReturn(true)
-        whenever(allowedProjectTagsRepository.existsById("web")).thenReturn(true)
-        whenever(allowedProjectTagsRepository.existsById("compose-ui")).thenReturn(true)
-        whenever(allowedProjectTagsRepository.existsById("flow")).thenReturn(false)
+        every { allowedProjectTagsRepository.existsById(any<String>()) } returns false
+        every { allowedProjectTagsRepository.existsById("kotlin") } returns true
+        every { allowedProjectTagsRepository.existsById("spring") } returns true
+        every { allowedProjectTagsRepository.existsById("web") } returns true
+        every { allowedProjectTagsRepository.existsById("compose-ui") } returns true
+        every { allowedProjectTagsRepository.existsById("flow") } returns false
 
         uut().updateRepo(existingRepo)
 
-        verify(projectService).updateProjectTags(existingRepo.name, existingRepo.ownerLogin, topicsFromGh, TagOrigin.GITHUB)
+        verify(exactly = 1) { projectService.updateProjectTags(existingRepo.name, existingRepo.ownerLogin, topicsFromGh, TagOrigin.GITHUB) }
     }
 }
