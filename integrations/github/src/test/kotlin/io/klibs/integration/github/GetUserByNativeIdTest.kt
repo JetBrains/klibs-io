@@ -2,11 +2,12 @@ package io.klibs.integration.github
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
-import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -19,15 +20,13 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.authorization.AuthorizationProvider
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
 
-@ExtendWith(MockitoExtension::class)
+@ExtendWith(MockKExtension::class)
 class GetUserByNativeIdTest {
 
     private lateinit var meterRegistry: SimpleMeterRegistry
 
-    @Mock
+    @MockK
     private lateinit var githubApi: GitHub
 
     @BeforeEach

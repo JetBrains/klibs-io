@@ -1,14 +1,14 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubUser
+import io.mockk.every
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.test.context.jdbc.Sql
 import kotlin.test.assertEquals
@@ -20,7 +20,7 @@ class GitHubIndexingServiceOwnerHomepageTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var scmOwnerRepository: ScmOwnerRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
     @Autowired
@@ -70,7 +70,7 @@ class GitHubIndexingServiceOwnerHomepageTest : BaseUnitWithDbLayerTest() {
             twitterUsername = "newtwitter",
             followers = 20,
         )
-        whenever(gitHubIntegration.getUser(login)).thenReturn(updatedGitHubUser)
+        every { gitHubIntegration.getUser(login) } returns updatedGitHubUser
 
         ownerUpdatingService.syncOwnerWithGitHub()
 

@@ -3,6 +3,8 @@ package io.klibs.integration.github
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -22,15 +24,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.authorization.AuthorizationProvider
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
 
-@ExtendWith(MockitoExtension::class)
+@ExtendWith(MockKExtension::class)
 class GetReadmeWithModifiedSinceCheckTest {
 
     private lateinit var meterRegistry: SimpleMeterRegistry
 
-    @Mock
+    @MockK
     private lateinit var githubApi: GitHub
 
     private val klibsRepoName = "JetBrains/klibs-io"

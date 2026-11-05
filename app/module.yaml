@@ -26,6 +26,13 @@ test-dependencies:
   - $libs.okhttp
   - $libs.kohsuke.githubApi
 
+test-settings:
+  jvm:
+    test:
+      freeJvmArgs:
+        # Required for @MockkSpyBean
+        - --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+
 settings:
   jvm:
     mainClass: io.klibs.app.ApplicationKt

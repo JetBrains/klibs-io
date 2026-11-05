@@ -4,12 +4,15 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.integration.mcp.dto.service.McpProjectSearchResultDto
 import io.klibs.integration.mcp.mapper.McpToolMapper
 import io.klibs.integration.mcp.service.DEFAULT_MAX_PACKAGES_PER_PROJECT
 import io.klibs.integration.mcp.service.McpProjectSearchService
 import io.klibs.integration.mcp.tool.LoggingToolCallback
 import io.klibs.integration.mcp.tool.McpProjectSearchTool
+import io.mockk.every
+import io.mockk.verify
 import io.modelcontextprotocol.client.McpClient
 import io.modelcontextprotocol.client.McpSyncClient
 import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport
@@ -20,10 +23,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import org.springframework.ai.mcp.server.common.autoconfigure.McpServerJsonMapperAutoConfiguration
 import org.springframework.ai.mcp.server.common.autoconfigure.McpServerStatelessAutoConfiguration
@@ -41,7 +40,6 @@ import org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebSer
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration
 import org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration
 import org.springframework.context.annotation.Bean
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.time.Duration
 
 /**
@@ -63,7 +61,7 @@ class McpProjectSearchToolE2ETest {
     @LocalServerPort
     private var port: Int = 0
 
-    @MockitoBean
+    @MockkBean
     private lateinit var mcpProjectSearchService: McpProjectSearchService
 
     private lateinit var client: McpSyncClient
@@ -93,23 +91,25 @@ class McpProjectSearchToolE2ETest {
 
     @Test
     fun `searchProjects tolerates an omitted maxPackagesPerProject over a real MCP call`() {
-        whenever(mcpProjectSearchService.mcpProjectSearch(anyOrNull(), any(), any()))
-            .thenReturn(McpProjectSearchResultDto(projects = emptyList()))
+        every { mcpProjectSearchService.mcpProjectSearch(any(), any(), any()) } returns
+            McpProjectSearchResultDto(projects = emptyList())
 
         val result = client.callTool(CallToolRequest("searchProjects", mapOf("query" to "kotlin")))
 
         assertFalse(result.isError, "tool call returned an error: ${result.content()}")
-        verify(mcpProjectSearchService).mcpProjectSearch(
-            query = "kotlin",
-            targetFilters = emptyList(),
-            maxPackagesPerProject = DEFAULT_MAX_PACKAGES_PER_PROJECT,
-        )
+        verify(exactly = 1) {
+            mcpProjectSearchService.mcpProjectSearch(
+                query = "kotlin",
+                targetFilters = emptyList(),
+                maxPackagesPerProject = DEFAULT_MAX_PACKAGES_PER_PROJECT,
+            )
+        }
     }
 
     @Test
     fun `logs tool failure at ERROR before surfacing it as an error result`() {
-        whenever(mcpProjectSearchService.mcpProjectSearch(anyOrNull(), any(), any()))
-            .thenThrow(RuntimeException("boom"))
+        every { mcpProjectSearchService.mcpProjectSearch(any(), any(), any()) } throws
+            RuntimeException("boom")
 
         val result = client.callTool(CallToolRequest("searchProjects", mapOf("query" to "kotlin")))
 

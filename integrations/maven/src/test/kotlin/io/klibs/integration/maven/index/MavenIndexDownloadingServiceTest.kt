@@ -10,6 +10,13 @@ import io.klibs.integration.maven.service.MavenIndexingContextManager
 import io.klibs.integration.maven.service.impl.BaseMavenCentralStaticDataProvider
 import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
+import io.mockk.Called
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
+import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.apache.maven.index.Indexer
 import org.apache.maven.index.context.IndexingContext
@@ -25,17 +32,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.check
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.spy
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.whenever
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -46,28 +42,28 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-@ExtendWith(MockitoExtension::class)
+@ExtendWith(MockKExtension::class)
 class MavenIndexDownloadingServiceTest {
 
     @TempDir
     lateinit var tempDir: File
 
-    @Mock
+    @MockK(relaxUnitFun = true)
     private lateinit var indexer: Indexer
 
-    @Mock
+    @MockK
     private lateinit var indexUpdater: IndexUpdater
 
-    @Mock
+    @MockK
     private lateinit var resourceFetcher: ResourceFetcher
 
-    @Mock
+    @MockK
     private lateinit var indexingContext: IndexingContext
 
-    @Mock
+    @MockK
     private lateinit var indexUpdateResult: IndexUpdateResult
 
-    @Mock
+    @MockK
     private lateinit var provider: BaseMavenCentralStaticDataProvider
 
     private lateinit var indexingContextManager: MavenIndexingContextManager
@@ -100,27 +96,29 @@ class MavenIndexDownloadingServiceTest {
     )
     fun `should download full index with force flag`(repositoryUrl: String): Unit = runBlocking {
         stubProviderContext(repositoryUrl)
-        whenever(provider.fetchRemoteIndexTimestamp()).thenReturn(INDEX_TIMESTAMP)
+        every { provider.fetchRemoteIndexTimestamp() } returns INDEX_TIMESTAMP
         val localIndexCacheDir = File(tempDir, "local-index-cache")
 
-        whenever(indexUpdateResult.isFullUpdate).thenReturn(true)
-        whenever(indexUpdater.fetchAndUpdateIndex(any())).thenReturn(indexUpdateResult)
+        every { indexUpdateResult.isFullUpdate } returns true
+        every { indexUpdater.fetchAndUpdateIndex(any()) } returns indexUpdateResult
 
         val result = service.downloadIndexIfNewer(Instant.EPOCH, provider)
 
         assertEquals(INDEX_TIMESTAMP, result)
-        verify(indexUpdater).fetchAndUpdateIndex(check {
-            assertTrue(it.isForceFullUpdate, "Should have forceFullUpdate flag set to true")
-            assertSame(indexingContext, it.indexingContext)
-            assertSame(resourceFetcher, it.resourceFetcher)
-            assertEquals(File(tempDir, "tmp"), it.indexTempDir, "Should use the configured temp directory")
-            assertEquals(
-                localIndexCacheDir,
-                it.localIndexCacheDir,
-                "Should use local index cache dir to decouple download from extraction",
-            )
-        })
-        verify(provider).fetchRemoteIndexTimestamp()
+        verify(exactly = 1) {
+            indexUpdater.fetchAndUpdateIndex(withArg {
+                assertTrue(it.isForceFullUpdate, "Should have forceFullUpdate flag set to true")
+                assertSame(indexingContext, it.indexingContext)
+                assertSame(resourceFetcher, it.resourceFetcher)
+                assertEquals(File(tempDir, "tmp"), it.indexTempDir, "Should use the configured temp directory")
+                assertEquals(
+                    localIndexCacheDir,
+                    it.localIndexCacheDir,
+                    "Should use local index cache dir to decouple download from extraction",
+                )
+            })
+        }
+        verify(exactly = 1) { provider.fetchRemoteIndexTimestamp() }
         verifyIndexingContext(repositoryUrl)
     }
 
@@ -131,12 +129,15 @@ class MavenIndexDownloadingServiceTest {
         remoteIndexTimestamp: Instant?,
     ): Unit = runBlocking {
         stubProviderContext(repositoryUrl)
-        whenever(provider.fetchRemoteIndexTimestamp()).thenReturn(remoteIndexTimestamp)
+        every { provider.fetchRemoteIndexTimestamp() } returns remoteIndexTimestamp
 
         assertNull(service.downloadIndexIfNewer(INDEX_TIMESTAMP, provider))
 
-        verify(provider).fetchRemoteIndexTimestamp()
-        verifyNoInteractions(indexUpdater, resourceFetcher)
+        verify(exactly = 1) { provider.fetchRemoteIndexTimestamp() }
+        verify {
+            indexUpdater wasNot Called
+            resourceFetcher wasNot Called
+        }
         verifyIndexingContext(repositoryUrl)
     }
 
@@ -145,15 +146,18 @@ class MavenIndexDownloadingServiceTest {
     fun `should propagate timestamp failure and close context`(repositoryUrl: String): Unit = runBlocking {
         stubProviderContext(repositoryUrl)
         val failure = IllegalStateException("Timestamp lookup failed")
-        whenever(provider.fetchRemoteIndexTimestamp()).thenThrow(failure)
+        every { provider.fetchRemoteIndexTimestamp() } throws failure
 
         val thrown = assertFailsWith<IllegalStateException> {
             service.downloadIndexIfNewer(Instant.EPOCH, provider)
         }
 
         assertSame(failure, thrown)
-        verify(provider).fetchRemoteIndexTimestamp()
-        verifyNoInteractions(indexUpdater, resourceFetcher)
+        verify(exactly = 1) { provider.fetchRemoteIndexTimestamp() }
+        verify {
+            indexUpdater wasNot Called
+            resourceFetcher wasNot Called
+        }
         verifyIndexingContext(repositoryUrl)
     }
 
@@ -161,17 +165,17 @@ class MavenIndexDownloadingServiceTest {
     @ValueSource(strings = [CENTRAL_REPOSITORY_URL, GOOGLE_MIRROR_REPOSITORY_URL])
     fun `should propagate download failure and close context`(repositoryUrl: String): Unit = runBlocking {
         stubProviderContext(repositoryUrl)
-        whenever(provider.fetchRemoteIndexTimestamp()).thenReturn(INDEX_TIMESTAMP)
+        every { provider.fetchRemoteIndexTimestamp() } returns INDEX_TIMESTAMP
         val failure = IOException("Index download failed")
-        whenever(indexUpdater.fetchAndUpdateIndex(any())).thenThrow(failure)
+        every { indexUpdater.fetchAndUpdateIndex(any()) } throws failure
 
         val thrown = assertFailsWith<IOException> {
             service.downloadIndexIfNewer(Instant.EPOCH, provider)
         }
 
         assertSame(failure, thrown)
-        verify(provider).fetchRemoteIndexTimestamp()
-        verify(indexUpdater).fetchAndUpdateIndex(any())
+        verify(exactly = 1) { provider.fetchRemoteIndexTimestamp() }
+        verify(exactly = 1) { indexUpdater.fetchAndUpdateIndex(any()) }
         verifyIndexingContext(repositoryUrl)
     }
 
@@ -183,11 +187,11 @@ class MavenIndexDownloadingServiceTest {
             nexus.index.timestamp=20260130185500.000 +0000
             nexus.index.chain-id=20260130185500
         """.trimIndent()
-        val transport = mock<Transport>()
-        val response = mock<Transport.Response>()
-        whenever(response.code).thenReturn(200)
-        whenever(response.body).thenAnswer { indexProperties.byteInputStream() }
-        whenever(transport.get(any(), any())).thenReturn(response)
+        val transport = mockk<Transport>()
+        val response = mockk<Transport.Response>(relaxUnitFun = true)
+        every { response.code } returns 200
+        every { response.body } answers { indexProperties.byteInputStream() }
+        every { transport.get(any(), any()) } returns response
         val selectedProvider = createProvider(repositoryUrl, transport)
         assertEquals(repositoryUrl, selectedProvider.contentEndpoint)
 
@@ -214,7 +218,7 @@ class MavenIndexDownloadingServiceTest {
             }
         }
         val configuration = MavenIndexerConfiguration()
-        val realIndexer = spy(configuration.indexer())
+        val realIndexer = spyk(configuration.indexer())
         val contextManager = MavenIndexingContextManager(properties, realIndexer, configuration.indexCreators())
         service = MavenIndexDownloadingService(configuration.indexUpdater(), recordingFetcher, contextManager)
 
@@ -224,8 +228,8 @@ class MavenIndexDownloadingServiceTest {
 
         assertSame(archiveFailure, thrown)
         val expectedIndexUrl = "${repositoryUrl.trimEnd('/')}/.index"
-        verify(transport).get("$expectedIndexUrl/nexus-maven-repository-index.properties", emptyMap())
-        verify(response).close()
+        verify(exactly = 1) { transport.get("$expectedIndexUrl/nexus-maven-repository-index.properties", emptyMap()) }
+        verify(exactly = 1) { response.close() }
         assertEquals(
             listOf(
                 "$expectedIndexUrl/nexus-maven-repository-index.properties",
@@ -235,36 +239,37 @@ class MavenIndexDownloadingServiceTest {
             requestedUrls,
         )
         assertTrue(disconnected)
-        verify(realIndexer).closeIndexingContext(any(), eq(false))
+        verify(exactly = 1) { realIndexer.closeIndexingContext(any(), false) }
     }
 
     private fun stubProviderContext(repositoryUrl: String) {
-        whenever(provider.contentEndpoint).thenReturn(repositoryUrl)
-        whenever(indexer.createIndexingContext(any(), any(), any(), any(), any(), anyOrNull(), any(), any(), any()))
-            .thenReturn(indexingContext)
+        every { provider.contentEndpoint } returns repositoryUrl
+        every {
+            indexer.createIndexingContext(any(), any(), any(), any(), any(), any(), any(), any(), any())
+        } returns indexingContext
     }
 
     private fun verifyIndexingContext(repositoryUrl: String) {
         val indexDir = File(tempDir, "maven-central-index")
-        verify(indexer).createIndexingContext(
-            "maven-central-context",
-            "central",
-            indexDir,
-            indexDir,
-            repositoryUrl,
-            null,
-            true,
-            true,
-            emptyList(),
-        )
-        verify(indexer).closeIndexingContext(indexingContext, false)
+        verify(exactly = 1) {
+            indexer.createIndexingContext(
+                "maven-central-context",
+                "central",
+                indexDir,
+                indexDir,
+                repositoryUrl,
+                null,
+                true,
+                true,
+                emptyList(),
+            )
+        }
+        verify(exactly = 1) { indexer.closeIndexingContext(indexingContext, false) }
     }
 
     private fun createProvider(repositoryUrl: String, transport: Transport): BaseMavenCentralStaticDataProvider {
-        val rateLimiter = mock<MavenCentralRateLimiter>()
-        whenever(rateLimiter.withRateLimitBlocking(any<() -> Any?>())).thenAnswer { invocation ->
-            invocation.getArgument<() -> Any?>(0).invoke()
-        }
+        val rateLimiter = mockk<MavenCentralRateLimiter>()
+        every { rateLimiter.withRateLimitBlocking(any<() -> Any?>()) } answers { firstArg<() -> Any?>().invoke() }
         return if (repositoryUrl == GOOGLE_MIRROR_REPOSITORY_URL) {
             GoogleMavenCentralMirrorStaticDataProvider(
                 xmlMapper = XmlMapper(),

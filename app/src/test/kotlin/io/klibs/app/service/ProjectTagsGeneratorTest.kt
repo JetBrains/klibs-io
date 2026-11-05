@@ -6,12 +6,10 @@ import io.klibs.app.service.impl.ProjectTagsGenerationService
 import io.klibs.core.project.service.TagService
 import io.klibs.integration.ai.AiModelsProperties
 import io.klibs.integration.ai.AiService
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.ClassPathResource
 import kotlin.test.assertEquals
@@ -36,7 +34,7 @@ class ProjectTagsGeneratorTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `throws when no description repo description and readme are provided`() {
-        val ai: AiService = mock()
+        val ai = mockk<AiService>()
         val generator = newGenerator(ai)
 
         assertThrows<IllegalStateException> {
@@ -51,16 +49,12 @@ class ProjectTagsGeneratorTest : BaseUnitWithDbLayerTest() {
 
     @Test
     fun `maps returned indices to allowed tag names`() {
-        val ai: AiService = mock()
+        val ai = mockk<AiService>()
         val generator = newGenerator(ai)
 
-        whenever(
-            ai.executeOpenAiRequest(
-                any(),
-                eq("generateProjectTags"),
-                eq(aiModels.default)
-            )
-        ).thenReturn("{" + "\"indices\":[0,2,5]}")
+        every {
+            ai.executeOpenAiRequest(any(), "generateProjectTags", aiModels.default)
+        } returns "{\"indices\":[0,2,5]}"
 
         val result = generator.generateTagsForProject(
             projectName = "TestProject",

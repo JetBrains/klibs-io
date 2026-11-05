@@ -1,15 +1,14 @@
 package io.klibs.core.readme.impl
 
 import io.klibs.core.readme.service.GithubLfsDetector
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 class LinksMarkdownReadmeProcessorTest {
 
-    private val lfsDetector: GithubLfsDetector = mock()
+    private val lfsDetector = mockk<GithubLfsDetector>()
     private val processor = LinksMarkdownReadmeProcessor(lfsDetector)
 
     @Test
@@ -68,8 +67,8 @@ class LinksMarkdownReadmeProcessorTest {
             </table>
             """.trimIndent()
 
-        whenever(lfsDetector.isLfsFile(any())).thenAnswer { invocation ->
-            val url = invocation.getArgument<String>(0)
+        every { lfsDetector.isLfsFile(any()) } answers {
+            val url = firstArg<String>()
             url == "https://raw.githubusercontent.com/Kotlin/kotlindl/master/artwork/readme/lfs.png"
         }
 

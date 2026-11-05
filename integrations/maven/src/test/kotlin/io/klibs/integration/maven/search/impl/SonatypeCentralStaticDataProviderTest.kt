@@ -6,6 +6,8 @@ import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.request.impl.MavenCentralRateLimiter
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
+import io.mockk.every
+import io.mockk.mockk
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -14,9 +16,6 @@ import org.apache.maven.search.api.transport.Transport
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 class SonatypeCentralStaticDataProviderTest {
 
@@ -61,15 +60,13 @@ class SonatypeCentralStaticDataProviderTest {
     }
 
     private fun provider(body: String): SonatypeCentralStaticDataProvider {
-        val response = mock<Transport.Response>()
-        whenever(response.code).thenReturn(200)
-        whenever(response.body).thenReturn(body.byteInputStream())
-        val transport = mock<Transport>()
-        whenever(transport.get(any(), any())).thenReturn(response)
-        val rateLimiter = mock<MavenCentralRateLimiter>()
-        whenever(rateLimiter.withRateLimitBlocking(any<() -> Any?>())).thenAnswer { invocation ->
-            invocation.getArgument<() -> Any?>(0).invoke()
-        }
+        val response = mockk<Transport.Response>(relaxUnitFun = true)
+        every { response.code } returns 200
+        every { response.body } returns body.byteInputStream()
+        val transport = mockk<Transport>()
+        every { transport.get(any(), any()) } returns response
+        val rateLimiter = mockk<MavenCentralRateLimiter>()
+        every { rateLimiter.withRateLimitBlocking(any<() -> Any?>()) } answers { firstArg<() -> Any?>().invoke() }
         return SonatypeCentralStaticDataProvider(
             xmlMapper = XmlMapper(),
             mavenCentralRateLimiter = rateLimiter,

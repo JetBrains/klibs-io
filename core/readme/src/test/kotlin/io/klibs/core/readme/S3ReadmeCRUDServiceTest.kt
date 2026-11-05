@@ -2,12 +2,12 @@ package io.klibs.core.readme
 
 import io.klibs.core.readme.service.S3ReadmeCRUDService
 import io.klibs.core.storage.S3StorageService
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.io.File
 
 class S3ReadmeCRUDServiceTest {
@@ -25,7 +25,7 @@ class S3ReadmeCRUDServiceTest {
                 prefix = "readme"
             )
         )
-        s3StorageService = mock()
+        s3StorageService = mockk(relaxUnitFun = true)
         uut = S3ReadmeCRUDService(readmeProperties, s3StorageService)
     }
 
@@ -36,7 +36,7 @@ class S3ReadmeCRUDServiceTest {
         val key = "readme/project/readme-456.md"
         val content = "README content"
 
-        whenever(s3StorageService.readText("test-bucket", key)).thenReturn(content)
+        every { s3StorageService.readText("test-bucket", key) } returns content
 
         val result = uut.readReadmeMd(projectId, scmRepositoryId)
 
@@ -51,8 +51,8 @@ class S3ReadmeCRUDServiceTest {
         val repoKey = "readme/readme-123.md"
         val content = "README content"
 
-        whenever(s3StorageService.readText("test-bucket", projectKey)).thenReturn(null)
-        whenever(s3StorageService.readText("test-bucket", repoKey)).thenReturn(content)
+        every { s3StorageService.readText("test-bucket", projectKey) } returns null
+        every { s3StorageService.readText("test-bucket", repoKey) } returns content
 
         val result = uut.readReadmeMd(projectId, scmRepositoryId)
 
@@ -68,8 +68,10 @@ class S3ReadmeCRUDServiceTest {
 
         uut.writeReadmeFiles(projectId, rawContent, mdContent, htmlContent)
 
-        verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456-raw.md", rawContent)
-        verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456.md", mdContent)
-        verify(s3StorageService).writeText("test-bucket", "readme/project/readme-456.html", htmlContent)
+        verify(exactly = 1) {
+            s3StorageService.writeText("test-bucket", "readme/project/readme-456-raw.md", rawContent)
+            s3StorageService.writeText("test-bucket", "readme/project/readme-456.md", mdContent)
+            s3StorageService.writeText("test-bucket", "readme/project/readme-456.html", htmlContent)
+        }
     }
 }

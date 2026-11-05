@@ -13,46 +13,44 @@ import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.service.MavenStaticDataProvider
-import java.time.Instant
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.transaction.support.TransactionTemplate
 
 class PackageIndexingServiceTestOld {
-    private val discoverer: PackageDiscoverer = mock()
+    private val discoverer = mockk<PackageDiscoverer>()
     private val providers: List<MavenStaticDataProvider> = listOf(
         provider(ScraperType.CENTRAL_SONATYPE),
         provider(ScraperType.GOOGLE_MAVEN),
         provider(ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
     )
-    private val gitHubIndexingService: GitHubIndexingService = mock()
-    private val projectIndexingService: ProjectIndexingService = mock()
-    private val pomIndexingService: PomIndexingService = mock()
-    private val kotlinToolingMetadataIndexingService: KotlinToolingMetadataIndexingService = mock()
-    private val packageDescriptionGenerator: PackageDescriptionGenerator = mock()
-    private val indexingRequestRepository: IndexingRequestRepository = mock()
-    private val userRequestReportWriter: UserRequestReportWriter = mock()
-    private val packageService: PackageService = mock()
-    private val packageRepository: PackageRepository = mock()
-    private val mavenCoordinateService: MavenCoordinateService = mock()
-    private val rejectedMavenCoordinatesService: RejectedMavenCoordinatesService = mock()
-    private val transactionTemplate: TransactionTemplate = mock()
-    private val selfProvider: ObjectProvider<PackageIndexingService> = mock()
+    private val gitHubIndexingService = mockk<GitHubIndexingService>()
+    private val projectIndexingService = mockk<ProjectIndexingService>()
+    private val pomIndexingService = mockk<PomIndexingService>()
+    private val kotlinToolingMetadataIndexingService = mockk<KotlinToolingMetadataIndexingService>()
+    private val packageDescriptionGenerator = mockk<PackageDescriptionGenerator>()
+    private val indexingRequestRepository = mockk<IndexingRequestRepository>()
+    private val userRequestReportWriter = mockk<UserRequestReportWriter>()
+    private val packageService = mockk<PackageService>()
+    private val packageRepository = mockk<PackageRepository>()
+    private val mavenCoordinateService = mockk<MavenCoordinateService>()
+    private val rejectedMavenCoordinatesService = mockk<RejectedMavenCoordinatesService>()
+    private val transactionTemplate = mockk<TransactionTemplate>()
+    private val selfProvider = mockk<ObjectProvider<PackageIndexingService>>()
 
     private lateinit var service: PackageIndexingService
 
     @BeforeEach
     fun setup() {
-        whenever(transactionTemplate.execute<Any?>(any())).thenReturn(null)
+        every { transactionTemplate.execute<Any?>(any()) } returns null
 
         service = PackageIndexingService(
             listOf(discoverer),
@@ -66,9 +64,9 @@ class PackageIndexingServiceTestOld {
             userRequestReportWriter,
             packageService,
             packageRepository,
-            mock(),
+            mockk(),
             mavenCoordinateService,
-            mock<PackageIndexingErrorHandler>(),
+            mockk<PackageIndexingErrorHandler>(),
             IndexingConfigurationProperties(),
             selfProvider
         )
@@ -83,33 +81,37 @@ class PackageIndexingServiceTestOld {
             scraperType = ScraperType.SEARCH_MAVEN,
         )
 
-        whenever(discoverer.discover(any())).thenAnswer { invocation ->
-            val channel = invocation.getArgument<Channel<Exception>>(0)
+        coEvery { discoverer.discover(any()) } answers {
+            val channel = firstArg<Channel<Exception>>()
             channel.close()
             flowOf(artifact)
         }
 
-        whenever(indexingRequestRepository.saveAll(any<Iterable<IndexingRequestEntity>>())).thenReturn(listOf(IndexingRequestEntity(
+        every { indexingRequestRepository.saveAll(any<Iterable<IndexingRequestEntity>>()) } returns listOf(IndexingRequestEntity(
             id = 1L,
             groupId = artifact.groupId,
             artifactId = artifact.artifactId,
             version = artifact.version,
             repo = artifact.scraperType
-        )))
+        ))
 
         service.indexNewPackages()
 
-        verify(indexingRequestRepository).saveAll(argThat<Iterable<IndexingRequestEntity>> { requests ->
-            val list = requests.toList()
-            list.size == 1 && list[0].groupId == artifact.groupId &&
-                    list[0].artifactId == artifact.artifactId &&
-                    list[0].version == artifact.version &&
-                    list[0].repo == artifact.scraperType
-        })
+        verify(exactly = 1) {
+            indexingRequestRepository.saveAll(
+                match<Iterable<IndexingRequestEntity>> { requests ->
+                    val list = requests.toList()
+                    list.size == 1 && list[0].groupId == artifact.groupId &&
+                            list[0].artifactId == artifact.artifactId &&
+                            list[0].version == artifact.version &&
+                            list[0].repo == artifact.scraperType
+                }
+            )
+        }
     }
 
     private fun provider(scraperType: ScraperType): MavenStaticDataProvider =
-        mock<MavenStaticDataProvider>().also { provider ->
-            whenever(provider.scraperType).thenReturn(scraperType)
+        mockk<MavenStaticDataProvider>().also { provider ->
+            every { provider.scraperType } returns scraperType
         }
 }

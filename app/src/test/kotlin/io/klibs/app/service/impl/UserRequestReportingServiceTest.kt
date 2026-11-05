@@ -1,6 +1,7 @@
 package io.klibs.app.service.impl
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.app.service.UserIssueNotifier
 import io.klibs.app.service.UserRequestReportingService
 import io.klibs.core.pckg.entity.PackageIndexKey
@@ -11,15 +12,11 @@ import io.klibs.core.pckg.enums.UserRequestProcessingStatus
 import io.klibs.core.pckg.repository.PackageIndexRepository
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.core.pckg.repository.UserRequestReportRepository
+import io.mockk.Called
+import io.mockk.every
+import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -36,10 +33,10 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var reportRepository: UserRequestReportRepository
 
-    @MockitoBean
+    @MockkBean(relaxUnitFun = true)
     private lateinit var userIssueNotifier: UserIssueNotifier
 
-    @MockitoBean
+    @MockkBean
     private lateinit var packageIndexRepository: PackageIndexRepository
 
     private val issueNumber = 100
@@ -49,11 +46,11 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
         val issue = saveIssue(UserRequestProcessingStatus.ACCEPTED)
         val report = saveReport(issue, UserRequestIndexingStatus.SUCCESS)
 
-        whenever(packageIndexRepository.existsById(eq(PackageIndexKey(issue.groupId, issue.artifactId)))).thenReturn(true)
+        every { packageIndexRepository.existsById(PackageIndexKey(issue.groupId, issue.artifactId)) } returns true
 
         assertTrue(uut.processReportsQueue())
 
-        verify(userIssueNotifier).notifyIndexingSuccess(issueNumber)
+        verify(exactly = 1) { userIssueNotifier.notifyIndexingSuccess(issueNumber) }
         assertEquals(UserRequestProcessingStatus.PROCESSED, statusOf(issue))
         assertFalse(reportRepository.existsById(requireNotNull(report.id)))
     }
@@ -65,7 +62,7 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
 
         uut.processReportsQueue()
 
-        verify(userIssueNotifier).notifyIndexingFailure(issueNumber, "test error")
+        verify(exactly = 1) { userIssueNotifier.notifyIndexingFailure(issueNumber, "test error") }
         val reloaded = issueRepository.findById(requireNotNull(issue.id)).get()
         assertEquals(UserRequestProcessingStatus.FAILED, reloaded.processingStatus)
         assertEquals("test error", reloaded.statusDetails)
@@ -77,11 +74,11 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
         val issue = saveIssue(UserRequestProcessingStatus.FAILED)
         saveReport(issue, UserRequestIndexingStatus.SUCCESS)
 
-        whenever(packageIndexRepository.existsById(eq(PackageIndexKey(issue.groupId, issue.artifactId)))).thenReturn(true)
+        every { packageIndexRepository.existsById(PackageIndexKey(issue.groupId, issue.artifactId)) } returns true
 
         uut.processReportsQueue()
 
-        verify(userIssueNotifier).notifyIndexingSuccess(issueNumber)
+        verify(exactly = 1) { userIssueNotifier.notifyIndexingSuccess(issueNumber) }
         assertEquals(UserRequestProcessingStatus.PROCESSED, statusOf(issue))
     }
 
@@ -92,7 +89,7 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
 
         uut.processReportsQueue()
 
-        verifyNoInteractions(userIssueNotifier)
+        verify { userIssueNotifier wasNot Called }
         assertEquals(UserRequestProcessingStatus.FAILED, statusOf(issue))
         assertFalse(reportRepository.existsById(requireNotNull(report.id)))
     }
@@ -104,7 +101,7 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
 
         uut.processReportsQueue()
 
-        verifyNoInteractions(userIssueNotifier)
+        verify { userIssueNotifier wasNot Called }
         assertEquals(UserRequestProcessingStatus.PROCESSED, statusOf(issue))
         assertFalse(reportRepository.existsById(requireNotNull(report.id)))
     }
@@ -113,9 +110,8 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
     fun `increments report attempts and leaves the issue untouched when posting the comment fails`() {
         val issue = saveIssue(UserRequestProcessingStatus.ACCEPTED)
         val report = saveReport(issue, UserRequestIndexingStatus.SUCCESS)
-        doThrow(RuntimeException("GitHub down"))
-            .whenever(userIssueNotifier).notifyIndexingSuccess(any())
-        whenever(packageIndexRepository.existsById(eq(PackageIndexKey(issue.groupId, issue.artifactId)))).thenReturn(true)
+        every { userIssueNotifier.notifyIndexingSuccess(any()) } throws RuntimeException("GitHub down")
+        every { packageIndexRepository.existsById(PackageIndexKey(issue.groupId, issue.artifactId)) } returns true
 
         uut.processReportsQueue()
 
@@ -130,7 +126,7 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
 
         uut.processReportsQueue()
 
-        verifyNoInteractions(userIssueNotifier)
+        verify { userIssueNotifier wasNot Called }
         assertEquals(UserRequestProcessingStatus.NEW, statusOf(issue))
         assertEquals(1, reportRepository.findById(requireNotNull(report.id)).get().failedAttempts)
     }
@@ -142,7 +138,7 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
 
         uut.processReportsQueue()
 
-        verifyNoInteractions(userIssueNotifier)
+        verify { userIssueNotifier wasNot Called }
         assertEquals(UserRequestProcessingStatus.REJECTED, statusOf(issue))
         assertEquals(1, reportRepository.findById(requireNotNull(report.id)).get().failedAttempts)
     }
@@ -157,11 +153,11 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
         val issue = saveIssue(UserRequestProcessingStatus.ACCEPTED)
         val report = saveReport(issue, UserRequestIndexingStatus.SUCCESS)
 
-        whenever(packageIndexRepository.existsById(eq(PackageIndexKey(issue.groupId, issue.artifactId)))).thenReturn(false)
+        every { packageIndexRepository.existsById(PackageIndexKey(issue.groupId, issue.artifactId)) } returns false
 
         assertTrue(uut.processReportsQueue())
 
-        verifyNoInteractions(userIssueNotifier)
+        verify { userIssueNotifier wasNot Called }
         assertEquals(UserRequestProcessingStatus.ACCEPTED, statusOf(issue))
         val reloaded = reportRepository.findById(requireNotNull(report.id)).get()
         assertEquals(0, reloaded.failedAttempts)
@@ -172,7 +168,7 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
     fun `does not poll a deferred report until its defer time passes`() {
         val issue = saveIssue(UserRequestProcessingStatus.ACCEPTED)
         saveReport(issue, UserRequestIndexingStatus.SUCCESS)
-        whenever(packageIndexRepository.existsById(any())).thenReturn(false)
+        every { packageIndexRepository.existsById(any()) } returns false
 
         // First run defers the report...
         assertTrue(uut.processReportsQueue())
@@ -187,7 +183,7 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
         val readyIssue = saveIssue(UserRequestProcessingStatus.ACCEPTED)
         val readyReport = saveReport(readyIssue, UserRequestIndexingStatus.FAILURE, statusDetails = "boom")
 
-        whenever(packageIndexRepository.existsById(any())).thenReturn(false)
+        every { packageIndexRepository.existsById(any()) } returns false
 
         // Bounded so a deferral regression fails fast instead of spinning forever.
         var iterations = 0
@@ -196,7 +192,7 @@ class UserRequestReportingServiceTest : BaseUnitWithDbLayerTest() {
         }
 
         // The ready report was published even though it was queued behind the deferred one.
-        verify(userIssueNotifier).notifyIndexingFailure(issueNumber, "boom")
+        verify(exactly = 1) { userIssueNotifier.notifyIndexingFailure(issueNumber, "boom") }
         assertEquals(UserRequestProcessingStatus.FAILED, statusOf(readyIssue))
         assertFalse(reportRepository.existsById(requireNotNull(readyReport.id)))
         // The deferred report is still queued and left for a later run.

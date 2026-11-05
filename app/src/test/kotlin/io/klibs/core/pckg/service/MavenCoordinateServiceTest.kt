@@ -1,18 +1,16 @@
 package io.klibs.core.pckg.service
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkSpyBean
 import io.klibs.core.pckg.dto.MavenCoordinateDTO
 import io.klibs.core.pckg.entity.MavenCoordinateEntity
 import io.klibs.core.pckg.repository.MavenCoordinateRepository
+import io.mockk.every
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito.doReturn
-import org.mockito.Mockito.verify
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -23,7 +21,7 @@ class MavenCoordinateServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var uut: MavenCoordinateService
 
-    @MockitoSpyBean
+    @MockkSpyBean
     private lateinit var mavenCoordinateRepository: MavenCoordinateRepository
 
     @Test
@@ -86,9 +84,11 @@ class MavenCoordinateServiceTest : BaseUnitWithDbLayerTest() {
         )
         val expectedId = requireNotNull(concurrentlyInserted.id)
 
-        doReturn(null, concurrentlyInserted)
-            .whenever(mavenCoordinateRepository)
-            .findByGroupIdAndArtifactIdAndVersion(eq(coords.groupId), eq(coords.artifactId), eq(coords.version))
+        every {
+            mavenCoordinateRepository.findByGroupIdAndArtifactIdAndVersion(
+                coords.groupId, coords.artifactId, coords.version
+            )
+        } returnsMany listOf(null, concurrentlyInserted)
 
         val result = uut.resolveOrCreate(coords)
 
@@ -96,18 +96,23 @@ class MavenCoordinateServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals(coords.groupId, result.groupId)
         assertEquals(coords.artifactId, result.artifactId)
         assertEquals(coords.version, result.version)
-        verify(mavenCoordinateRepository).saveIfAbsent(coords.groupId, coords.artifactId, coords.version)
+        verify(exactly = 1) {
+            mavenCoordinateRepository.saveIfAbsent(coords.groupId, coords.artifactId, coords.version)
+        }
     }
 
     @Test
     fun `insertOrLookup throws when saveIfAbsent lost race but row cannot be re-read`() {
         val coords = MavenCoordinateDTO("io.klibs", "missing", "1.0.0")
-        doReturn(0L)
-            .whenever(mavenCoordinateRepository)
-            .saveIfAbsent(eq(coords.groupId), eq(coords.artifactId), eq(coords.version))
-        doReturn(null)
-            .whenever(mavenCoordinateRepository)
-            .findByGroupIdAndArtifactIdAndVersion(eq(coords.groupId), eq(coords.artifactId), eq(coords.version))
+
+        every {
+            mavenCoordinateRepository.saveIfAbsent(coords.groupId, coords.artifactId, coords.version)
+        } returns 0L
+        every {
+            mavenCoordinateRepository.findByGroupIdAndArtifactIdAndVersion(
+                coords.groupId, coords.artifactId, coords.version
+            )
+        } returns null
 
         val ex = assertThrows<IllegalArgumentException> { uut.resolveOrCreate(coords) }
         assertTrue(ex.message!!.contains("maven_coordinate row after insert"))

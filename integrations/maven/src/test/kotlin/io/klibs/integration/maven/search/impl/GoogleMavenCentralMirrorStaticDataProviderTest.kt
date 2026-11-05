@@ -6,6 +6,8 @@ import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.klibs.integration.maven.request.impl.MavenCentralRateLimiter
 import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
+import io.mockk.every
+import io.mockk.mockk
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -13,9 +15,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.apache.maven.search.api.transport.Transport
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 class GoogleMavenCentralMirrorStaticDataProviderTest {
 
@@ -92,10 +91,10 @@ class GoogleMavenCentralMirrorStaticDataProviderTest {
     }
 
     private fun fetchReleaseDate(headers: Map<String, String>): Instant {
-        val response = mock<Transport.Response>()
-        whenever(response.code).thenReturn(200)
-        whenever(response.headers).thenReturn(headers)
-        whenever(response.body).thenReturn(
+        val response = mockk<Transport.Response>(relaxUnitFun = true)
+        every { response.code } returns 200
+        every { response.headers } returns headers
+        every { response.body } returns
             """
                 <project>
                     <modelVersion>4.0.0</modelVersion>
@@ -104,13 +103,10 @@ class GoogleMavenCentralMirrorStaticDataProviderTest {
                     <version>0.30.1</version>
                 </project>
             """.trimIndent().byteInputStream()
-        )
-        val transport = mock<Transport>()
-        whenever(transport.get(any(), any())).thenReturn(response)
-        val rateLimiter = mock<MavenCentralRateLimiter>()
-        whenever(rateLimiter.withRateLimitBlocking(any<() -> Any?>())).thenAnswer { invocation ->
-            invocation.getArgument<() -> Any?>(0).invoke()
-        }
+        val transport = mockk<Transport>()
+        every { transport.get(any(), any()) } returns response
+        val rateLimiter = mockk<MavenCentralRateLimiter>()
+        every { rateLimiter.withRateLimitBlocking(any<() -> Any?>()) } answers { firstArg<() -> Any?>().invoke() }
         val uut = GoogleMavenCentralMirrorStaticDataProvider(
             xmlMapper = XmlMapper(),
             mavenCentralRateLimiter = rateLimiter,
