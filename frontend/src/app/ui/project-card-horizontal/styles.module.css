@@ -1,0 +1,115 @@
+.card {
+    display: flex;
+    align-items: stretch;
+    padding: 12px;
+    border: 1px solid rgba(25, 25, 28, 0.1);
+    border-radius: 8px;
+    background: #fff;
+    color: #19191c;
+    text-decoration: none;
+    transition: border-color 0.2s;
+}
+
+.card:hover {
+    border-color: rgba(25, 25, 28, 0.4);
+}
+
+.card:focus-visible {
+    outline: none;
+    box-shadow: rgba(107, 87, 255, .8) 0 0 0 4px;
+}
+
+.content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    padding: 12px 24px 12px 12px;
+}
+
+.heading {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.title {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.authorRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    column-gap: 8px;
+}
+
+.author {
+    margin: 0;
+}
+
+.grantProject {
+    background-image: linear-gradient(170.6deg, rgba(247, 0, 111, 0.15) 0%, rgba(255, 255, 255, 0) 22.84%);
+}
+
+.grantWinner {
+    display: flex;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.grantWinnerIcon path {
+    fill: #f7006f;
+}
+
+.grantWinner .grantWinnerTitle {
+    color: #f7006f;
+}
+
+.description {
+    margin: 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 8px;
+}
+
+.platforms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/*Design puts the switch before the label*/
+.compare {
+    align-self: flex-start;
+    flex-direction: row-reverse;
+}
+
+.details {
+    flex-shrink: 0;
+    width: 394px;
+}
+
+/*Medium 1000px - 641px */
+@media only screen and (max-width: 1000px) {
+    .card {
+        flex-direction: column;
+    }
+
+    .content {
+        padding: 12px;
+    }
+
+    .details {
+        width: 100%;
+    }
+}

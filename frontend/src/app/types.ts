@@ -12,6 +12,7 @@ export interface ProjectSearchResults {
 	targetGroups: TargetGroups;
 	tags: string[];
 	markers: string[];
+	dependentCount: number;
 }
 
 export interface ProjectDetails extends ProjectSearchResults {

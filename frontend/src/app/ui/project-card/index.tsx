@@ -1,4 +1,3 @@
-import { Fragment, ReactNode, useMemo } from "react";
 import Link from "next/link";
 import cn from 'classnames';
 import { isFeaturedProject, isGrantWinner, kFormatter } from "@/app/types";
@@ -8,6 +7,7 @@ import { textCn } from '@rescui/typography';
 import { StarIcon, ReadIcon, WinIcon, RocketIcon } from '@rescui/icons';
 import PlatformTag from "@/app/ui/platform-tag";
 import CompareToggle from "@/app/ui/compare-toggle";
+import SearchTextWrap from "@/app/ui/search-text-wrap";
 
 import styles from './styles.module.css';
 import { trackEvent, GAEvent } from "@/app/analytics";
@@ -16,35 +16,6 @@ interface ProjectCardProps {
 	featuredProject?: ProjectSearchResults;
 	className?: string;
 	search?: string;
-}
-
-function SearchTextWrap({ search, children }: { search?: ProjectCardProps['search'], children?: string | null }) {
-	return useMemo(() => {
-		if (!search || !children) return children;
-
-		const chunks: ReactNode[] = [];
-		let text = children;
-		const query = search.toLowerCase();
-
-		do {
-			const i = text.toLowerCase().indexOf(query);
-
-			if (i === -1) {
-				text && chunks.push(<Fragment key={i}>{text}</Fragment>);
-				break
-			}
-
-			const item = text.substring(0, i);
-			const suffixIndex = i + query.length;
-
-			chunks.push(<Fragment key={i + '-' + text.length}>{item}<span
-				className={styles.highlight}>{text.substring(i, suffixIndex)}</span></Fragment>);
-			text = text.substring(suffixIndex);
-		} while (true);
-
-		if (chunks.length === 1) return chunks[0];
-		return <>{chunks}</>
-	}, [search, children]);
 }
 
 export default function ProjectCard({ featuredProject, className, search }: ProjectCardProps) {
