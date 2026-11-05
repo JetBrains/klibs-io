@@ -34,7 +34,7 @@ test('navbar on an inner page while typing a search', async () => {
     await renderNavbar('/project/arrow-kt/arrow');
 
     await userEvent.type(page.getByRole('textbox').first(), 'ktor');
-    await expect.element(page.getByText('Clear')).toBeVisible();
+    await expect.element(page.getByText('Clear', { exact: false })).toBeVisible();
 });
 
 test('navbar mobile menu open', async () => {
