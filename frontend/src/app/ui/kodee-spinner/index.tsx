@@ -1,12 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
 
 import kodeeWalking from '@/app/img/kodee/kodee-walking.gif';
 import kodeeLoading from '@/app/img/kodee/kodee-loading.gif';
 import kodeeFloating from '@/app/img/kodee/kodee-floating.gif';
-
 
 const images = [
 	kodeeWalking,
@@ -15,21 +13,16 @@ const images = [
 ];
 
 export default function KodeeSpinner() {
-	// Pick the image only after hydration: Math.random() during render
-	// makes server and client HTML diverge (react-hydration-error).
-	const [kodeeImgSrc, setKodeeImgSrc] = useState(images[0]);
-
-	useEffect(() => {
-		setKodeeImgSrc(images[Math.floor(Math.random() * images.length)]);
-	}, []);
+	const kodeeImgSrc = images[Math.floor(Math.random() * images.length)];
 
 	return (
 		<Image
 			src={kodeeImgSrc}
-	        alt="Kodee spinning"
+			alt="Kodee spinning"
 			width={64}
 			height={64}
 			unoptimized
+			suppressHydrationWarning
 		/>
 	);
 }
