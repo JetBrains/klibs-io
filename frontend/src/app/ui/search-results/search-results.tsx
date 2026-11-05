@@ -144,7 +144,7 @@ export function SearchResults({ filters, setFilters, updateURLFromState, isPacka
                     {/*Search results cards*/}
                     {isPackageSearch
                         ? packages?.map((item) => (
-                            <PackageCardHorizontal search={filters?.query} pkg={item} key={item.id} />
+                            <PackageCardHorizontal search={filters?.query} pkg={item} key={`${item.groupId}:${item.artifactId}`} />
                         ))
                         : projects?.map((item) => (
                             <ProjectCardHorizontal search={filters?.query} project={item} key={item.id} />
