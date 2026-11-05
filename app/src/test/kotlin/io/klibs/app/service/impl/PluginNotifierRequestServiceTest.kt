@@ -3,18 +3,15 @@ package io.klibs.app.service.impl
 import io.klibs.app.api.PluginNotifierIndexingRequest
 import io.klibs.app.exceptions.UserRequestProcessingException
 import io.klibs.app.service.UserIndexingRequestService
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.whenever
 
 class PluginNotifierRequestServiceTest {
 
-    private val userIndexingRequestService: UserIndexingRequestService = mock()
+    private val userIndexingRequestService = mockk<UserIndexingRequestService>(relaxUnitFun = true)
     private val uut = PluginNotifierRequestService(userIndexingRequestService)
 
     @Test
@@ -27,7 +24,7 @@ class PluginNotifierRequestServiceTest {
 
         uut.processRequest(request)
 
-        verify(userIndexingRequestService).saveGAVRequest("org.example", "lib", "1.0.0")
+        verify(exactly = 1) { userIndexingRequestService.saveGAVRequest("org.example", "lib", "1.0.0") }
     }
 
     @Test
@@ -42,7 +39,7 @@ class PluginNotifierRequestServiceTest {
             uut.processRequest(request)
         }
 
-        verify(userIndexingRequestService, never()).saveGAVRequest(any(), any(), any())
+        verify(exactly = 0) { userIndexingRequestService.saveGAVRequest(any(), any(), any()) }
     }
 
     @Test
@@ -52,8 +49,8 @@ class PluginNotifierRequestServiceTest {
             artifactId = "lib",
             version = "1.0.0"
         )
-        doThrow(UserRequestProcessingException("Artifact is banned"))
-            .whenever(userIndexingRequestService).saveGAVRequest(any(), any(), any())
+        every { userIndexingRequestService.saveGAVRequest(any(), any(), any()) } throws
+            UserRequestProcessingException("Artifact is banned")
 
         assertThrows<UserRequestProcessingException> {
             uut.processRequest(request)

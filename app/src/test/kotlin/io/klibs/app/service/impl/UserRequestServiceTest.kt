@@ -1,6 +1,7 @@
 package io.klibs.app.service.impl
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.app.exceptions.UserRequestProcessingException
 import io.klibs.app.service.UserIndexingRequestService
 import io.klibs.app.service.UserIssueNotifier
@@ -8,18 +9,12 @@ import io.klibs.core.pckg.dto.UserIndexingRequestDto
 import io.klibs.core.pckg.entity.UserRequestIssueEntity
 import io.klibs.core.pckg.enums.UserRequestProcessingStatus
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
+import io.mockk.every
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.never
-import org.mockito.kotlin.timeout
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import java.time.Instant
 import java.util.*
 
@@ -28,19 +23,19 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var uut: UserRequestService
 
-    @MockitoBean
+    @MockkBean
     private lateinit var userRequestIssueRepository: UserRequestIssueRepository
 
-    @MockitoBean
+    @MockkBean(relaxUnitFun = true)
     private lateinit var userIssueNotifier: UserIssueNotifier
 
-    @MockitoBean
+    @MockkBean(relaxUnitFun = true)
     private lateinit var userIndexingRequestService: UserIndexingRequestService
 
     @BeforeEach
     fun setUp() {
-        whenever(userRequestIssueRepository.save(any<UserRequestIssueEntity>())).thenAnswer {
-            val entity = it.arguments[0] as UserRequestIssueEntity
+        every { userRequestIssueRepository.save(any<UserRequestIssueEntity>()) } answers {
+            val entity = firstArg<UserRequestIssueEntity>()
             if (entity.id == null) entity.copy(id = UUID.randomUUID()) else entity
         }
     }
@@ -49,70 +44,67 @@ class UserRequestServiceTest : BaseUnitWithDbLayerTest() {
     fun `comments and labels as triaged on success`() {
         uut.processRequest(createMockDto(123, "g", "a", null))
 
-        verify(userIndexingRequestService, timeout(1000)).discoverAndSaveRequest(any<UUID>())
-        verify(userIssueNotifier, timeout(1000)).notifyAccepted(123)
+        verify(exactly = 1, timeout = 1000) { userIndexingRequestService.discoverAndSaveRequest(any<UUID>()) }
+        verify(exactly = 1, timeout = 1000) { userIssueNotifier.notifyAccepted(123) }
 
-        verify(userRequestIssueRepository).save(argThat {
-            githubIssueNumber == 123 && groupId == "g" && artifactId == "a" &&
-                processingStatus == UserRequestProcessingStatus.NEW
-        })
-        verify(userRequestIssueRepository, timeout(1000)).save(argThat {
-            processingStatus == UserRequestProcessingStatus.ACCEPTED
-        })
+        verify(exactly = 1) { userRequestIssueRepository.save(match { it.githubIssueNumber == 123 && it.groupId == "g" && it.artifactId == "a" &&
+                it.processingStatus == UserRequestProcessingStatus.NEW }) }
+        verify(exactly = 1, timeout = 1000) { userRequestIssueRepository.save(match {
+            it.processingStatus == UserRequestProcessingStatus.ACCEPTED
+        }) }
     }
 
     @Test
     fun `comments with reason as triaged on UserRequestProcessingException`() {
-        whenever(userIndexingRequestService.discoverAndSaveRequest(any<UUID>()))
-            .thenThrow(
-                UserRequestProcessingException(
-                    "No Kotlin Multiplatform artifacts found for g.a: ${HttpStatus.BAD_REQUEST}"
-                )
+        every { userIndexingRequestService.discoverAndSaveRequest(any<UUID>()) } throws
+            UserRequestProcessingException(
+                "No Kotlin Multiplatform artifacts found for g.a: ${HttpStatus.BAD_REQUEST}"
             )
 
         uut.processRequest(createMockDto(123, "g", "a", null))
 
-        verify(userIndexingRequestService, timeout(1000)).discoverAndSaveRequest(any<UUID>())
-        verify(userIssueNotifier, timeout(1000)).notifyFailure(
-            123,
-            "No Kotlin Multiplatform artifacts found for g.a: 400 BAD_REQUEST"
-        )
-        verify(userRequestIssueRepository, timeout(1000)).save(argThat {
-            processingStatus == UserRequestProcessingStatus.REJECTED
-        })
+        verify(exactly = 1, timeout = 1000) { userIndexingRequestService.discoverAndSaveRequest(any<UUID>()) }
+        verify(exactly = 1, timeout = 1000) {
+            userIssueNotifier.notifyFailure(
+                123,
+                "No Kotlin Multiplatform artifacts found for g.a: 400 BAD_REQUEST"
+            )
+        }
+        verify(exactly = 1, timeout = 1000) { userRequestIssueRepository.save(match {
+            it.processingStatus == UserRequestProcessingStatus.REJECTED
+        }) }
     }
 
     @Test
     fun `comments validation error and labels on invalid request data`() {
         uut.processRequest(createMockDto(123, "group with spaces", "a", "1.0.0"))
 
-        verify(userIndexingRequestService, never()).discoverAndSaveRequest(any<UUID>())
-        verify(userIssueNotifier).notifyFailure(eq(123), argThat { contains("Invalid Group ID format") })
+        verify(exactly = 0) { userIndexingRequestService.discoverAndSaveRequest(any<UUID>()) }
+        verify(exactly = 1) { userIssueNotifier.notifyFailure(123, match { it.contains("Invalid Group ID format") }) }
     }
 
     @Test
     fun `notifies failure on unexpected exception`() {
-        whenever(userIndexingRequestService.discoverAndSaveRequest(any<UUID>()))
-            .thenThrow(IllegalStateException("unexpected exception"))
+        every { userIndexingRequestService.discoverAndSaveRequest(any<UUID>()) } throws
+            IllegalStateException("unexpected exception")
 
         uut.processRequest(createMockDto(123, "g", "a", null))
 
-        verify(userIndexingRequestService, timeout(1000)).discoverAndSaveRequest(any<UUID>())
-        verify(userIssueNotifier, timeout(1000)).notifyServerErrorFailure(eq(123))
-        verify(userRequestIssueRepository, timeout(1000)).save(argThat {
-            processingStatus == UserRequestProcessingStatus.FAILED
-        })
+        verify(exactly = 1, timeout = 1000) { userIndexingRequestService.discoverAndSaveRequest(any<UUID>()) }
+        verify(exactly = 1, timeout = 1000) { userIssueNotifier.notifyServerErrorFailure(123) }
+        verify(exactly = 1, timeout = 1000) { userRequestIssueRepository.save(match {
+            it.processingStatus == UserRequestProcessingStatus.FAILED
+        }) }
     }
 
     @Test
     fun `notifies failure if repository save fails`() {
-        whenever(userRequestIssueRepository.save(any()))
-            .thenThrow(RuntimeException("DB is down"))
+        every { userRequestIssueRepository.save(any()) } throws RuntimeException("DB is down")
 
         uut.processRequest(createMockDto(123, "g", "a", null))
 
-        verify(userIssueNotifier).notifyServerErrorFailure(eq(123))
-        verify(userIndexingRequestService, never()).discoverAndSaveRequest(any<UUID>())
+        verify(exactly = 1) { userIssueNotifier.notifyServerErrorFailure(123) }
+        verify(exactly = 0) { userIndexingRequestService.discoverAndSaveRequest(any<UUID>()) }
     }
 
     private fun createMockDto(

@@ -3,6 +3,8 @@ package io.klibs.integration.maven.index
 import io.klibs.integration.maven.MavenIntegrationProperties
 import io.klibs.integration.maven.configuration.MavenIndexerConfiguration
 import io.klibs.integration.maven.service.MavenIndexingContextManager
+import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.apache.maven.index.Indexer
 import org.apache.maven.index.context.IndexCreator
@@ -11,8 +13,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import org.mockito.kotlin.spy
-import org.mockito.kotlin.verify
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -31,7 +31,7 @@ class MavenIndexingContextManagerTest {
     @BeforeEach
     fun setup() {
         val configuration = MavenIndexerConfiguration()
-        indexer = spy(configuration.indexer())
+        indexer = spyk(configuration.indexer())
         indexCreators = configuration.indexCreators()
         val properties = MavenIntegrationProperties(
             central = MavenIntegrationProperties.Central(
@@ -63,18 +63,20 @@ class MavenIndexingContextManagerTest {
         }
 
         assertSame(expectedResult, result)
-        verify(indexer).createIndexingContext(
-            "test-context",
-            "central",
-            indexDir,
-            indexDir,
-            repositoryUrl,
-            null,
-            true,
-            true,
-            indexCreators,
-        )
-        verify(indexer).closeIndexingContext(indexingContext, false)
+        verify(exactly = 1) {
+            indexer.createIndexingContext(
+                "test-context",
+                "central",
+                indexDir,
+                indexDir,
+                repositoryUrl,
+                null,
+                true,
+                true,
+                indexCreators,
+            )
+        }
+        verify(exactly = 1) { indexer.closeIndexingContext(indexingContext, false) }
         assertTrue(indexDir.isDirectory, "Closing the context should preserve the local index")
     }
 
@@ -93,7 +95,7 @@ class MavenIndexingContextManagerTest {
             }
 
             assertSame(failure, thrown)
-            verify(indexer).closeIndexingContext(indexingContext, false)
+            verify(exactly = 1) { indexer.closeIndexingContext(indexingContext, false) }
             assertTrue(File(tempDir, "maven-central-index").isDirectory)
         }
 

@@ -1,21 +1,16 @@
 package io.klibs.core.readme
 
 import io.klibs.integration.github.GitHubIntegration
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import kotlin.test.assertEquals
 
 class ReadmeContentBuilderTest {
-    private val gitHubIntegration = mock<GitHubIntegration> {
-        whenever(it.markdownToHtml(any(), any())).thenAnswer { invocation ->
-            "<html>${invocation.getArgument<String>(0)}</html>"
-        }
-        whenever(it.markdownRender(any(), any())).thenAnswer { invocation ->
-            invocation.getArgument<String>(0)
-        }
+    private val gitHubIntegration = mockk<GitHubIntegration> {
+        every { markdownToHtml(any(), any()) } answers { "<html>${firstArg<String>()}</html>" }
+        every { markdownRender(any(), any()) } answers { firstArg() }
     }
     private val builder = ReadmeContentBuilder(gitHubIntegration, emptyList())
 

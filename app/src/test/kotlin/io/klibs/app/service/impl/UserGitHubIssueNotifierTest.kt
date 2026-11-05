@@ -2,22 +2,24 @@ package io.klibs.app.service.impl
 
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.configuration.properties.GitHubIntegrationProperties
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.*
 
 class UserGitHubIssueNotifierTest {
 
-    private val gitHubIntegration: GitHubIntegration = mock()
-    private val gitHubIntegrationProperties: GitHubIntegrationProperties = mock()
-    private val indexRequests: GitHubIntegrationProperties.IndexRequests = mock()
+    private val gitHubIntegration = mockk<GitHubIntegration>(relaxUnitFun = true)
+    private val gitHubIntegrationProperties = mockk<GitHubIntegrationProperties>()
+    private val indexRequests = mockk<GitHubIntegrationProperties.IndexRequests>()
 
     private lateinit var uut: UserGitHubIssueNotifier
 
     @BeforeEach
     fun setUp() {
-        whenever(gitHubIntegrationProperties.indexRequests).thenReturn(indexRequests)
-        whenever(indexRequests.processedLabel).thenReturn("processed")
+        every { gitHubIntegrationProperties.indexRequests } returns indexRequests
+        every { indexRequests.processedLabel } returns "processed"
         uut = UserGitHubIssueNotifier(gitHubIntegration, gitHubIntegrationProperties)
     }
 
@@ -25,55 +27,69 @@ class UserGitHubIssueNotifierTest {
     fun `notifies success`() {
         uut.notifyAccepted(123)
 
-        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat { contains("accepted") })
-        verify(gitHubIntegration).addKlibsIssueLabel(123, "processed")
+        verify(exactly = 1) { gitHubIntegration.addKlibsIssueComment(123, match { it.contains("accepted") }) }
+        verify(exactly = 1) { gitHubIntegration.addKlibsIssueLabel(123, "processed") }
     }
 
     @Test
     fun `notifies failure with reason and pings developer`() {
-        whenever(indexRequests.developerHandle).thenReturn("dev")
+        every { indexRequests.developerHandle } returns "dev"
 
         uut.notifyFailure(123, "some reason")
 
-        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat {
-            contains("some reason") && contains("cc @dev")
-        })
-        verify(gitHubIntegration).addKlibsIssueLabel(123, "processed")
+        verify(exactly = 1) {
+            gitHubIntegration.addKlibsIssueComment(
+                123,
+                match { it.contains("some reason") && it.contains("cc @dev") }
+            )
+        }
+        verify(exactly = 1) { gitHubIntegration.addKlibsIssueLabel(123, "processed") }
     }
 
     @Test
     fun `notifies parse failure and pings developer`() {
-        whenever(indexRequests.developerHandle).thenReturn("dev")
+        every { indexRequests.developerHandle } returns "dev"
 
         uut.notifyFailure(123, null)
 
-        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat {
-            contains("Indexing request could not be processed") && contains("cc @dev")
-        })
-        verify(gitHubIntegration).addKlibsIssueLabel(123, "processed")
+        verify(exactly = 1) {
+            gitHubIntegration.addKlibsIssueComment(
+                123,
+                match { it.contains("Indexing request could not be processed") && it.contains("cc @dev") }
+            )
+        }
+        verify(exactly = 1) { gitHubIntegration.addKlibsIssueLabel(123, "processed") }
     }
 
     @Test
     fun `notifies indexing success and pings developer`() {
-        whenever(indexRequests.developerHandle).thenReturn("dev")
+        every { indexRequests.developerHandle } returns "dev"
 
         uut.notifyIndexingSuccess(123)
 
-        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat {
-            contains("Indexing completed") && contains("cc @dev")
-        })
+        verify(exactly = 1) {
+            gitHubIntegration.addKlibsIssueComment(
+                123,
+                match { it.contains("Indexing completed") && it.contains("cc @dev") }
+            )
+        }
     }
 
     @Test
     fun `notifies developer on internal error`() {
-        whenever(indexRequests.developerHandle).thenReturn("dev")
+        every { indexRequests.developerHandle } returns "dev"
 
         uut.notifyServerErrorFailure(123)
 
-        verify(gitHubIntegration).addKlibsIssueComment(eq(123), argThat {
-            contains("Developers have been notified") &&
-                    contains("cc @dev")
-        })
-        verify(gitHubIntegration).addKlibsIssueLabel(123, "processed")
+        verify(exactly = 1) {
+            gitHubIntegration.addKlibsIssueComment(
+                123,
+                match {
+                    it.contains("Developers have been notified") &&
+                            it.contains("cc @dev")
+                }
+            )
+        }
+        verify(exactly = 1) { gitHubIntegration.addKlibsIssueLabel(123, "processed") }
     }
 }

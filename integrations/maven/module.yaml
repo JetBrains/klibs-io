@@ -15,7 +15,7 @@ dependencies:
   - $libs.kotlinx.datetime
 
 test-dependencies:
-  - $libs.mockito.kotlin
+  - $libs.mockk
 
 settings:
   kotlin:

@@ -3,18 +3,18 @@ package io.klibs.integration.mcp
 import io.klibs.core.pckg.model.PackageDetails
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.integration.mcp.service.McpPackageService
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
-import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class McpPackageServiceTest {
 
-    private val packageService = mock(PackageService::class.java)
+    private val packageService = mockk<PackageService>()
     private val mcpPackageService = McpPackageService(packageService)
 
     @Test
@@ -24,11 +24,11 @@ class McpPackageServiceTest {
         val expectedLatestVersion = "1.9.0-RC"
         val expectedStableVersion = "1.8.0"
 
-        whenever(packageService.getLatestPackageDetails(groupId, artifactId))
-            .thenReturn(createPackageDetails(groupId, artifactId, expectedLatestVersion))
+        every { packageService.getLatestPackageDetails(groupId, artifactId) } returns
+            createPackageDetails(groupId, artifactId, expectedLatestVersion)
 
-        whenever(packageService.getLatestStablePackageDetails(groupId, artifactId))
-            .thenReturn(createPackageDetails(groupId, artifactId, expectedStableVersion))
+        every { packageService.getLatestStablePackageDetails(groupId, artifactId) } returns
+            createPackageDetails(groupId, artifactId, expectedStableVersion)
 
         val result = mcpPackageService.getLatestVersion(groupId, artifactId)
 
@@ -45,11 +45,10 @@ class McpPackageServiceTest {
         val artifactId = "kotlinx-coroutines-core"
         val expectedLatestVersion = "1.9.0-RC"
 
-        whenever(packageService.getLatestPackageDetails(groupId, artifactId))
-            .thenReturn(createPackageDetails(groupId, artifactId, expectedLatestVersion))
+        every { packageService.getLatestPackageDetails(groupId, artifactId) } returns
+            createPackageDetails(groupId, artifactId, expectedLatestVersion)
 
-        whenever(packageService.getLatestStablePackageDetails(groupId, artifactId))
-            .thenReturn(null)
+        every { packageService.getLatestStablePackageDetails(groupId, artifactId) } returns null
 
         val result = mcpPackageService.getLatestVersion(groupId, artifactId)
 
@@ -66,11 +65,11 @@ class McpPackageServiceTest {
         val artifactId = "kotlinx-coroutines-core"
         val expectedVersion = "1.8.0"
 
-        whenever(packageService.getLatestPackageDetails(groupId, artifactId))
-            .thenReturn(createPackageDetails(groupId, artifactId, expectedVersion))
+        every { packageService.getLatestPackageDetails(groupId, artifactId) } returns
+            createPackageDetails(groupId, artifactId, expectedVersion)
 
-        whenever(packageService.getLatestStablePackageDetails(groupId, artifactId))
-            .thenReturn(createPackageDetails(groupId, artifactId, expectedVersion))
+        every { packageService.getLatestStablePackageDetails(groupId, artifactId) } returns
+            createPackageDetails(groupId, artifactId, expectedVersion)
 
         val result = mcpPackageService.getLatestVersion(groupId, artifactId)
 
@@ -84,8 +83,8 @@ class McpPackageServiceTest {
         val groupId = "com.nonexistent"
         val artifactId = "nonexistent-lib"
 
-        whenever(packageService.getLatestPackageDetails(groupId, artifactId))
-            .thenReturn(null)
+        every { packageService.getLatestPackageDetails(groupId, artifactId) } returns null
+        every { packageService.getLatestStablePackageDetails(groupId, artifactId) } returns null
 
         val result = mcpPackageService.getLatestVersion(groupId, artifactId)
 

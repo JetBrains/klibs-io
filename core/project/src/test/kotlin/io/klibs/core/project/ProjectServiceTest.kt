@@ -12,24 +12,26 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
 import io.klibs.core.project.repository.ProjectHiddenRepository
 import io.klibs.core.readme.service.ReadmeService
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.*
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class ProjectServiceTest {
 
-    private val packageService: PackageService = mock()
-    private val readmeService: ReadmeService = mock()
-    private val projectRepository: ProjectRepository = mock()
-    private val scmRepositoryRepository: ScmRepositoryRepository = mock()
-    private val markerRepository: MarkerRepository = mock()
-    private val tagRepository: TagRepository = mock()
-    private val projectTagRepository: ProjectTagRepository = mock()
-    private val allowedProjectTagsRepository: AllowedProjectTagsRepository = mock()
-    private val scmRepoHealthComponentsRepository: ScmRepoHealthComponentsRepository = mock()
-    private val projectHiddenRepository: ProjectHiddenRepository = mock()
-    private val project: ProjectEntity = mock()
+    private val packageService = mockk<PackageService>()
+    private val readmeService = mockk<ReadmeService>()
+    private val projectRepository = mockk<ProjectRepository>()
+    private val scmRepositoryRepository = mockk<ScmRepositoryRepository>()
+    private val markerRepository = mockk<MarkerRepository>()
+    private val tagRepository = mockk<TagRepository>()
+    private val projectTagRepository = mockk<ProjectTagRepository>(relaxed = true)
+    private val allowedProjectTagsRepository = mockk<AllowedProjectTagsRepository>()
+    private val scmRepoHealthComponentsRepository = mockk<ScmRepoHealthComponentsRepository>()
+    private val projectHiddenRepository = mockk<ProjectHiddenRepository>()
+    private val project = mockk<ProjectEntity>()
 
     private val uut = ProjectService(
         packageService,
@@ -52,14 +54,14 @@ class ProjectServiceTest {
         val tags = listOf("", " ", "!!!")
         val tagsType = TagOrigin.GITHUB
 
-        whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
-        whenever(project.idNotNull).thenReturn(projectId)
+        every { projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) } returns project
+        every { project.idNotNull } returns projectId
 
         val result = uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
 
         assertEquals(emptyList(), result)
-        verify(projectTagRepository).deleteByProjectIdAndOrigin(projectId, tagsType)
-        verify(projectTagRepository, never()).saveAll(any<List<TagEntity>>())
+        verify(exactly = 1) { projectTagRepository.deleteByProjectIdAndOrigin(projectId, tagsType) }
+        verify(exactly = 0) { projectTagRepository.saveAll(any<List<TagEntity>>()) }
     }
 
     @Test
@@ -70,13 +72,13 @@ class ProjectServiceTest {
         val tags = listOf("", " ", "!!!")
         val tagsType = TagOrigin.USER
 
-        whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
-        whenever(project.idNotNull).thenReturn(projectId)
+        every { projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) } returns project
+        every { project.idNotNull } returns projectId
 
         assertFailsWith<IllegalArgumentException> {
             uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
         }
-        verify(projectTagRepository, never()).deleteByProjectIdAndOrigin(any(), any())
+        verify(exactly = 0) { projectTagRepository.deleteByProjectIdAndOrigin(any(), any()) }
     }
 
     @Test
@@ -87,17 +89,17 @@ class ProjectServiceTest {
         val tags = listOf("valid-tag", "another-tag")
         val tagsType = TagOrigin.GITHUB
 
-        whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
-        whenever(project.idNotNull).thenReturn(projectId)
+        every { projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) } returns project
+        every { project.idNotNull } returns projectId
 
-        whenever(allowedProjectTagsRepository.existsById("valid-tag")).thenReturn(true)
-        whenever(allowedProjectTagsRepository.existsById("another-tag")).thenReturn(true)
+        every { allowedProjectTagsRepository.existsById("valid-tag") } returns true
+        every { allowedProjectTagsRepository.existsById("another-tag") } returns true
 
         val result = uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
 
         assertEquals(listOf("valid-tag", "another-tag"), result)
-        verify(projectTagRepository).deleteByProjectIdAndOrigin(projectId, tagsType)
-        verify(projectTagRepository).saveAll(any<List<TagEntity>>())
+        verify(exactly = 1) { projectTagRepository.deleteByProjectIdAndOrigin(projectId, tagsType) }
+        verify(exactly = 1) { projectTagRepository.saveAll(any<List<TagEntity>>()) }
     }
 
     @Test
@@ -108,15 +110,15 @@ class ProjectServiceTest {
         val tags = listOf("invalid-tag")
         val tagsType = TagOrigin.USER
 
-        whenever(projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin)).thenReturn(project)
-        whenever(project.idNotNull).thenReturn(projectId)
-        whenever(allowedProjectTagsRepository.existsById("invalid-tag")).thenReturn(false)
+        every { projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) } returns project
+        every { project.idNotNull } returns projectId
+        every { allowedProjectTagsRepository.existsById("invalid-tag") } returns false
 
         val exception = assertFailsWith<IllegalArgumentException> {
             uut.updateProjectTags(projectName, ownerLogin, tags, tagsType)
         }
         assertEquals("Invalid tags were provided. After normalization they are: invalid-tag", exception.message)
-        verify(projectTagRepository, never()).deleteByProjectIdAndOrigin(any(), any())
+        verify(exactly = 0) { projectTagRepository.deleteByProjectIdAndOrigin(any(), any()) }
     }
 
 }

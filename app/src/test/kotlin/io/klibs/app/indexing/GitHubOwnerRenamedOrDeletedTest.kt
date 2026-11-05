@@ -1,19 +1,18 @@
 package io.klibs.app.indexing
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.owner.repository.ScmOwnerSchedulingRepository
 import io.klibs.integration.github.GitHubApiException
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubUser
+import io.mockk.every
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.whenever
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.data.repository.findByIdOrNull
 import kotlin.test.assertContains
@@ -39,7 +38,7 @@ class GitHubOwnerRenamedOrDeletedTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var schedulingRepository: ScmOwnerSchedulingRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
     @Test
@@ -47,8 +46,8 @@ class GitHubOwnerRenamedOrDeletedTest : BaseUnitWithDbLayerTest() {
     fun `a renamed owner keeps its row and gets the new login`() {
         deferOtherOwner(XING_LOGIN)
         val newLogin = "voize-health"
-        whenever(gitHubIntegration.getUser(VOIZE_LOGIN)).thenReturn(null)
-        whenever(gitHubIntegration.getUser(VOIZE_NATIVE_ID)).thenReturn(githubUser(VOIZE_NATIVE_ID, newLogin))
+        every { gitHubIntegration.getUser(VOIZE_LOGIN) } returns null
+        every { gitHubIntegration.getUser(VOIZE_NATIVE_ID) } returns githubUser(VOIZE_NATIVE_ID, newLogin)
 
         ownerUpdatingService.syncOwnerWithGitHub()
 
@@ -66,8 +65,8 @@ class GitHubOwnerRenamedOrDeletedTest : BaseUnitWithDbLayerTest() {
     fun `an owner whose login was taken over by a different account is followed by native id`() {
         deferOtherOwner(XING_LOGIN)
         val newLogin = "voize-health"
-        whenever(gitHubIntegration.getUser(VOIZE_LOGIN)).thenReturn(githubUser(999999L, VOIZE_LOGIN))
-        whenever(gitHubIntegration.getUser(VOIZE_NATIVE_ID)).thenReturn(githubUser(VOIZE_NATIVE_ID, newLogin))
+        every { gitHubIntegration.getUser(VOIZE_LOGIN) } returns githubUser(999999L, VOIZE_LOGIN)
+        every { gitHubIntegration.getUser(VOIZE_NATIVE_ID) } returns githubUser(VOIZE_NATIVE_ID, newLogin)
 
         ownerUpdatingService.syncOwnerWithGitHub()
 
@@ -79,9 +78,9 @@ class GitHubOwnerRenamedOrDeletedTest : BaseUnitWithDbLayerTest() {
     @Sql(SEED)
     fun `a failing native id probe is retried, never treated as deleted`() {
         deferOtherOwner(XING_LOGIN)
-        whenever(gitHubIntegration.getUser(VOIZE_LOGIN)).thenReturn(null)
-        whenever(gitHubIntegration.getUser(VOIZE_NATIVE_ID))
-            .thenThrow(GitHubApiException(429, "https://api.github.com/user/$VOIZE_NATIVE_ID", "rate limited"))
+        every { gitHubIntegration.getUser(VOIZE_LOGIN) } returns null
+        every { gitHubIntegration.getUser(VOIZE_NATIVE_ID) } throws
+            GitHubApiException(429, "https://api.github.com/user/$VOIZE_NATIVE_ID", "rate limited")
 
         ownerUpdatingService.syncOwnerWithGitHub()
 
@@ -99,8 +98,8 @@ class GitHubOwnerRenamedOrDeletedTest : BaseUnitWithDbLayerTest() {
     fun `a deleted owner keeps its data and stays visible`(output: CapturedOutput) {
         deferOtherOwner(XING_LOGIN)
         val before = assertNotNull(scmOwnerRepository.findByLogin(VOIZE_LOGIN))
-        whenever(gitHubIntegration.getUser(any<String>())).thenReturn(null)
-        whenever(gitHubIntegration.getUser(any<Long>())).thenReturn(null)
+        every { gitHubIntegration.getUser(any<String>()) } returns null
+        every { gitHubIntegration.getUser(any<Long>()) } returns null
 
         ownerUpdatingService.syncOwnerWithGitHub()
 

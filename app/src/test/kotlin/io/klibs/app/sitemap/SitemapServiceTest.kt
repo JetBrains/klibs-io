@@ -4,22 +4,22 @@ import io.klibs.core.pckg.dto.projection.SitemapPackageView
 import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.ProjectService
 import io.klibs.core.project.repository.SitemapProjectEntry
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import io.mockk.every
+import io.mockk.mockk
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class SitemapServiceTest {
 
-    private val projectService: ProjectService = mock()
-    private val packageService: PackageService = mock()
+    private val projectService = mockk<ProjectService>()
+    private val packageService = mockk<PackageService>()
     private val sitemapService = SitemapService(projectService, packageService)
 
     @Test
     fun `generateSitemap should include static pages`() {
-        whenever(projectService.findAllForSitemap()).thenReturn(emptyList())
-        whenever(packageService.findAllPackagesForSitemap()).thenReturn(emptyList())
+        every { projectService.findAllForSitemap() } returns emptyList()
+        every { packageService.findAllPackagesForSitemap() } returns emptyList()
 
         val sitemap = sitemapService.generateSitemap()
 
@@ -33,8 +33,8 @@ class SitemapServiceTest {
             SitemapProjectEntry("owner1", "project-a", Instant.parse("2025-03-15T10:00:00Z")),
             SitemapProjectEntry("owner2", "project-b", Instant.parse("2025-06-20T18:30:00Z")),
         )
-        whenever(projectService.findAllForSitemap()).thenReturn(projects)
-        whenever(packageService.findAllPackagesForSitemap()).thenReturn(emptyList())
+        every { projectService.findAllForSitemap() } returns projects
+        every { packageService.findAllPackagesForSitemap() } returns emptyList()
 
         val sitemap = sitemapService.generateSitemap()
 
@@ -49,8 +49,8 @@ class SitemapServiceTest {
         val packages = listOf(
             sitemapPackage("com.example", "lib-core", Instant.parse("2025-01-10T12:00:00Z")),
         )
-        whenever(projectService.findAllForSitemap()).thenReturn(emptyList())
-        whenever(packageService.findAllPackagesForSitemap()).thenReturn(packages)
+        every { projectService.findAllForSitemap() } returns emptyList()
+        every { packageService.findAllPackagesForSitemap() } returns packages
 
         val sitemap = sitemapService.generateSitemap()
 
@@ -63,8 +63,8 @@ class SitemapServiceTest {
         val projects = listOf(
             SitemapProjectEntry("owner&co", "lib<1>", Instant.parse("2025-05-01T00:00:00Z")),
         )
-        whenever(projectService.findAllForSitemap()).thenReturn(projects)
-        whenever(packageService.findAllPackagesForSitemap()).thenReturn(emptyList())
+        every { projectService.findAllForSitemap() } returns projects
+        every { packageService.findAllPackagesForSitemap() } returns emptyList()
 
         val sitemap = sitemapService.generateSitemap()
 
@@ -73,8 +73,8 @@ class SitemapServiceTest {
 
     @Test
     fun `generateSitemap should produce valid XML structure`() {
-        whenever(projectService.findAllForSitemap()).thenReturn(emptyList())
-        whenever(packageService.findAllPackagesForSitemap()).thenReturn(emptyList())
+        every { projectService.findAllForSitemap() } returns emptyList()
+        every { packageService.findAllPackagesForSitemap() } returns emptyList()
 
         val sitemap = sitemapService.generateSitemap()
 

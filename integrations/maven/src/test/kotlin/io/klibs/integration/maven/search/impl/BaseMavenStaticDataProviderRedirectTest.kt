@@ -10,6 +10,9 @@ import io.klibs.integration.maven.request.impl.MavenCentralRateLimiter
 import io.klibs.integration.maven.service.impl.GoogleMavenCentralMirrorStaticDataProvider
 import io.klibs.integration.maven.service.impl.MAX_REDIRECTS
 import io.klibs.integration.maven.service.impl.SonatypeCentralStaticDataProvider
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import kotlin.test.assertEquals
@@ -25,12 +28,6 @@ import kotlinx.datetime.format
 import org.apache.maven.search.api.transport.Transport
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 
 class BaseMavenStaticDataProviderRedirectTest {
 
@@ -45,7 +42,7 @@ class BaseMavenStaticDataProviderRedirectTest {
 
     @BeforeEach
     fun setup() {
-        transport = mock()
+        transport = mockk()
         sonatypeClient = createSonatypeClient(transport)
         googleMirrorClient = createGoogleMirrorClient(transport)
     }
@@ -61,7 +58,7 @@ class BaseMavenStaticDataProviderRedirectTest {
             code = 200,
             body = pom
         )
-        whenever(transport.get(any(), any())).thenReturn(redirect, ok)
+        every { transport.get(any(), any()) } returnsMany listOf(redirect, ok)
 
         val result = sonatypeClient.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
@@ -83,11 +80,7 @@ class BaseMavenStaticDataProviderRedirectTest {
             )
         }
         val ok = mockSonatypeOkResponse(code = 200, body = pom)
-        whenever(transport.get(any(), any())).thenReturn(
-            redirects[0],
-            *redirects.subList(1, redirects.size).toTypedArray(),
-            ok
-        )
+        every { transport.get(any(), any()) } returnsMany (redirects + ok)
 
         val result = sonatypeClient.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
@@ -104,9 +97,7 @@ class BaseMavenStaticDataProviderRedirectTest {
                 headers = mapOf("location" to "https://example.com/redirect/$idx")
             )
         }
-        whenever(transport.get(any(), any())).thenReturn(
-            redirects[0], *redirects.subList(1, redirects.size).toTypedArray()
-        )
+        every { transport.get(any(), any()) } returnsMany redirects
 
         val ex = assertFailsWith<IllegalStateException> {
             sonatypeClient.getPom(
@@ -120,7 +111,7 @@ class BaseMavenStaticDataProviderRedirectTest {
     @Test
     fun `redirect missing location header throws`() {
         val redirect = mockResponse(code = 302, headers = emptyMap())
-        whenever(transport.get(any(), any())).thenReturn(redirect)
+        every { transport.get(any(), any()) } returns redirect
 
         assertFailsWith<IllegalArgumentException> {
             sonatypeClient.getPom(
@@ -132,7 +123,7 @@ class BaseMavenStaticDataProviderRedirectTest {
     @Test
     fun `unexpected status throws`() {
         val serverError = mockResponse(code = 500)
-        whenever(transport.get(any(), any())).thenReturn(serverError)
+        every { transport.get(any(), any()) } returns serverError
 
         assertFailsWith<IllegalStateException> {
             sonatypeClient.getPom(
@@ -144,7 +135,7 @@ class BaseMavenStaticDataProviderRedirectTest {
     @Test
     fun `not found returns null`() {
         val notFound = mockResponse(code = 404)
-        whenever(transport.get(any(), any())).thenReturn(notFound)
+        every { transport.get(any(), any()) } returns notFound
 
         val result = sonatypeClient.getPom(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
@@ -162,7 +153,7 @@ class BaseMavenStaticDataProviderRedirectTest {
             body = pom,
             addDefaultLastModifiedHeader = false
         )
-        whenever(transport.get(any(), any())).thenReturn(ok)
+        every { transport.get(any(), any()) } returns ok
 
         val result = sonatypeClient.getPomWithReleaseDate(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.CENTRAL_SONATYPE)
@@ -183,7 +174,7 @@ class BaseMavenStaticDataProviderRedirectTest {
             body = pom,
             addDefaultLastModifiedHeader = false
         )
-        whenever(transport.get(any(), any())).thenReturn(ok)
+        every { transport.get(any(), any()) } returns ok
 
         val result = googleMirrorClient.getPomWithReleaseDate(
             MavenArtifact("org.example", "example-artifact", "1.0.0", ScraperType.GOOGLE_MAVEN_CENTRAL_MIRROR)
@@ -197,7 +188,7 @@ class BaseMavenStaticDataProviderRedirectTest {
     fun `pom on 404 returns null`() {
         val primary404 = mockResponse(code = 404)
         val fallback404 = mockResponse(code = 404)
-        whenever(transport.get(any(), any())).thenReturn(primary404, fallback404)
+        every { transport.get(any(), any()) } returnsMany listOf(primary404, fallback404)
 
         val fallbackClient = createSonatypeClient(transport)
         val result = fallbackClient.getPom(
@@ -211,7 +202,7 @@ class BaseMavenStaticDataProviderRedirectTest {
     fun `rate limited with retry-after applies cooldown and carries the delay`() {
         val rateLimiter = passthroughRateLimiter()
         val tooMany = mockResponse(code = 429, headers = mapOf("retry-after" to "120"))
-        whenever(transport.get(any(), any())).thenReturn(tooMany)
+        every { transport.get(any(), any()) } returns tooMany
 
         val rateLimitedClient = createSonatypeClient(transport, rateLimiter = rateLimiter, clock = mockedClock)
         val ex = assertFailsWith<MavenRateLimitedException> {
@@ -226,7 +217,7 @@ class BaseMavenStaticDataProviderRedirectTest {
         }
 
         assertEquals(mockedNow.plus(120.seconds), ex.retryAfter)
-        verify(rateLimiter).applyCooldown(eq(mockedNow.plus(120.seconds)))
+        verify(exactly = 1) { rateLimiter.applyCooldown(mockedNow.plus(120.seconds)) }
     }
 
     @Test
@@ -238,7 +229,7 @@ class BaseMavenStaticDataProviderRedirectTest {
             kotlinx.datetime.format.DateTimeComponents.Formats.RFC_1123
         )
         val tooManyRequestsResponse = mockResponse(code = 429, headers = mapOf("retry-after" to retryAfterHeader))
-        whenever(transport.get(any(), any())).thenReturn(tooManyRequestsResponse)
+        every { transport.get(any(), any()) } returns tooManyRequestsResponse
 
         val uut = createSonatypeClient(transport, rateLimiter = rateLimiter, clock = mockedClock)
         val ex = assertFailsWith<MavenRateLimitedException> {
@@ -253,14 +244,14 @@ class BaseMavenStaticDataProviderRedirectTest {
         }
 
         assertEquals(expectedRetryCooldownTime, ex.retryAfter)
-        verify(rateLimiter).applyCooldown(eq(expectedRetryCooldownTime))
+        verify(exactly = 1) { rateLimiter.applyCooldown(expectedRetryCooldownTime) }
     }
 
     @Test
     fun `rate limited without retry-after does not apply cooldown`() {
         val rateLimiter = passthroughRateLimiter()
         val tooMany = mockResponse(code = 429)
-        whenever(transport.get(any(), any())).thenReturn(tooMany)
+        every { transport.get(any(), any()) } returns tooMany
 
         val rateLimitedClient = createSonatypeClient(transport, rateLimiter = rateLimiter)
         val ex = assertFailsWith<MavenRateLimitedException> {
@@ -275,14 +266,14 @@ class BaseMavenStaticDataProviderRedirectTest {
         }
 
         assertNull(ex.retryAfter)
-        verify(rateLimiter, never()).applyCooldown(any())
+        verify(exactly = 0) { rateLimiter.applyCooldown(any()) }
     }
 
     @Test
     fun `rate limited with invalid retry-after is treated as absent`() {
         val rateLimiter = passthroughRateLimiter()
         val tooMany = mockResponse(code = 429, headers = mapOf("retry-after" to "0"))
-        whenever(transport.get(any(), any())).thenReturn(tooMany)
+        every { transport.get(any(), any()) } returns tooMany
 
         val rateLimitedClient = createSonatypeClient(transport, rateLimiter = rateLimiter)
         val ex = assertFailsWith<MavenRateLimitedException> {
@@ -297,14 +288,12 @@ class BaseMavenStaticDataProviderRedirectTest {
         }
 
         assertNull(ex.retryAfter)
-        verify(rateLimiter, never()).applyCooldown(any())
+        verify(exactly = 0) { rateLimiter.applyCooldown(any()) }
     }
 
     private fun passthroughRateLimiter(): MavenCentralRateLimiter {
-        val rateLimiter = mock<MavenCentralRateLimiter>()
-        whenever(rateLimiter.withRateLimitBlocking(any<() -> Any?>())).thenAnswer { invocation ->
-            invocation.getArgument<() -> Any?>(0).invoke()
-        }
+        val rateLimiter = mockk<MavenCentralRateLimiter>(relaxUnitFun = true)
+        every { rateLimiter.withRateLimitBlocking(any<() -> Any?>()) } answers { firstArg<() -> Any?>().invoke() }
         return rateLimiter
     }
 
@@ -358,8 +347,8 @@ class BaseMavenStaticDataProviderRedirectTest {
         defaultLastModifiedHeaderName: String? = null,
         defaultLastModifiedHeaderValue: String = DEFAULT_RFC_1123_LAST_MODIFIED,
     ): Transport.Response {
-        val response = mock<Transport.Response>()
-        whenever(response.code).thenReturn(code)
+        val response = mockk<Transport.Response>(relaxUnitFun = true)
+        every { response.code } returns code
 
         val shouldAddDefaultLastModified =
             code == 200 && addDefaultLastModifiedHeader && defaultLastModifiedHeaderName != null &&
@@ -371,9 +360,9 @@ class BaseMavenStaticDataProviderRedirectTest {
             headers
         }
 
-        whenever(response.headers).thenReturn(finalHeaders)
+        every { response.headers } returns finalHeaders
         val stream = ByteArrayInputStream((body ?: "").toByteArray(StandardCharsets.UTF_8))
-        whenever(response.body).thenReturn(stream)
+        every { response.body } returns stream
         return response
     }
 

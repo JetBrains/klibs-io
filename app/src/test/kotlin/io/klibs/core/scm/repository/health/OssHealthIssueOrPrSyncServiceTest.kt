@@ -1,6 +1,7 @@
 package io.klibs.core.scm.repository.health
 
 import BaseUnitWithDbLayerTest
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.health.enums.ScmRepoIssueOrPrType
@@ -9,14 +10,10 @@ import io.klibs.core.scm.repository.health.repository.ScmRepoIssueOrPrRepository
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubIssue
 import io.klibs.integration.github.model.GitHubPullRequest
+import io.mockk.every
+import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -44,7 +41,7 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
     @Autowired
     private lateinit var healthComponentsRepository: ScmRepoHealthComponentsRepository
 
-    @MockitoBean
+    @MockkBean
     private lateinit var gitHubIntegration: GitHubIntegration
 
     private val now: Instant = Instant.parse("2026-04-29T12:00:00Z")
@@ -86,7 +83,7 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
         val repo = seededRepo()
         // 5 issues opened in window: 4 closed with durations [2,4,8,10] (median 6.0), 1 open.
         // 3 PRs   opened in window: 2 merged with durations [1,3]    (median 2.0), 1 open.
-        whenever(gitHubIntegration.recentIssues(eq(repo.nativeId), any())).thenReturn(
+        every { gitHubIntegration.recentIssues(repo.nativeId, any()) } returns (
             listOf(
                 githubIssue(number = 101, createdDaysAgo = 50, closedDaysAgo = 48),
                 githubIssue(number = 102, createdDaysAgo = 40, closedDaysAgo = 36),
@@ -95,7 +92,7 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
                 githubIssue(number = 105, createdDaysAgo = 5, closedDaysAgo = null),
             )
         )
-        whenever(gitHubIntegration.recentPrs(eq(repo.nativeId), any())).thenReturn(
+        every { gitHubIntegration.recentPrs(repo.nativeId, any()) } returns (
             listOf(
                 githubPr(number = 201, createdDaysAgo = 30, mergedDaysAgo = 29),
                 githubPr(number = 202, createdDaysAgo = 20, mergedDaysAgo = 17),
@@ -127,8 +124,8 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthIssueOrPrSyncServiceTest/seed-repo.sql")
     fun `syncOne with no GitHub issues or PRs still writes a zero-count components row`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.recentIssues(eq(repo.nativeId), any())).thenReturn(emptyList())
-        whenever(gitHubIntegration.recentPrs(eq(repo.nativeId), any())).thenReturn(emptyList())
+        every { gitHubIntegration.recentIssues(repo.nativeId, any()) } returns emptyList()
+        every { gitHubIntegration.recentPrs(repo.nativeId, any()) } returns emptyList()
 
         uut.syncOne(repo, now)
 
@@ -149,8 +146,8 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthIssueOrPrSyncServiceTest/seed-repo.sql")
     fun `syncOne propagates and writes nothing when the GitHub call throws`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.recentIssues(eq(repo.nativeId), any()))
-            .thenThrow(RuntimeException("network blip"))
+        every { gitHubIntegration.recentIssues(repo.nativeId, any()) } throws
+            RuntimeException("network blip")
 
         assertFailsWith<RuntimeException> { uut.syncOne(repo, now) }
 
@@ -163,14 +160,14 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
     @Sql("classpath:sql/OssHealthIssueOrPrSyncServiceTest/seed-repo.sql")
     fun `syncOne uses windowStart as since when no prior sync exists`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.recentIssues(eq(repo.nativeId), any())).thenReturn(emptyList())
-        whenever(gitHubIntegration.recentPrs(eq(repo.nativeId), any())).thenReturn(emptyList())
+        every { gitHubIntegration.recentIssues(repo.nativeId, any()) } returns emptyList()
+        every { gitHubIntegration.recentPrs(repo.nativeId, any()) } returns emptyList()
 
         uut.syncOne(repo, now)
 
-        val sinceCaptor = argumentCaptor<Instant>()
-        verify(gitHubIntegration).recentIssues(eq(repo.nativeId), sinceCaptor.capture())
-        assertEquals(windowStart, sinceCaptor.firstValue)
+        val sinceCaptor = mutableListOf<Instant>()
+        verify(exactly = 1) { gitHubIntegration.recentIssues(repo.nativeId, capture(sinceCaptor)) }
+        assertEquals(windowStart, sinceCaptor.first())
     }
 
     @Test
@@ -179,14 +176,14 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
         val repo = seededRepo()
         val lastSync = now.minus(6, ChronoUnit.DAYS)
         healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, lastSync)
-        whenever(gitHubIntegration.recentIssues(eq(repo.nativeId), any())).thenReturn(emptyList())
-        whenever(gitHubIntegration.recentPrs(eq(repo.nativeId), any())).thenReturn(emptyList())
+        every { gitHubIntegration.recentIssues(repo.nativeId, any()) } returns emptyList()
+        every { gitHubIntegration.recentPrs(repo.nativeId, any()) } returns emptyList()
 
         uut.syncOne(repo, now)
 
-        val sinceCaptor = argumentCaptor<Instant>()
-        verify(gitHubIntegration).recentIssues(eq(repo.nativeId), sinceCaptor.capture())
-        assertEquals(lastSync.minus(1, ChronoUnit.HOURS), sinceCaptor.firstValue)
+        val sinceCaptor = mutableListOf<Instant>()
+        verify(exactly = 1) { gitHubIntegration.recentIssues(repo.nativeId, capture(sinceCaptor)) }
+        assertEquals(lastSync.minus(1, ChronoUnit.HOURS), sinceCaptor.first())
     }
 
     @Test
@@ -195,24 +192,24 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
         val repo = seededRepo()
         val veryOld = now.minus(13 * 7L, ChronoUnit.DAYS)
         healthComponentsRepository.setLastIssueOrPrSyncTs(repo.idNotNull, veryOld)
-        whenever(gitHubIntegration.recentIssues(eq(repo.nativeId), any())).thenReturn(emptyList())
-        whenever(gitHubIntegration.recentPrs(eq(repo.nativeId), any())).thenReturn(emptyList())
+        every { gitHubIntegration.recentIssues(repo.nativeId, any()) } returns emptyList()
+        every { gitHubIntegration.recentPrs(repo.nativeId, any()) } returns emptyList()
 
         uut.syncOne(repo, now)
 
-        val sinceCaptor = argumentCaptor<Instant>()
-        verify(gitHubIntegration).recentIssues(eq(repo.nativeId), sinceCaptor.capture())
-        assertEquals(windowStart, sinceCaptor.firstValue)
+        val sinceCaptor = mutableListOf<Instant>()
+        verify(exactly = 1) { gitHubIntegration.recentIssues(repo.nativeId, capture(sinceCaptor)) }
+        assertEquals(windowStart, sinceCaptor.first())
     }
 
     @Test
     @Sql("classpath:sql/OssHealthIssueOrPrSyncServiceTest/seed-repo.sql")
     fun `syncOne is idempotent when run twice on the same GitHub issues and PRs`() {
         val repo = seededRepo()
-        whenever(gitHubIntegration.recentIssues(eq(repo.nativeId), any())).thenReturn(
+        every { gitHubIntegration.recentIssues(repo.nativeId, any()) } returns (
             listOf(githubIssue(number = 1, createdDaysAgo = 10, closedDaysAgo = 5))
         )
-        whenever(gitHubIntegration.recentPrs(eq(repo.nativeId), any())).thenReturn(
+        every { gitHubIntegration.recentPrs(repo.nativeId, any()) } returns (
             listOf(githubPr(number = 2, createdDaysAgo = 10, mergedDaysAgo = 5))
         )
 
@@ -238,8 +235,8 @@ class OssHealthIssueOrPrSyncServiceTest : BaseUnitWithDbLayerTest() {
             mergedAt = null,
             durationDays = 5,
         )
-        whenever(gitHubIntegration.recentIssues(eq(repo.nativeId), any())).thenReturn(emptyList())
-        whenever(gitHubIntegration.recentPrs(eq(repo.nativeId), any())).thenReturn(emptyList())
+        every { gitHubIntegration.recentIssues(repo.nativeId, any()) } returns emptyList()
+        every { gitHubIntegration.recentPrs(repo.nativeId, any()) } returns emptyList()
 
         uut.syncOne(repo, now)
 

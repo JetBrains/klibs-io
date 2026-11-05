@@ -2,6 +2,7 @@ package io.klibs.app.indexing
 
 import io.klibs.app.service.TagsGenerationService
 import io.klibs.app.util.BackoffProvider
+import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.project.enums.TagOrigin
@@ -11,30 +12,27 @@ import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeService
+import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.github.GitHubIntegration
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class ProjectIndexingServiceAddAiTagsTest {
 
-    private val readmeService: ReadmeService = mock()
-    private val projectDescriptionGenerator: io.klibs.integration.ai.ProjectDescriptionGenerator = mock()
-    private val projectRepository: ProjectRepository = mock()
-    private val scmRepositoryRepository: ScmRepositoryRepository = mock()
-    private val scmOwnerRepository: io.klibs.core.owner.ScmOwnerRepository = mock()
-    private val tagsGenerator: TagsGenerationService = mock()
-    private val projectTagRepository: ProjectTagRepository = mock()
-    private val gitHubIntegration: GitHubIntegration = mock()
-    private val readmeContentBuilder: ReadmeContentBuilder = mock()
-    private val descriptionBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
-    private val tagsBackoffProvider: BackoffProvider = BackoffProvider("descriptionBackoff", mock())
+    private val readmeService = mockk<ReadmeService>()
+    private val projectDescriptionGenerator = mockk<ProjectDescriptionGenerator>()
+    private val projectRepository = mockk<ProjectRepository>()
+    private val scmRepositoryRepository = mockk<ScmRepositoryRepository>()
+    private val scmOwnerRepository = mockk<ScmOwnerRepository>()
+    private val tagsGenerator = mockk<TagsGenerationService>()
+    private val projectTagRepository = mockk<ProjectTagRepository>()
+    private val gitHubIntegration = mockk<GitHubIntegration>()
+    private val readmeContentBuilder = mockk<ReadmeContentBuilder>()
+    private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
+    private val tagsBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
 
     private fun uut() = ProjectIndexingService(
         readmeService = readmeService,
@@ -65,7 +63,7 @@ class ProjectIndexingServiceAddAiTagsTest {
             latestVersion = "1.0.0",
             latestVersionTs = Instant.parse("2024-01-01T00:00:00Z")
         )
-        whenever(projectRepository.findWithoutTags()).thenReturn(project)
+        every { projectRepository.findWithoutTags() } returns project
 
         val repo = ScmRepositoryEntity(
             id = scmRepoId,
@@ -90,31 +88,32 @@ class ProjectIndexingServiceAddAiTagsTest {
             lastActivityTs = Instant.parse("2024-06-01T00:00:00Z"),
             updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
-        whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
-        whenever(readmeService.readReadmeMd(
-            ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "octocat")
-        )).thenReturn(readme)
+        every { scmRepositoryRepository.findById(scmRepoId) } returns repo
+        every {
+            readmeService.readReadmeMd(
+                ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "octocat")
+            )
+        } returns readme
 
         val generatedTags = listOf("kotlin", "testing", "http-client")
-        whenever(
+        every {
             tagsGenerator.generateTagsForProject(
-                eq(project.name),
-                eq(project.description ?: ""),
-                eq(repo.description ?: ""),
-                eq(readme)
+                project.name,
+                project.description ?: "",
+                repo.description ?: "",
+                readme
             )
-        ).thenReturn(generatedTags)
+        } returns generatedTags
 
-        whenever(projectTagRepository.saveAll(any<Iterable<TagEntity>>())).thenAnswer { invocation ->
-            @Suppress("UNCHECKED_CAST")
-            (invocation.arguments[0] as Iterable<TagEntity>).toList()
+        every { projectTagRepository.saveAll(any<Iterable<TagEntity>>()) } answers {
+            firstArg<Iterable<TagEntity>>().toList()
         }
 
         uut().addAiTags()
 
-        val captor = argumentCaptor<Iterable<TagEntity>>()
-        verify(projectTagRepository).saveAll(captor.capture())
-        val saved = captor.firstValue.toList()
+        val captor = mutableListOf<Iterable<TagEntity>>()
+        verify(exactly = 1) { projectTagRepository.saveAll(capture(captor)) }
+        val saved = captor.first().toList()
 
         assert(saved.size == generatedTags.size)
         saved.forEachIndexed { idx, tagEntity ->
@@ -126,14 +125,14 @@ class ProjectIndexingServiceAddAiTagsTest {
 
     @Test
     fun `addAiTags should do nothing when there is no project without tags`() {
-        whenever(projectRepository.findWithoutTags()).thenReturn(null)
+        every { projectRepository.findWithoutTags() } returns null
 
         uut().addAiTags()
 
-        verify(scmRepositoryRepository, never()).findById(any<Int>())
-        verify(readmeService, never()).readReadmeMd(any())
-        verify(tagsGenerator, never()).generateTagsForProject(any<String>(), any<String>(), any<String>(), any<String>())
-        verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
+        verify(exactly = 0) { scmRepositoryRepository.findById(any<Int>()) }
+        verify(exactly = 0) { readmeService.readReadmeMd(any()) }
+        verify(exactly = 0) { tagsGenerator.generateTagsForProject(any(), any(), any(), any()) }
+        verify(exactly = 0) { projectTagRepository.saveAll(any<Iterable<TagEntity>>()) }
     }
 
     @Test
@@ -152,7 +151,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         )
 
         // Always return the same project (so second run hits backoff and exits)
-        whenever(projectRepository.findWithoutTags()).thenReturn(project)
+        every { projectRepository.findWithoutTags() } returns project
 
         val repo = ScmRepositoryEntity(
             id = scmRepoId,
@@ -177,15 +176,17 @@ class ProjectIndexingServiceAddAiTagsTest {
             lastActivityTs = Instant.parse("2024-06-01T00:00:00Z"),
             updatedAtTs = Instant.parse("2024-06-01T00:00:00Z")
         )
-        whenever(scmRepositoryRepository.findById(scmRepoId)).thenReturn(repo)
-        whenever(readmeService.readReadmeMd(
-            ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "owner")
-        )).thenReturn("# Test README")
+        every { scmRepositoryRepository.findById(scmRepoId) } returns repo
+        every {
+            readmeService.readReadmeMd(
+                ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "owner")
+            )
+        } returns "# Test README"
 
         // Force a failure during tag generation
-        whenever(
+        every {
             tagsGenerator.generateTagsForProject(any(), any(), any(), any())
-        ).thenThrow(RuntimeException("AI tags generation failure"))
+        } throws RuntimeException("AI tags generation failure")
 
         val service = uut()
 
@@ -196,9 +197,9 @@ class ProjectIndexingServiceAddAiTagsTest {
         service.addAiTags()
 
         // Generator should be invoked only once (first run). Second run should skip early.
-        verify(tagsGenerator).generateTagsForProject(any(), any(), any(), any())
+        verify(exactly = 1) { tagsGenerator.generateTagsForProject(any(), any(), any(), any()) }
 
         // No tags should be saved at all due to failure and then skip
-        verify(projectTagRepository, never()).saveAll(any<Iterable<TagEntity>>())
+        verify(exactly = 0) { projectTagRepository.saveAll(any<Iterable<TagEntity>>()) }
     }
 }
