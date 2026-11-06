@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import cn from 'classnames';
 import { isFeaturedProject, isGrantWinner, kFormatter } from "@/app/types";
 import { getProjectLink, getTargetGroupNames, ProjectSearchResults } from "@/app/types";
@@ -22,10 +23,10 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 	const projectLink = featuredProject ? getProjectLink(featuredProject) : null;
 
 	const hasTags = featuredProject && featuredProject.tags && featuredProject.tags.length > 0;
-	const tagsContent = featuredProject && featuredProject.tags && featuredProject.tags.map((tag, i) => <>
+	const tagsContent = featuredProject && featuredProject.tags && featuredProject.tags.map((tag, i) => <Fragment key={tag}>
 		{i !== 0 ? ', ' : null}
-		<SearchTextWrap key={tag} search={search}>{`#${tag}`}</SearchTextWrap>
-	</>);
+		<SearchTextWrap search={search}>{`#${tag}`}</SearchTextWrap>
+	</Fragment>);
 
 	const showGrantWinner = featuredProject && isGrantWinner(featuredProject);
 	const showFeaturedProject = featuredProject && isFeaturedProject(featuredProject);
@@ -36,7 +37,7 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 		// Solution for <Link> href error: https://stackoverflow.com/questions/66821351/nextjs-error-message-failed-prop-type-the-prop-href-expects-a-string-or-o
 		<Link
 			className={cn(cardCn({
-				isClickable: true, paddings: 16,
+				isClickable: true, paddings: 16, disableBorder: true
 			}), styles.card, className, {
 				[styles.featuredProject]: showFeaturedProject,
 				[styles.grantProject]: showGrantWinner
@@ -73,14 +74,14 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 											{showGrantWinner &&
 												<div className={styles.featuredWrapper}>
 													<WinIcon size={'m'} className={styles.featuredIcon} />
-													<span className={cn('rs-h5', styles.featuredTitle)}>Kotlin grant winner</span>
+													<span className={cn(textCn('rs-h5'), styles.featuredTitle)}>Kotlin grant winner</span>
 												</div>
 											}
 
 											{showFeaturedProject && !showGrantWinner &&
 												<div className={styles.featuredWrapper}>
 													<RocketIcon size={'m'} className={styles.featuredIcon} />
-													<span className={cn('rs-h5', styles.featuredTitle)}>Featured</span>
+													<span className={cn(textCn('rs-h5'), styles.featuredTitle)}>Featured</span>
 												</div>
 											}
 										</div>

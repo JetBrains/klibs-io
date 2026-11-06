@@ -142,7 +142,8 @@ export default function InsightsPage() {
                         size="m"
                         options={SORT_OPTIONS}
                         value={currentOption}
-                        onChange={(option: { label: string; value?: string }) => {
+                        onChange={(option) => {
+                            if (!option) return;
                             const next = option.value as InsightsSort;
                             if (next !== sort) setSort(next);
                         }}

@@ -227,11 +227,10 @@ function ProjectTabs({projectReadme, projectPackages, isMobile, activeIndex, set
                                         >
                                             {/*Package coordinates*/}
                                             <div className={styles.packageCoordinates}>
-                                                <Link
-                                                    href={`/package/${packageOverview.groupId}/${packageOverview.artifactId}`}
+                                                <span
                                                     className={styles.packageCoordinatesTitle}>
                                                     {getPackageCoordinates(packageOverview)}
-                                                </Link>
+                                                </span>
                                                 <div className={textCn('rs-text-3', {hardness: 'hard'})}>
                                                     {packageOverview.description}
                                                 </div>

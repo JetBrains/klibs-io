@@ -1,4 +1,4 @@
-import type {ResolvingMetadata} from "next";
+import type {Metadata, ResolvingMetadata} from "next";
 import {socialMetadata} from "@/app/helpers";
 import ProjectPageContent from './project-page-content'
 import {getProjectDetails, getProjectPackages, getProjectReadme, NotFoundException} from "@/app/api";
@@ -10,15 +10,16 @@ type MetadataParamsProps = {
     projectName: string;
 };
 
-export async function generateMetadata({ params }: { params: MetadataParamsProps }, parent: ResolvingMetadata) {
+export async function generateMetadata({ params }: { params: Promise<MetadataParamsProps> }, parent: ResolvingMetadata): Promise<Metadata> {
+    const {organization, projectName} = await params;
 
-    const projectDetails = await getProjectDetails(params?.organization, params?.projectName);
+    const projectDetails = await getProjectDetails(organization, projectName);
 
     if (projectDetails instanceof NotFoundException) {
         return notFound()
     }
 
-    const displayName = projectDetails?.name || params?.projectName;
+    const displayName = projectDetails?.name || projectName;
     const platforms = getTargetGroupNames(projectDetails?.targetGroups ?? {}).join(', ');
     const title = platforms
         ? `${displayName} — KMP library for ${platforms}`
@@ -35,16 +36,18 @@ export async function generateMetadata({ params }: { params: MetadataParamsProps
     };
 }
 
-export default async function Page({ params }: { params: MetadataParamsProps }) {
-    const projectDetails = await getProjectDetails(params.organization, params.projectName);
+export default async function Page({ params }: { params: Promise<MetadataParamsProps> }) {
+    const {organization, projectName} = await params;
+
+    const projectDetails = await getProjectDetails(organization, projectName);
 
     if (projectDetails instanceof NotFoundException) {
         return notFound();
     }
 
     const [projectPackages, projectReadme] = await Promise.all([
-        getProjectPackages(params.organization, params.projectName),
-        getProjectReadme(params.organization, params.projectName),
+        getProjectPackages(organization, projectName),
+        getProjectReadme(organization, projectName),
     ]);
 
     return (
@@ -52,7 +55,7 @@ export default async function Page({ params }: { params: MetadataParamsProps }) 
             initialProject={projectDetails}
             initialPackages={projectPackages}
             initialReadme={projectReadme}
-            projectName={params.projectName}
+            projectName={projectName}
         />
     );
 }
