@@ -39,6 +39,22 @@
     overflow-wrap: anywhere;
 }
 
+.jetbrainsProject {
+    background-image: linear-gradient(170.6deg, rgba(67, 119, 255, 0.15) 0%, rgba(255, 255, 255, 0) 22.84%);
+
+    .title {
+        color: #174EA6;
+    }
+}
+
+.androidxProject {
+    background-image: linear-gradient(170.6deg, rgba(61, 220, 132, 0.15) 0%, rgba(255, 255, 255, 0) 22.84%);
+
+    .title {
+        color: #137A45;
+    }
+}
+
 .authorRow {
     display: flex;
     flex-wrap: wrap;

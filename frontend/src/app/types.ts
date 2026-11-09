@@ -404,6 +404,7 @@ export interface TagsStatsItem {
 
 export interface Category {
 	name: string;
+	subtitle?: string | null;
 	markers: string[];
 }
 

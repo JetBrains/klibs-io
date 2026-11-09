@@ -31,6 +31,32 @@ test('horizontal project card with a highlighted search match', async () => {
     await takeSnapshot('project card horizontal');
 });
 
+test('horizontal project cards with JetBrains and Google ecosystem highlighting', async () => {
+    disableAutoSnapshot();
+    await page.viewport(1280, 400);
+
+    await render(
+        <div style={{ width: 1240, display: 'flex', gap: 16 }}>
+            <ProjectCardHorizontal
+                project={projectSearchResult({
+                    name: 'compose-multiplatform',
+                    ownerLogin: 'JetBrains',
+                    targetGroups: cardTargetGroups(),
+                })}
+            />
+            <ProjectCardHorizontal
+                project={projectSearchResult({
+                    name: 'Room',
+                    ownerLogin: 'androidx',
+                    targetGroups: cardTargetGroups(),
+                })}
+            />
+        </div>,
+    );
+
+    await takeSnapshot('project cards horizontal ecosystem highlighting');
+});
+
 test('horizontal project card of a Kotlin grant winner', async () => {
     disableAutoSnapshot();
     await page.viewport(1280, 400);
@@ -48,4 +74,25 @@ test('horizontal project card of a Kotlin grant winner', async () => {
     );
 
     await takeSnapshot('project card horizontal grant winner');
+});
+
+test('horizontal project card of an affiliated grant winner', async () => {
+    disableAutoSnapshot();
+    await page.viewport(1280, 400);
+
+    await render(
+        <div style={{ width: 1240 }}>
+            <ProjectCardHorizontal
+                project={projectSearchResult({
+                    name: 'kotlinx.coroutines',
+                    ownerLogin: 'Kotlin',
+                    targetGroups: cardTargetGroups(),
+                    tags: ['functional-programming', 'typed-errors'],
+                    markers: ['GRANT_WINNER_2024'],
+                })}
+            />
+        </div>,
+    );
+
+    await takeSnapshot('project card horizontal affiliated grant winner');
 });
