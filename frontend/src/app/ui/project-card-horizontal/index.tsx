@@ -11,6 +11,7 @@ import TimeAgo from "@/app/ui/time-ago";
 
 import styles from './styles.module.css';
 import { trackEvent, GAEvent } from "@/app/analytics";
+import { ANDROIDX_OWNER_LOGIN, JETBRAINS_KOTLIN_OWNER_LOGINS } from "@/app/constants";
 
 interface ProjectCardHorizontalProps {
     project: ProjectSearchResults;
@@ -22,6 +23,12 @@ export default function ProjectCardHorizontal({ project, className, search }: Pr
     const targetGroups = project.targetGroups ? getTargetGroupNames(project.targetGroups) : [];
     const hasTags = project.tags && project.tags.length > 0;
     const showGrantWinner = isGrantWinner(project);
+    const isJetBrainsKotlinOwner = JETBRAINS_KOTLIN_OWNER_LOGINS.some(ownerLogin => ownerLogin === project.ownerLogin);
+    const affiliation = isJetBrainsKotlinOwner
+        ? { type: 'jetbrains-kotlin' as const }
+        : project.ownerLogin === ANDROIDX_OWNER_LOGIN
+            ? { type: 'androidx' as const }
+            : null;
 
     const details: CardDetail[] = [
         { label: 'GitHub stars', value: project.scmStars },
@@ -40,7 +47,12 @@ export default function ProjectCardHorizontal({ project, className, search }: Pr
 
     return (
         <Link
-            className={cn(styles.card, className, { [styles.grantProject]: showGrantWinner })}
+            className={cn(styles.card, className, {
+                [styles.grantProject]: showGrantWinner,
+                [styles.jetbrainsProject]: affiliation?.type === 'jetbrains-kotlin' && !showGrantWinner,
+                [styles.androidxProject]: affiliation?.type === 'androidx' && !showGrantWinner,
+            })}
+            data-project-affiliation={affiliation?.type}
             href={getProjectLink(project)}
             title={project.name}
             onClick={() => trackEvent(GAEvent.PROJECT_CARD_CLICK, { eventCategory: project.name })}
