@@ -1,4 +1,5 @@
 <div class="markdown-heading"><h1 class="heading-element">Room</h1><a id="user-content-room" class="anchor" aria-label="Permalink: Room" href="#room"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<p>This is the previous major version of the Room library. See <a href="/project/androidx/room3">Room 3.0</a> for a dedicated Kotlin Multiplatform solution with support for JavaScript and WebAssembly (WASM).</p>
 <p>The Room persistence library provides an abstraction layer over SQLite to allow for more robust database access while harnessing the full power of SQLite.</p>
 <p>[<a href="https://developer.android.com/training/data-storage/room" rel="nofollow">User Guide</a>]</p>
 <p>[<a href="https://developer.android.com/reference/kotlin/androidx/room/package-summary" rel="nofollow">API Reference</a>]</p>
@@ -7,7 +8,7 @@
 <p>Add the dependencies for the artifacts you need in the <code>build.gradle</code> file for your app or module:</p>
 <div class="markdown-heading"><h3 class="heading-element">Kotlin</h3><a id="user-content-kotlin" class="anchor" aria-label="Permalink: Kotlin" href="#kotlin"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
 <div class="highlight highlight-source-kotlin"><pre>dependencies {
-    <span class="pl-k">val</span> room_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>2.8.4<span class="pl-pds">"</span></span>
+    <span class="pl-k">val</span> room_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>2.8.5<span class="pl-pds">"</span></span>
     implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.room:room-runtime:<span class="pl-e">$room_version</span><span class="pl-pds">"</span></span>)
     <span class="pl-c"><span class="pl-c">//</span> If this project uses any Kotlin source, use Kotlin Symbol Processing (KSP)</span>
     ksp(<span class="pl-s"><span class="pl-pds">"</span>androidx.room:room-compiler:<span class="pl-e">$room_version</span><span class="pl-pds">"</span></span>)
@@ -27,7 +28,7 @@
 <details>
 <summary><b>Groovy</b></summary>
 <div class="highlight highlight-source-groovy"><pre>dependencies {
-    <span class="pl-k">def</span> room_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>2.8.4<span class="pl-pds">"</span></span>
+    <span class="pl-k">def</span> room_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>2.8.5<span class="pl-pds">"</span></span>
     implementation <span class="pl-s"><span class="pl-pds">"</span>androidx.room:room-runtime:<span class="pl-smi">$r<span class="pl-smi">oom_version</span></span><span class="pl-pds">"</span></span>
     <span class="pl-c"><span class="pl-c">//</span> If this project uses any Kotlin source, use Kotlin Symbol Processing (KSP)</span>
     ksp <span class="pl-s"><span class="pl-pds">"</span>androidx.room:room-compiler:<span class="pl-smi">$r<span class="pl-smi">oom_version</span></span><span class="pl-pds">"</span></span>
