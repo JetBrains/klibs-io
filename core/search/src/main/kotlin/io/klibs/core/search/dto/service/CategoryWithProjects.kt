@@ -5,5 +5,6 @@ import io.klibs.core.search.dto.repository.SearchProjectResult
 data class CategoryWithProjects(
     val categoryName: String,
     val categoryMarkers: List<String>,
+    val subtitle: String?,
     val projects: List<SearchProjectResult>,
 )

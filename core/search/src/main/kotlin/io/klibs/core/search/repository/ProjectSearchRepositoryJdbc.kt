@@ -3,6 +3,8 @@ package io.klibs.core.search.repository
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.pckg.util.getTargetsVector
+import io.klibs.core.search.enums.JETBRAINS_AND_GOOGLE_MARKER
+import io.klibs.core.search.enums.JETBRAINS_AND_GOOGLE_OWNER_LOGINS
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.Category
 import io.klibs.core.search.dto.repository.SearchProjectResult
@@ -28,7 +30,7 @@ class ProjectSearchRepositoryJdbc(
         tags: List<String>,
         markers: List<String>,
         page: Int,
-        limit: Int
+        limit: Int,
     ): List<SearchProjectResult> {
         val isQueryPresent = rawQuery?.isBlank() == false
         val offset = limit * (page - 1)
@@ -82,6 +84,7 @@ class ProjectSearchRepositoryJdbc(
                 prefix = "AND"
             }
 
+
             if (tags.isNotEmpty()) {
                 appendLine(" $prefix tags @> ARRAY[:tags]::text[]")
 
@@ -89,14 +92,12 @@ class ProjectSearchRepositoryJdbc(
             }
 
             if (markers.isNotEmpty()) {
-                appendLine(" $prefix markers && :markers::varchar[]")
+                appendLine(" $prefix (markers && :markers::varchar[] OR (:hasOwnerMarker AND owner_login = ANY(:ownerLogins::text[])))")
                 prefix = "AND"
             }
 
             if (targetCondition != null) {
                 appendLine(" $prefix $targetCondition")
-
-                prefix = "AND"
             }
 
             appendLine(" ORDER BY $orderBy")
@@ -111,8 +112,10 @@ class ProjectSearchRepositoryJdbc(
             .param("wildcardQueryWithSpecialSymbols", wildcardQueryWithSpecialSymbols)
             .param("wildcardQueryWithoutSpecialSymbols", wildcardQueryWithoutSpecialSymbols)
             .param("ownerLogin", ownerLogin)
+            .param("ownerLogins", JETBRAINS_AND_GOOGLE_OWNER_LOGINS.toTypedArray())
+            .param("hasOwnerMarker", JETBRAINS_AND_GOOGLE_MARKER in markers)
             .param("tags", tags.toTypedArray())
-            .param("markers", markers.toTypedArray())
+            .param("markers", markers.filterNot { it == JETBRAINS_AND_GOOGLE_MARKER }.toTypedArray())
             .query(PROJECT_OVERVIEW_ROW_MAPPER)
             .list()
     }
@@ -191,28 +194,38 @@ class ProjectSearchRepositoryJdbc(
     fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
         val sql = """
             SELECT c.id AS category_id, c.name AS category_name, c.markers AS category_markers,
+                   c.subtitle AS category_subtitle,
                    pi.project_id, pi.owner_type, pi.owner_login, pi.repo_name, pi.name,
                    pi.stars, pi.license_name, pi.latest_version, pi.latest_version_ts,
                    pi.plain_description, pi.tags, pi.markers, pi.targets_vector, pi.dependent_count, pi.health_score
             FROM category c
             LEFT JOIN LATERAL (
                 SELECT * FROM project_index
-                WHERE project_index.markers && c.markers
-                ORDER BY stars DESC, project_id
+                WHERE project_index.markers && array_remove(c.markers, :ownerMarker)
+                   OR (:ownerMarker = ANY(c.markers) AND project_index.owner_login = ANY(:ownerLogins::text[]))
+                ORDER BY CASE WHEN :ownerMarker = ANY(c.markers) THEN dependent_count END DESC NULLS LAST,
+                         CASE WHEN NOT (:ownerMarker = ANY(c.markers)) THEN stars END DESC NULLS LAST,
+                         project_id ASC
                 LIMIT :limit
             ) pi ON true
-            ORDER BY c.id, pi.stars DESC NULLS LAST, pi.project_id NULLS LAST
+            ORDER BY c.id, CASE WHEN :ownerMarker = ANY(c.markers) THEN pi.dependent_count END DESC NULLS LAST,
+                     CASE WHEN NOT (:ownerMarker = ANY(c.markers)) THEN pi.stars END DESC NULLS LAST,
+                     pi.project_id NULLS LAST
         """.trimIndent()
 
         val result = linkedMapOf<Category, MutableList<SearchProjectResult>>()
 
-        jdbcClient.sql(sql)
-            .param("limit", limit)
+        jdbcClient.sql(sql).param("limit", limit)
+            .param("ownerMarker", JETBRAINS_AND_GOOGLE_MARKER)
+            .param("ownerLogins", JETBRAINS_AND_GOOGLE_OWNER_LOGINS.toTypedArray())
             .query { rs, _ ->
+                val categoryName = rs.getString("category_name")
                 val category = Category(
-                    name = rs.getString("category_name"),
+                    id = rs.getInt("category_id"),
+                    name = categoryName,
                     markers = rs.getArray("category_markers")?.array
-                        ?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList()
+                        ?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList(),
+                    subtitle = rs.getString("category_subtitle"),
                 )
                 val project = if (rs.getObject("project_id") != null) {
                     PROJECT_OVERVIEW_ROW_MAPPER.mapRow(rs, 0)

@@ -1,6 +1,7 @@
 package io.klibs.core.search.repository
 
 import io.klibs.core.owner.ScmOwnerType
+import io.klibs.core.search.enums.JETBRAINS_AND_GOOGLE_MARKER
 import io.klibs.core.search.configuration.properties.OpenSearchProperties
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.opensearch.OpenSearchIndexSpec
@@ -53,6 +54,22 @@ class SearchRepositoryFallbackTest {
 
         assertEquals(listOf(project(2)), findProjects())
         assertEquals(1.0, fallbacks("project")?.count())
+    }
+
+    @Test
+    fun `fallback forwards marker alternatives and other filters to PostgreSQL`() {
+        val markers = listOf(JETBRAINS_AND_GOOGLE_MARKER, "OTHER")
+        every {
+            openSearchProjects.find("ktor", emptyList(), "Kotlin", SearchSort.RELEVANCY, listOf("tag"), markers, 1, 10)
+        } throws RuntimeException("connection refused")
+        every {
+            postgresProjects.find("ktor", emptyList(), "Kotlin", SearchSort.RELEVANCY, listOf("tag"), markers, 1, 10)
+        } returns listOf(project(2))
+
+        assertEquals(
+            listOf(project(2)),
+            projects.find("ktor", emptyList(), "Kotlin", SearchSort.RELEVANCY, listOf("tag"), markers, 1, 10),
+        )
     }
 
     @Test

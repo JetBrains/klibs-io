@@ -49,10 +49,10 @@ class SearchController(
         @Max(value = 100, message = "Limit must be <= 100")
         limit: Int,
 
-        @RequestBody
+        @RequestBody(required = false)
         @Parameter(description = "JSON body containing search parameters")
         @Valid
-        searchRequest: SearchProjectsRequest
+        searchRequest: SearchProjectsRequest = SearchProjectsRequest()
     ): List<SearchProjectResultDTO> {
         searchRequest.apply {
             val res = searchService.search(
