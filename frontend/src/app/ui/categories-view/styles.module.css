@@ -10,3 +10,11 @@
     justify-content: space-between;
     margin-bottom: 24px;
 }
+
+.categoryTitle > h2 {
+    margin: 0;
+}
+
+.categoryTitle > p {
+    margin: 8px 0 0;
+}
