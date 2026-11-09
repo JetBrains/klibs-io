@@ -41,8 +41,11 @@ function CategorySection({ category, projects }: CategorySectionProps) {
 
     return (
         <div className={styles.categoryWrapper} data-testid={`category-section-${categorySlug}`}>
-            <div className={styles.categoryHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className={textCn('rs-h2')}>{category.name}</h2>
+            <div className={styles.categoryHeader}>
+                <div className={styles.categoryTitle}>
+                    <h2 className={textCn('rs-h2')}>{category.name}</h2>
+                    {category.subtitle && <p className={textCn('rs-text-3')}>{category.subtitle}</p>}
+                </div>
                 {projects.length > CATEGORY_ITEMS_LIMIT && (
                     <Link href={`/?category=${categorySlug}`}>
                         <Button
