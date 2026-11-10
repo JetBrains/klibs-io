@@ -172,9 +172,8 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
 
   - **Given:** a browser has a klibs session cookie whose token matches a non-expired DB session from a previous login.
   - **When:** the browser opens klibs.io or calls `/auth/current-user`.
-  - **Then:** the backend returns `authenticated=true` and the same local `userId`.
-  - **Independent test:** create a valid session, call `/auth/current-user`, and assert the response contains
-    `authenticated=true` plus the expected local `userId`.
+  - **Then:** the backend returns `200` with the same local `userId`.
+  - **Independent test:** create a valid session, call `/auth/current-user`, and assert `200` with the expected local `userId`.
 
   </details>
 
@@ -227,8 +226,8 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
   - Callback fails after matching the current login attempt -> OAuth error response and clear the login cookie.
   - `returnTo` is parsed and validated after URL decoding. Absolute URLs, scheme-relative URLs, decoded backslashes, decoded
     control characters, or unparsable values -> fallback to `/`.
-  - Session cookie exists but session is expired or missing -> `/auth/current-user` returns `authenticated=false`; user-only
-    requests return `401`; an accepted request clears the stale cookie.
+  - Session cookie exists but session is expired or missing -> `/auth/current-user` and user-only requests return `401`;
+    after applicable CORS/Origin checks pass, the response clears the stale cookie.
   - Session cookie exists and user-only write request has missing/untrusted Origin -> return `403` before HMAC/DB session
     lookup, even if the DB session would be missing or expired.
   - Sign-out with valid session cookie and missing/untrusted Origin -> `403`, cookie is not cleared, and session is not deleted.
@@ -285,16 +284,17 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
 
   <br>
 
-  - **FR-009:** `/auth/current-user` MUST return `authenticated=false` when there is no valid klibs session.
-  - **FR-010:** `/auth/current-user` MUST return `authenticated=true` and the local `userId` when there is a valid klibs
-    session.
+  - **FR-009:** After applicable CORS/Origin checks pass, `/auth/current-user` MUST return `401` with an empty body when there
+    is no valid klibs session.
+  - **FR-010:** `/auth/current-user` MUST return `200` with only the local `userId` when there is a valid klibs session.
   - **FR-011:** After the CSRF gate, a user-only endpoint MUST return `401` when no valid klibs session is available.
 
   On `/auth/current-user` and user-only endpoints, a cookie for a missing or expired session MUST NOT authenticate and MUST
-  be cleared after applicable CORS/Origin checks. Rejected requests MUST NOT reach session lookup or cookie clearing.
+  be cleared after applicable CORS/Origin checks. Requests rejected by CORS/Origin checks MUST NOT reach session lookup or
+  cookie clearing.
 
-  Important distinction: `/auth/current-user` is an auth-state endpoint, not a user-only action endpoint. Its unauthenticated
-  response is `authenticated=false`, not `401`.
+  Public endpoints remain accessible without a session. The frontend treats `401` from `/auth/current-user` as a signed-out
+  state and MUST NOT require login to browse public pages.
 
   </details>
 
@@ -890,7 +890,8 @@ Notes:
   <br>
 
   - **Decision:** no-cookie sign-out does not send `Set-Cookie`; CORS may reject an untrusted Origin before the endpoint.
-  - **Decision:** `/auth/current-user` and accepted user-only requests clear stale session cookies; rejected requests do not.
+  - **Decision:** `/auth/current-user` and user-only requests clear stale session cookies even on `401`, after CORS/Origin
+    checks pass; requests rejected by those checks do not.
   - **Decision:** a Hub callback clears the login cookie only after matching the current login attempt.
 
   </details>
