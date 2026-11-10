@@ -44,13 +44,13 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
     private lateinit var userSessionService: UserSessionService
 
     @Test
-    fun `current-user reports an anonymous request without caching it`() {
+    fun `current-user rejects an anonymous request without caching it`() {
         mockMvc.get("/auth/current-user")
             .andExpect {
-                status { isOk() }
+                status { isUnauthorized() }
                 header { string(HttpHeaders.CACHE_CONTROL, containsString("no-store")) }
-                jsonPath("$.authenticated") { value(false) }
-                jsonPath("$.userId") { doesNotExist() }
+                header { doesNotExist(HttpHeaders.SET_COOKIE) }
+                content { string("") }
             }
     }
 
@@ -68,7 +68,7 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
             header { string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, TRUSTED_ORIGIN) }
             header { string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true") }
             header { doesNotExist(HttpHeaders.SET_COOKIE) }
-            jsonPath("$.authenticated") { value(true) }
+            jsonPath("$.authenticated") { doesNotExist() }
             jsonPath("$.userId") { value(user.id.toString()) }
         }
     }
@@ -82,24 +82,23 @@ class AuthenticationControllerTest : BaseUnitWithDbLayerTest() {
             param(SESSION_COOKIE_NAME, session.token)
             header(HttpHeaders.AUTHORIZATION, "Bearer ${session.token}")
         }.andExpect {
-            status { isOk() }
-            jsonPath("$.authenticated") { value(false) }
-            jsonPath("$.userId") { doesNotExist() }
+            status { isUnauthorized() }
+            content { string("") }
         }
 
         assertNotNull(userSessionService.authenticateAndRefreshSessionIfAlive(session.token))
     }
 
     @Test
-    fun `current-user reports unauthenticated for an unknown session token`() {
+    fun `current-user rejects an unknown session token and clears its cookie`() {
         mockMvc.get("/auth/current-user") {
             cookie(Cookie(SESSION_COOKIE_NAME, "unknown-session-token"))
         }.andExpect {
-            status { isOk() }
+            status { isUnauthorized() }
             header { string(HttpHeaders.CACHE_CONTROL, containsString("no-store")) }
-            header { exists(HttpHeaders.SET_COOKIE) }
-            jsonPath("$.authenticated") { value(false) }
-            jsonPath("$.userId") { doesNotExist() }
+            header { string(HttpHeaders.SET_COOKIE, containsString("$SESSION_COOKIE_NAME=")) }
+            header { string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")) }
+            content { string("") }
         }
     }
 

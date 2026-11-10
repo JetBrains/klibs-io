@@ -23,12 +23,10 @@ class AuthenticationController(
 ) {
     @GetMapping("/current-user")
     fun currentUser(
-        @AuthenticationPrincipal principalUserId: UUID?,
-    ): CurrentUserResponse =
-        CurrentUserResponse(
-            authenticated = principalUserId != null,
-            userId = principalUserId,
-        )
+        @AuthenticationPrincipal principalUserId: UUID,
+    ): CurrentUserResponse = CurrentUserResponse(
+        userId = principalUserId,
+    )
 
     @PostMapping("/sign-out")
     fun signOut(request: HttpServletRequest): ResponseEntity<Void> {
