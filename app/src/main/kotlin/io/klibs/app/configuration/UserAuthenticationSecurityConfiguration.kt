@@ -55,7 +55,7 @@ class UserAuthenticationSecurityConfiguration {
             }
 
             authorizeHttpRequests {
-                authorize(HttpMethod.GET, CURRENT_USER_PATH, permitAll)
+                authorize(HttpMethod.GET, CURRENT_USER_PATH, hasAuthority(AUTHENTICATED_USER_AUTHORITY))
                 authorize(HttpMethod.POST, SIGN_OUT_PATH, permitAll)
                 authorize(HttpMethod.OPTIONS, AUTHENTICATION_ENDPOINTS_PATH, permitAll)
                 authorize(anyRequest, denyAll)
