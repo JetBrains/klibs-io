@@ -3,9 +3,9 @@ package io.klibs.core.user.service
 import io.klibs.core.user.entity.UserEntity
 import io.klibs.core.user.entity.UserSessionEntity
 import io.klibs.core.user.repository.UserSessionRepository
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import java.security.SecureRandom
 import java.time.Clock
 import java.time.Duration
@@ -16,12 +16,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class UserSessionServiceTest {
-    private val sessionRepository = mock<UserSessionRepository>()
+    private val sessionRepository = mockk<UserSessionRepository>()
     private val hashingService = AuthenticationHashingService(SECRET)
     private val clock = Clock.fixed(NOW, ZoneOffset.UTC)
 
     @Test
     fun `creates an opaque session with creation and expiration times`() {
+        every { sessionRepository.save(any<UserSessionEntity>()) } answers { firstArg<UserSessionEntity>() }
         val user = user()
         val service = service(
             secureRandom = FixedSecureRandom(ByteArray(32) { it.toByte() }),
@@ -36,7 +37,7 @@ class UserSessionServiceTest {
     fun `returns an active session without refreshing it too early`() {
         val user = user()
         val session = session(user)
-        whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
+        every { sessionRepository.findByTokenHash(TOKEN_HASH) } returns session
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
@@ -53,10 +54,8 @@ class UserSessionServiceTest {
             createdAt = createdAt,
             expiresAt = createdAt.plus(IDLE_TTL),
         )
-        whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
-        whenever(
-            sessionRepository.updateExpiration(session.id, NOW.plus(IDLE_TTL))
-        ).thenReturn(1)
+        every { sessionRepository.findByTokenHash(TOKEN_HASH) } returns session
+        every { sessionRepository.updateExpiration(session.id, NOW.plus(IDLE_TTL)) } returns 1L
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
@@ -73,10 +72,8 @@ class UserSessionServiceTest {
             createdAt = createdAt,
             expiresAt = NOW.plus(Duration.ofHours(12)),
         )
-        whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
-        whenever(
-            sessionRepository.updateExpiration(session.id, absoluteExpiresAt)
-        ).thenReturn(1)
+        every { sessionRepository.findByTokenHash(TOKEN_HASH) } returns session
+        every { sessionRepository.updateExpiration(session.id, absoluteExpiresAt) } returns 1L
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
@@ -86,7 +83,8 @@ class UserSessionServiceTest {
     @Test
     fun `rejects a session when its idle expiration is reached`() {
         val session = session(user(), expiresAt = NOW)
-        whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
+        every { sessionRepository.findByTokenHash(TOKEN_HASH) } returns session
+        every { sessionRepository.deleteByTokenHash(TOKEN_HASH) } returns 1
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 
@@ -100,7 +98,8 @@ class UserSessionServiceTest {
             createdAt = NOW.minus(ABSOLUTE_TTL),
             expiresAt = NOW.plus(Duration.ofDays(1)),
         )
-        whenever(sessionRepository.findByTokenHash(TOKEN_HASH)).thenReturn(session)
+        every { sessionRepository.findByTokenHash(TOKEN_HASH) } returns session
+        every { sessionRepository.deleteByTokenHash(TOKEN_HASH) } returns 1
 
         val result = service().authenticateAndRefreshSessionIfAlive(TOKEN)
 

@@ -1,14 +1,15 @@
 package io.klibs.app.configuration
 
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.dto.AuthenticatedSessionDTO
 import io.klibs.core.user.service.UserSessionService
+import io.mockk.every
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -22,7 +23,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -81,7 +81,7 @@ class UserActionSecurityTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    @MockitoBean
+    @MockkBean
     private lateinit var userSessionService: UserSessionService
 
     @Test
@@ -95,8 +95,7 @@ class UserActionSecurityTest {
 
     @Test
     fun `protected action receives the authenticated local user`() {
-        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN))
-            .thenReturn(authenticatedSession())
+        every { userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN) } returns authenticatedSession()
 
         mockMvc.get(USER_ACTION_PATH) {
             cookie(sessionCookie())
@@ -133,8 +132,8 @@ class UserActionSecurityTest {
 
     @Test
     fun `refreshed session reissues its cookie with the remaining lifetime`() {
-        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN))
-            .thenReturn(authenticatedSession(REFRESHED_COOKIE_TTL))
+        every { userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN) } returns
+            authenticatedSession(REFRESHED_COOKIE_TTL)
         mockMvc.get(USER_ACTION_PATH) {
             cookie(sessionCookie())
         }.andExpect {
@@ -154,8 +153,7 @@ class UserActionSecurityTest {
 
     @Test
     fun `unsafe action accepts a valid session from the trusted origin`() {
-        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN))
-            .thenReturn(authenticatedSession())
+        every { userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN) } returns authenticatedSession()
 
         mockMvc.post(USER_ACTION_PATH) {
             cookie(sessionCookie())
@@ -168,7 +166,7 @@ class UserActionSecurityTest {
 
     @Test
     fun `unknown session is rejected and its cookie is expired`() {
-        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN)).thenReturn(null)
+        every { userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN) } returns null
 
         mockMvc.get(USER_ACTION_PATH) {
             cookie(sessionCookie())

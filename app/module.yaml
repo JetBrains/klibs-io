@@ -26,6 +26,8 @@ dependencies:
 test-dependencies:
   - $libs.okhttp
   - $libs.kohsuke.githubApi
+  - $libs.mockk
+  - $libs.springmockk
 
 settings:
   jvm:

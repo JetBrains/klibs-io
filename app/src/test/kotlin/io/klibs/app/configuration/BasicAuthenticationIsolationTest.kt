@@ -1,15 +1,16 @@
 package io.klibs.app.configuration
 
+import com.ninjasquad.springmockk.MockkBean
 import io.klibs.app.configuration.properties.BasicAuthenticationProperties
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.dto.AuthenticatedSessionDTO
 import io.klibs.core.user.service.UserSessionService
+import io.mockk.every
 import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -23,7 +24,6 @@ import org.springframework.security.core.Authentication
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.web.bind.annotation.GetMapping
@@ -87,17 +87,15 @@ class BasicAuthenticationIsolationTest {
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    @MockitoBean
+    @MockkBean
     private lateinit var userSessionService: UserSessionService
 
     @BeforeEach
     fun setUpSessionAuthentication() {
-        whenever(userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN))
-            .thenReturn(
-                AuthenticatedSessionDTO(
-                    userId = SESSION_USER_ID,
-                    refreshedCookieTtl = null,
-                )
+        every { userSessionService.authenticateAndRefreshSessionIfAlive(SESSION_TOKEN) } returns
+            AuthenticatedSessionDTO(
+                userId = SESSION_USER_ID,
+                refreshedCookieTtl = null,
             )
     }
 
