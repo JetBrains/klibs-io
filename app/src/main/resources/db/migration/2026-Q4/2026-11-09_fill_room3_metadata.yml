@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: KTL-5236 set minimized_readme and description for androidx room3
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              UPDATE project
+              SET
+                minimized_readme = 'Room 3.0 The Room persistence library provides an abstraction layer over SQLite to allow for more robust database access while harnessing the full power of SQLite. Room 3.0 is a major breaking version of the Room library that focuses on Kotlin Multiplatform and adds support for JavaScript and WebAssembly WASM . User Guide API Reference Declaring dependencies To add a dependency on Room3, you must add the Google Maven repository to your project. Read Google s Maven repository for more information. Add the dependencies for the artifacts you need in the build.gradle file for your app or module Kotlin For information on using the KSP plugin, see the KSP quick-start documentation . For more information about dependencies, see Add Build Dependencies . Use the Room Gradle Plugin You can use the Room Gradle Plugin to configure options for the Room compiler. The plugin configures the project such that generated schemas which are an output of the compile tasks and are consumed for auto-migration',
+                description = NULL
+              FROM scm_owner
+              WHERE project.owner_id = scm_owner.id
+                AND scm_owner.login = 'androidx'
+                AND project.name = 'room3';
+
+  - changeSet:
+      id: KTL-5236 add local storage marker to androidx room3
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT p.id, 'LOCAL_STORAGE'
+              FROM project p
+              JOIN scm_owner o ON p.owner_id = o.id
+              WHERE o.login = 'androidx'
+                AND p.name = 'room3'
+              ON CONFLICT (project_id, type) DO NOTHING;

@@ -1,5 +1,7 @@
 # Room
 
+This is the previous major version of the Room library. See [Room 3.0](https://klibs.io/project/androidx/room3) for a dedicated Kotlin Multiplatform solution with support for JavaScript and WebAssembly (WASM).
+
 The Room persistence library provides an abstraction layer over SQLite to allow for more robust database access while harnessing the full power of SQLite. 
 
 [[User Guide](https://developer.android.com/training/data-storage/room)]
@@ -15,7 +17,7 @@ Add the dependencies for the artifacts you need in the `build.gradle` file for y
 ### Kotlin
 ```kotlin
 dependencies {
-    val room_version = "2.8.4"
+    val room_version = "2.8.5"
     implementation("androidx.room:room-runtime:$room_version")
     // If this project uses any Kotlin source, use Kotlin Symbol Processing (KSP)
     ksp("androidx.room:room-compiler:$room_version")
@@ -39,7 +41,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    def room_version = "2.8.4"
+    def room_version = "2.8.5"
     implementation "androidx.room:room-runtime:$room_version"
     // If this project uses any Kotlin source, use Kotlin Symbol Processing (KSP)
     ksp "androidx.room:room-compiler:$room_version"

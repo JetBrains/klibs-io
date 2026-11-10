@@ -1,0 +1,62 @@
+<div class="markdown-heading"><h1 class="heading-element">Room 3.0</h1><a id="user-content-room-30" class="anchor" aria-label="Permalink: Room 3.0" href="#room-30"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<p>The Room persistence library provides an abstraction layer over SQLite to allow for more robust database access while harnessing the full power of SQLite.</p>
+<p>Room 3.0 is a major breaking version of the <a href="/project/androidx/room">Room</a> library that focuses on Kotlin Multiplatform and adds support for JavaScript and WebAssembly (WASM).</p>
+<p>[<a href="https://developer.android.com/training/data-storage/room" rel="nofollow">User Guide</a>]</p>
+<p>[<a href="https://developer.android.com/reference/kotlin/androidx/room3/package-summary" rel="nofollow">API Reference</a>]</p>
+<div class="markdown-heading"><h2 class="heading-element">Declaring dependencies</h2><a id="user-content-declaring-dependencies" class="anchor" aria-label="Permalink: Declaring dependencies" href="#declaring-dependencies"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<p>To add a dependency on Room3, you must add the Google Maven repository to your project. Read <a href="https://developer.android.com/studio/build/dependencies#google-maven" rel="nofollow">Google's Maven repository</a> for more information.</p>
+<p>Add the dependencies for the artifacts you need in the <code>build.gradle</code> file for your app or module:</p>
+<div class="markdown-heading"><h3 class="heading-element">Kotlin</h3><a id="user-content-kotlin" class="anchor" aria-label="Permalink: Kotlin" href="#kotlin"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<div class="highlight highlight-source-kotlin"><pre>dependencies {
+    <span class="pl-k">val</span> room_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>3.0.3<span class="pl-pds">"</span></span>
+
+    implementation(<span class="pl-s"><span class="pl-pds">"</span>androidx.room3:room3-runtime:<span class="pl-e">$room_version</span><span class="pl-pds">"</span></span>)
+    ksp(<span class="pl-s"><span class="pl-pds">"</span>androidx.room3:room3-compiler:<span class="pl-e">$room_version</span><span class="pl-pds">"</span></span>)
+}</pre></div>
+<details>
+<summary><b>Groovy</b></summary>
+<div class="highlight highlight-source-groovy"><pre>dependencies {
+    <span class="pl-k">def</span> room_version <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>3.0.3<span class="pl-pds">"</span></span>
+
+    implementation <span class="pl-s"><span class="pl-pds">"</span>androidx.room3:room3-runtime:<span class="pl-smi">$r<span class="pl-smi">oom_version</span></span><span class="pl-pds">"</span></span>
+
+    ksp <span class="pl-s"><span class="pl-pds">"</span>androidx.room3:room3-compiler:<span class="pl-smi">$r<span class="pl-smi">oom_version</span></span><span class="pl-pds">"</span></span>
+}</pre></div>
+</details>
+<p>For information on using the KSP plugin, see the <a href="https://kotlinlang.org/docs/ksp-quickstart.html" rel="nofollow">KSP quick-start documentation</a>.</p>
+<p>For more information about dependencies, see <a href="https://developer.android.com/studio/build/dependencies" rel="nofollow">Add Build Dependencies</a>.</p>
+<div class="markdown-heading"><h3 class="heading-element">Use the Room Gradle Plugin</h3><a id="user-content-use-the-room-gradle-plugin" class="anchor" aria-label="Permalink: Use the Room Gradle Plugin" href="#use-the-room-gradle-plugin"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<p>You can use the Room Gradle Plugin to configure options for the Room compiler. The plugin configures the project such that generated schemas (which are an output of the compile tasks and are consumed for auto-migrations) are correctly configured to have reproducible and cacheable builds.</p>
+<p>To add the plugin, in your top-level Gradle build file, define the plugin and its version.</p>
+<div class="markdown-heading"><h3 class="heading-element">Kotlin</h3><a id="user-content-kotlin-1" class="anchor" aria-label="Permalink: Kotlin" href="#kotlin-1"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<div class="highlight highlight-source-kotlin"><pre>plugins {
+    id(<span class="pl-s"><span class="pl-pds">"</span>androidx.room3<span class="pl-pds">"</span></span>) version <span class="pl-s"><span class="pl-pds">"</span><span class="pl-e">$room_version</span><span class="pl-pds">"</span></span> apply <span class="pl-c1">false</span>
+}</pre></div>
+<details>
+<summary><b>Groovy</b></summary>
+<div class="highlight highlight-source-groovy"><pre>plugins {
+    id <span class="pl-s"><span class="pl-pds">'</span>androidx.room3<span class="pl-pds">'</span></span> version <span class="pl-s"><span class="pl-pds">"</span><span class="pl-smi">$r<span class="pl-smi">oom_version</span></span><span class="pl-pds">"</span></span> apply <span class="pl-c1">false</span>
+}</pre></div>
+</details>
+<p>In the module-level Gradle build file, apply the plugin and use the <code>room3</code> extension.</p>
+<div class="markdown-heading"><h3 class="heading-element">Kotlin</h3><a id="user-content-kotlin-2" class="anchor" aria-label="Permalink: Kotlin" href="#kotlin-2"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<div class="highlight highlight-source-kotlin"><pre>plugins {
+    id(<span class="pl-s"><span class="pl-pds">"</span>androidx.room3<span class="pl-pds">"</span></span>)
+}
+
+room3 {
+    schemaDirectory(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-e">$projectDir</span>/schemas<span class="pl-pds">"</span></span>)
+}</pre></div>
+<details>
+<summary><b>Groovy</b></summary>
+<div class="highlight highlight-source-groovy"><pre>plugins {
+    id <span class="pl-s"><span class="pl-pds">'</span>androidx.room3<span class="pl-pds">'</span></span>
+}
+
+room3 {
+    schemaDirectory <span class="pl-s"><span class="pl-pds">"</span><span class="pl-smi">$p<span class="pl-smi">rojectDir</span></span>/schemas<span class="pl-pds">"</span></span>
+}</pre></div>
+</details>
+<p>Setting a <code>schemaDirectory</code> is required when using the Room Gradle Plugin. This will configure the Room compiler and the various compile tasks and its backends (kotlinc, KSP) to output schema files into flavored folders, for example <code>schemas/flavorOneDebug/com.package.MyDatabase/1.json</code>. These files should be checked into the repository to be used for validation and auto-migrations.</p>
+<div class="markdown-heading"><h2 class="heading-element">Issue tracker</h2><a id="user-content-issue-tracker" class="anchor" aria-label="Permalink: Issue tracker" href="#issue-tracker"><span aria-hidden="true" class="octicon octicon-link"></span></a></div>
+<p><a href="https://issuetracker.google.com/issues?q=componentid:413107" rel="nofollow">Issue Tracker</a></p>
