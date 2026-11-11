@@ -18,6 +18,8 @@ data class SearchProjectResult(
 
     val latestVersion: String,
     val latestVersionPublishedAt: Instant,
+    val createdAt: Instant,
+    val lastActivityAt: Instant,
 
     val targets: List<String> = emptyList(),
 

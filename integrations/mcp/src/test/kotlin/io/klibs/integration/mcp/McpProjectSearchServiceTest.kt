@@ -158,6 +158,8 @@ class McpProjectSearchServiceTest {
         licenseName = "Apache-2.0",
         latestVersion = "1.0.0",
         latestVersionPublishedAt = Instant.now(),
+        createdAt = Instant.EPOCH,
+        lastActivityAt = Instant.EPOCH,
         targets = emptyList(),
         tags = emptyList(),
         markers = emptyList()

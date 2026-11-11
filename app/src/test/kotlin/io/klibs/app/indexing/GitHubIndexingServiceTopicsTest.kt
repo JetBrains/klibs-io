@@ -102,7 +102,7 @@ class GitHubIndexingServiceTopicsTest {
             id = 101,
             scmRepoId = repoId,
             ownerId = 10,
-            name = "awesome-lib",
+            name = repoName,
             description = null,
             minimizedReadme = null,
             latestVersion = "1.0.0",
@@ -135,6 +135,6 @@ class GitHubIndexingServiceTopicsTest {
 
         uut().updateRepo(existingRepo)
 
-        verify(exactly = 1) { projectService.updateProjectTags(existingRepo.name, existingRepo.ownerLogin, topicsFromGh, TagOrigin.GITHUB) }
+        verify(exactly = 1) { projectService.updateProjectTags(project.idNotNull, topicsFromGh, TagOrigin.GITHUB) }
     }
 }

@@ -70,6 +70,12 @@ data class SearchProjectResultDTO(
     )
     val latestReleasePublishedAtMillis: Long?,
 
+    @Schema(description = "Epoch millis of when the project's repository was created", example = "1725375720000")
+    val createdAtMillis: Long,
+
+    @Schema(description = "Epoch millis of the project's last activity", example = "1725375720000")
+    val lastActivityAtMillis: Long,
+
     @Schema(
         description = "Targets supported by the project's packages. Map where keys are target groups (e.g. 'JVM', 'IOS') and values are sets of specific targets within that group.",
         type = "object",
@@ -115,6 +121,8 @@ fun SearchProjectResult.toDTO(): SearchProjectResultDTO {
         licenseName = this.licenseName,
         latestReleaseVersion = this.latestVersion,
         latestReleasePublishedAtMillis = this.latestVersionPublishedAt.toEpochMilli(),
+        createdAtMillis = this.createdAt.toEpochMilli(),
+        lastActivityAtMillis = this.lastActivityAt.toEpochMilli(),
         targetGroups = TargetGroup.getTargetGroupsFromTargets(this.targets),
         tags = this.tags,
         markers = markers,
