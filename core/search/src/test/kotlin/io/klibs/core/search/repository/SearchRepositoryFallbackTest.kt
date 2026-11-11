@@ -128,6 +128,8 @@ class SearchRepositoryFallbackTest {
         licenseName = null,
         latestVersion = "1.0.0",
         latestVersionPublishedAt = Instant.EPOCH,
+        createdAt = Instant.EPOCH,
+        lastActivityAt = Instant.EPOCH,
         targets = emptyList(),
         tags = emptyList(),
         markers = emptyList(),

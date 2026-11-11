@@ -48,6 +48,8 @@ SELECT json_build_object(
   'license_name', repo.license_name,
   'latest_version', project.latest_version,
   'latest_version_ts', project.latest_version_ts,
+  'created_ts', repo.created_ts,
+  'last_activity_ts', CASE WHEN owner.login = 'androidx' THEN project.latest_version_ts ELSE repo.last_activity_ts END,
   'platforms', COALESCE(proj_tgt.platforms, ARRAY[]::text[]),
   'targets', COALESCE(proj_tgt.targets, ARRAY[]::text[]),
   'plain_description', COALESCE(project.description, repo.description),
