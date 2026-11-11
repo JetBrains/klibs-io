@@ -59,9 +59,11 @@ class SearchService(
         markers: List<String>,
         tags: List<String>,
         page: Int,
-        limit: Int
+        limit: Int,
     ): List<SearchProjectResult> {
+        validatePagination(page, limit)
         validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
+
         return projectSearchRepository.find(
             query = query,
             targetGroupFilters = targetGroupFilters,
@@ -70,7 +72,7 @@ class SearchService(
             markers = markers,
             tags = tags,
             page = page,
-            limit = limit
+            limit = limit,
         )
     }
 
@@ -84,6 +86,7 @@ class SearchService(
         page: Int,
         limit: Int
     ): List<SearchPackageResult> {
+        validatePagination(page, limit)
         validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
         return packageSearchRepository.find(
             query = query,
@@ -97,15 +100,25 @@ class SearchService(
 
 
     @Transactional(readOnly = true)
-    fun searchByCategories(limit: Int): List<CategoryWithProjects> {
+    fun searchByCategories(page: Int, limit: Int): List<CategoryWithProjects> {
+        validatePagination(page = page, limit = limit)
         return projectIndexJdbc.findCategoriesWithProjects(limit)
             .map { (category, projects) ->
                 CategoryWithProjects(
                     categoryName = category.name,
                     categoryMarkers = category.markers,
+                    subtitle = category.subtitle,
                     projects = projects,
                 )
             }
+    }
+
+    private fun validatePagination(page: Int, limit: Int) {
+        if (page < 1 || limit < 1) {
+            logger.warn("Discarding search request: page={}, limit={}", page, limit)
+        }
+        require(page >= 1) { "Page must be >= 1" }
+        require(limit >= 1) { "Limit must be >= 1" }
     }
 
     private fun refreshProjectIndexView() {

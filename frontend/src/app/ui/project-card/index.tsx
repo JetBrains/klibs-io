@@ -11,6 +11,7 @@ import SearchTextWrap from "@/app/ui/search-text-wrap";
 
 import styles from './styles.module.css';
 import { trackEvent, GAEvent } from "@/app/analytics";
+import { ANDROIDX_OWNER_LOGIN, JETBRAINS_KOTLIN_OWNER_LOGINS } from "@/app/constants";
 
 interface ProjectCardProps {
 	featuredProject?: ProjectSearchResults;
@@ -20,6 +21,16 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ featuredProject, className, search }: ProjectCardProps) {
 	const projectLink = featuredProject ? getProjectLink(featuredProject) : null;
+	const isJetBrainsKotlinOwner = JETBRAINS_KOTLIN_OWNER_LOGINS.some(ownerLogin => ownerLogin === featuredProject?.ownerLogin);
+	const affiliation = isJetBrainsKotlinOwner
+		? {
+			type: 'jetbrains-kotlin' as const,
+		}
+		: featuredProject?.ownerLogin === ANDROIDX_OWNER_LOGIN
+			? {
+				type: 'androidx' as const,
+			}
+			: null;
 
 	const hasTags = featuredProject && featuredProject.tags && featuredProject.tags.length > 0;
 	const tagsContent = featuredProject && featuredProject.tags && featuredProject.tags.map((tag, i) => <>
@@ -39,8 +50,11 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 				isClickable: true, paddings: 16,
 			}), styles.card, className, {
 				[styles.featuredProject]: showFeaturedProject,
-				[styles.grantProject]: showGrantWinner
+				[styles.grantProject]: showGrantWinner,
+				[styles.jetbrainsProject]: affiliation?.type === 'jetbrains-kotlin' && !showGrantWinner && !showFeaturedProject,
+				[styles.androidxProject]: affiliation?.type === 'androidx' && !showGrantWinner && !showFeaturedProject,
 			})}
+			data-project-affiliation={affiliation?.type}
 			href={String(projectLink)}
 			title={featuredProject && featuredProject.name}
 			onClick={() => trackEvent(GAEvent.PROJECT_CARD_CLICK, { eventCategory: `${featuredProject?.name}` })}
@@ -75,7 +89,7 @@ export default function ProjectCard({ featuredProject, className, search }: Proj
 													<WinIcon size={'m'} className={styles.featuredIcon} />
 													<span className={cn('rs-h5', styles.featuredTitle)}>Kotlin grant winner</span>
 												</div>
-											}
+									}
 
 											{showFeaturedProject && !showGrantWinner &&
 												<div className={styles.featuredWrapper}>

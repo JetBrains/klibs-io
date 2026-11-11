@@ -112,7 +112,7 @@ class ProjectSearchRepositoryOpenSearch(
 
     private fun extraFilters(tags: List<String>, markers: List<String>): List<Query> = buildList {
         tags.forEach { add(OpenSearchQueryBuilder.term(ProjectFields.TAGS.keyword, it)) }
-        if (markers.isNotEmpty()) add(OpenSearchQueryBuilder.termsAny(ProjectFields.MARKERS, markers))
+        OpenSearchQueryBuilder.markerFilter(markers)?.let { add(it) }
     }
 
     override fun sortOptions(sortBy: SearchSort, isQueryPresent: Boolean): List<SortOptions> {

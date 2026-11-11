@@ -165,9 +165,23 @@ export const networkingProjects = (): ProjectSearchResults[] => [
     }),
 ];
 
+export const ecosystemProjects = (): ProjectSearchResults[] => [
+    projectSearchResult({ id: 101, name: 'kotlinx.coroutines', ownerLogin: 'Kotlin' }),
+    projectSearchResult({ id: 102, name: 'compose-multiplatform', ownerLogin: 'JetBrains' }),
+    projectSearchResult({ id: 103, name: 'Room', ownerLogin: 'androidx' }),
+];
+
 export const homeCategories = (): CategoryWithProjects[] => [
-    { category: { name: 'Grant winners', markers: [] }, projects: [] },
-    { category: { name: 'Networking', markers: [] }, projects: networkingProjects() },
+    {
+        category: {
+            name: 'JetBrains and Google',
+            subtitle: 'Essential libraries from the JetBrains and Google ecosystem',
+            markers: ['JetBrains and Google'],
+        },
+        projects: ecosystemProjects(),
+    },
+    { category: { name: 'Grant winners', markers: ['GRANT_WINNER_2024'] }, projects: [] },
+    { category: { name: 'Networking', markers: ['NETWORKING'] }, projects: networkingProjects() },
 ];
 
 export const serializationPackages = (): PackageSearchResults[] => [

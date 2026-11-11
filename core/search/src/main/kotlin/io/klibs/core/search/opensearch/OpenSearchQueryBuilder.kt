@@ -1,6 +1,8 @@
 package io.klibs.core.search.opensearch
 
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.enums.JETBRAINS_AND_GOOGLE_MARKER
+import io.klibs.core.search.enums.JETBRAINS_AND_GOOGLE_OWNER_LOGINS
 import org.opensearch.client.opensearch._types.FieldValue
 import org.opensearch.client.opensearch._types.Script
 import org.opensearch.client.opensearch._types.query_dsl.FunctionBoostMode
@@ -175,6 +177,18 @@ object OpenSearchQueryBuilder {
     ): List<Query> = buildList {
         ownerLogin?.let { add(term(ProjectFields.OWNER_LOGIN.keyword, it)) }
         addAll(targetGroupFiltersClauses(targetGroupFilters))
+    }
+
+    fun markerFilter(markers: List<String>): Query? {
+        if (markers.isEmpty()) return null
+        val alternatives = buildList {
+            val ordinaryMarkers = markers.filterNot { it == JETBRAINS_AND_GOOGLE_MARKER }
+            if (ordinaryMarkers.isNotEmpty()) add(termsAny(ProjectFields.MARKERS, ordinaryMarkers))
+            if (JETBRAINS_AND_GOOGLE_MARKER in markers) {
+                add(termsAny(ProjectFields.OWNER_LOGIN.keyword, JETBRAINS_AND_GOOGLE_OWNER_LOGINS))
+            }
+        }
+        return alternatives.singleOrNull() ?: bool(shoulds = alternatives, filters = emptyList())
     }
 
     /** OR within a map (group set), AND between maps. */

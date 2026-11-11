@@ -1,6 +1,7 @@
 package io.klibs.core.search.opensearch
 
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.enums.JETBRAINS_AND_GOOGLE_MARKER
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -75,6 +76,41 @@ class OpenSearchQueryBuilderTest {
         assertTrue(out.contains("jetbrains"))
         // JavaScript group folds to a platforms=JS term
         assertTrue(out.contains("JS"))
+    }
+
+    @Test
+    fun `owner marker and ordinary markers form an OR filter`() {
+        assertEquals(
+            """{"bool":{"minimum_should_match":"1","should":[{"terms":{"markers":["OTHER"]}},{"terms":{"owner_login.keyword":["Kotlin","JetBrains","androidx"]}}]}}""",
+            json(OpenSearchQueryBuilder.markerFilter(listOf(JETBRAINS_AND_GOOGLE_MARKER, "OTHER"))!!),
+        )
+    }
+
+    @Test
+    fun `ordinary markers and empty markers do not add an owner filter`() {
+        assertEquals(null, OpenSearchQueryBuilder.markerFilter(emptyList()))
+        assertEquals(
+            """{"terms":{"markers":["OTHER"]}}""",
+            json(OpenSearchQueryBuilder.markerFilter(listOf("OTHER"))!!),
+        )
+    }
+
+    @Test
+    fun `owner marker alone matches exact owner logins`() {
+        assertEquals(
+            """{"terms":{"owner_login.keyword":["Kotlin","JetBrains","androidx"]}}""",
+            json(OpenSearchQueryBuilder.markerFilter(listOf(JETBRAINS_AND_GOOGLE_MARKER))!!),
+        )
+    }
+
+    @Test
+    fun `marker alternatives remain ANDed with owner and target filters`() {
+        val filters = OpenSearchQueryBuilder.commonFilters(
+            listOf(mapOf(TargetGroup.JavaScript to emptySet())), "other"
+        ) + OpenSearchQueryBuilder.markerFilter(listOf(JETBRAINS_AND_GOOGLE_MARKER, "OTHER"))!!
+        val query = OpenSearchQueryBuilder.bool(emptyList(), filters).bool()
+        assertEquals(3, query.filter().size)
+        assertEquals("1", query.filter()[2].bool().minimumShouldMatch())
     }
 
     @Test

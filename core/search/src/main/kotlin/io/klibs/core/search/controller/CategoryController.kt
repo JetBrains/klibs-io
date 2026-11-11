@@ -26,17 +26,24 @@ class CategoryController(
     @Operation(summary = "Get projects grouped by categories")
     @GetMapping("/projects")
     fun getProjectsByCategories(
+        @RequestParam("page", required = false, defaultValue = "1")
+        @Min(value = 1, message = "Page must be >= 1")
+        page: Int,
         @RequestParam("limit", required = false, defaultValue = "7")
         @Min(value = 1, message = "Limit must be >= 1")
         @Max(value = 50, message = "Limit must be <= 50")
         limit: Int,
     ): CategoriesProjectsResponse {
-        val results = searchService.searchByCategories(limit)
+        val results = searchService.searchByCategories(page, limit)
 
         return CategoriesProjectsResponse(
             categories = results.map { cwp ->
                 CategoryWithProjectsDTO(
-                    category = CategoryDTO(name = cwp.categoryName, markers = cwp.categoryMarkers),
+                    category = CategoryDTO(
+                        name = cwp.categoryName,
+                        subtitle = cwp.subtitle,
+                        markers = cwp.categoryMarkers,
+                    ),
                     projects = cwp.projects.map { it.toDTO() }
                 )
             }

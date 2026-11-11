@@ -25,21 +25,24 @@ export default function CategoryResults({ category, searchQuery }: CategoryResul
     const [currentPage, setCurrentPage] = useState(1);
     const currentPageRef = useRef(currentPage);
     const loadMoreRef = useRef<HTMLDivElement | null>(null);
+    const requestGeneration = useRef(0);
 
     useEffect(() => {
         currentPageRef.current = currentPage;
     }, [currentPage]);
 
-    const fetchProjects = useCallback(async (page: number, reset: boolean) => {
+    const fetchProjects = useCallback(async (page: number, reset: boolean, generation: number) => {
         setLoading(true);
         try {
             const results = await searchProjects({
                 page,
                 limit: SEARCH_LIMIT,
                 markers: category.markers,
+                sort: category.markers.includes('JetBrains and Google') ? 'most-dependents' : undefined,
                 query: searchQuery || undefined
             });
 
+            if (generation !== requestGeneration.current) return;
             if (reset) {
                 setProjects(results);
             } else {
@@ -49,21 +52,29 @@ export default function CategoryResults({ category, searchQuery }: CategoryResul
         } catch (error) {
             console.error("Error fetching projects:", error);
         } finally {
-            setLoading(false);
+            if (generation === requestGeneration.current) setLoading(false);
         }
     }, [category.markers, searchQuery]);
 
     useEffect(() => {
+        const generation = ++requestGeneration.current;
         setCurrentPage(1);
-        fetchProjects(1, true);
-    }, [fetchProjects]);
+        if (category.markers.length === 0) {
+            setProjects([]);
+            setHasMore(false);
+            setLoading(false);
+        } else {
+            fetchProjects(1, true, generation);
+        }
+        return () => { requestGeneration.current++; };
+    }, [fetchProjects, category.markers]);
 
     const handleObserver = useCallback(() => {
         if (!hasMore || loading) return;
 
         const nextPage = currentPageRef.current + 1;
         setCurrentPage(nextPage);
-        fetchProjects(nextPage, false);
+        fetchProjects(nextPage, false, requestGeneration.current);
     }, [hasMore, loading, fetchProjects]);
 
     useEffect(() => {
@@ -92,7 +103,14 @@ export default function CategoryResults({ category, searchQuery }: CategoryResul
 
     return (
         <>
-            <h1 className={cn(textCn("rs-h1"))} style={{ margin: '24px 0' }}>{category.name}</h1>
+            <div style={{ margin: '24px 0' }}>
+                <h1 className={cn(textCn("rs-h1"))} style={{ margin: 0 }}>{category.name}</h1>
+                {category.subtitle && (
+                    <p className={textCn("rs-text-3")} style={{ margin: '8px 0 0' }}>
+                        {category.subtitle}
+                    </p>
+                )}
+            </div>
 
             {loading && projects.length === 0 ? (
                 <div className="row w-100 justify-content-center py-5">

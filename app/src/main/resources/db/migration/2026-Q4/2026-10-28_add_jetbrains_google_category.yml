@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+        id: add category marker and subtitle
+        author: dmitrii.krasnov@jetbrains.com
+        preConditions:
+          - onFail: HALT
+          - not:
+              columnExists:
+                tableName: category
+                columnName: subtitle
+        changes:
+          - addColumn:
+              tableName: category
+              columns:
+                - column:
+                    name: subtitle
+                    type: TEXT
+  - changeSet:
+      id: add JetBrains and Google category
+      author: dmitrii.krasnov@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: "0"
+            sql: SELECT COUNT(*) FROM category WHERE id = 0
+      changes:
+        - insert:
+            tableName: category
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 0
+              - column:
+                  name: name
+                  value: JetBrains and Google
+              - column:
+                  name: markers
+                  value: '{"JetBrains and Google"}'
+              - column:
+                  name: subtitle
+                  value: Essential libraries from the JetBrains and Google ecosystem

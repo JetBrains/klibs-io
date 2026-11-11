@@ -13,7 +13,7 @@ services:
       - klibs-net
 
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:4.14.0
     container_name: klibs-localstack
     ports:
       - "4566:4566"
