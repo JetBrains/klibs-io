@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-2026-grant-winner-markers
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "KTL-5298: Add 2026 Kotlin Foundation grant winners."
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT project.id, 'GRANT_WINNER_2026'
+              FROM project
+              JOIN scm_repo ON project.scm_repo_id = scm_repo.id
+              JOIN scm_owner ON scm_repo.owner_id = scm_owner.id
+              WHERE (scm_repo.name = 'Llamatik' AND scm_owner.login = 'llamatik')
+                 OR (scm_repo.name = 'FileKit' AND scm_owner.login = 'vinceglb')
+                 OR (scm_repo.name IN ('CameraK', 'Kamera') AND scm_owner.login = 'Kashif-E')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-grant-winner-2026-to-category
+      author: dmitrii.krasnov@jetbrains.com
+      comment: "KTL-5298: Include GRANT_WINNER_2026 in the Grant winners category."
+      changes:
+        - sql:
+            sql: |
+              UPDATE category
+              SET markers = markers || ARRAY['GRANT_WINNER_2026']
+              WHERE name = 'Grant winners';
