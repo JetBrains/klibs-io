@@ -139,6 +139,8 @@ class ProjectSearchRepositoryOpenSearch(
         latestVersion = src.get(ProjectFields.LATEST_VERSION).asText(),
         latestVersionPublishedAt = LocalDateTime.parse(src.get(ProjectFields.LATEST_VERSION_TS).asText())
             .toInstant(ZoneOffset.UTC),
+        createdAt = src.indexTimestamp("created_ts"),
+        lastActivityAt = src.indexTimestamp("last_activity_ts"),
         targets = src.stringList(ProjectFields.TARGETS),
         tags = src.stringList(ProjectFields.TAGS),
         markers = src.stringList(ProjectFields.MARKERS),
@@ -146,6 +148,10 @@ class ProjectSearchRepositoryOpenSearch(
         // Not indexed in OpenSearch, see sortOptions.
         ossHealthScore = null,
     )
+
+    private fun ObjectNode.indexTimestamp(field: String) =
+        LocalDateTime.parse(checkNotNull(textOrNull(field)) { "Missing $field in project index; rebuild required" })
+            .toInstant(ZoneOffset.UTC)
 
     private companion object {
         /** People type the start of a name far more often than its end. */

@@ -48,6 +48,8 @@
     "license_name": { "type": "keyword" },
     "latest_version": { "type": "keyword" },
     "latest_version_ts": { "type": "date" },
+    "created_ts": { "type": "date" },
+    "last_activity_ts": { "type": "date" },
     "plain_description": { "type": "text", "index": false },
     "packages": {
       "type": "nested",
