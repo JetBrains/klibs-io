@@ -1,5 +1,5 @@
 import { render } from 'vitest-browser-react';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { comparedProjects } from '@/test/fixtures';
@@ -27,8 +27,9 @@ test('compare page with two projects', async () => {
 test('compare page with all properties unselected', async () => {
     await page.viewport(1280, 800);
     await render(<ComparePageContent projects={comparedProjects()} />);
-    for (const tab of page.getByRole('tab').all()) {
-        await tab.click();
+    // Chips are visually hidden checkboxes inside a <label>; the label is the click target.
+    for (const chip of page.getByRole('checkbox').all()) {
+        await userEvent.click(chip.element().closest('label')!);
     }
     await expect.element(page.getByText('No properties selected.', { exact: false })).toBeVisible();
 });
