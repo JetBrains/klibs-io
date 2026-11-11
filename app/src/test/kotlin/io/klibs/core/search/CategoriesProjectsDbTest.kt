@@ -29,8 +29,8 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
         val results = searchService.searchByCategories(limit = 10)
 
         val grantWinnersCategory = results.first { it.categoryName == "Grant winners" }
-        assertEquals(3, grantWinnersCategory.projects.size, "Grant winners has 3 projects (50003, 50004, 50007)")
-        assertEquals(listOf(60, 50, 45), grantWinnersCategory.projects.map { it.vcsStars }, "Projects sorted by stars DESC")
+        assertEquals(4, grantWinnersCategory.projects.size, "Grant winners has 4 projects")
+        assertEquals(listOf(80, 60, 50, 45), grantWinnersCategory.projects.map { it.vcsStars }, "Projects sorted by stars DESC")
 
         val compose = results.first { it.categoryName == "Compose UI" }
         assertEquals(2, compose.projects.size, "COMPOSE_UI has 2 projects (50005, 50006)")
@@ -38,14 +38,14 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
     }
 
     @Test
-    @DisplayName("Multi-marker category (Grant winners) merges projects from both markers")
+    @DisplayName("Multi-marker category (Grant winners) merges projects from all years")
     @Sql(value = ["classpath:sql/CategoriesProjectsDbTest/seed.sql"])
     fun `multi-marker category merges markers`() {
         val results = searchService.searchByCategories(limit = 10)
 
         val grantWinners = results.first { it.categoryName == "Grant winners" }
-        assertEquals(3, grantWinners.projects.size, "Grant winners merges GRANT_WINNER_2023 + GRANT_WINNER_2024 + GRANT_WINNER_2025")
-        assertEquals(listOf(60, 50, 45), grantWinners.projects.map { it.vcsStars }, "Sorted by stars DESC")
+        assertEquals(4, grantWinners.projects.size, "Grant winners merges markers from 2023 through 2026")
+        assertEquals(listOf(80, 60, 50, 45), grantWinners.projects.map { it.vcsStars }, "Sorted by stars DESC")
     }
 
     @Test
@@ -56,7 +56,7 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
 
         val grantWinnersCategory = results.first { it.categoryName == "Grant winners" }
         assertEquals(2, grantWinnersCategory.projects.size, "Grant winners capped at limit=2")
-        assertEquals(listOf(60, 50), grantWinnersCategory.projects.map { it.vcsStars }, "Top-2 by stars")
+        assertEquals(listOf(80, 60), grantWinnersCategory.projects.map { it.vcsStars }, "Top-2 by stars")
     }
 
     @Test
