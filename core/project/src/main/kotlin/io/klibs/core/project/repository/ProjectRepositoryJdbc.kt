@@ -131,6 +131,14 @@ class ProjectRepositoryJdbc(
         }
     }
 
+    override fun updateName(projectId: Int, name: String) {
+        val updated = jdbcClient.sql("UPDATE project SET name = :name WHERE id = :projectId")
+            .param("projectId", projectId)
+            .param("name", name)
+            .update()
+        require(updated == 1) { "Did not update the project name for projectId: $projectId" }
+    }
+
     override fun findById(id: Int): ProjectEntity? {
         val sql = """
             SELECT id,
