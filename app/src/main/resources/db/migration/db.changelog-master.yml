@@ -193,3 +193,5 @@ databaseChangeLog:
       file: db/migration/2026-Q3/2026-09-07_create_suspicious_package_candidate_table.yml
   - include:
       file: db/migration/2026-Q3/2026-09-18_create_scm_owner_scheduling_table.yml
+  - include:
+      file: db/migration/2026-Q3/2026-09-21_create_klibs_user_auth_tables.yml

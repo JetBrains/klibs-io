@@ -25,6 +25,9 @@ spring:
 
 klibs:
   ai: false
+  auth:
+    session:
+      cookie-secure: false
   indexing: false
   readme:
     s3:
