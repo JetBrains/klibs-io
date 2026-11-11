@@ -105,6 +105,7 @@ class ScmRepositoryRepositoryJdbc(
             UPDATE scm_repo  
             SET 
                 id_native        = :idGh,
+                name             = :name,
                 description      = :description,
                 default_branch   = :defaultBranch,
                 homepage         = :homepage,

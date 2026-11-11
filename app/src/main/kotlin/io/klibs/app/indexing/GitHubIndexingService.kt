@@ -7,6 +7,7 @@ import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.ProjectService
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
+import io.klibs.core.readme.AndroidxReadmeProvider
 import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.readme.entity.ReadmeMetadataEntity
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
@@ -51,37 +52,27 @@ class GitHubIndexingService(
                 repoToUpdate.name
             )
         if (ghRepo == null) {
-            val now = Instant.now()
-            scmRepositoryRepository.setUpdatedAt(repoToUpdate.idNotNull, now).also { require(it) }
-            scmRepositoryRepository.markUnreachable(repoToUpdate.idNotNull, now)
-            logger.warn("Unable to find the GH repository for update: $repoToUpdate. Skipping it.")
-
-            val unreachableRepo = repoToUpdate.copy(
-                updatedAtTs = now,
-                unreachableSince = repoToUpdate.unreachableSince ?: now
-            )
-            unreachableRepoHidingService.hideIfUnreachableTooLong(unreachableRepo)
-            return unreachableRepo
+            return markScmRepositoryAsUnreachableInGitHub(repoToUpdate)
         }
 
         if (repoToUpdate.unreachableSince != null) {
-            logger.info(
-                "GH repository {}/{} is reachable again, clearing unreachable_since={}",
-                repoToUpdate.ownerLogin,
-                repoToUpdate.name,
-                repoToUpdate.unreachableSince
-            )
-            scmRepositoryRepository.clearUnreachable(repoToUpdate.idNotNull)
-            unreachableRepoHidingService.unhide(repoToUpdate)
+            unmarkScmRepositoryAsUnreachableInGitHub(repoToUpdate, repoToUpdate.unreachableSince)
         }
 
         val ownerId = updateRepositoryOwnerIfChanged(repoToUpdate, ghRepo)
         val projectEntity = projectRepository.findByNameAndScmRepoId(repoToUpdate.name, repoToUpdate.idNotNull)
+            ?: projectRepository.findByScmRepoId(repoToUpdate.idNotNull)
             ?: error("Unable to find project entity for repoId=${repoToUpdate.idNotNull}")
 
         if (projectEntity.ownerId != ownerId) {
             logger.info("Updating project owner from ${projectEntity.ownerId} to $ownerId for projectId=${projectEntity.idNotNull}")
             projectRepository.updateOwnerId(projectEntity.idNotNull, ownerId)
+            projectEntity.ownerId = ownerId
+        }
+
+        if (repoToUpdate.ownerLogin != AndroidxReadmeProvider.OWNER_NAME && projectEntity.name != ghRepo.name) {
+            projectRepository.updateName(projectEntity.idNotNull, ghRepo.name)
+            projectEntity.name = ghRepo.name
         }
 
         val hasReadme = updateReadme(projectEntity, repoToUpdate, ghRepo, repoToUpdate.updatedAtTs)
@@ -127,6 +118,34 @@ class GitHubIndexingService(
         }
 
         return persistedRepo
+    }
+
+    private fun unmarkScmRepositoryAsUnreachableInGitHub(
+        repoToUpdate: ScmRepositoryEntity,
+        unreachableSince: Instant?
+    ) {
+        logger.info(
+            "GH repository {}/{} is reachable again, clearing unreachable_since={}",
+            repoToUpdate.ownerLogin,
+            repoToUpdate.name,
+            unreachableSince
+        )
+        scmRepositoryRepository.clearUnreachable(repoToUpdate.idNotNull)
+        unreachableRepoHidingService.unhide(repoToUpdate)
+    }
+
+    private fun markScmRepositoryAsUnreachableInGitHub(repoToUpdate: ScmRepositoryEntity): ScmRepositoryEntity {
+        val now = Instant.now()
+        scmRepositoryRepository.setUpdatedAt(repoToUpdate.idNotNull, now).also { require(it) }
+        scmRepositoryRepository.markUnreachable(repoToUpdate.idNotNull, now)
+        logger.warn("Unable to find the GH repository for update: $repoToUpdate. Skipping it.")
+
+        val unreachableRepo = repoToUpdate.copy(
+            updatedAtTs = now,
+            unreachableSince = repoToUpdate.unreachableSince ?: now
+        )
+        unreachableRepoHidingService.hideIfUnreachableTooLong(unreachableRepo)
+        return unreachableRepo
     }
 
     /**
@@ -400,8 +419,7 @@ class GitHubIndexingService(
         val repositoryTopics = gitHubIntegration.getRepositoryTopics(scmRepositoryEntity.nativeId)
         try {
             projectService.updateProjectTags(
-                scmRepositoryEntity.name,
-                scmRepositoryEntity.ownerLogin,
+                projectEntity.idNotNull,
                 repositoryTopics,
                 TagOrigin.GITHUB
             )
