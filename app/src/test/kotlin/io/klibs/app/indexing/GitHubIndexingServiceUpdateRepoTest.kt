@@ -105,6 +105,55 @@ class GitHubIndexingServiceUpdateRepoTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
+    fun `repository rename updates project and remains refreshable`() {
+        val before = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        val project = requireNotNull(projectRepository.findByScmRepoId(before.idNotNull))
+        initVars(before)
+        every { gitHubIntegration.getRepository(repoNativeId) } returns ghRepoBefore.copy(name = "Kamera")
+        every { gitHubIntegration.getLicense(repoNativeId) } returns ghLicenseBefore
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) } returns ReadmeFetchResult.NotModified
+
+        val updated = uut.updateRepo(before)
+        assertEquals(before.id, updated.id)
+        assertEquals("Kamera", updated.name)
+        assertEquals("Kamera", projectRepository.findById(project.idNotNull)?.name)
+        uut.updateRepo(updated)
+        assertEquals("Kamera", projectRepository.findById(project.idNotNull)?.name)
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
+    fun `refresh repairs project left behind by a previous repository rename`() {
+        val before = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        val project = requireNotNull(projectRepository.findByScmRepoId(before.idNotNull))
+        val renamedRepo = scmRepositoryRepository.upsert(before.copy(name = "Kamera"))
+        initVars(renamedRepo)
+        every { gitHubIntegration.getRepository(repoNativeId) } returns ghRepoBefore
+        every { gitHubIntegration.getLicense(repoNativeId) } returns ghLicenseBefore
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) } returns ReadmeFetchResult.NotModified
+
+        uut.updateRepo(renamedRepo)
+        assertEquals("Kamera", projectRepository.findById(project.idNotNull)?.name)
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
+    fun `case only repository rename updates repository and project`() {
+        val before = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
+        val project = requireNotNull(projectRepository.findByScmRepoId(before.idNotNull))
+        initVars(before)
+        val newName = before.name.uppercase()
+        every { gitHubIntegration.getRepository(repoNativeId) } returns ghRepoBefore.copy(name = newName)
+        every { gitHubIntegration.getLicense(repoNativeId) } returns ghLicenseBefore
+        every { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) } returns ReadmeFetchResult.NotModified
+
+        uut.updateRepo(before)
+        assertEquals(newName, scmRepositoryRepository.findById(before.idNotNull)?.name)
+        assertEquals(newName, projectRepository.findById(project.idNotNull)?.name)
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:sql/GitHubIndexingServiceTest/insert-repository-for-update.sql"])
     fun `updateRepo - github repo not found stamps unreachable since`() {
         val before = requireNotNull(scmRepositoryRepository.findByNativeId(repoNativeId))
         initVars(before)

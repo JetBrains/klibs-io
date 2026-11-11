@@ -133,6 +133,15 @@ class ProjectService(
 
     @Transactional
     fun updateProjectTags(
+        id: Int,
+        tags: List<String>,
+        tagsType: TagOrigin
+    ): List<String> {
+        return innerUpdateProjectTags(id, tags, tagsType)
+    }
+
+    @Transactional
+    fun updateProjectTags(
         projectName: String,
         ownerLogin: String,
         tags: List<String>,
@@ -142,6 +151,14 @@ class ProjectService(
             ?: throw IllegalArgumentException("Project $ownerLogin/$projectName not found")
         val projectId = projectEntity.idNotNull
 
+        return innerUpdateProjectTags(projectId, tags, tagsType)
+    }
+
+    private fun innerUpdateProjectTags(
+        projectId: Int,
+        tags: List<String>,
+        tagsType: TagOrigin,
+    ): List<String> {
         val normalizedTags = tags.asSequence()
             .map { normalizeTag(it) }
             .filter { it.isNotEmpty() }
@@ -165,8 +182,10 @@ class ProjectService(
         }
 
         if (invalidTags.isNotEmpty() && tagsType != TagOrigin.GITHUB) {
-            throw IllegalArgumentException("Invalid tags were provided. " +
-                    "After normalization they are: ${invalidTags.joinToString(", ")}")
+            throw IllegalArgumentException(
+                "Invalid tags were provided. " +
+                        "After normalization they are: ${invalidTags.joinToString(", ")}"
+            )
         }
 
         projectTagRepository.deleteByProjectIdAndOrigin(projectId, tagsType)

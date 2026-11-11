@@ -18,6 +18,8 @@ interface ProjectRepository {
 
     fun updateOwnerId(projectId: Int, newOwnerId: Int)
 
+    fun updateName(projectId: Int, name: String)
+
     fun findById(id: Int): ProjectEntity?
 
     fun findByScmRepoId(scmRepoId: Int): ProjectEntity?
