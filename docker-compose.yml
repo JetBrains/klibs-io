@@ -1,3 +1,5 @@
+name: klibs
+
 version: "4.0"
 services:
   postgres:
@@ -13,7 +15,7 @@ services:
       - klibs-net
 
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:4.14.0
     container_name: klibs-localstack
     ports:
       - "4566:4566"
@@ -21,7 +23,7 @@ services:
       SERVICES: s3
       DEFAULT_REGION: eu-west-1
     volumes:
-      - ./docker-compose-volumes/localstack-data:/var/lib/localstack
+      - localstack-data:/var/lib/localstack
     networks:
       - klibs-net
 
@@ -35,7 +37,7 @@ services:
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=OpenSearch!ocalPassw0rd
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
     volumes:
-      - ./docker-compose-volumes/opensearch-data:/usr/share/opensearch/data
+      - opensearch-data:/usr/share/opensearch/data
     networks:
       - klibs-net
     healthcheck:
