@@ -102,6 +102,7 @@ class SearchService(
             .map { (category, projects) ->
                 CategoryWithProjects(
                     categoryName = category.name,
+                    subtitle = category.subtitle,
                     categoryMarkers = category.markers,
                     projects = projects,
                 )

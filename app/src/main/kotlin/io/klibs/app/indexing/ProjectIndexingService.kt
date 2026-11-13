@@ -8,6 +8,7 @@ import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
+import io.klibs.core.project.service.OwnerMarkerService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.AndroidxReadmeProvider
@@ -43,6 +44,7 @@ class ProjectIndexingService(
     private val descriptionBackoffProvider: BackoffProvider,
     @Qualifier("aiTagsBackoffProvider")
     private val tagsBackoffProvider: BackoffProvider,
+    private val ownerMarkerService: OwnerMarkerService,
 ) {
 
     fun addAiDescription() {
@@ -196,6 +198,7 @@ class ProjectIndexingService(
                 latestVersionTs = requireNotNull(mavenArtifact.releasedAt),
             )
         )
+        ownerMarkerService.assignOwnerMarkers(persistedEntity.idNotNull, scmRepositoryEntity.ownerLogin)
 
         if (readmeContent != null) {
             scmRepositoryRepository.update(
@@ -230,7 +233,7 @@ class ProjectIndexingService(
 
         logger.debug("Persisting a new androidx project {} by {}", projectName, mavenArtifact)
 
-        return projectRepository.insert(
+        val persistedEntity = projectRepository.insert(
             ProjectEntity(
                 id = null,
                 scmRepoId = scmRepositoryEntity.idNotNull,
@@ -242,6 +245,9 @@ class ProjectIndexingService(
                 latestVersionTs = requireNotNull(mavenArtifact.releasedAt),
             )
         )
+        ownerMarkerService.assignOwnerMarkers(persistedEntity.idNotNull, scmRepositoryEntity.ownerLogin)
+
+        return persistedEntity
     }
 
     private fun fetchReadmeContent(scmRepositoryEntity: ScmRepositoryEntity): GitHubIndexingReadmeContent? {

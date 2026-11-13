@@ -68,4 +68,16 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
         val networking = results.first { it.categoryName == "Networking" }
         assertTrue(networking.projects.isEmpty(), "No projects have NETWORKING marker in seed data")
     }
+
+    @Test
+    @DisplayName("JetBrains and Google category is listed first and holds JETBRAINS_AND_GOOGLE marker")
+    @Sql(value = ["classpath:sql/CategoriesProjectsDbTest/seed.sql"])
+    fun `jetbrains and google category is first`() {
+        val results = searchService.searchByCategories(limit = 10)
+
+        val first = results.first()
+        assertEquals("JetBrains and Google", first.categoryName)
+        assertEquals("Essential libraries from the JetBrains and Google ecosystem", first.subtitle)
+        assertEquals(listOf("JETBRAINS_AND_GOOGLE"), first.categoryMarkers)
+    }
 }
