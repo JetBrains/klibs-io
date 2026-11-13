@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: backfill-jetbrains-and-google-marker
+      author: nikita.vlaev@jetbrains.com
+      comment: "Assign JETBRAINS_AND_GOOGLE marker to existing projects of Kotlin, JetBrains and androidx owners. Snapshot of OwnerMarkerService.OWNER_MARKERS."
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO project_marker (project_id, type)
+              SELECT p.id, 'JETBRAINS_AND_GOOGLE'
+              FROM project p
+              JOIN scm_owner o ON p.owner_id = o.id
+              WHERE lower(o.login) IN ('kotlin', 'jetbrains', 'androidx')
+              ON CONFLICT (project_id, type) DO NOTHING;
+
+  - changeSet:
+      id: add-jetbrains-and-google-category
+      author: nikita.vlaev@jetbrains.com
+      comment: "Add 'JetBrains and Google' category, listed first (id = 0)."
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: |
+              SELECT COUNT(*) FROM category WHERE name = 'JetBrains and Google';
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO category (id, name, markers)
+              VALUES (0, 'JetBrains and Google', ARRAY['JETBRAINS_AND_GOOGLE']);
