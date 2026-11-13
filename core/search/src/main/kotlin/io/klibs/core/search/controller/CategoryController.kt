@@ -36,7 +36,11 @@ class CategoryController(
         return CategoriesProjectsResponse(
             categories = results.map { cwp ->
                 CategoryWithProjectsDTO(
-                    category = CategoryDTO(name = cwp.categoryName, markers = cwp.categoryMarkers),
+                    category = CategoryDTO(
+                        name = cwp.categoryName,
+                        subtitle = cwp.subtitle,
+                        markers = cwp.categoryMarkers,
+                    ),
                     projects = cwp.projects.map { it.toDTO() }
                 )
             }
