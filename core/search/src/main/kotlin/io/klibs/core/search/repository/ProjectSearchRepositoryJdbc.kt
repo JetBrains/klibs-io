@@ -192,7 +192,8 @@ class ProjectSearchRepositoryJdbc(
 
     fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
         val sql = """
-            SELECT c.id AS category_id, c.name AS category_name, c.markers AS category_markers,
+            SELECT c.id AS category_id, c.name AS category_name, c.subtitle AS category_subtitle,
+                   c.markers AS category_markers,
                    pi.project_id, pi.owner_type, pi.owner_login, pi.repo_name, pi.name,
                    pi.stars, pi.license_name, pi.latest_version, pi.latest_version_ts,
                    pi.plain_description, pi.tags, pi.markers, pi.targets_vector, pi.dependent_count, pi.health_score,
@@ -201,20 +202,27 @@ class ProjectSearchRepositoryJdbc(
             LEFT JOIN LATERAL (
                 SELECT * FROM project_index
                 WHERE project_index.markers && c.markers
-                ORDER BY stars DESC, project_id
+                ORDER BY CASE WHEN :dependentsSortMarker = ANY(c.markers) THEN dependent_count END DESC NULLS LAST,
+                         CASE WHEN NOT (:dependentsSortMarker = ANY(c.markers)) THEN stars END DESC NULLS LAST,
+                         project_id
                 LIMIT :limit
             ) pi ON true
             LEFT ${projectDatesJoin("pi")}
-            ORDER BY c.id, pi.stars DESC NULLS LAST, pi.project_id NULLS LAST
+            ORDER BY c.id,
+                     CASE WHEN :dependentsSortMarker = ANY(c.markers) THEN pi.dependent_count END DESC NULLS LAST,
+                     CASE WHEN NOT (:dependentsSortMarker = ANY(c.markers)) THEN pi.stars END DESC NULLS LAST,
+                     pi.project_id NULLS LAST
         """.trimIndent()
 
         val result = linkedMapOf<Category, MutableList<SearchProjectResult>>()
 
         jdbcClient.sql(sql)
             .param("limit", limit)
+            .param("dependentsSortMarker", JETBRAINS_AND_GOOGLE)
             .query { rs, _ ->
                 val category = Category(
                     name = rs.getString("category_name"),
+                    subtitle = rs.getString("category_subtitle"),
                     markers = rs.getArray("category_markers")?.array
                         ?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList()
                 )
@@ -237,6 +245,8 @@ class ProjectSearchRepositoryJdbc(
     }
 
     private companion object {
+        private const val JETBRAINS_AND_GOOGLE = "JETBRAINS_AND_GOOGLE"
+
         private fun projectDatesJoin(indexAlias: String) = """
             JOIN LATERAL (
                 SELECT repo.created_ts,

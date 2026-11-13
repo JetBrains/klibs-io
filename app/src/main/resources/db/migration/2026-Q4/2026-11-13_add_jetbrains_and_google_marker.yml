@@ -28,3 +28,32 @@ databaseChangeLog:
             sql: |
               INSERT INTO category (id, name, markers)
               VALUES (0, 'JetBrains and Google', ARRAY['JETBRAINS_AND_GOOGLE']);
+
+  - changeSet:
+      id: add-category-subtitle-column
+      author: nikita.vlaev@jetbrains.com
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            columnExists:
+              tableName: category
+              columnName: subtitle
+      changes:
+        - addColumn:
+            tableName: category
+            columns:
+              - column:
+                  name: subtitle
+                  type: TEXT
+
+  - changeSet:
+      id: set-jetbrains-and-google-category-subtitle
+      author: nikita.vlaev@jetbrains.com
+      changes:
+        - update:
+            tableName: category
+            columns:
+              - column:
+                  name: subtitle
+                  value: Essential libraries from the JetBrains and Google ecosystem
+            where: name = 'JetBrains and Google'

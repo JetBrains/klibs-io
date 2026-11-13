@@ -33,6 +33,10 @@ VALUES
     (50006, 50006, CURRENT_TIMESTAMP, '1.0.0', 'Featured + Compose lib', 'repo-feat-comp', NULL, 50006),
     (50007, 50007, CURRENT_TIMESTAMP, '1.0.0', 'Grant winner 2025 lib',  'repo-grant-25',  NULL, 50007);
 
+UPDATE public.project SET dependent_count = 5 WHERE id = 50001;
+UPDATE public.project SET dependent_count = 30 WHERE id = 50004;
+UPDATE public.project SET dependent_count = 20 WHERE id = 50005;
+
 
 
 INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
