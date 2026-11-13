@@ -50,3 +50,6 @@ INSERT INTO public.project_marker (project_id, type) VALUES (30002, 'GRANT_WINNE
 
 INSERT INTO public.project_marker (project_id, type) VALUES (30003, 'FEATURED_DEPRECATED');
 INSERT INTO public.project_marker (project_id, type) VALUES (30003, 'GRANT_WINNER_2024');
+
+
+INSERT INTO public.project_marker (project_id, type) VALUES (30002, 'JETBRAINS_AND_GOOGLE');

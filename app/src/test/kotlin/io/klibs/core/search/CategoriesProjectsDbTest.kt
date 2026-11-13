@@ -31,10 +31,12 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
         val grantWinnersCategory = results.first { it.categoryName == "Grant winners" }
         assertEquals(4, grantWinnersCategory.projects.size, "Grant winners has 4 projects")
         assertEquals(listOf(80, 60, 50, 45), grantWinnersCategory.projects.map { it.vcsStars }, "Projects sorted by stars DESC")
+        assertEquals(null, grantWinnersCategory.subtitle)
 
         val compose = results.first { it.categoryName == "Compose UI" }
         assertEquals(2, compose.projects.size, "COMPOSE_UI has 2 projects (50005, 50006)")
         assertEquals(listOf(90, 40), compose.projects.map { it.vcsStars })
+        assertEquals(null, compose.subtitle)
     }
 
     @Test
@@ -67,5 +69,28 @@ class CategoriesProjectsDbTest : BaseUnitWithDbLayerTest() {
 
         val networking = results.first { it.categoryName == "Networking" }
         assertTrue(networking.projects.isEmpty(), "No projects have NETWORKING marker in seed data")
+    }
+
+    @Test
+    @DisplayName("JetBrains and Google category is listed first and holds JETBRAINS_AND_GOOGLE marker")
+    @Sql(value = ["classpath:sql/CategoriesProjectsDbTest/seed.sql"])
+    fun `jetbrains and google category is first`() {
+        val results = searchService.searchByCategories(limit = 10)
+
+        val first = results.first()
+        assertEquals("JetBrains and Google", first.categoryName)
+        assertEquals("Essential libraries from the JetBrains and Google ecosystem", first.subtitle)
+        assertEquals(listOf("JETBRAINS_AND_GOOGLE"), first.categoryMarkers)
+    }
+
+    @Test
+    @DisplayName("JetBrains and Google category returns marked projects sorted by dependents DESC")
+    @Sql(value = ["classpath:sql/CategoriesProjectsDbTest/seed.sql"])
+    fun `jetbrains and google category returns marked projects`() {
+        val results = searchService.searchByCategories(limit = 10)
+
+        val jetbrainsAndGoogle = results.first { it.categoryName == "JetBrains and Google" }
+        assertEquals(listOf(50004, 50005, 50001), jetbrainsAndGoogle.projects.map { it.id })
+        assertEquals(listOf(30, 20, 5), jetbrainsAndGoogle.projects.map { it.dependentCount })
     }
 }

@@ -17,6 +17,11 @@ data class CategoryWithProjectsDTO(
 data class CategoryDTO(
     @Schema(description = "Display name of the category", example = "Compose UI")
     val name: String,
+    @Schema(
+        description = "Optional subtitle displayed below the category name",
+        example = "Essential libraries from the JetBrains and Google ecosystem",
+    )
+    val subtitle: String?,
     @Schema(description = "Marker types that belong to this category", example = "[\"COMPOSE_UI\"]")
     val markers: List<String>,
 )

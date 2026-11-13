@@ -6,6 +6,7 @@ import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
+import io.klibs.core.project.service.OwnerMarkerService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeService
@@ -41,6 +42,7 @@ class ProjectIndexingServicePersistReadmeTest {
     private val readmeMinimizer = mockk<ReadmeMinimizationProcessor>()
     private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val tagsBackoffProvider = BackoffProvider("tagsBackoff", mockk(relaxed = true))
+    private val ownerMarkerService = mockk<OwnerMarkerService>(relaxUnitFun = true)
 
     private fun uut() = ProjectIndexingService(
         readmeService = readmeService,
@@ -54,6 +56,7 @@ class ProjectIndexingServicePersistReadmeTest {
         readmeContentBuilder = readmeContentBuilder,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
+        ownerMarkerService = ownerMarkerService,
     )
 
     @Test

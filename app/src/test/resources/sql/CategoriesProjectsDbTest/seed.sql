@@ -33,6 +33,10 @@ VALUES
     (50006, 50006, CURRENT_TIMESTAMP, '1.0.0', 'Featured + Compose lib', 'repo-feat-comp', NULL, 50006),
     (50007, 50007, CURRENT_TIMESTAMP, '1.0.0', 'Grant winner 2025 lib',  'repo-grant-25',  NULL, 50007);
 
+UPDATE public.project SET dependent_count = 5 WHERE id = 50001;
+UPDATE public.project SET dependent_count = 30 WHERE id = 50004;
+UPDATE public.project SET dependent_count = 20 WHERE id = 50005;
+
 
 
 INSERT INTO public.maven_coordinate (id, group_id, artifact_id, version) VALUES
@@ -74,4 +78,7 @@ INSERT INTO public.project_marker (project_id, type) VALUES
     (50005, 'COMPOSE_UI'),
     (50006, 'FEATURED_DEPRECATED'),
     (50006, 'COMPOSE_UI'),
-    (50007, 'GRANT_WINNER_2025');
+    (50007, 'GRANT_WINNER_2025'),
+    (50001, 'JETBRAINS_AND_GOOGLE'),
+    (50004, 'JETBRAINS_AND_GOOGLE'),
+    (50005, 'JETBRAINS_AND_GOOGLE');
