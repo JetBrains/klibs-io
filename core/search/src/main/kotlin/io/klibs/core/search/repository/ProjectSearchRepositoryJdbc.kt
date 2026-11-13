@@ -192,7 +192,8 @@ class ProjectSearchRepositoryJdbc(
 
     fun findCategoriesWithProjects(limit: Int): Map<Category, List<SearchProjectResult>> {
         val sql = """
-            SELECT c.id AS category_id, c.name AS category_name, c.markers AS category_markers,
+            SELECT c.id AS category_id, c.name AS category_name, c.subtitle AS category_subtitle,
+                   c.markers AS category_markers,
                    pi.project_id, pi.owner_type, pi.owner_login, pi.repo_name, pi.name,
                    pi.stars, pi.license_name, pi.latest_version, pi.latest_version_ts,
                    pi.plain_description, pi.tags, pi.markers, pi.targets_vector, pi.dependent_count, pi.health_score,
@@ -201,7 +202,7 @@ class ProjectSearchRepositoryJdbc(
             LEFT JOIN LATERAL (
                 SELECT * FROM project_index
                 WHERE project_index.markers && c.markers
-                ORDER BY stars DESC, project_id
+                ORDER BY  stars DESC, project_id
                 LIMIT :limit
             ) pi ON true
             LEFT ${projectDatesJoin("pi")}
@@ -215,6 +216,7 @@ class ProjectSearchRepositoryJdbc(
             .query { rs, _ ->
                 val category = Category(
                     name = rs.getString("category_name"),
+                    subtitle = rs.getString("category_subtitle"),
                     markers = rs.getArray("category_markers")?.array
                         ?.let { it as? Array<*> }?.map { it.toString() } ?: emptyList()
                 )
@@ -237,6 +239,7 @@ class ProjectSearchRepositoryJdbc(
     }
 
     private companion object {
+
         private fun projectDatesJoin(indexAlias: String) = """
             JOIN LATERAL (
                 SELECT repo.created_ts,
