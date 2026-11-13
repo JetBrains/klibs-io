@@ -6,6 +6,7 @@ import io.klibs.core.owner.ScmOwnerRepository
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
+import io.klibs.core.readme.ANDROIDX_DEFAULT_DESCRIPTION
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeService
@@ -16,9 +17,8 @@ import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import org.junit.jupiter.api.Test
-import io.klibs.core.readme.AndroidxReadmeProvider
-import io.klibs.core.readme.GitHubIndexingReadmeContent
-import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.ReadmeContent
+import io.klibs.core.readme.GithubReadmeContentBuilder
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -36,8 +36,8 @@ class ProjectIndexingServicePersistReadmeTest {
     private val tagsGenerator = mockk<TagsGenerationService>()
     private val projectTagRepository = mockk<ProjectTagRepository>()
     private val gitHubIntegration = mockk<GitHubIntegration>()
-    private val readmeContentBuilder = mockk<ReadmeContentBuilder>()
-    private val androidxReadmeProvider = mockk<AndroidxReadmeProvider>()
+    private val githubReadmeContentBuilder = mockk<GithubReadmeContentBuilder>()
+    private val androidxReadmesUpdatingService = mockk<AndroidxReadmesUpdatingService>(relaxUnitFun = true)
     private val readmeMinimizer = mockk<ReadmeMinimizationProcessor>()
     private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val tagsBackoffProvider = BackoffProvider("tagsBackoff", mockk(relaxed = true))
@@ -51,7 +51,8 @@ class ProjectIndexingServicePersistReadmeTest {
         tagsGenerationService = tagsGenerator,
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
-        readmeContentBuilder = readmeContentBuilder,
+        githubReadmeContentBuilder = githubReadmeContentBuilder,
+        androidxReadmesUpdatingService = androidxReadmesUpdatingService,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
     )
@@ -109,14 +110,14 @@ class ProjectIndexingServicePersistReadmeTest {
         every { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, Instant.EPOCH) } returns
             ReadmeFetchResult.Content("# Title")
         every {
-            readmeContentBuilder.buildFromMarkdown(
+            githubReadmeContentBuilder.buildFromMarkdown(
                 readmeMd = "# Title",
                 nativeId = repoNativeId,
                 ownerLogin = "octocat",
                 repoName = repoName,
                 defaultBranch = defaultBranch,
             )
-        } returns GitHubIndexingReadmeContent(
+        } returns ReadmeContent(
             raw = "# Title",
             markdown = "# Title",
             html = "<h1>Title</h1>",
@@ -127,10 +128,14 @@ class ProjectIndexingServicePersistReadmeTest {
 
         assertEquals(persistedProject.idNotNull, result.idNotNull)
         verify(exactly = 1) {
-            readmeService.writeReadmeFiles(
-                projectId = persistedProject.idNotNull,
+            readmeService.saveReadmeMetadata(
                 scmRepositoryId = scmRepositoryEntity.idNotNull,
                 readmeMetadataEntity = null,
+            )
+        }
+        verify(exactly = 1) {
+            readmeService.writeReadmeFiles(
+                projectId = persistedProject.idNotNull,
                 rawContent = "# Title",
                 mdContent = "# Title",
                 htmlContent = "<h1>Title</h1>"
@@ -147,7 +152,7 @@ class ProjectIndexingServicePersistReadmeTest {
     }
 
     @Test
-    fun `save persists androidx project with default description when no readme`() {
+    fun `save writes README when creating an androidx project`() {
         val scmRepoId = 202
         val mavenArtifact = MavenArtifact(
             groupId = "androidx.paging",
@@ -162,14 +167,13 @@ class ProjectIndexingServicePersistReadmeTest {
             scmRepoId = scmRepoId,
             ownerId = 1,
             name = "paging",
-            description = "This is androidx library, that was not documented or supported well. It is probably just a KMP module, that could be used on your own responsibility.",
+            description = ANDROIDX_DEFAULT_DESCRIPTION,
             minimizedReadme = null,
             latestVersion = mavenArtifact.version,
             latestVersionTs = requireNotNull(mavenArtifact.releasedAt)
         )
 
         every { projectRepository.findByNameAndScmRepoId("paging", scmRepoId) } returns null
-        every { androidxReadmeProvider.resolve("paging", "md.raw") } returns null
         every { projectRepository.insert(any()) } returns persistedProject
 
         val result = uut().save(mavenArtifact, scmRepositoryEntity)
@@ -186,8 +190,10 @@ class ProjectIndexingServicePersistReadmeTest {
             inserted.description
         )
 
+        verify(exactly = 1) { androidxReadmesUpdatingService.syncReadme(any(), any()) }
         verify(exactly = 0) { readmeMinimizer.process(any(), any(), any(), any()) }
-        verify(exactly = 0) { readmeService.writeReadmeFiles(any(), any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { readmeService.saveReadmeMetadata(any(), any()) }
+        verify(exactly = 0) { readmeService.writeReadmeFiles(any(), any(), any(), any()) }
         verify(exactly = 0) { scmRepositoryRepository.update(any()) }
         verify(exactly = 0) { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) }
     }
@@ -242,7 +248,6 @@ class ProjectIndexingServicePersistReadmeTest {
             )
         }
         verify(exactly = 0) { projectRepository.insert(any()) }
-        verify(exactly = 0) { androidxReadmeProvider.resolve(any(), any()) }
         verify(exactly = 0) { projectRepository.updateMinimizedReadme(any(), any()) }
     }
 

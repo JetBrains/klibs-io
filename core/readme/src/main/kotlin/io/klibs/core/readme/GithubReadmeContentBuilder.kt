@@ -3,15 +3,8 @@ package io.klibs.core.readme
 import io.klibs.integration.github.GitHubIntegration
 import org.springframework.stereotype.Service
 
-data class GitHubIndexingReadmeContent(
-    val raw: String,
-    val markdown: String,
-    val html: String,
-    val minimized: String,
-)
-
 @Service
-class ReadmeContentBuilder(
+class GithubReadmeContentBuilder(
     private val gitHubIntegration: GitHubIntegration,
     private val readmeProcessors: List<ReadmeProcessor>,
 ) {
@@ -21,7 +14,7 @@ class ReadmeContentBuilder(
         ownerLogin: String,
         repoName: String,
         defaultBranch: String,
-    ): GitHubIndexingReadmeContent {
+    ): ReadmeContent {
         val sanitizedReadme = sanitizeReadme(readmeMd)
         val readmeHtml = gitHubIntegration.markdownToHtml(sanitizedReadme, nativeId)
             ?: error("No HTML content, even though its got Markdown readme? ghRepositoryId=$nativeId")
@@ -35,7 +28,7 @@ class ReadmeContentBuilder(
             sanitizedReadme, ownerLogin, repoName, defaultBranch, ReadmeType.MINIMIZED_MARKDOWN,
         )
 
-        return GitHubIndexingReadmeContent(
+        return ReadmeContent(
             raw = sanitizedReadme,
             markdown = processedMarkdownReadme,
             html = processedReadmeHtml,

@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Primary
 class GitHubIntegrationConfiguration {
 
     @Bean
+    @Primary
     fun okHttpClient(
         gitHubIntegrationProperties: GitHubIntegrationProperties,
         meterRegistry: MeterRegistry,

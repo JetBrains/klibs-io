@@ -138,8 +138,7 @@ class GitHubIntegrationKohsukeLibraryTest {
                 .withAbuseLimitHandler(GitHubAbuseLimitHandler.FAIL)
                 .build()
 
-        @Bean
-        @Primary
+        @Bean("okHttpClient")
         fun testOkHttpClient(requestRecorder: RequestRecorder): OkHttpClient = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val path = chain.request().url.encodedPath

@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: KTL-4398 set hardcoded description for androidx room and room3 projects
+      author: zofia.zuzanna.wiora@jetbrains.com
+      changes:
+        - sql:
+            sql: |
+              UPDATE project
+              SET description = vals.description
+              FROM (VALUES
+                ('room', 'Previous major version of the Room persistence library, provides an abstraction layer over SQLite to allow fluent database access. See Room 3.0 for a dedicated Kotlin Multiplatform solution.'),
+                ('room3', 'Provides an abstraction layer over SQLite to allow fluent database access. This project is a major breaking version of the Room library that focuses on Kotlin Multiplatform and adds support for JavaScript and WebAssembly.')
+                ) AS vals(name, description),
+              scm_owner
+              WHERE project.owner_id = scm_owner.id
+                AND scm_owner.login = 'androidx'
+                AND project.name = vals.name;
