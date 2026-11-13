@@ -8,8 +8,8 @@ import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
+import io.klibs.core.readme.GithubReadmeContentBuilder
 import io.klibs.core.project.service.OwnerMarkerService
-import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.service.ReadmeService
@@ -31,7 +31,8 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val tagsGenerator = mockk<TagsGenerationService>()
     private val projectTagRepository = mockk<ProjectTagRepository>()
     private val gitHubIntegration = mockk<GitHubIntegration>()
-    private val readmeContentBuilder = mockk<ReadmeContentBuilder>()
+    private val githubReadmeContentBuilder = mockk<GithubReadmeContentBuilder>()
+    private val androidxReadmesUpdatingService = mockk<AndroidxReadmesUpdatingService>()
     private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val tagsBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val ownerMarkerService = mockk<OwnerMarkerService>()
@@ -45,7 +46,8 @@ class ProjectIndexingServiceAddAiTagsTest {
         tagsGenerationService = tagsGenerator,
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
-        readmeContentBuilder = readmeContentBuilder,
+        githubReadmeContentBuilder = githubReadmeContentBuilder,
+        androidxReadmesUpdatingService = androidxReadmesUpdatingService,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
         ownerMarkerService = ownerMarkerService,
@@ -94,7 +96,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         every { scmRepositoryRepository.findById(scmRepoId) } returns repo
         every {
             readmeService.readReadmeMd(
-                ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "octocat")
+                ReadmeService.ProjectInfo(projectId, scmRepoId)
             )
         } returns readme
 
@@ -182,7 +184,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         every { scmRepositoryRepository.findById(scmRepoId) } returns repo
         every {
             readmeService.readReadmeMd(
-                ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "owner")
+                ReadmeService.ProjectInfo(projectId, scmRepoId)
             )
         } returns "# Test README"
 

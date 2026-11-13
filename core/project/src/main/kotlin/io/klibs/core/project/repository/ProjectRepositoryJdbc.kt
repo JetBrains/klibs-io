@@ -80,7 +80,7 @@ class ProjectRepositoryJdbc(
         }
     }
 
-    override fun updateDescription(id: Int, description: String) {
+    override fun updateDescription(id: Int, description: String?) {
         val sql = """
             UPDATE project 
             SET description = :description 
@@ -283,6 +283,28 @@ class ProjectRepositoryJdbc(
             .query(PROJECT_ENTITY_ROW_MAPPER)
             .optional()
             .getOrNull()
+    }
+
+    override fun findByOwnerLogin(ownerLogin: String): List<ProjectEntity> {
+        val sql = """
+            SELECT project.id,
+                   project.scm_repo_id,
+                   project.owner_id,
+                   project.name,
+                   project.description,
+                   project.minimized_readme,
+                   project.latest_version,
+                   project.latest_version_ts,
+                   project.dependent_count
+            FROM project
+            JOIN scm_owner ON project.owner_id = scm_owner.id
+            WHERE scm_owner.login = :ownerLogin
+        """.trimIndent()
+
+        return jdbcClient.sql(sql)
+            .param("ownerLogin", ownerLogin)
+            .query(PROJECT_ENTITY_ROW_MAPPER)
+            .list()
     }
 
     override fun findManyByProjectNameAndOwnerLogin(pairs: List<Pair<String, String>>): List<ProjectEntity> {

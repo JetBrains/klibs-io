@@ -8,7 +8,7 @@ import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
-import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.GithubReadmeContentBuilder
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
@@ -31,7 +31,7 @@ class GitHubIndexingServiceTopicsTest {
     private val readmeService = mockk<ReadmeService>()
     private val projectRepository = mockk<ProjectRepository>()
     private val projectTagRepository = mockk<ProjectTagRepository>()
-    private val readmeContentBuilder = mockk<ReadmeContentBuilder>()
+    private val githubReadmeContentBuilder = mockk<GithubReadmeContentBuilder>()
     private val allowedProjectTagsRepository = mockk<AllowedProjectTagsRepository>()
     private val projectService = mockk<ProjectService>(relaxed = true)
     private val unreachableRepoHidingService = mockk<UnreachableRepoHidingService>()
@@ -43,7 +43,7 @@ class GitHubIndexingServiceTopicsTest {
         scmOwnerRepository = scmOwnerRepository,
         readmeMetadataRepository = readmeMetadataRepository,
         readmeService = readmeService,
-        readmeContentBuilder = readmeContentBuilder,
+        githubReadmeContentBuilder = githubReadmeContentBuilder,
         projectRepository = projectRepository,
         projectService = projectService,
         unreachableRepoHidingService = unreachableRepoHidingService,

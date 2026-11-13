@@ -12,7 +12,7 @@ interface ProjectRepository {
 
     fun updateDescription(projectName: String, ownerLogin: String, description: String)
 
-    fun updateDescription(id: Int, description: String)
+    fun updateDescription(id: Int, description: String?)
 
     fun updateMinimizedReadme(id: Int, minimizedReadme: String?)
 
@@ -30,6 +30,8 @@ interface ProjectRepository {
     fun findByNameAndScmRepoId(name: String, scmRepoId: Int): ProjectEntity?
 
     fun findByNameAndOwnerLogin(name: String, ownerLogin: String): ProjectEntity?
+
+    fun findByOwnerLogin(ownerLogin: String): List<ProjectEntity>
 
     fun findManyByProjectNameAndOwnerLogin(pairs: List<Pair<String, String>>): List<ProjectEntity>
 
