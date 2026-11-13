@@ -109,4 +109,24 @@ class SearchMarkersFilterDbTest : BaseUnitWithDbLayerTest() {
         assertEquals(2, results.size, "Expected only FEATURED_DEPRECATED projects to be returned when mixed with unknown marker")
         assertTrue(results.all { it.markers.contains("FEATURED_DEPRECATED") }, "All returned projects must contain FEATURED_DEPRECATED marker")
     }
+
+    @Test
+    @DisplayName("Search filter by JETBRAINS_AND_GOOGLE marker should return only marked projects")
+    @Sql(value = ["classpath:sql/SearchMarkersFilterDbTest/seed.sql"])
+    fun `filter by jetbrains and google marker`() {
+        val results = projectSearchRepository.find(
+            rawQuery = null,
+            targetGroupFilters = emptyList(),
+            ownerLogin = null,
+            sortBy = SearchSort.RELEVANCY,
+            tags = emptyList(),
+            markers = listOf("JETBRAINS_AND_GOOGLE"),
+            page = 1,
+            limit = 50
+        )
+
+        // In seed, JETBRAINS_AND_GOOGLE is only on Project B
+        assertEquals(listOf(30002), results.map { it.id })
+        assertTrue(results.single().markers.contains("JETBRAINS_AND_GOOGLE"))
+    }
 }

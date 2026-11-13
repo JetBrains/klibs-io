@@ -203,3 +203,5 @@ databaseChangeLog:
       file: db/migration/2026-Q4/2026-11-09_fill_room3_metadata.yml
   - include:
       file: db/migration/2026-Q4/2026-11-11_add_2026_grant_winners.yml
+  - include:
+      file: db/migration/2026-Q4/2026-11-13_add_jetbrains_and_google_marker.yml

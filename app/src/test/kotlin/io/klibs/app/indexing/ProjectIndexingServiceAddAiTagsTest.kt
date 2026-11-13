@@ -8,6 +8,7 @@ import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
+import io.klibs.core.project.service.OwnerMarkerService
 import io.klibs.core.readme.ReadmeContentBuilder
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
@@ -33,6 +34,7 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val readmeContentBuilder = mockk<ReadmeContentBuilder>()
     private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val tagsBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
+    private val ownerMarkerService = mockk<OwnerMarkerService>()
 
     private fun uut() = ProjectIndexingService(
         readmeService = readmeService,
@@ -46,6 +48,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         readmeContentBuilder = readmeContentBuilder,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
+        ownerMarkerService = ownerMarkerService,
     )
 
     @Test
