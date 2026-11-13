@@ -7,8 +7,8 @@ import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.ProjectService
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
-import io.klibs.core.readme.AndroidxReadmeProvider
-import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.ANDROIDX_GITHUB_OWNER
+import io.klibs.core.readme.GithubReadmeContentBuilder
 import io.klibs.core.readme.entity.ReadmeMetadataEntity
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity
@@ -35,7 +35,7 @@ class GitHubIndexingService(
     private val readmeMetadataRepository: ReadmeMetadataRepository,
 
     private val readmeService: ReadmeService,
-    private val readmeContentBuilder: ReadmeContentBuilder,
+    private val githubReadmeContentBuilder: GithubReadmeContentBuilder,
     private val projectRepository: ProjectRepository,
     private val projectService: ProjectService,
     private val unreachableRepoHidingService: UnreachableRepoHidingService,
@@ -70,7 +70,7 @@ class GitHubIndexingService(
             projectEntity.ownerId = ownerId
         }
 
-        if (repoToUpdate.ownerLogin != AndroidxReadmeProvider.OWNER_NAME && projectEntity.name != ghRepo.name) {
+        if (repoToUpdate.ownerLogin != ANDROIDX_GITHUB_OWNER && projectEntity.name != ghRepo.name) {
             projectRepository.updateName(projectEntity.idNotNull, ghRepo.name)
             projectEntity.name = ghRepo.name
         }
@@ -216,8 +216,6 @@ class GitHubIndexingService(
                         ReadmeService.ProjectInfo(
                             projectEntity.idNotNull,
                             projectEntity.scmRepoId,
-                            projectEntity.name,
-                            ghRepo.owner
                         )
                     ) ?: run {
                         logger.warn("Received NotModified but no readme content found for repo ${scmRepositoryEntity.idNotNull}")
@@ -254,17 +252,16 @@ class GitHubIndexingService(
         scmRepoId: Int,
         readmeMetadataEntity: ReadmeMetadataEntity?,
         ) {
-        val readmeContent = readmeContentBuilder.buildFromMarkdown(
+        val readmeContent = githubReadmeContentBuilder.buildFromMarkdown(
             readmeMd = content,
             nativeId = ghRepo.nativeId,
             ownerLogin = ghRepo.owner,
             repoName = ghRepo.name,
             defaultBranch = ghRepo.defaultBranch,
         )
+        readmeService.saveReadmeMetadata(scmRepoId, readmeMetadataEntity)
         readmeService.writeReadmeFiles(
             projectId = projectEntity.idNotNull,
-            scmRepositoryId = scmRepoId,
-            readmeMetadataEntity = readmeMetadataEntity,
             rawContent = readmeContent.raw,
             mdContent = readmeContent.markdown,
             htmlContent = readmeContent.html

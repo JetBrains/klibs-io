@@ -18,7 +18,7 @@ import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
 import io.klibs.core.project.repository.AllowedProjectTagsRepository
 import io.klibs.core.project.utils.normalizeTag
-import io.klibs.core.readme.AndroidxReadmeProvider
+import io.klibs.core.readme.ANDROIDX_GITHUB_OWNER
 import io.klibs.core.readme.service.ReadmeService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -96,8 +96,6 @@ class ProjectService(
             ReadmeService.ProjectInfo(
                 projectEntity.idNotNull,
                 projectEntity.scmRepoId,
-                projectName,
-                ownerLogin
             )
         )
     }
@@ -109,8 +107,6 @@ class ProjectService(
             ReadmeService.ProjectInfo(
                 projectEntity.idNotNull,
                 projectEntity.scmRepoId,
-                projectName,
-                ownerLogin
             )
         )
     }
@@ -201,10 +197,6 @@ class ProjectService(
 
         return validTags
     }
-
-    private companion object {
-        private val logger = LoggerFactory.getLogger(ProjectService::class.java)
-    }
 }
 
 private fun ProjectEntity.toDetails(
@@ -238,7 +230,7 @@ private fun ProjectEntity.toDetails(
         stars = scmRepositoryEntity.stars,
         createdAt = scmRepositoryEntity.createdTs,
         openIssues = scmRepositoryEntity.openIssues,
-        lastActivityAt = if (scmRepositoryEntity.ownerLogin == AndroidxReadmeProvider.OWNER_NAME) {
+        lastActivityAt = if (scmRepositoryEntity.ownerLogin == ANDROIDX_GITHUB_OWNER) {
             projectEntity.latestVersionTs
         } else {
             scmRepositoryEntity.lastActivityTs

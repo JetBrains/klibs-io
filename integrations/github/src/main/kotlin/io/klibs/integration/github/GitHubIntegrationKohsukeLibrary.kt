@@ -261,13 +261,17 @@ internal class GitHubIntegrationKohsukeLibrary(
         }
     }
 
+    override fun markdownRenderRaw(markdownText: String): String? {
+        return githubApi.renderMarkdown(markdownText).readText()
+    }
+
     override fun markdownRender(markdownText: String, contextRepositoryId: Long): String? {
         return getRepositoryById(contextRepositoryId)?.markdownRender(markdownText, MarkdownMode.MARKDOWN)
     }
 
     override fun markdownToHtml(markdownText: String, contextRepositoryId: Long?): String? {
         return if (contextRepositoryId == null) {
-            githubApi.renderMarkdown(markdownText).readText()
+            markdownRenderRaw(markdownText)
         } else {
             getRepositoryById(contextRepositoryId)?.markdownRender(markdownText, MarkdownMode.GFM)
         }

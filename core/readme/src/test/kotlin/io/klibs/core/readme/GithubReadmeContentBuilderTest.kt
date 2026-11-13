@@ -7,12 +7,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import kotlin.test.assertEquals
 
-class ReadmeContentBuilderTest {
+class GithubReadmeContentBuilderTest {
     private val gitHubIntegration = mockk<GitHubIntegration> {
         every { markdownToHtml(any(), any()) } answers { "<html>${firstArg<String>()}</html>" }
         every { markdownRender(any(), any()) } answers { firstArg() }
     }
-    private val builder = ReadmeContentBuilder(gitHubIntegration, emptyList())
+    private val builder = GithubReadmeContentBuilder(gitHubIntegration, emptyList())
 
     @ParameterizedTest
     @ValueSource(strings = ["\u0000", "\u0000# README", "# README\u0000broken", "# README\u0000"])
@@ -24,7 +24,7 @@ class ReadmeContentBuilderTest {
     @ValueSource(strings = ["", "# Hello 世界", "# Привет\n\nREADME", "literal \\u0000"])
     fun `valid README is preserved`(markdown: String) {
         assertEquals(
-            GitHubIndexingReadmeContent(markdown, markdown, "<html>$markdown</html>", markdown),
+            ReadmeContent(markdown, markdown, "<html>$markdown</html>", markdown),
             build(markdown),
         )
     }

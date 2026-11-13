@@ -37,6 +37,11 @@ interface GitHubIntegration {
         modifiedSince: Instant = Instant.EPOCH
     ): ReadmeFetchResult
 
+    /**
+     * Renders Markdown without linking GitHub-specific information (such as comments or issues)
+     */
+    fun markdownRenderRaw(markdownText: String): String?
+
     fun markdownRender(markdownText: String, contextRepositoryId: Long): String?
 
     fun markdownToHtml(markdownText: String, contextRepositoryId: Long?): String?

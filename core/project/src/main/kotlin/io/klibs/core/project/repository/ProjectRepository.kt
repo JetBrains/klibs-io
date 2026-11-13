@@ -31,6 +31,8 @@ interface ProjectRepository {
 
     fun findByNameAndOwnerLogin(name: String, ownerLogin: String): ProjectEntity?
 
+    fun findByOwnerLogin(ownerLogin: String): List<ProjectEntity>
+
     fun findManyByProjectNameAndOwnerLogin(pairs: List<Pair<String, String>>): List<ProjectEntity>
 
     fun findWithoutDescription(): ProjectEntity?

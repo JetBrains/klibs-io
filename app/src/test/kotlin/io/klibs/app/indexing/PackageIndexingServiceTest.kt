@@ -16,7 +16,7 @@ import io.klibs.core.pckg.repository.RejectedMavenCoordinateRepository
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.core.pckg.repository.UserRequestReportRepository
 import io.klibs.core.pckg.service.PackageDescriptionService
-import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.GithubReadmeContentBuilder
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository
@@ -105,7 +105,7 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
     private lateinit var gitHubIntegration: GitHubIntegration
 
     @MockkBean
-    private lateinit var readmeContentBuilder: ReadmeContentBuilder
+    private lateinit var githubReadmeContentBuilder: GithubReadmeContentBuilder
 
     @MockkBean
     private lateinit var discoverer: CentralSonatypePackageDiscoverer
@@ -707,8 +707,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         every { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, any()) } returns
             ReadmeFetchResult.Content("# Test README")
 
-        // Mock ReadmeContentBuilder to throw an exception
-        every { readmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()) } throws
+        // Mock GithubReadmeContentBuilder to throw an exception
+        every { githubReadmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()) } throws
             RuntimeException("Mocked buildFromMarkdown exception")
 
         val result = uut.processPackageQueue()
@@ -796,8 +796,8 @@ class PackageIndexingServiceTest : BaseUnitWithDbLayerTest() {
         every { gitHubIntegration.getReadmeWithModifiedSinceCheck(repoNativeId, any()) } returns
             ReadmeFetchResult.Content("# Test README")
 
-        // Mock ReadmeContentBuilder to throw an exception
-        every { readmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()) } throws
+        // Mock GithubReadmeContentBuilder to throw an exception
+        every { githubReadmeContentBuilder.buildFromMarkdown(any(), any(), any(), any(), any()) } throws
             RuntimeException("Mocked buildFromMarkdown exception")
 
         val result = uut.processPackageQueue()
@@ -986,7 +986,7 @@ class OriginSelection : BaseUnitWithDbLayerTest() {
     private lateinit var gitHubIntegration: GitHubIntegration
 
     @MockkBean
-    private lateinit var readmeContentBuilder: ReadmeContentBuilder
+    private lateinit var githubReadmeContentBuilder: GithubReadmeContentBuilder
 
     @MockkBean
     private lateinit var discoverer: CentralSonatypePackageDiscoverer
