@@ -23,7 +23,7 @@
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
-    "@jetbrains/kotlin-web-site-ui": "^4.14.9",
+    "@jetbrains/kotlin-web-site-ui": "^4.14.10",
     "@next/third-parties": "^16.4.5",
     "bem-cn-fast": "^1.0.2",
     "@rescui/button": "^0.27.2",
