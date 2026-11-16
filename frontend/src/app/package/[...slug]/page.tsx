@@ -1,4 +1,4 @@
-import type {ResolvingMetadata} from "next";
+import type {Metadata, ResolvingMetadata} from "next";
 import {socialMetadata} from "@/app/helpers";
 import PackagePageContent from './package-page-content'
 
@@ -15,9 +15,10 @@ type MetadataParamsProps = {
     slug: string[];
 };
 
-export async function generateMetadata({ params }: { params: MetadataParamsProps }, parent: ResolvingMetadata) {
+export async function generateMetadata({ params }: { params: Promise<MetadataParamsProps> }, parent: ResolvingMetadata): Promise<Metadata> {
+    const {slug} = await params;
 
-    const pkg = await getPackageDetails(params.slug[0], params.slug[1]);
+    const pkg = await getPackageDetails(slug[0], slug[1]);
 
     const parentProject = pkg.projectId
         ? await getProjectById(pkg.projectId)
@@ -44,10 +45,12 @@ export async function generateMetadata({ params }: { params: MetadataParamsProps
     };
 }
 
-export default async function Page({ params }: { params: MetadataParamsProps }) {
-    const groupId = params.slug[0];
-    const artifactId = params.slug[1];
-    const version = params.slug[2];
+export default async function Page({ params }: { params: Promise<MetadataParamsProps> }) {
+    const {slug} = await params;
+
+    const groupId = slug[0];
+    const artifactId = slug[1];
+    const version = slug[2];
 
     try {
         const packageDetails = version
@@ -72,7 +75,7 @@ export default async function Page({ params }: { params: MetadataParamsProps }) 
                 version={version}
             />
         );
-    } catch (error) {
+    } catch {
         notFound();
     }
 }

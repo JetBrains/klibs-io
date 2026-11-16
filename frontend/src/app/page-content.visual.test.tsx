@@ -69,5 +69,5 @@ test('home page category view', async () => {
     await renderHome('category=networking');
 
     await expect.element(page.getByRole('heading', { name: 'Ktorfit' })).toBeVisible();
-    await expect.element(page.getByTestId('category-clear-tag')).toHaveTextContent(/networking/i);
+    await expect.element(page.getByTestId('category-clear-tag')).toMatchTextContent(/networking/i);
 });

@@ -53,7 +53,6 @@ export interface CompareProjectResponse extends ProjectReference {
 }
 
 export interface PackageSearchResults {
-	id: number;
 	groupId: string;
 	artifactId: string;
 	description: string | null;

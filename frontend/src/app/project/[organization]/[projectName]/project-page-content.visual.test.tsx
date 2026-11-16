@@ -29,7 +29,7 @@ test('archived project page with packages and readme', async () => {
     await expect.element(page.getByText("The project's repository was archived on Nov 5, 2024.", { exact: false }))
         .toBeVisible();
     await expect.element(page.getByRole('heading', { name: 'Arrow', level: 1 }).first()).toBeVisible();
-    await expect.element(page.getByTestId('readme-tab').first()).toHaveTextContent('typed functional programming');
+    await expect.element(page.getByTestId('readme-tab').first()).toMatchTextContent('typed functional programming');
 });
 
 test('project page packages tab', async () => {

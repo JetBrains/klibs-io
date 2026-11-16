@@ -5,6 +5,7 @@ import {Button} from "@rescui/button";
 import {Tooltip} from "@rescui/tooltip";
 import {CopyIcon} from "@rescui/icons";
 import {Tab, TabList, TabSeparator} from "@rescui/tab-list";
+import {textCn} from "@rescui/typography";
 
 import {getPackageCoordinates, PackageDetails, PackageOverview} from "@/app/types";
 import {useLocalStorage} from "@/app/hooks";
@@ -77,7 +78,7 @@ export function PackageImportCode({projectPackage}: { projectPackage: PackageDet
     };
 
     return <div>
-        <TabList className="rs-docs-offset-top-12" value={activeTab} onChange={setActiveTab} mode={"rock"}>
+        <TabList value={activeTab} onChange={setActiveTab} mode={"rock"}>
             {TABS_ENTRIES.map(([key, value]) => (
                 <Tab key={key} value={key} onClick={() => {trackEvent(GAEvent.PACKAGE_IMPORT_TAB_CLICK, {eventCategory: value.title})}}>{value.title}</Tab>
             ))}
@@ -85,7 +86,7 @@ export function PackageImportCode({projectPackage}: { projectPackage: PackageDet
 
         <TabSeparator className={styles.separator}/>
 
-        <code className={cn(styles.codeWrapper, "rs-code rs-pre")}>
+        <code className={cn(styles.codeWrapper, textCn('rs-code'), textCn('rs-pre'))}>
             <span ref={contentNode}>{TABS[activeTab].Wrapper({projectPackage})}</span>
             <Tooltip
                 sparse={false}

@@ -55,7 +55,6 @@ export const projectDetails = (overrides: Partial<ProjectDetails> = {}): Project
 export const packageSearchResult = (
     overrides: Partial<PackageSearchResults> = {},
 ): PackageSearchResults => ({
-    id: 1,
     groupId: 'io.arrow-kt',
     artifactId: 'arrow-core',
     description: 'Functional companion to Kotlin standard library',
@@ -172,7 +171,6 @@ export const homeCategories = (): CategoryWithProjects[] => [
 
 export const serializationPackages = (): PackageSearchResults[] => [
     packageSearchResult({
-        id: 1,
         artifactId: 'kotlinx-serialization-json',
         groupId: 'org.jetbrains.kotlinx',
         ownerLogin: 'Kotlin',
@@ -180,7 +178,6 @@ export const serializationPackages = (): PackageSearchResults[] => [
         scmLink: 'https://github.com/Kotlin/kotlinx.serialization',
     }),
     packageSearchResult({
-        id: 2,
         artifactId: 'kotlinx-serialization-cbor',
         groupId: 'org.jetbrains.kotlinx',
         ownerLogin: 'Kotlin',
@@ -188,7 +185,6 @@ export const serializationPackages = (): PackageSearchResults[] => [
         scmLink: 'https://github.com/Kotlin/kotlinx.serialization',
     }),
     packageSearchResult({
-        id: 3,
         artifactId: 'kaml',
         groupId: 'com.charleskorn.kaml',
         ownerLogin: 'charleskorn',
