@@ -75,6 +75,9 @@ export default defineConfig({
                     browser: {
                         enabled: true,
                         headless: true,
+                        // Import-map mocks key on the resolved id's `?v=` hash, which deps in
+                        // optimizeDeps.exclude (next/image, next/link) lack, so their vi.mock never applies.
+                        importMapMocks: false,
                         provider: playwright(),
                         instances: [{ browser: 'chromium' }],
                     },
