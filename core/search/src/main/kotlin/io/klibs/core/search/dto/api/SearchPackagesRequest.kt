@@ -1,8 +1,13 @@
 package io.klibs.core.search.dto.api
 
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_OWNER_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_QUERY_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_SORT_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_TARGET_GROUP_FILTERS
 import io.klibs.core.search.dto.validation.ValidTargetGroupValues
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Size
 
 @Schema(
     name = "SearchPackagesRequest",
@@ -13,6 +18,7 @@ data class SearchPackagesRequest(
         description = "Arbitrary full text search query",
         example = "kotlin"
     )
+    @field:Size(max = MAX_QUERY_LENGTH)
     val query: String? = null,
 
     @Schema(
@@ -23,6 +29,7 @@ data class SearchPackagesRequest(
         type = "array",
         example = """[{"JVM": ["11", "17"]}, {"AndroidJvm": [], "AndroidNative": []}]"""
     )
+    @field:Size(max = MAX_TARGET_GROUP_FILTERS)
     @field:ValidTargetGroupValues
     val targetGroupFilters: List<Map<TargetGroup, Set<String>>> = emptyList(),
 
@@ -30,11 +37,13 @@ data class SearchPackagesRequest(
         description = "Login of the owner",
         example = "Kotlin-Multiplatform-Foundation"
     )
+    @field:Size(max = MAX_OWNER_LENGTH)
     val owner: String? = null,
     @Schema(
         description = "Sorting order",
         allowableValues = ["most-stars", "relevance"],
         defaultValue = "relevance"
     )
+    @field:Size(max = MAX_SORT_LENGTH)
     val sortBy: String = "relevance"
 )

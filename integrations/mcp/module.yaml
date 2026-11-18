@@ -7,6 +7,7 @@ dependencies:
   - bom: $libs.spring.ai.bom
   - $libs.mappie.api
   - $libs.spring.ai.starter.mcp.server.webmvc: exported
+  - $libs.spring.boot.starter.validation
   - ../../core/package
   - ../../core/search
   - ../../core/project
