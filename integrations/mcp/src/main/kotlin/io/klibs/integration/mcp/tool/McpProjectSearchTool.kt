@@ -1,10 +1,11 @@
 package io.klibs.integration.mcp.tool
 
 import io.klibs.core.pckg.model.TargetGroup
-import io.klibs.core.search.dto.validation.validateTargetGroupFilters
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_QUERY_LENGTH
 import io.klibs.integration.mcp.dto.api.ProjectSearchResponse
 import io.klibs.integration.mcp.mapper.McpToolMapper
 import io.klibs.integration.mcp.service.DEFAULT_MAX_PACKAGES_PER_PROJECT
+import io.klibs.integration.mcp.service.MAX_PACKAGES_PER_PROJECT
 import io.klibs.integration.mcp.service.McpProjectSearchService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -46,7 +47,10 @@ class McpProjectSearchTool(
             - totalPackages: Total number of packages the project publishes (may exceed the returned count; raise maxPackagesPerProject to retrieve more)"""
     )
     fun searchProjects(
-        @ToolParam(description = "Free text search keywords (e.g. 'serialization', 'state machine', 'compose ui').")
+        @ToolParam(
+            description = "Free text search keywords (e.g. 'serialization', 'state machine', 'compose ui'). " +
+                    "At most $MAX_QUERY_LENGTH characters."
+        )
         query: String? = null,
         @ToolParam(
             description = "List of target-group maps. Groups within the same map are combined with OR; " +
@@ -59,15 +63,14 @@ class McpProjectSearchTool(
         )
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>? = emptyList(),
         @ToolParam(
-            description = "Maximum number of packages to return per project (newest first). Defaults to 10. " +
+            description = "Maximum number of packages to return per project (newest first), " +
+                    "between 1 and $MAX_PACKAGES_PER_PROJECT. Defaults to $DEFAULT_MAX_PACKAGES_PER_PROJECT. " +
                     "Increase only when a project's totalPackages exceeds the returned count and you need more artifacts.",
             required = false
         )
         maxPackagesPerProject: Int? = null,
     ): ProjectSearchResponse {
         logger.info("MCP: Searching for projects with query: $query, targetFilters: $targetGroupFilters")
-
-        validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
 
         val maxPackages = maxPackagesPerProject ?: DEFAULT_MAX_PACKAGES_PER_PROJECT
 

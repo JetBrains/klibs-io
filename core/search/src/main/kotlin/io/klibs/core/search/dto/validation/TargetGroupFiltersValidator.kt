@@ -7,19 +7,20 @@ import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
 
-class TargetGroupFiltersValidator : ConstraintValidator<ValidTargetGroupValues, List<Map<TargetGroup, Set<String>>>> {
+class TargetGroupFiltersValidator :
+    ConstraintValidator<ValidTargetGroupValues, @JvmSuppressWildcards List<Map<TargetGroup, Set<String>>>> {
     override fun isValid(
-        tragetGroupFilters: List<Map<TargetGroup, Set<String>>>?,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>?,
         context: ConstraintValidatorContext
     ): Boolean {
-        val error = validateTargetGroupFilters(tragetGroupFilters) ?: return true
+        val error = validateTargetGroupFilters(targetGroupFilters) ?: return true
         context.disableDefaultConstraintViolation()
         context.buildConstraintViolationWithTemplate(error).addConstraintViolation()
         return false
     }
 }
 
-@Target(AnnotationTarget.FIELD)
+@Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
 @Constraint(validatedBy = [TargetGroupFiltersValidator::class])
 annotation class ValidTargetGroupValues(
     val message: String = "Invalid filter values",
