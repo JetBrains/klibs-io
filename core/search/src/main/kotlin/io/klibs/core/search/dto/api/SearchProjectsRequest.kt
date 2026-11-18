@@ -1,8 +1,16 @@
 package io.klibs.core.search.dto.api
 
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_MARKERS
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_MARKER_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_OWNER_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_QUERY_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_TAGS
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_TAG_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_TARGET_GROUP_FILTERS
 import io.klibs.core.search.dto.validation.ValidTargetGroupValues
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Size
 
 @Schema(
     name = "SearchProjectsRequest",
@@ -13,6 +21,7 @@ data class SearchProjectsRequest(
         description = "Arbitrary full text search query",
         example = "kotlin"
     )
+    @field:Size(max = MAX_QUERY_LENGTH)
     val query: String? = null,
 
     @Schema(
@@ -23,6 +32,7 @@ data class SearchProjectsRequest(
         type = "array",
         example = """[{"JVM": ["11", "17"]}, {"IOS": [], "TvOS": []}]"""
     )
+    @field:Size(max = MAX_TARGET_GROUP_FILTERS)
     @field:ValidTargetGroupValues
     val targetGroupFilters: List<Map<TargetGroup, Set<String>>> = emptyList(),
 
@@ -30,6 +40,7 @@ data class SearchProjectsRequest(
         description = "Login of the owner",
         example = "Kotlin"
     )
+    @field:Size(max = MAX_OWNER_LENGTH)
     val owner: String? = null,
     @Schema(
         description = "Sorting order",
@@ -42,11 +53,13 @@ data class SearchProjectsRequest(
         type = "array",
         example = "\"kotlin\", \"android\""
     )
-    val tags: List<String> = emptyList(),
+    @field:Size(max = MAX_TAGS)
+    val tags: List<@Size(max = MAX_TAG_LENGTH) String> = emptyList(),
     @Schema(
         description = "Filter by markers",
         type = "array",
         example = "\"FEATURED_DEPRECATED\", \"GRANT_WINNER_2024\""
     )
-    val markers: List<String> = emptyList()
+    @field:Size(max = MAX_MARKERS)
+    val markers: List<@Size(max = MAX_MARKER_LENGTH) String> = emptyList()
 )

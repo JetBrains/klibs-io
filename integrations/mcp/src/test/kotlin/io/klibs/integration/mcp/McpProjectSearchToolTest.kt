@@ -14,7 +14,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.Instant
@@ -47,23 +46,6 @@ class McpProjectSearchToolTest {
             mcpProjectSearchService.mcpProjectSearch(
                 query = "kotlin",
                 targetFilters = targetFilters,
-            )
-        }
-    }
-
-    @Test
-    fun `searchProjects rejects Unknown target group and does not call service`() {
-        val filters = listOf(mapOf(TargetGroup.Unknown to emptySet<String>()))
-
-        assertThrows(IllegalArgumentException::class.java) {
-            uut.searchProjects(query = "kotlin", targetGroupFilters = filters)
-        }
-
-        verify(exactly = 0) {
-            mcpProjectSearchService.mcpProjectSearch(
-                query = any(),
-                targetFilters = any(),
-                maxPackagesPerProject = any(),
             )
         }
     }

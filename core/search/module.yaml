@@ -9,3 +9,9 @@ dependencies:
   - ../package
   - ../scm-owner
   - $libs.opensearch.java: exported
+
+settings:
+  kotlin:
+    freeCompilerArgs:
+      # Needed for container-element constraints, e.g. List<@Size(max = ...) String>
+      - -Xemit-jvm-type-annotations

@@ -6,11 +6,16 @@ import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.service.SearchService
 import io.klibs.integration.mcp.dto.service.McpProjectSearchResultDto
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import org.springframework.stereotype.Service
+import org.springframework.validation.annotation.Validated
 
 internal const val DEFAULT_MAX_PACKAGES_PER_PROJECT = 10
+internal const val MAX_PACKAGES_PER_PROJECT = 100
 
 @Service
+@Validated
 class McpProjectSearchService(
     private val searchService: SearchService,
     private val packageService: PackageService,
@@ -22,6 +27,7 @@ class McpProjectSearchService(
     fun mcpProjectSearch(
         query: String?,
         targetFilters: List<Map<TargetGroup, Set<String>>>,
+        @Min(1) @Max(MAX_PACKAGES_PER_PROJECT.toLong())
         maxPackagesPerProject: Int = DEFAULT_MAX_PACKAGES_PER_PROJECT,
     ): McpProjectSearchResultDto {
         val searchResults = searchService.search(

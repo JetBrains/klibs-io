@@ -9,18 +9,28 @@ import io.klibs.core.search.controller.SearchSort
 import io.klibs.core.search.dto.repository.SearchPackageResult
 import io.klibs.core.search.dto.repository.SearchProjectResult
 import io.klibs.core.search.dto.service.CategoryWithProjects
-import io.klibs.core.search.dto.validation.validateTargetGroupFilters
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_MARKERS
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_MARKER_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_OWNER_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_QUERY_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_TAGS
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_TAG_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_TARGET_GROUP_FILTERS
+import io.klibs.core.search.dto.validation.ValidTargetGroupValues
 import io.micrometer.core.annotation.Timed
+import jakarta.validation.constraints.Size
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.validation.annotation.Validated
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureNanoTime
 
 @Service
+@Validated
 class SearchService(
     private val projectSearchRepository: ProjectSearchRepository,
     private val packageSearchRepository: PackageSearchRepository,
@@ -52,16 +62,16 @@ class SearchService(
     @Transactional(readOnly = true)
     @Timed(value = "klibs.project.search.time", description = "Klibs: Time taken to search projects")
     fun search(
-        query: String?,
+        @Size(max = MAX_QUERY_LENGTH) query: String?,
+        @Size(max = MAX_TARGET_GROUP_FILTERS) @ValidTargetGroupValues
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
-        ownerLogin: String?,
+        @Size(max = MAX_OWNER_LENGTH) ownerLogin: String?,
         sort: SearchSort,
-        markers: List<String>,
-        tags: List<String>,
+        @Size(max = MAX_MARKERS) markers: List<@Size(max = MAX_MARKER_LENGTH) String>,
+        @Size(max = MAX_TAGS) tags: List<@Size(max = MAX_TAG_LENGTH) String>,
         page: Int,
         limit: Int
     ): List<SearchProjectResult> {
-        validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
         return projectSearchRepository.find(
             query = query,
             targetGroupFilters = targetGroupFilters,
@@ -77,14 +87,14 @@ class SearchService(
     @Transactional(readOnly = true)
     @Timed(value = "klibs.package.search.time", description = "Klibs: Time taken to search packages")
     fun searchPackage(
-        query: String?,
+        @Size(max = MAX_QUERY_LENGTH) query: String?,
+        @Size(max = MAX_TARGET_GROUP_FILTERS) @ValidTargetGroupValues
         targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
-        ownerLogin: String?,
+        @Size(max = MAX_OWNER_LENGTH) ownerLogin: String?,
         sort: SearchSort,
         page: Int,
         limit: Int
     ): List<SearchPackageResult> {
-        validateTargetGroupFilters(targetGroupFilters)?.let { throw IllegalArgumentException(it) }
         return packageSearchRepository.find(
             query = query,
             ownerLogin = ownerLogin,

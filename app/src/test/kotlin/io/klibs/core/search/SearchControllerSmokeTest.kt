@@ -4,8 +4,10 @@ import SmokeTestBase
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.search.dto.api.SearchPackagesRequest
 import io.klibs.core.search.dto.api.SearchProjectResultDTO
 import io.klibs.core.search.dto.api.SearchProjectsRequest
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_QUERY_LENGTH
 import io.klibs.core.search.service.SearchService
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.BeforeEach
@@ -217,6 +219,44 @@ class SearchControllerSmokeTest : SmokeTestBase() {
                 project.targetGroups.containsKey(TargetGroup.JVM),
                 "Project ${project.name} should expose the JVM target group in its targets map"
             )
+        }
+    }
+
+    @Test
+    fun `project search accepts a query at the length limit`() {
+        mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(SearchProjectsRequest(query = "y".repeat(MAX_QUERY_LENGTH)))
+            param("page", "1")
+            param("limit", "10")
+        }.andExpect {
+            status { isOk() }
+        }
+    }
+
+    @Test
+    fun `project search rejects a query over the length limit with 400`() {
+        mockMvc.post("/search/projects") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(SearchProjectsRequest(query = "y".repeat(MAX_QUERY_LENGTH + 1)))
+            param("page", "1")
+            param("limit", "10")
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.query") { exists() }
+        }
+    }
+
+    @Test
+    fun `package search rejects a query over the length limit with 400`() {
+        mockMvc.post("/search/packages") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(SearchPackagesRequest(query = "y".repeat(MAX_QUERY_LENGTH + 1)))
+            param("page", "1")
+            param("limit", "10")
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.query") { exists() }
         }
     }
 }
