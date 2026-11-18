@@ -64,7 +64,7 @@ class SearchService(
     fun search(
         @Size(max = MAX_QUERY_LENGTH) query: String?,
         @Size(max = MAX_TARGET_GROUP_FILTERS) @ValidTargetGroupValues
-        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: @JvmSuppressWildcards List<Map<TargetGroup, Set<String>>>,
         @Size(max = MAX_OWNER_LENGTH) ownerLogin: String?,
         sort: SearchSort,
         @Size(max = MAX_MARKERS) markers: List<@Size(max = MAX_MARKER_LENGTH) String>,
@@ -89,7 +89,7 @@ class SearchService(
     fun searchPackage(
         @Size(max = MAX_QUERY_LENGTH) query: String?,
         @Size(max = MAX_TARGET_GROUP_FILTERS) @ValidTargetGroupValues
-        targetGroupFilters: List<Map<TargetGroup, Set<String>>>,
+        targetGroupFilters: @JvmSuppressWildcards List<Map<TargetGroup, Set<String>>>,
         @Size(max = MAX_OWNER_LENGTH) ownerLogin: String?,
         sort: SearchSort,
         page: Int,

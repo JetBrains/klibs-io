@@ -3,6 +3,7 @@ package io.klibs.core.search.dto.api
 import io.klibs.core.pckg.model.TargetGroup
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_OWNER_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_QUERY_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_SORT_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_TARGET_GROUP_FILTERS
 import io.klibs.core.search.dto.validation.ValidTargetGroupValues
 import io.swagger.v3.oas.annotations.media.Schema
@@ -43,5 +44,6 @@ data class SearchPackagesRequest(
         allowableValues = ["most-stars", "relevance"],
         defaultValue = "relevance"
     )
+    @field:Size(max = MAX_SORT_LENGTH)
     val sortBy: String = "relevance"
 )

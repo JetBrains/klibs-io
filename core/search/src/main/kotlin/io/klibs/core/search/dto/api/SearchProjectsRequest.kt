@@ -5,6 +5,7 @@ import io.klibs.core.search.dto.validation.SearchLimits.MAX_MARKERS
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_MARKER_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_OWNER_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_QUERY_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_SORT_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_TAGS
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_TAG_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_TARGET_GROUP_FILTERS
@@ -47,6 +48,7 @@ data class SearchProjectsRequest(
         allowableValues = ["most-stars", "most-healthy", "relevance"],
         defaultValue = "relevance"
     )
+    @field:Size(max = MAX_SORT_LENGTH)
     val sortBy: String = "relevance",
     @Schema(
         description = "Filter by tags",

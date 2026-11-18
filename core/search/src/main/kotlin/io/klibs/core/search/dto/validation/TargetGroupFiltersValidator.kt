@@ -7,14 +7,13 @@ import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
 
-class TargetGroupFiltersValidator : ConstraintValidator<ValidTargetGroupValues, List<*>> {
+class TargetGroupFiltersValidator :
+    ConstraintValidator<ValidTargetGroupValues, @JvmSuppressWildcards List<Map<TargetGroup, Set<String>>>> {
     override fun isValid(
-        targetGroupFilters: List<*>?,
+        targetGroupFilters: List<Map<TargetGroup, Set<String>>>?,
         context: ConstraintValidatorContext
     ): Boolean {
-        @Suppress("UNCHECKED_CAST")
-        val filters = targetGroupFilters as List<Map<TargetGroup, Set<String>>>?
-        val error = validateTargetGroupFilters(filters) ?: return true
+        val error = validateTargetGroupFilters(targetGroupFilters) ?: return true
         context.disableDefaultConstraintViolation()
         context.buildConstraintViolationWithTemplate(error).addConstraintViolation()
         return false

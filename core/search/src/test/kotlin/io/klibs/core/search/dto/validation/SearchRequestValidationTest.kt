@@ -7,6 +7,7 @@ import io.klibs.core.search.dto.validation.SearchLimits.MAX_MARKERS
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_MARKER_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_OWNER_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_QUERY_LENGTH
+import io.klibs.core.search.dto.validation.SearchLimits.MAX_SORT_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_TAGS
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_TAG_LENGTH
 import io.klibs.core.search.dto.validation.SearchLimits.MAX_TARGET_GROUP_FILTERS
@@ -26,6 +27,7 @@ class SearchRequestValidationTest {
             query = "y".repeat(MAX_QUERY_LENGTH),
             targetGroupFilters = List(MAX_TARGET_GROUP_FILTERS) { mapOf(TargetGroup.JVM to emptySet()) },
             owner = "o".repeat(MAX_OWNER_LENGTH),
+            sortBy = "s".repeat(MAX_SORT_LENGTH),
             tags = List(MAX_TAGS) { "t".repeat(MAX_TAG_LENGTH) },
             markers = List(MAX_MARKERS) { "m".repeat(MAX_MARKER_LENGTH) },
         )
@@ -38,10 +40,14 @@ class SearchRequestValidationTest {
             query = "y".repeat(MAX_QUERY_LENGTH + 1),
             targetGroupFilters = List(MAX_TARGET_GROUP_FILTERS + 1) { mapOf(TargetGroup.JVM to emptySet()) },
             owner = "o".repeat(MAX_OWNER_LENGTH + 1),
+            sortBy = "s".repeat(MAX_SORT_LENGTH + 1),
             tags = List(MAX_TAGS + 1) { "tag$it" },
             markers = List(MAX_MARKERS + 1) { "marker$it" },
         )
-        assertEquals(setOf("query", "targetGroupFilters", "owner", "tags", "markers"), violatedProperties(request))
+        assertEquals(
+            setOf("query", "targetGroupFilters", "owner", "sortBy", "tags", "markers"),
+            violatedProperties(request)
+        )
     }
 
     @Test
@@ -62,8 +68,20 @@ class SearchRequestValidationTest {
             query = "y".repeat(MAX_QUERY_LENGTH + 1),
             targetGroupFilters = List(MAX_TARGET_GROUP_FILTERS + 1) { mapOf(TargetGroup.JVM to emptySet()) },
             owner = "o".repeat(MAX_OWNER_LENGTH + 1),
+            sortBy = "s".repeat(MAX_SORT_LENGTH + 1),
         )
-        assertEquals(setOf("query", "targetGroupFilters", "owner"), violatedProperties(request))
+        assertEquals(setOf("query", "targetGroupFilters", "owner", "sortBy"), violatedProperties(request))
+    }
+
+    @Test
+    fun `accepts package request at all limits`() {
+        val request = SearchPackagesRequest(
+            query = "y".repeat(MAX_QUERY_LENGTH),
+            targetGroupFilters = List(MAX_TARGET_GROUP_FILTERS) { mapOf(TargetGroup.JVM to emptySet()) },
+            owner = "o".repeat(MAX_OWNER_LENGTH),
+            sortBy = "s".repeat(MAX_SORT_LENGTH),
+        )
+        assertTrue(validator.validate(request).isEmpty())
     }
 
     private fun violatedProperties(request: Any): Set<String> =
