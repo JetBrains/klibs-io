@@ -49,6 +49,22 @@ Pick the cheapest level that proves the behavior:
 
 Every page and route state (`page`, `loading`, `error`, `not-found`) needs a visual test that renders it or its content component; `src/app/visual-coverage.test.ts` fails otherwise. That test can't see states inside a page, so when you add one (empty, error, a different layout), add a visual test for it too.
 
+### When the UI Verify check reports changes on a PR
+
+Triage the latest build on the PR with the `triage-visual-changes` skill (UI Verify MCP from `.mcp.json`), then
+clear what doesn't need a person and summarize the rest:
+
+1. **Rendering-only changes** (same text and layout; only glyph rendering, anti-aliasing or a few px of shift, e.g.
+   a font rendering change after a dependency bump). For each story: `post_comment` one line on why it's safe
+   ("font rendering changed after the dependency bump; same text and layout"), `resolve_comment` on it, then
+   `review_diff` with `accept`. An open comment blocks the accept, so resolve first.
+2. **Everything else** (content, color, size or layout changed, or you're not sure). `post_comment` one line on what
+   changed and where ("card title wraps to two lines at 1024px"), leave it open and don't accept. Never accept a
+   story someone else commented on.
+3. **One PR comment** with `gh pr comment` (`--edit-last` if you posted one before): how many you accepted and why,
+   then each story left for review as one line with its dashboard link and what changed. Lead with those; if none
+   are left, say so.
+
 ## Guardrails
 
 - Never delete branches.
