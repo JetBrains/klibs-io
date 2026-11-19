@@ -10,6 +10,10 @@ health:
     initialDelaySeconds: 300
 databaseSecrets:
   - db-secrets
+customEnv:
+  # see KTL-5315 for more details
+  - name: JDK_JAVA_OPTIONS
+    value: "-XX:-UseBASE64Intrinsics"
 ingress:
   enabled: false
 podAnnotations:
