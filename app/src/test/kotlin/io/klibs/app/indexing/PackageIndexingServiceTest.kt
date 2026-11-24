@@ -16,7 +16,7 @@ import io.klibs.core.pckg.repository.RejectedMavenCoordinateRepository
 import io.klibs.core.pckg.repository.UserRequestIssueRepository
 import io.klibs.core.pckg.repository.UserRequestReportRepository
 import io.klibs.core.pckg.service.PackageDescriptionService
-import io.klibs.core.readme.GithubReadmeContentBuilder
+import io.klibs.core.readme.service.GithubReadmeContentBuilder
 import io.klibs.integration.ai.PackageDescriptionGenerator
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.GitHubRepository

@@ -2,9 +2,8 @@ package io.klibs.app.indexing
 
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
-import io.klibs.core.readme.ANDROIDX_DEFAULT_DESCRIPTION
-import io.klibs.core.readme.ANDROIDX_GITHUB_OWNER
-import io.klibs.core.readme.AndroidxReadmeContentBuilder
+import io.klibs.core.readme.*
+import io.klibs.core.readme.service.AndroidxReadmeContentBuilder
 import io.klibs.core.readme.service.AndroidxReadmeFetcher
 import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.github.model.ReadmeFetchResult
@@ -22,7 +21,7 @@ class AndroidxReadmesUpdatingService(
 ) {
     fun syncReadmes() {
         projectRepository.findByOwnerLogin(ANDROIDX_GITHUB_OWNER)
-            .filterNot { it.name == "androidx" } // Skip the androidx.androidx umbrella project
+            .filterNot { it.name == ANDROIDX_GITHUB_UMBRELLA_PROJECT }
             .forEach { project ->
                 runCatching {
                     syncReadme(project) { markdown ->
@@ -30,7 +29,7 @@ class AndroidxReadmesUpdatingService(
                         val oldContent = readmeService.readReadmeRaw(projectInfo)
                         oldContent != markdown
                     }
-                }.onFailure { logger.error("Failed to sync readme for androidx.${project.name}", it) }
+                }.onFailure { logger.error("Failed to sync readme for $ANDROIDX_PREFIX${project.name}", it) }
             }
     }
 
@@ -45,18 +44,18 @@ class AndroidxReadmesUpdatingService(
                         content = result.markdown,
                         projectEntity = project
                     )
-                    logger.info("Readme for project androidx.${project.name} updated")
+                    logger.info("Readme for project $ANDROIDX_PREFIX${project.name} updated")
                 } else {
-                    logger.info("Readme for project androidx.${project.name} is up to date, skipping update")
+                    logger.info("Readme for project $ANDROIDX_PREFIX${project.name} is up to date, skipping update")
                 }
             }
 
             is ReadmeFetchResult.Error -> {
-                logger.warn("Error fetching readme for project androidx.${project.name}: (${result.status}) ${result.message}")
+                logger.warn("Error fetching readme for project $ANDROIDX_PREFIX${project.name}: (${result.status}) ${result.message}")
             }
 
             is ReadmeFetchResult.NotFound, ReadmeFetchResult.NotModified -> {
-                logger.warn("Unexpected result of fetching readme for project androidx.${project.name}: ${result::class.qualifiedName}")
+                logger.warn("Unexpected result of fetching readme for project $ANDROIDX_PREFIX${project.name}: ${result::class.qualifiedName}")
             }
         }
     }
@@ -67,8 +66,10 @@ class AndroidxReadmesUpdatingService(
     ) {
         val readmeContent = androidxReadmeContentBuilder.buildFromMarkdown(
             readme = content,
-            projectName = "androidx.${projectEntity.name}",
+            projectName = "$ANDROIDX_PREFIX${projectEntity.name}",
         )
+        // The default description is a placeholder set in case of missing readme; once a real readme exists,
+        // it should be deleted so an accurate description can be generated.
         val clearDefaultDescription = projectEntity.description == ANDROIDX_DEFAULT_DESCRIPTION
 
         transactionTemplate.executeWithoutResult {
@@ -92,5 +93,6 @@ class AndroidxReadmesUpdatingService(
 
     private companion object {
         private val logger = LoggerFactory.getLogger(AndroidxReadmesUpdatingService::class.java)
+        private const val ANDROIDX_PREFIX = "androidx."
     }
 }

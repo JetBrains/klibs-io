@@ -59,12 +59,9 @@ class ReadmeServiceTest {
 
     @Test
     fun `writeReadmeFiles delegates to S3`() {
-        every { readmeMetadataRepository.save(any()) } returnsArgument 0
-
-        uut.saveReadmeMetadata(1)
         uut.writeReadmeFiles(1, "raw content", "md content", "html content")
 
         verify(exactly = 1) { s3ReadmeService.writeReadmeFiles(1, "raw content", "md content", "html content") }
-        verify(exactly = 1) { readmeMetadataRepository.save(any()) }
+        verify(exactly = 0) { readmeMetadataRepository.save(any()) }
     }
 }

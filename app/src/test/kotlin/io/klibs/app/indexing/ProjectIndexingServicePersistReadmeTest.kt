@@ -18,9 +18,11 @@ import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import org.junit.jupiter.api.Test
-import io.klibs.core.readme.ReadmeContent
-import io.klibs.core.readme.GithubReadmeContentBuilder
+import io.klibs.core.readme.dto.ReadmeContent
+import io.klibs.core.readme.service.GithubReadmeContentBuilder
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import java.time.Instant
@@ -29,7 +31,7 @@ import kotlin.test.assertNull
 
 class ProjectIndexingServicePersistReadmeTest {
 
-    private val readmeService = mockk<ReadmeService>(relaxUnitFun = true)
+    private val readmeService = mockk<ReadmeService>()
     private val projectDescriptionGenerator = mockk<ProjectDescriptionGenerator>()
     private val projectRepository = mockk<ProjectRepository>()
     private val scmRepositoryRepository = mockk<ScmRepositoryRepository>()
@@ -126,6 +128,20 @@ class ProjectIndexingServicePersistReadmeTest {
             html = "<h1>Title</h1>",
             minimized = "# Title",
         )
+        every {
+            readmeService.saveReadmeMetadata(
+                scmRepositoryId = scmRepositoryEntity.idNotNull,
+                readmeMetadataEntity = null,
+            )
+        } just Runs
+        every {
+            readmeService.writeReadmeFiles(
+                projectId = persistedProject.idNotNull,
+                rawContent = "# Title",
+                mdContent = "# Title",
+                htmlContent = "<h1>Title</h1>",
+            )
+        } just Runs
 
         val result = uut().save(mavenArtifact, scmRepositoryEntity)
 
@@ -155,7 +171,7 @@ class ProjectIndexingServicePersistReadmeTest {
     }
 
     @Test
-    fun `save writes README when creating an androidx project`() {
+    fun `save delegates readme syncing to AndroidxReadmesUpdatingService when creating an androidx project`() {
         val scmRepoId = 202
         val mavenArtifact = MavenArtifact(
             groupId = "androidx.paging",
@@ -195,8 +211,6 @@ class ProjectIndexingServicePersistReadmeTest {
 
         verify(exactly = 1) { androidxReadmesUpdatingService.syncReadme(any(), any()) }
         verify(exactly = 0) { readmeMinimizer.process(any(), any(), any(), any()) }
-        verify(exactly = 0) { readmeService.saveReadmeMetadata(any(), any()) }
-        verify(exactly = 0) { readmeService.writeReadmeFiles(any(), any(), any(), any()) }
         verify(exactly = 0) { scmRepositoryRepository.update(any()) }
         verify(exactly = 0) { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) }
     }

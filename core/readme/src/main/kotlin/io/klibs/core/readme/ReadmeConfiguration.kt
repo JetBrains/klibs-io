@@ -13,6 +13,6 @@ class ReadmeConfiguration {
      * Separate client from GitHub [OkHttpClient], so androidx requests don't go through
      * GitHub request metering and response cache.
      */
-    @Bean("androidxDocsHttpClient")
+    @Bean
     fun androidxDocsHttpClient(): OkHttpClient = OkHttpClient()
 }

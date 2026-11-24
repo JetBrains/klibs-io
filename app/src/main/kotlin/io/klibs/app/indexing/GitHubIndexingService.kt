@@ -8,7 +8,7 @@ import io.klibs.core.project.ProjectService
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.readme.ANDROIDX_GITHUB_OWNER
-import io.klibs.core.readme.GithubReadmeContentBuilder
+import io.klibs.core.readme.service.GithubReadmeContentBuilder
 import io.klibs.core.readme.entity.ReadmeMetadataEntity
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.scm.repository.ScmRepositoryEntity

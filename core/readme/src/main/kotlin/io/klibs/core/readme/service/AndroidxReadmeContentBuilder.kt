@@ -1,5 +1,6 @@
-package io.klibs.core.readme
+package io.klibs.core.readme.service
 
+import io.klibs.core.readme.dto.ReadmeContent
 import io.klibs.core.readme.impl.ReadmeMinimizationProcessor
 import io.klibs.integration.github.GitHubIntegration
 import org.springframework.stereotype.Service
@@ -13,6 +14,8 @@ class AndroidxReadmeContentBuilder(
         val cleanedReadme = cleanReadme(readme)
         val renderedReadme = gitHubIntegration.markdownRenderRaw(cleanedReadme)
             ?: error("Problem rendering markdown for $projectName")
+        // Empty owner/repo/branch: the readme comes from developer.android.com, so there is no GitHub repo context,
+        // and the ReadmeMinimizationProcessor does not use them anyway
         val minimizedReadme = minimizer.process(cleanedReadme, "", "", "")
 
         return ReadmeContent(

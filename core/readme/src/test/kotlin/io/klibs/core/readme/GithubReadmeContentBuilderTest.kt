@@ -1,5 +1,7 @@
 package io.klibs.core.readme
 
+import io.klibs.core.readme.dto.ReadmeContent
+import io.klibs.core.readme.service.GithubReadmeContentBuilder
 import io.klibs.integration.github.GitHubIntegration
 import io.mockk.every
 import io.mockk.mockk

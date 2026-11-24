@@ -38,7 +38,7 @@ interface GitHubIntegration {
     ): ReadmeFetchResult
 
     /**
-     * Renders Markdown without linking GitHub-specific information (such as comments or issues)
+     * Renders Markdown without linking to GitHub-specific content (such as comments or issues)
      */
     fun markdownRenderRaw(markdownText: String): String?
 

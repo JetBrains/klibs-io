@@ -8,7 +8,7 @@ import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.service.OwnerMarkerService
-import io.klibs.core.readme.GithubReadmeContentBuilder
+import io.klibs.core.readme.service.GithubReadmeContentBuilder
 import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository

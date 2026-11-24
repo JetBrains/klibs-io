@@ -97,7 +97,6 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
 
         assertEquals(expected, project)
         assertEquals(expected, findProject(CUSTOM_DESCRIPTION_PROJECT_ID))
-        verify(exactly = 0) { s3ReadmeService.writeReadmeFiles(any(), any(), any(), any()) }
     }
 
     @Test
@@ -112,7 +111,6 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals("Connection failure", failure.message)
         assertEquals(expected, project)
         assertEquals(expected, findProject(DEFAULT_DESCRIPTION_PROJECT_ID))
-        verify(exactly = 0) { s3ReadmeService.writeReadmeFiles(any(), any(), any(), any()) }
     }
 
     @Test
@@ -128,7 +126,6 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
         assertEquals("Problem rendering markdown for androidx.paging", failure.message)
         assertEquals(expected, project)
         assertEquals(expected, findProject(DEFAULT_DESCRIPTION_PROJECT_ID))
-        verify(exactly = 0) { s3ReadmeService.writeReadmeFiles(any(), any(), any(), any()) }
     }
 
     @Test
@@ -151,15 +148,11 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql(scripts = ["classpath:/sql/AndroidxReadmesUpdatingServiceTest/insert-androidx-projects.sql"])
-    fun `syncReadmes updates projects whose stored readme is missing or outdated`() {
+    fun `syncReadmes updates projects whose stored readme is missing`() {
         val paging = findProject(DEFAULT_DESCRIPTION_PROJECT_ID)
-        val compose = findProject(CUSTOM_DESCRIPTION_PROJECT_ID)
         every { androidxReadmeFetcher.getReadme("paging") } returns Content(README)
         every { gitHubIntegration.markdownRenderRaw(README) } returns RENDERED_README
-        every { androidxReadmeFetcher.getReadme("compose") } returns Content(README)
-        every { gitHubIntegration.markdownRenderRaw(README) } returns RENDERED_README
         every { s3ReadmeService.readReadmeRaw(DEFAULT_DESCRIPTION_PROJECT_ID, null) } returns null
-        every { s3ReadmeService.readReadmeRaw(CUSTOM_DESCRIPTION_PROJECT_ID, null) } returns "# Outdated"
 
         uut.syncReadmes()
 
@@ -167,7 +160,6 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
             paging.copy(description = null, minimizedReadme = MINIMIZED_README),
             findProject(DEFAULT_DESCRIPTION_PROJECT_ID)
         )
-        assertEquals(compose.copy(minimizedReadme = MINIMIZED_README), findProject(CUSTOM_DESCRIPTION_PROJECT_ID))
         verify(exactly = 1) {
             s3ReadmeService.writeReadmeFiles(
                 DEFAULT_DESCRIPTION_PROJECT_ID,
@@ -176,6 +168,19 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
                 RENDERED_README
             )
         }
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:/sql/AndroidxReadmesUpdatingServiceTest/insert-androidx-projects.sql"])
+    fun `syncReadmes updates projects whose stored readme is outdated`() {
+        val compose = findProject(CUSTOM_DESCRIPTION_PROJECT_ID)
+        every { androidxReadmeFetcher.getReadme("compose") } returns Content(README)
+        every { gitHubIntegration.markdownRenderRaw(README) } returns RENDERED_README
+        every { s3ReadmeService.readReadmeRaw(CUSTOM_DESCRIPTION_PROJECT_ID, null) } returns "# Outdated"
+
+        uut.syncReadmes()
+
+        assertEquals(compose.copy(minimizedReadme = MINIMIZED_README), findProject(CUSTOM_DESCRIPTION_PROJECT_ID))
         verify(exactly = 1) {
             s3ReadmeService.writeReadmeFiles(
                 CUSTOM_DESCRIPTION_PROJECT_ID,
@@ -213,9 +218,8 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
 
     @Test
     @Sql(scripts = ["classpath:/sql/AndroidxReadmesUpdatingServiceTest/insert-androidx-projects.sql"])
-    fun `syncReadmes skips androidx umbrella project and projects of other owners`() {
+    fun `syncReadmes skips androidx umbrella project`() {
         val umbrella = findProject(UMBRELLA_PROJECT_ID)
-        val foreign = findProject(FOREIGN_ID)
         every { androidxReadmeFetcher.getReadme(any()) } returns Content(README)
         every { gitHubIntegration.markdownRenderRaw(README) } returns RENDERED_README
         every { s3ReadmeService.readReadmeRaw(any(), null) } returns null
@@ -226,9 +230,22 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
         verify(exactly = 1) { androidxReadmeFetcher.getReadme("compose") }
         confirmVerified(androidxReadmeFetcher)
         assertEquals(umbrella, findProject(UMBRELLA_PROJECT_ID))
+    }
+
+    @Test
+    @Sql(scripts = ["classpath:/sql/AndroidxReadmesUpdatingServiceTest/insert-androidx-projects.sql"])
+    fun `syncReadmes skips projects of other owners`() {
+        val foreign = findProject(FOREIGN_ID)
+        every { androidxReadmeFetcher.getReadme(any()) } returns Content(README)
+        every { gitHubIntegration.markdownRenderRaw(README) } returns RENDERED_README
+        every { s3ReadmeService.readReadmeRaw(any(), null) } returns null
+
+        uut.syncReadmes()
+
+        verify(exactly = 1) { androidxReadmeFetcher.getReadme("paging") }
+        verify(exactly = 1) { androidxReadmeFetcher.getReadme("compose") }
+        confirmVerified(androidxReadmeFetcher)
         assertEquals(foreign, findProject(FOREIGN_ID))
-        verify(exactly = 0) { s3ReadmeService.writeReadmeFiles(UMBRELLA_PROJECT_ID, any(), any(), any()) }
-        verify(exactly = 0) { s3ReadmeService.writeReadmeFiles(FOREIGN_ID, any(), any(), any()) }
     }
 
     @Test

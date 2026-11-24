@@ -1,40 +1,42 @@
 package io.klibs.core.readme.service
 
+import io.klibs.core.readme.ANDROIDX_RELEASES_URL
 import io.klibs.integration.github.model.ReadmeFetchResult
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.springframework.beans.factory.annotation.Qualifier
+import okhttp3.Response
 import org.springframework.stereotype.Service
 
 @Service
 class AndroidxReadmeFetcher(
-    @param:Qualifier("androidxDocsHttpClient")
-    private val okHttpClient: OkHttpClient,
+    private val androidxDocsHttpClient: OkHttpClient,
 ) {
     fun getReadme(projectName: String): ReadmeFetchResult {
-        val request = Request.Builder()
-            .url("$BASE_URL${projectName.lowercase()}.md.txt")
-            .build()
+        val request = buildReadmeRequest(projectName)
+        return androidxDocsHttpClient.newCall(request).execute().use { it.toFetchResult() }
+    }
 
-        return okHttpClient.newCall(request).execute().use { response ->
-            val contentType = response.body?.contentType()
-            val isMarkdown = contentType?.let { it.type == "text" && it.subtype == "markdown" } == true
+    private fun Response.toFetchResult(): ReadmeFetchResult {
+        val contentType = body?.contentType()
+        val isMarkdown = contentType?.type == EXPECTED_CONTENT_TYPE && contentType.subtype == EXPECTED_CONTENT_SUBTYPE
+        val markdown = body?.string()
 
-            when {
-                !response.isSuccessful -> ReadmeFetchResult.Error(status = response.code, message = response.message)
-                !isMarkdown -> ReadmeFetchResult.Error(
-                    status = response.code,
-                    message = "Unexpected content type: $contentType"
-                )
-                else -> response.body?.string()
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { ReadmeFetchResult.Content(it) }
-                    ?: ReadmeFetchResult.Error(status = response.code, message = "Empty readme")
-            }
+        return when {
+            !isSuccessful -> toError(message)
+            !isMarkdown -> toError("Unexpected content type: $contentType")
+            markdown.isNullOrBlank() -> toError("Empty readme")
+            else -> ReadmeFetchResult.Content(markdown)
         }
     }
 
+    private fun Response.toError(message: String) = ReadmeFetchResult.Error(status = code, message = message)
+
+    private fun buildReadmeRequest(projectName: String): Request = Request.Builder()
+        .url("$ANDROIDX_RELEASES_URL${projectName.lowercase()}.md.txt")
+        .build()
+
     private companion object {
-        private const val BASE_URL = "https://developer.android.com/jetpack/androidx/releases/"
+        private const val EXPECTED_CONTENT_TYPE = "text"
+        private const val EXPECTED_CONTENT_SUBTYPE = "markdown"
     }
 }

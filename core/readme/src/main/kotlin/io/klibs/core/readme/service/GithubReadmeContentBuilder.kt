@@ -1,5 +1,8 @@
-package io.klibs.core.readme
+package io.klibs.core.readme.service
 
+import io.klibs.core.readme.ReadmeProcessor
+import io.klibs.core.readme.ReadmeType
+import io.klibs.core.readme.dto.ReadmeContent
 import io.klibs.integration.github.GitHubIntegration
 import org.springframework.stereotype.Service
 

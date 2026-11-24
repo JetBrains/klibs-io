@@ -13,8 +13,8 @@ import io.klibs.core.readme.ANDROIDX_DEFAULT_DESCRIPTION
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.readme.ANDROIDX_GITHUB_OWNER
-import io.klibs.core.readme.ReadmeContent
-import io.klibs.core.readme.GithubReadmeContentBuilder
+import io.klibs.core.readme.dto.ReadmeContent
+import io.klibs.core.readme.service.GithubReadmeContentBuilder
 import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.github.GitHubIntegration

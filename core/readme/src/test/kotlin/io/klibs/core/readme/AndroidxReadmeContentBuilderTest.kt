@@ -1,6 +1,7 @@
 package io.klibs.core.readme
 
 import io.klibs.core.readme.impl.ReadmeMinimizationProcessor
+import io.klibs.core.readme.service.AndroidxReadmeContentBuilder
 import io.klibs.integration.github.GitHubIntegration
 import io.mockk.every
 import io.mockk.mockk
