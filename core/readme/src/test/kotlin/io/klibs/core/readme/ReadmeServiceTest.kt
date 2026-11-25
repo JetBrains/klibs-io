@@ -1,5 +1,6 @@
-package io.klibs.app.indexing
+package io.klibs.core.readme
 
+import io.klibs.core.project.ProjectService
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
 import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.readme.service.ReadmeService.ProjectInfo
@@ -15,13 +16,15 @@ class ReadmeServiceTest {
 
     private lateinit var s3ReadmeService: S3ReadmeCRUDService
     private lateinit var readmeMetadataRepository: ReadmeMetadataRepository
+    private lateinit var projectService: ProjectService
     private lateinit var uut: ReadmeService
 
     @BeforeEach
     fun setUp() {
         s3ReadmeService = mockk(relaxUnitFun = true)
         readmeMetadataRepository = mockk(relaxed = true)
-        uut = ReadmeService(s3ReadmeService, readmeMetadataRepository)
+        projectService = mockk()
+        uut = ReadmeService(s3ReadmeService, readmeMetadataRepository, projectService)
     }
 
     @Test

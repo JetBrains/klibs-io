@@ -1,4 +1,4 @@
-package io.klibs.core.readme
+package io.klibs.core.project
 
 const val ANDROIDX_GITHUB_OWNER = "androidx"
 const val ANDROIDX_GITHUB_UMBRELLA_PROJECT = "androidx"

@@ -85,49 +85,7 @@ class ProjectController(
 
         return ResponseEntity.ok(packages.map { it.toDTO() })
     }
-
-    @Operation(summary = "Get a project's README in Markdown format")
-    @GetMapping("/{ownerLogin}/{projectName}/readme/markdown", produces = ["text/plain"])
-    fun getProjectReadmeMarkdown(
-        @PathVariable
-        @Parameter(
-            description = "Login of the owner (same as the scm/github login)",
-            example = "Kotlin"
-        )
-        ownerLogin: String,
-
-        @PathVariable
-        @Parameter(
-            description = "Name of the project (same as the scm/github repo name)",
-            example = "kotlinx.coroutines"
-        )
-        projectName: String
-    ): String? {
-        return projectService.getProjectReadmeMd(ownerLogin, projectName)
-    }
-
-    @Operation(summary = "Get a project's README in HTML format. Produced from Markdown via GitHub's API")
-    @GetMapping("/{ownerLogin}/{projectName}/readme/html", produces = ["text/plain"])
-    fun getProjectReadmeHtml(
-        @PathVariable
-        @Parameter(
-            description = "Login of the owner (same as the scm/github login)",
-            example = "Kotlin"
-        )
-        ownerLogin: String,
-
-        @PathVariable
-        @Parameter(
-            description = "Name of the project (same as the scm/github repo name)",
-            example = "kotlinx.coroutines"
-        )
-        projectName: String
-    ): String? {
-        return projectService.getProjectReadmeHtml(ownerLogin, projectName)
-    }
-
 }
-
 
 private fun ProjectDetails.toDTO(): ProjectDetailsDTO {
     return ProjectDetailsDTO(

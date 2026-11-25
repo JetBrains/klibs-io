@@ -1,6 +1,6 @@
 package io.klibs.core.readme.service
 
-import io.klibs.core.readme.ANDROIDX_RELEASES_URL
+import io.klibs.core.project.ANDROIDX_RELEASES_URL
 import io.klibs.integration.github.model.ReadmeFetchResult
 import okhttp3.OkHttpClient
 import okhttp3.Request

@@ -1,11 +1,10 @@
-package io.klibs.app.indexing
+package io.klibs.core.readme.service
 
+import io.klibs.core.project.ANDROIDX_DEFAULT_DESCRIPTION
+import io.klibs.core.project.ANDROIDX_GITHUB_OWNER
+import io.klibs.core.project.ANDROIDX_GITHUB_UMBRELLA_PROJECT
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
-import io.klibs.core.readme.*
-import io.klibs.core.readme.service.AndroidxReadmeContentBuilder
-import io.klibs.core.readme.service.AndroidxReadmeFetcher
-import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.github.model.ReadmeFetchResult
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service

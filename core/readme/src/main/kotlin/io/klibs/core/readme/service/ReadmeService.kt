@@ -1,15 +1,17 @@
 package io.klibs.core.readme.service
 
+import io.klibs.core.project.ProjectService
 import io.klibs.core.readme.entity.ReadmeMetadataEntity
 import io.klibs.core.readme.repository.ReadmeMetadataRepository
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
 @Service
 class ReadmeService(
     private val s3ReadmeService: S3ReadmeCRUDService,
     private val readmeMetadataRepository: ReadmeMetadataRepository,
+    private val projectService: ProjectService,
 ) {
     data class ProjectInfo(
         val id: Int?,
@@ -50,5 +52,27 @@ class ReadmeService(
             }
 
         readmeMetadataRepository.save(metadataToSave)
+    }
+
+    @Transactional(readOnly = true)
+    fun getProjectReadmeMd(ownerLogin: String, projectName: String): String? {
+        val projectEntity = projectService.findVisibleProject(ownerLogin, projectName) ?: return null
+        return readReadmeMd(
+            ProjectInfo(
+                projectEntity.idNotNull,
+                projectEntity.scmRepoId,
+            )
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun getProjectReadmeHtml(ownerLogin: String, projectName: String): String? {
+        val projectEntity = projectService.findVisibleProject(ownerLogin, projectName) ?: return null
+        return readReadmeHtml(
+            ProjectInfo(
+                projectEntity.idNotNull,
+                projectEntity.scmRepoId,
+            )
+        )
     }
 }

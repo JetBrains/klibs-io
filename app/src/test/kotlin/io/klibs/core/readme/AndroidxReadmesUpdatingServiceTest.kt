@@ -1,11 +1,12 @@
-package io.klibs.app.indexing
+package io.klibs.core.readme
 
 import BaseUnitWithDbLayerTest
 import com.ninjasquad.springmockk.MockkBean
+import io.klibs.core.project.ANDROIDX_DEFAULT_DESCRIPTION
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
-import io.klibs.core.readme.ANDROIDX_DEFAULT_DESCRIPTION
 import io.klibs.core.readme.service.AndroidxReadmeFetcher
+import io.klibs.core.readme.service.AndroidxReadmesUpdatingService
 import io.klibs.core.readme.service.S3ReadmeCRUDService
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.ReadmeFetchResult

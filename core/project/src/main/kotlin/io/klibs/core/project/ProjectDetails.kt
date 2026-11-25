@@ -3,7 +3,6 @@ package io.klibs.core.project
 import io.klibs.core.owner.ScmOwnerType
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
-import io.klibs.core.readme.ANDROIDX_RELEASES_URL
 import io.klibs.core.project.enums.MarkerType
 import java.time.Instant
 

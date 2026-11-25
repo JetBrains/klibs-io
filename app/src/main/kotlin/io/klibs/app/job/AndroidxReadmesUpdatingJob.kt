@@ -1,6 +1,6 @@
 package io.klibs.app.job
 
-import io.klibs.app.indexing.AndroidxReadmesUpdatingService
+import io.klibs.core.readme.service.AndroidxReadmesUpdatingService
 import net.javacrumbs.shedlock.core.LockAssert
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty

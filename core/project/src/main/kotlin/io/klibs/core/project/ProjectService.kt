@@ -1,32 +1,23 @@
 package io.klibs.core.project
 
-import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.pckg.model.PackageOverview
 import io.klibs.core.pckg.model.PackagePlatform
 import io.klibs.core.pckg.model.TargetGroup
+import io.klibs.core.pckg.service.PackageService
 import io.klibs.core.project.entity.Marker
 import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.project.enums.TagOrigin
-import io.klibs.core.project.repository.MarkerRepository
-import io.klibs.core.project.repository.ProjectHiddenRepository
-import io.klibs.core.project.repository.ProjectRepository
-import io.klibs.core.project.repository.ProjectTagRepository
-import io.klibs.core.project.repository.SitemapProjectEntry
-import io.klibs.core.project.repository.TagRepository
+import io.klibs.core.project.repository.*
+import io.klibs.core.project.utils.normalizeTag
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
-import io.klibs.core.project.repository.AllowedProjectTagsRepository
-import io.klibs.core.project.utils.normalizeTag
-import io.klibs.core.readme.ANDROIDX_GITHUB_OWNER
-import io.klibs.core.readme.service.ReadmeService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class ProjectService(
     private val packageService: PackageService,
-    private val readmeService: ReadmeService,
     private val projectRepository: ProjectRepository,
     private val scmRepositoryRepository: ScmRepositoryRepository,
     private val markerRepository: MarkerRepository,
@@ -88,32 +79,10 @@ class ProjectService(
         return packageService.getLatestPackagesByProjectId(projectEntity.idNotNull)
     }
 
-    @Transactional(readOnly = true)
-    fun getProjectReadmeMd(ownerLogin: String, projectName: String): String? {
-        val projectEntity = findVisibleProject(ownerLogin, projectName) ?: return null
-        return readmeService.readReadmeMd(
-            ReadmeService.ProjectInfo(
-                projectEntity.idNotNull,
-                projectEntity.scmRepoId,
-            )
-        )
-    }
-
-    @Transactional(readOnly = true)
-    fun getProjectReadmeHtml(ownerLogin: String, projectName: String): String? {
-        val projectEntity = findVisibleProject(ownerLogin, projectName) ?: return null
-        return readmeService.readReadmeHtml(
-            ReadmeService.ProjectInfo(
-                projectEntity.idNotNull,
-                projectEntity.scmRepoId,
-            )
-        )
-    }
-
     /**
      * A hidden project is not served on any read path, so it must not be looked up on one either.
      */
-    private fun findVisibleProject(ownerLogin: String, projectName: String): ProjectEntity? {
+    fun findVisibleProject(ownerLogin: String, projectName: String): ProjectEntity? {
         val projectEntity = projectRepository.findByNameAndOwnerLogin(projectName, ownerLogin) ?: return null
         return projectEntity.takeUnless { projectHiddenRepository.existsById(it.idNotNull) }
     }
