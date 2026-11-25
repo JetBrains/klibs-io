@@ -12,6 +12,8 @@ class AuthenticationHashingService(secret: ByteArray) {
     fun hashExternalIdentity(identity: ExternalUserIdentity): String =
         computeHmac("$HUB_ACCOUNT_PREFIX${identity.externalUserId}")
 
+    fun signOAuthState(payload: String): String = computeHmac("$OAUTH_STATE_PREFIX$payload")
+
     private fun computeHmac(input: String): String {
         val hmac = Mac.getInstance(HMAC_ALGORITHM)
         hmac.init(secretKey)
@@ -24,5 +26,6 @@ class AuthenticationHashingService(secret: ByteArray) {
         const val HMAC_ALGORITHM = "HmacSHA256"
         const val SESSION_TOKEN_PREFIX = "session-token:"
         const val HUB_ACCOUNT_PREFIX = "hub-account:"
+        const val OAUTH_STATE_PREFIX = "oauth-state:"
     }
 }

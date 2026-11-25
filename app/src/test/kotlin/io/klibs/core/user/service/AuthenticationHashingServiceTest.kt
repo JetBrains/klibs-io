@@ -43,6 +43,17 @@ class AuthenticationHashingServiceTest {
         )
     }
 
+    @Test
+    fun `signs OAuth state using the expected HMAC and a separate domain`() {
+        val uut = AuthenticationHashingService(SECRET.copyOf())
+
+        val signature = uut.signOAuthState("test-state")
+
+        assertEquals("85364278dd537ed83aec782dd82a6d39b38b7c5bd52db814eca235cd23e52e48", signature)
+        assertNotEquals(uut.hashSessionToken("test-state"), signature)
+        assertNotEquals(uut.hashExternalIdentity(ExternalUserIdentity("test-state")), signature)
+    }
+
     private companion object {
         val SECRET = "0123456789abcdef0123456789abcdef".toByteArray()
     }
