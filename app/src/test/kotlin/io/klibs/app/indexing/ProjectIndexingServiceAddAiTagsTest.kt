@@ -9,7 +9,6 @@ import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.service.OwnerMarkerService
-import io.klibs.core.readme.service.AndroidxReadmesUpdatingService
 import io.klibs.core.readme.service.GithubReadmeContentBuilder
 import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
@@ -20,6 +19,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.springframework.context.ApplicationEventPublisher
 import java.time.Instant
 
 class ProjectIndexingServiceAddAiTagsTest {
@@ -33,7 +33,7 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val projectTagRepository = mockk<ProjectTagRepository>()
     private val gitHubIntegration = mockk<GitHubIntegration>()
     private val githubReadmeContentBuilder = mockk<GithubReadmeContentBuilder>()
-    private val androidxReadmesUpdatingService = mockk<AndroidxReadmesUpdatingService>()
+    private val eventPublisher = mockk<ApplicationEventPublisher>()
     private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val tagsBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val ownerMarkerService = mockk<OwnerMarkerService>()
@@ -48,7 +48,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
         githubReadmeContentBuilder = githubReadmeContentBuilder,
-        androidxReadmesUpdatingService = androidxReadmesUpdatingService,
+        eventPublisher = eventPublisher,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
         ownerMarkerService = ownerMarkerService,

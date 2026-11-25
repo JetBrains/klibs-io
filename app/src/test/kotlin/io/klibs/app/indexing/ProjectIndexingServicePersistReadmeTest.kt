@@ -8,9 +8,9 @@ import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.service.OwnerMarkerService
+import io.klibs.core.readme.dto.AndroidxProjectDTO
 import io.klibs.core.readme.dto.ReadmeContent
 import io.klibs.core.readme.impl.ReadmeMinimizationProcessor
-import io.klibs.core.readme.service.AndroidxReadmesUpdatingService
 import io.klibs.core.readme.service.GithubReadmeContentBuilder
 import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
@@ -22,6 +22,7 @@ import io.klibs.integration.maven.MavenArtifact
 import io.klibs.integration.maven.ScraperType
 import io.mockk.*
 import org.junit.jupiter.api.Test
+import org.springframework.context.ApplicationEventPublisher
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -37,7 +38,7 @@ class ProjectIndexingServicePersistReadmeTest {
     private val projectTagRepository = mockk<ProjectTagRepository>()
     private val gitHubIntegration = mockk<GitHubIntegration>()
     private val githubReadmeContentBuilder = mockk<GithubReadmeContentBuilder>()
-    private val androidxReadmesUpdatingService = mockk<AndroidxReadmesUpdatingService>(relaxUnitFun = true)
+    private val eventPublisher = mockk<ApplicationEventPublisher>(relaxUnitFun = true)
     private val readmeMinimizer = mockk<ReadmeMinimizationProcessor>()
     private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val tagsBackoffProvider = BackoffProvider("tagsBackoff", mockk(relaxed = true))
@@ -53,7 +54,7 @@ class ProjectIndexingServicePersistReadmeTest {
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
         githubReadmeContentBuilder = githubReadmeContentBuilder,
-        androidxReadmesUpdatingService = androidxReadmesUpdatingService,
+        eventPublisher = eventPublisher,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
         ownerMarkerService = ownerMarkerService,
@@ -168,7 +169,7 @@ class ProjectIndexingServicePersistReadmeTest {
     }
 
     @Test
-    fun `save delegates readme syncing to AndroidxReadmesUpdatingService when creating an androidx project`() {
+    fun `save publishes AndroidxProjectCreatedEvent when creating an androidx project`() {
         val scmRepoId = 202
         val mavenArtifact = MavenArtifact(
             groupId = "androidx.paging",
@@ -206,7 +207,11 @@ class ProjectIndexingServicePersistReadmeTest {
             inserted.description
         )
 
-        verify(exactly = 1) { androidxReadmesUpdatingService.syncReadme(any(), any()) }
+        verify(exactly = 1) {
+            eventPublisher.publishEvent(
+                AndroidxProjectCreatedEvent(AndroidxProjectDTO(405, "paging", ANDROIDX_DEFAULT_DESCRIPTION))
+            )
+        }
         verify(exactly = 0) { readmeMinimizer.process(any(), any(), any(), any()) }
         verify(exactly = 0) { scmRepositoryRepository.update(any()) }
         verify(exactly = 0) { gitHubIntegration.getReadmeWithModifiedSinceCheck(any(), any()) }

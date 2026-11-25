@@ -11,8 +11,8 @@ import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.service.OwnerMarkerService
+import io.klibs.core.readme.dto.AndroidxProjectDTO
 import io.klibs.core.readme.dto.ReadmeContent
-import io.klibs.core.readme.service.AndroidxReadmesUpdatingService
 import io.klibs.core.readme.service.GithubReadmeContentBuilder
 import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
@@ -23,6 +23,7 @@ import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenArtifact
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -42,7 +43,7 @@ class ProjectIndexingService(
     private val projectTagRepository: ProjectTagRepository,
     private val gitHubIntegration: GitHubIntegration,
     private val githubReadmeContentBuilder: GithubReadmeContentBuilder,
-    private val androidxReadmesUpdatingService: AndroidxReadmesUpdatingService,
+    private val eventPublisher: ApplicationEventPublisher,
     @param:Qualifier("aiDescriptionBackoffProvider")
     private val descriptionBackoffProvider: BackoffProvider,
     @param:Qualifier("aiTagsBackoffProvider")
@@ -242,7 +243,15 @@ class ProjectIndexingService(
             )
         )
         ownerMarkerService.assignOwnerMarkers(persistedEntity.idNotNull, scmRepositoryEntity.ownerLogin)
-        androidxReadmesUpdatingService.syncReadme(persistedEntity)
+        eventPublisher.publishEvent(
+            AndroidxProjectCreatedEvent(
+                AndroidxProjectDTO(
+                    id = persistedEntity.idNotNull,
+                    name = persistedEntity.name,
+                    description = persistedEntity.description,
+                )
+            )
+        )
 
         return persistedEntity
     }

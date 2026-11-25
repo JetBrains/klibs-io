@@ -3,11 +3,14 @@ package io.klibs.core.readme.service
 import io.klibs.core.project.ANDROIDX_DEFAULT_DESCRIPTION
 import io.klibs.core.project.ANDROIDX_GITHUB_OWNER
 import io.klibs.core.project.ANDROIDX_GITHUB_UMBRELLA_PROJECT
-import io.klibs.core.project.ProjectEntity
+import io.klibs.core.project.ANDROIDX_PREFIX
 import io.klibs.core.project.repository.ProjectRepository
+import io.klibs.core.readme.dto.AndroidxProjectDTO
 import io.klibs.integration.github.model.ReadmeFetchResult
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.TransactionTemplate
 
 @Service
@@ -16,11 +19,16 @@ class AndroidxReadmesUpdatingService(
     private val androidxReadmeFetcher: AndroidxReadmeFetcher,
     private val androidxReadmeContentBuilder: AndroidxReadmeContentBuilder,
     private val readmeService: ReadmeService,
-    private val transactionTemplate: TransactionTemplate,
+    transactionManager: PlatformTransactionManager,
 ) {
+    private val transactionTemplate = TransactionTemplate(transactionManager).apply {
+        propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
+    }
+
     fun syncReadmes() {
         projectRepository.findByOwnerLogin(ANDROIDX_GITHUB_OWNER)
             .filterNot { it.name == ANDROIDX_GITHUB_UMBRELLA_PROJECT }
+            .map { AndroidxProjectDTO(id = it.idNotNull, name = it.name, description = it.description) }
             .forEach { project ->
                 runCatching {
                     syncReadme(project) { markdown ->
@@ -33,7 +41,7 @@ class AndroidxReadmesUpdatingService(
     }
 
     fun syncReadme(
-        project: ProjectEntity,
+        project: AndroidxProjectDTO,
         shouldUpdate: (markdown: String) -> Boolean = { true },
     ) {
         when (val result = androidxReadmeFetcher.getReadme(project.name)) {
@@ -41,7 +49,7 @@ class AndroidxReadmesUpdatingService(
                 if (shouldUpdate(result.markdown)) {
                     processReadmeContent(
                         content = result.markdown,
-                        projectEntity = project
+                        project = project
                     )
                     logger.info("Readme for project $ANDROIDX_PREFIX${project.name} updated")
                 } else {
@@ -61,37 +69,31 @@ class AndroidxReadmesUpdatingService(
 
     private fun processReadmeContent(
         content: String,
-        projectEntity: ProjectEntity,
+        project: AndroidxProjectDTO,
     ) {
         val readmeContent = androidxReadmeContentBuilder.buildFromMarkdown(
             readme = content,
-            projectName = "$ANDROIDX_PREFIX${projectEntity.name}",
+            projectName = "$ANDROIDX_PREFIX${project.name}",
         )
         // The default description is a placeholder set in case of missing readme; once a real readme exists,
         // it should be deleted so an accurate description can be generated.
-        val clearDefaultDescription = projectEntity.description == ANDROIDX_DEFAULT_DESCRIPTION
+        val clearDefaultDescription = project.description == ANDROIDX_DEFAULT_DESCRIPTION
 
         transactionTemplate.executeWithoutResult {
-            projectRepository.updateMinimizedReadme(projectEntity.idNotNull, readmeContent.minimized)
+            projectRepository.updateMinimizedReadme(project.id, readmeContent.minimized)
             if (clearDefaultDescription) {
-                projectRepository.updateDescription(projectEntity.idNotNull, null)
+                projectRepository.updateDescription(project.id, null)
             }
             readmeService.writeReadmeFiles(
-                projectId = projectEntity.idNotNull,
+                projectId = project.id,
                 rawContent = readmeContent.raw,
                 mdContent = readmeContent.markdown,
                 htmlContent = readmeContent.html,
             )
         }
-
-        projectEntity.minimizedReadme = readmeContent.minimized
-        if (clearDefaultDescription) {
-            projectEntity.description = null
-        }
     }
 
     private companion object {
         private val logger = LoggerFactory.getLogger(AndroidxReadmesUpdatingService::class.java)
-        private const val ANDROIDX_PREFIX = "androidx."
     }
 }

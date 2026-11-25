@@ -5,6 +5,7 @@ import com.ninjasquad.springmockk.MockkBean
 import io.klibs.core.project.ANDROIDX_DEFAULT_DESCRIPTION
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
+import io.klibs.core.readme.dto.AndroidxProjectDTO
 import io.klibs.core.readme.service.AndroidxReadmeFetcher
 import io.klibs.core.readme.service.AndroidxReadmesUpdatingService
 import io.klibs.core.readme.service.S3ReadmeCRUDService
@@ -48,9 +49,8 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
         every { androidxReadmeFetcher.getReadme("paging") } returns Content(README)
         every { gitHubIntegration.markdownRenderRaw(README) } returns RENDERED_README
 
-        uut.syncReadme(project)
+        uut.syncReadme(project.toDTO())
 
-        assertEquals(expected, project)
         assertEquals(expected, findProject(DEFAULT_DESCRIPTION_PROJECT_ID))
         verify(exactly = 1) {
             s3ReadmeService.writeReadmeFiles(
@@ -70,9 +70,8 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
         every { androidxReadmeFetcher.getReadme("compose") } returns Content(README)
         every { gitHubIntegration.markdownRenderRaw(README) } returns RENDERED_README
 
-        uut.syncReadme(project)
+        uut.syncReadme(project.toDTO())
 
-        assertEquals(expected, project)
         assertEquals(expected, findProject(CUSTOM_DESCRIPTION_PROJECT_ID))
         verify(exactly = 1) {
             s3ReadmeService.writeReadmeFiles(
@@ -94,9 +93,8 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
             message = "Unexpected content type: text/html"
         )
 
-        uut.syncReadme(project)
+        uut.syncReadme(project.toDTO())
 
-        assertEquals(expected, project)
         assertEquals(expected, findProject(CUSTOM_DESCRIPTION_PROJECT_ID))
     }
 
@@ -107,10 +105,9 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
         val expected = project.copy()
         every { androidxReadmeFetcher.getReadme("paging") } throws IOException("Connection failure")
 
-        val failure = assertFailsWith<IOException> { uut.syncReadme(project) }
+        val failure = assertFailsWith<IOException> { uut.syncReadme(project.toDTO()) }
 
         assertEquals("Connection failure", failure.message)
-        assertEquals(expected, project)
         assertEquals(expected, findProject(DEFAULT_DESCRIPTION_PROJECT_ID))
     }
 
@@ -122,10 +119,9 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
         every { androidxReadmeFetcher.getReadme("paging") } returns Content(README)
         every { gitHubIntegration.markdownRenderRaw(README) } returns null
 
-        val failure = assertFailsWith<IllegalStateException> { uut.syncReadme(project) }
+        val failure = assertFailsWith<IllegalStateException> { uut.syncReadme(project.toDTO()) }
 
         assertEquals("Problem rendering markdown for androidx.paging", failure.message)
-        assertEquals(expected, project)
         assertEquals(expected, findProject(DEFAULT_DESCRIPTION_PROJECT_ID))
     }
 
@@ -140,10 +136,9 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
             s3ReadmeService.writeReadmeFiles(DEFAULT_DESCRIPTION_PROJECT_ID, README, RENDERED_README, RENDERED_README)
         } throws IllegalStateException("S3 is unavailable")
 
-        val failure = assertFailsWith<IllegalStateException> { uut.syncReadme(project) }
+        val failure = assertFailsWith<IllegalStateException> { uut.syncReadme(project.toDTO()) }
 
         assertEquals("S3 is unavailable", failure.message)
-        assertEquals(expected, project)
         assertEquals(expected, findProject(DEFAULT_DESCRIPTION_PROJECT_ID))
     }
 
@@ -264,6 +259,8 @@ class AndroidxReadmesUpdatingServiceTest : BaseUnitWithDbLayerTest() {
     }
 
     private fun findProject(id: Int): ProjectEntity = assertNotNull(projectRepository.findById(id))
+
+    private fun ProjectEntity.toDTO() = AndroidxProjectDTO(id = idNotNull, name = name, description = description)
 
     companion object {
         private const val UMBRELLA_PROJECT_ID = 7001

@@ -8,10 +8,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.scheduling.annotation.EnableAsync
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 
 @Configuration
+@EnableAsync
 @EnableConfigurationProperties
 class ExecutorServiceConfiguration() {
 
