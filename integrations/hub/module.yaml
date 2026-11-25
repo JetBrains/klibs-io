@@ -1,0 +1,7 @@
+product: jvm/lib
+
+apply:
+  - ../../build-logic/templates/spring.module-template.yaml
+
+dependencies:
+  - $libs.okhttp

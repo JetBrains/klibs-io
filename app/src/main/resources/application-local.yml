@@ -26,6 +26,10 @@ spring:
 klibs:
   ai: false
   auth:
+    hub:
+      base-url: ${KLIBS_AUTH_HUB_BASE_URL:http://localhost:7777/hub}
+      client-id: ${KLIBS_AUTH_HUB_CLIENT_ID:klibs-io-local}
+      callback-url: ${KLIBS_AUTH_HUB_CALLBACK_URL:http://localhost:8080/auth/hub/callback}
     session:
       cookie-secure: false
   indexing: false

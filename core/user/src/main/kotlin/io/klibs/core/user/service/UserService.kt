@@ -3,13 +3,14 @@ package io.klibs.core.user.service
 import io.klibs.core.user.entity.UserEntity
 import io.klibs.core.user.model.ExternalUserIdentity
 import io.klibs.core.user.repository.UserRepository
+import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
-@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
+@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
 @Transactional
 class UserService(
     private val userRepository: UserRepository,

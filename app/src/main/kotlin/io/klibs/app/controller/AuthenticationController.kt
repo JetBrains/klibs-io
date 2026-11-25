@@ -3,6 +3,7 @@ package io.klibs.app.controller
 import io.klibs.app.api.CurrentUserResponse
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
+import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.HttpHeaders
@@ -16,7 +17,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/auth")
-@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
+@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
 class AuthenticationController(
     private val sessionCookieService: SessionCookieService,
     private val userSessionService: UserSessionService,

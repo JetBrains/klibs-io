@@ -5,6 +5,7 @@ import io.klibs.core.user.dto.CreatedSessionDTO
 import io.klibs.core.user.entity.UserEntity
 import io.klibs.core.user.entity.UserSessionEntity
 import io.klibs.core.user.repository.UserSessionRepository
+import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,7 +16,7 @@ import java.time.Instant
 import java.util.Base64
 
 @Service
-@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
+@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
 @Transactional
 class UserSessionService(
     private val sessionRepository: UserSessionRepository,
