@@ -6,6 +6,7 @@ import io.klibs.app.filter.SessionOriginProtectionFilter
 import io.klibs.app.filter.UserSessionAuthenticationFilter
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
+import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -27,9 +28,11 @@ internal const val AUTHENTICATION_ENDPOINTS_PATH = "/auth/**"
 internal const val USER_ACTIONS_PATH = "/user/**"
 internal const val CURRENT_USER_PATH = "/auth/current-user"
 internal const val SIGN_OUT_PATH = "/auth/sign-out"
+internal const val HUB_SIGN_IN_PATH = "/auth/hub/sign-in"
+internal const val HUB_CALLBACK_PATH = "/auth/hub/callback"
 
 @Configuration
-@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
+@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
 class UserAuthenticationSecurityConfiguration {
 
     @Bean
@@ -55,6 +58,8 @@ class UserAuthenticationSecurityConfiguration {
             }
 
             authorizeHttpRequests {
+                authorize(HttpMethod.GET, HUB_SIGN_IN_PATH, permitAll)
+                authorize(HttpMethod.GET, HUB_CALLBACK_PATH, permitAll)
                 authorize(HttpMethod.GET, CURRENT_USER_PATH, hasAuthority(AUTHENTICATED_USER_AUTHORITY))
                 authorize(HttpMethod.POST, SIGN_OUT_PATH, permitAll)
                 authorize(HttpMethod.OPTIONS, AUTHENTICATION_ENDPOINTS_PATH, permitAll)
