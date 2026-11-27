@@ -8,6 +8,8 @@ import io.klibs.integration.hub.configuration.properties.HubAuthenticationProper
 import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import io.klibs.integration.hub.enums.HubAuthenticationFailure
 import io.klibs.integration.hub.exception.HubAuthenticationException
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Timer
 import okhttp3.FormBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -26,6 +28,7 @@ class HubAuthenticationService(
     private val hubHttpClient: OkHttpClient,
     private val objectMapper: ObjectMapper,
     private val properties: HubAuthenticationProperties,
+    private val meterRegistry: MeterRegistry,
 ) {
     private val baseUrl = properties.baseUrl.trimEnd('/')
 
@@ -88,8 +91,18 @@ class HubAuthenticationService(
         .build()
 
     private fun execute(request: Request, tokenExchange: Boolean): JsonNode {
-        return hubHttpClient.newCall(request).execute().use { response ->
-            parseResponse(response, tokenExchange)
+        val sample = Timer.start(meterRegistry)
+        try {
+            return hubHttpClient.newCall(request).execute().use { response ->
+                parseResponse(response, tokenExchange)
+            }
+        } finally {
+            sample.stop(
+                Timer.builder("klibs.auth.hub.request")
+                    .description("Time spent requesting and parsing a Hub response, including failures")
+                    .tag("endpoint", if (tokenExchange) "token" else "userinfo")
+                    .register(meterRegistry),
+            )
         }
     }
 

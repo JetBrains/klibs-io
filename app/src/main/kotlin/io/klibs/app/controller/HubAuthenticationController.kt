@@ -11,6 +11,7 @@ import io.klibs.integration.hub.configuration.properties.HubAuthenticationProper
 import io.klibs.integration.hub.enums.HubAuthenticationFailure
 import io.klibs.integration.hub.exception.HubAuthenticationException
 import io.klibs.integration.hub.service.HubAuthenticationService
+import io.micrometer.core.annotation.Timed
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.servlet.http.HttpServletRequest
@@ -63,6 +64,10 @@ class HubAuthenticationController(
 
     @Operation(summary = "Complete Hub sign-in", description = "Creates a local session and redirects to the frontend.")
     @GetMapping(HUB_CALLBACK_PATH)
+    @Timed(
+        value = "klibs.auth.hub.callback",
+        description = "Time spent processing a Hub callback, including rejected attempts",
+    )
     fun callback(
         request: HttpServletRequest,
         response: HttpServletResponse,

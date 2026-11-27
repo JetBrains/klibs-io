@@ -5,6 +5,7 @@ import io.klibs.integration.hub.configuration.properties.HubAuthenticationProper
 import io.klibs.integration.hub.enums.HubAuthenticationFailure
 import io.klibs.integration.hub.exception.HubAuthenticationException
 import io.klibs.integration.hub.service.HubAuthenticationService
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -22,10 +23,12 @@ import kotlin.test.assertTrue
 
 class HubAuthenticationServiceTest {
     private val server = HubTestServer()
+    private val meterRegistry = SimpleMeterRegistry()
 
     @AfterEach
     fun tearDown() {
         server.close()
+        meterRegistry.close()
     }
 
     @Test
@@ -59,6 +62,8 @@ class HubAuthenticationServiceTest {
         assertEquals("Bearer hub-access-token", userRequest.authorization)
         assertEquals("", userRequest.body)
         assertTrue(server.requests.isEmpty())
+        assertEquals(1, meterRegistry.get("klibs.auth.hub.request").tag("endpoint", "token").timer().count())
+        assertEquals(1, meterRegistry.get("klibs.auth.hub.request").tag("endpoint", "userinfo").timer().count())
     }
 
     @ParameterizedTest
@@ -72,6 +77,8 @@ class HubAuthenticationServiceTest {
         assertEquals(HubAuthenticationFailure.OAUTH_ERROR, exception.failure)
         assertEquals("OAUTH_ERROR", exception.message)
         assertEquals("/hub/api/rest/oauth2/token", server.requests.single().path)
+        assertEquals(1, meterRegistry.get("klibs.auth.hub.request").tag("endpoint", "token").timer().count())
+        assertNull(meterRegistry.find("klibs.auth.hub.request").tag("endpoint", "userinfo").timer())
     }
 
     @ParameterizedTest
@@ -148,6 +155,7 @@ class HubAuthenticationServiceTest {
         val exception = assertFailsWith<HubAuthenticationException> { uut.authenticate("code", VERIFIER) }
 
         assertEquals(HubAuthenticationFailure.UNAVAILABLE, exception.failure)
+        assertEquals(1, meterRegistry.get("klibs.auth.hub.request").tag("endpoint", "userinfo").timer().count())
     }
 
     @Test
@@ -175,6 +183,7 @@ class HubAuthenticationServiceTest {
             listOf("/hub/api/rest/oauth2/token", "/hub/api/rest/oauth2/userinfo"),
             server.requests.map { it.path },
         )
+        assertEquals(1, meterRegistry.get("klibs.auth.hub.request").tag("endpoint", "userinfo").timer().count())
     }
 
     private fun service(
@@ -191,6 +200,7 @@ class HubAuthenticationServiceTest {
             requestTimeout = requestTimeout,
             loginAttemptTtl = Duration.ofMinutes(10),
         ),
+        meterRegistry,
     )
 
     private companion object {
