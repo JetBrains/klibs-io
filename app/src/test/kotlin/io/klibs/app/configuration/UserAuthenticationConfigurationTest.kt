@@ -1,6 +1,7 @@
 package io.klibs.app.configuration
 
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -140,7 +141,18 @@ class UserAuthenticationConfigurationTest {
         val environment = MockEnvironment().apply {
             setActiveProfiles(*profiles)
         }
-        return UserAuthenticationConfiguration(properties, environment)
+        return UserAuthenticationConfiguration(
+            properties,
+            environment,
+            HubAuthenticationProperties(
+                baseUrl = "https://hub.example/hub",
+                clientId = "test-klibs-client",
+                scope = "openid",
+                callbackUrl = "https://api.example/auth/hub/callback",
+                requestTimeout = Duration.ofSeconds(5),
+                loginAttemptTtl = Duration.ofMinutes(10),
+            ),
+        )
     }
 
     private companion object {

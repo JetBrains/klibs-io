@@ -31,6 +31,8 @@ class SecurityConfiguration(
             httpBasic { }
 
             authorizeHttpRequests {
+                authorize(HttpMethod.GET, HUB_SIGN_IN_PATH, permitAll)
+                authorize(HttpMethod.GET, HUB_CALLBACK_PATH, permitAll)
                 authorize(HttpMethod.GET, CURRENT_USER_PATH, permitAll)
                 authorize(HttpMethod.POST, SIGN_OUT_PATH, permitAll)
                 authorize(USER_ACTIONS_PATH, denyAll)

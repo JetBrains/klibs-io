@@ -2,7 +2,11 @@ package io.klibs.app.configuration
 
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.core.user.service.AuthenticationHashingService
+import io.klibs.core.user.service.OAuthLoginSettings
 import io.klibs.core.user.service.UserSessionSettings
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
+import okhttp3.OkHttpClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -12,11 +16,12 @@ import java.net.URI
 import java.util.Base64
 
 @Configuration
-@ConditionalOnProperty("klibs.auth.hub.enabled", havingValue = "true")
-@EnableConfigurationProperties(UserAuthenticationProperties::class)
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
+@EnableConfigurationProperties(UserAuthenticationProperties::class, HubAuthenticationProperties::class)
 class UserAuthenticationConfiguration(
     private val properties: UserAuthenticationProperties,
     environment: Environment,
+    private val hubProperties: HubAuthenticationProperties,
 ) {
 
     @Bean
@@ -32,6 +37,21 @@ class UserAuthenticationConfiguration(
 
         return AuthenticationHashingService(secret)
     }
+
+    @Bean
+    fun oauthLoginSettings(): OAuthLoginSettings = OAuthLoginSettings(
+        attemptTtl = hubProperties.loginAttemptTtl,
+        trustedFrontendOrigin = properties.trustedFrontendOrigin,
+    )
+
+    @Bean
+    fun hubHttpClient(): OkHttpClient = OkHttpClient.Builder()
+        .callTimeout(hubProperties.requestTimeout)
+        // Do not retry single-use code exchange or automatically follow HTTP redirects.
+        .retryOnConnectionFailure(false)
+        .followRedirects(false)
+        .followSslRedirects(false)
+        .build()
 
     @Bean
     fun userSessionSettings(): UserSessionSettings {
@@ -94,9 +114,25 @@ class UserAuthenticationConfiguration(
         }
     }
 
+    private fun validateHubSettings(hub: HubAuthenticationProperties, production: Boolean) {
+        requireHttpsInProduction(hub.baseUrl, "KLIBS_AUTH_HUB_BASE_URL", production)
+        requireHttpsInProduction(hub.callbackUrl, "KLIBS_AUTH_HUB_CALLBACK_URL", production)
+        // OkHttp treats zero as no timeout, so a stalled Hub could hold a request indefinitely.
+        require(hub.requestTimeout.isPositive) {
+            "Hub request timeout must be positive"
+        }
+    }
+
+    private fun requireHttpsInProduction(url: String, propertyName: String, production: Boolean) {
+        require(!production || URI.create(url).scheme == "https") {
+            "$propertyName must use HTTPS in production"
+        }
+    }
+
     init {
         val production = environment.matchesProfiles("prod")
         validateTrustedOrigin(properties.trustedFrontendOrigin, production)
         validateCookieSettings(properties.session, production)
+        validateHubSettings(hubProperties, production)
     }
 }

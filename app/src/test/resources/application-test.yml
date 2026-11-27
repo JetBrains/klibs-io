@@ -1,6 +1,11 @@
 klibs:
   indexing: false
   ai: false
+  auth:
+    hub:
+      base-url: https://hub.example/hub
+      client-id: test-klibs-client
+      callback-url: https://api.example/auth/hub/callback
   integration:
     github:
       personal-access-token: test

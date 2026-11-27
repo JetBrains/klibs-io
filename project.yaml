@@ -13,6 +13,7 @@ modules:
   - e2e
   - integrations/ai
   - integrations/github
+  - integrations/hub
   - integrations/maven
   - integrations/mcp
 

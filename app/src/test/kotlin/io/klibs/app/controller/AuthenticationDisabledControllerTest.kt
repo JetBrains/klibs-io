@@ -25,12 +25,16 @@ class AuthenticationDisabledControllerTest : BaseUnitWithDbLayerTest() {
             .andExpect { status { isNotFound() } }
         mockMvc.post("/auth/sign-out")
             .andExpect { status { isNotFound() } }
+        mockMvc.get("/auth/hub/sign-in")
+            .andExpect { status { isNotFound() } }
+        mockMvc.get("/auth/hub/callback")
+            .andExpect { status { isNotFound() } }
     }
 
     @Test
     fun `cors remains disabled when authentication is disabled`() {
         mockMvc.perform(
-            options("/")
+            options("/auth/current-user")
                 .header(HttpHeaders.ORIGIN, "https://frontend.example")
                 .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.GET.name())
         )

@@ -10,6 +10,7 @@ apply:
 
 dependencies:
   - $libs.swagger.annotations # do not remove it, it is a workaround for jar hell
+  - $libs.okhttp
   - ../core/package
   - ../core/project
   - ../core/readme
@@ -21,10 +22,10 @@ dependencies:
   - ../integrations/ai
   - ../integrations/maven
   - ../integrations/github
+  - ../integrations/hub
   - ../integrations/mcp
 
 test-dependencies:
-  - $libs.okhttp
   - $libs.kohsuke.githubApi
   - $libs.mockk
   - $libs.springmockk

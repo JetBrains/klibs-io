@@ -62,6 +62,7 @@ Review-ready authentication spec grouped into collapsible sections for focused d
   - **OAuth state:** value sent to Hub during login and returned on callback to connect the callback to the login
     attempt. `OAuth state` and `state` mean the same value in this spec.
   - **Token exchange:** backend-to-Hub call that exchanges OAuth code plus PKCE proof for an access token.
+  - **Public client:** OAuth application registered in Hub without a client secret. PKCE protects the token exchange.
 
   </details>
 
@@ -382,6 +383,7 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
   <br>
 
   - Hub access tokens, raw Hub user ids, and raw local session tokens must not be persisted in the klibs DB.
+  - Hub profile and email data must not be persisted by this feature: login reads only the Hub user id.
   - A DB leak alone must not let an attacker log in or identify the real Hub user.
 
   </details>
@@ -424,8 +426,8 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
     partial session may remain; a newly created local user may remain and must be reused by a later login.
   - Each HTTP call to Hub must stop when its timeout is reached, so a stalled Hub cannot keep a backend request running
     indefinitely.
-  - Default timeout budget: connect <= 2 seconds, each Hub HTTP call <= 5 seconds, and the combined callback Hub-call budget
-    <= 10 seconds. These confirmed defaults must be configurable (section 14.2).
+  - Each Hub HTTP call has a configurable total timeout, 30 seconds by default. Connection, read, and write timeouts use
+    OkHttp defaults; there is no separate combined timeout for the callback's Hub calls (section 14.2).
   - Authentication failures may log only a safe error category, such as invalid OAuth state (state) or Hub timeout. Logs
     must not contain raw tokens, authorization codes, Hub user ids, or session cookies.
 
@@ -502,7 +504,8 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
   <br>
 
   - Browser authorization through the JetBrains Hub authorization endpoint.
-  - Server-to-server token exchange with PKCE.
+  - Server-to-server token exchange with PKCE as a public Hub client: the form carries `client_id` and no client secret
+    (section 8.9).
   - JetBrains Hub current-user/user-info endpoint.
   - Expired sessions are deleted when encountered. No scheduled cleanup job is part of this feature.
 
@@ -668,6 +671,17 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
     after the configured interval, but never beyond the absolute lifetime. Expired sessions are deleted when encountered.
   - **Why:** Correctness should not depend on scheduler timing or allow indefinite session extension.
   - **Rejected:** Treating cleanup as the mechanism that makes sessions invalid.
+
+  </details>
+
+- <details>
+  <summary><strong>8.9 Public Hub client — PKCE instead of a client secret</strong></summary>
+
+  <br>
+
+  - **Choice:** Register klibs.io in Hub as a public client. The token exchange sends `client_id` and the PKCE
+    `code_verifier`; no client secret is configured or sent. The backend still owns the exchange (section 8.1).
+  - **Scopes:** `openid profile email`.
 
   </details>
 
@@ -857,8 +871,8 @@ Notes:
 - `returnTo` only needs to support relative frontend paths.
 - Existing Basic-auth users under `klibs.auth.basic.users` remain the operator/admin auth source.
 - A new `core/user` module is acceptable for local user/session domain code.
-- The exact OAuth state/login-cookie TTL and Hub scopes are deferred to Hub implementation. Local-session TTLs and the
-  production session-cookie requirements are confirmed in section 14.
+- The OAuth state/login-cookie TTL is configurable and defaults to 10 minutes. Authentication TTLs and the production
+  session-cookie requirements are confirmed in section 14.
 
 </details>
 
@@ -880,7 +894,7 @@ Notes:
 </details>
 
 <details>
-<summary><strong>14. Confirmed Decisions and Deferred Hub Parameter (required reading for reviewers)</strong></summary>
+<summary><strong>14. Confirmed Decisions (required reading for reviewers)</strong></summary>
 
 <br>
 
@@ -901,11 +915,11 @@ Notes:
 
   <br>
 
-  - **Decision:** Hub timeout defaults are connect <= 2 seconds, each call <= 5 seconds, and callback Hub calls <= 10 seconds
-    in total.
+  - **Decision:** each Hub HTTP call has a configurable 30-second total timeout. Connection, read, and write timeouts use
+    OkHttp defaults; there is no separate combined timeout for the callback's Hub calls.
   - **Decision:** local sessions use 30-day idle TTL, 1-day refresh interval, and 180-day absolute TTL; the cookie follows the
     remaining server-side TTL.
-  - **Deferred to Hub implementation:** the exact short OAuth state/login-cookie TTL.
+  - **Decision:** OAuth state and the login cookie share a configurable TTL, 10 minutes by default.
 
   </details>
 
