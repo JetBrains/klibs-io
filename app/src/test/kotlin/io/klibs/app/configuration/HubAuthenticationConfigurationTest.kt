@@ -1,13 +1,12 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.configuration.properties.HubAuthenticationProperties
 import io.klibs.app.service.LoginCookieService
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.FrontendRedirectService
 import io.klibs.core.user.service.OAuthLoginAttemptService
 import io.klibs.core.user.service.OAuthLoginSettings
 import io.klibs.core.user.service.PkceService
-import io.klibs.integration.hub.configuration.HubClientSettings
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties
 import jakarta.servlet.http.Cookie
 import okhttp3.OkHttpClient
 import org.junit.jupiter.api.Test
@@ -70,12 +69,10 @@ class HubAuthenticationConfigurationTest {
     }
 
     @Test
-    fun `binds Hub settings and custom timeouts`() {
+    fun `binds Hub settings and request timeout while keeping other HTTP defaults`() {
         uut.withPropertyValues(
             "klibs.auth.hub.scope=openid profile",
-            "klibs.auth.hub.connect-timeout=1700ms",
             "klibs.auth.hub.request-timeout=4s",
-            "klibs.auth.hub.callback-timeout=9s",
             "klibs.auth.hub.login-attempt-ttl=7m",
         ).run { context ->
             assertNull(context.startupFailure)
@@ -84,20 +81,16 @@ class HubAuthenticationConfigurationTest {
             assertEquals("test-klibs-client", properties.clientId)
             assertEquals("openid profile", properties.scope)
             assertEquals("https://api.example/auth/hub/callback", properties.callbackUrl)
-            assertEquals(Duration.ofMillis(1700), properties.connectTimeout)
             assertEquals(Duration.ofSeconds(4), properties.requestTimeout)
-            assertEquals(Duration.ofSeconds(9), properties.callbackTimeout)
             assertEquals(Duration.ofMinutes(7), properties.loginAttemptTtl)
             val settings = context.getBean(OAuthLoginSettings::class.java)
             assertEquals(Duration.ofMinutes(7), settings.attemptTtl)
             assertEquals("https://frontend.example", settings.trustedFrontendOrigin)
-            val hubSettings = context.getBean(HubClientSettings::class.java)
-            assertEquals("openid profile", hubSettings.scope, "scope must reach the Hub client settings")
-            assertEquals(Duration.ofSeconds(4), hubSettings.requestTimeout, "Hub request-timeout=4s")
-            assertEquals(Duration.ofSeconds(9), hubSettings.callbackTimeout, "Hub callback-timeout=9s")
             val client = context.getBean(OkHttpClient::class.java)
-            assertEquals(1700, client.connectTimeoutMillis, "connect-timeout=1700ms must reach the HTTP client")
-            assertEquals(4000, client.readTimeoutMillis, "request-timeout=4s must reach the HTTP read timeout")
+            val defaults = OkHttpClient()
+            assertEquals(defaults.connectTimeoutMillis, client.connectTimeoutMillis)
+            assertEquals(defaults.readTimeoutMillis, client.readTimeoutMillis)
+            assertEquals(defaults.writeTimeoutMillis, client.writeTimeoutMillis)
             assertEquals(4000, client.callTimeoutMillis, "request-timeout=4s must reach the HTTP call timeout")
         }
     }
@@ -114,13 +107,11 @@ class HubAuthenticationConfigurationTest {
     }
 
     @Test
-    fun `loads default Hub timeouts from application configuration`() {
+    fun `loads default Hub request timeout from application configuration`() {
         uut.run { context ->
             assertNull(context.startupFailure)
             val properties = context.getBean(HubAuthenticationProperties::class.java)
-            assertEquals(Duration.ofSeconds(2), properties.connectTimeout)
-            assertEquals(Duration.ofSeconds(5), properties.requestTimeout)
-            assertEquals(Duration.ofSeconds(10), properties.callbackTimeout)
+            assertEquals(Duration.ofSeconds(30), properties.requestTimeout)
             assertEquals(Duration.ofMinutes(10), properties.loginAttemptTtl)
         }
     }

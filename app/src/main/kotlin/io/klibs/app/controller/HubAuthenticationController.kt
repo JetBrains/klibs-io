@@ -7,7 +7,7 @@ import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.HubLoginService
 import io.klibs.core.user.service.OAuthLoginAttemptService
 import io.klibs.core.user.service.PkceService
-import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import io.klibs.integration.hub.enums.HubAuthenticationFailure
 import io.klibs.integration.hub.exception.HubAuthenticationException
 import io.klibs.integration.hub.service.HubAuthenticationService
@@ -29,7 +29,7 @@ import java.time.Duration
 import java.time.Instant
 
 @RestController
-@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
 class HubAuthenticationController(
     private val hubAuthenticationService: HubAuthenticationService,
     private val loginAttemptService: OAuthLoginAttemptService,
@@ -67,7 +67,7 @@ class HubAuthenticationController(
         request: HttpServletRequest,
         response: HttpServletResponse,
         @Schema(description = "Signed state returned unchanged by Hub")
-        @RequestParam(required = false) state: String?,
+        @RequestParam state: String,
         @Schema(description = "Single-use authorization code returned by Hub")
         @RequestParam(required = false) code: String?,
         @Schema(description = "OAuth error returned by Hub instead of an authorization code", example = "access_denied")

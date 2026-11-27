@@ -1,4 +1,4 @@
-package io.klibs.app.configuration.properties
+package io.klibs.integration.hub.configuration.properties
 
 import jakarta.validation.constraints.NotBlank
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -27,15 +27,13 @@ class HubAuthenticationProperties(
     @field:NotBlank(message = "KLIBS_AUTH_HUB_CALLBACK_URL must be configured when Hub authentication is enabled")
     val callbackUrl: String,
 
-    /** Maximum time to establish a connection to Hub. */
-    val connectTimeout: Duration,
-
     /** Maximum duration of each token or user-info request to Hub. */
     val requestTimeout: Duration,
 
-    /** Combined budget for Hub calls during one callback, excluding interactive browser login. */
-    val callbackTimeout: Duration,
-
     /** Lifetime shared by signed OAuth state and its browser login cookie, not the local user session. */
     val loginAttemptTtl: Duration,
-)
+) {
+    companion object {
+        const val ENABLED_PROPERTY = "klibs.auth.hub.enabled"
+    }
+}

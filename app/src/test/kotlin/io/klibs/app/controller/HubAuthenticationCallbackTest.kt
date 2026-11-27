@@ -40,7 +40,6 @@ import kotlin.test.assertTrue
         "klibs.auth.session.cookie-name=test_session",
         "klibs.auth.session.cookie-secure=true",
         "klibs.auth.hub.request-timeout=1s",
-        "klibs.auth.hub.callback-timeout=2s",
     ],
 )
 class HubAuthenticationCallbackTest : BaseUnitWithDbLayerTest() {
@@ -110,6 +109,20 @@ class HubAuthenticationCallbackTest : BaseUnitWithDbLayerTest() {
         assertRejectedWithoutPersistence(response, 400)
         assertTrue(response.getHeaders(HttpHeaders.SET_COOKIE).isEmpty())
         assertTrue(server.requests.isEmpty())
+    }
+
+    @Test
+    fun `a callback without state leaves the current browser login attempt usable`() {
+        val login = startLogin()
+        val response = uut.get("/auth/hub/callback") {
+            cookie(loginCookie(login))
+            param("code", "authorization-code")
+        }.andReturn().response
+
+        assertRejectedWithoutPersistence(response, 400)
+        assertTrue(response.getHeaders(HttpHeaders.SET_COOKIE).isEmpty())
+        assertTrue(server.requests.isEmpty())
+        assertEquals(302, callback(login).status)
     }
 
     @Test

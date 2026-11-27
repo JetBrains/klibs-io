@@ -5,3 +5,4 @@ apply:
 
 dependencies:
   - $libs.okhttp
+  - $libs.spring.boot.starter.validation

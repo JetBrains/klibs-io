@@ -1,6 +1,6 @@
 package io.klibs.core.user.service
 
-import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
@@ -8,7 +8,7 @@ import java.net.URI
 import java.net.URLDecoder
 
 @Service
-@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
 class FrontendRedirectService {
     fun sanitizeReturnTo(returnTo: String?): String {
         if (returnTo == null) return FRONTEND_ROOT

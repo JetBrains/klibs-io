@@ -6,7 +6,7 @@ import io.klibs.app.filter.SessionOriginProtectionFilter
 import io.klibs.app.filter.UserSessionAuthenticationFilter
 import io.klibs.app.service.SessionCookieService
 import io.klibs.core.user.service.UserSessionService
-import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -32,7 +32,7 @@ internal const val HUB_SIGN_IN_PATH = "/auth/hub/sign-in"
 internal const val HUB_CALLBACK_PATH = "/auth/hub/callback"
 
 @Configuration
-@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
 class UserAuthenticationSecurityConfiguration {
 
     @Bean

@@ -1,7 +1,7 @@
 package io.klibs.app.service
 
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
-import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.ResponseCookie
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 import java.time.Duration
 
 @Component
-@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
 class SessionCookieService(
     userAuthenticationProperties: UserAuthenticationProperties,
 ) {

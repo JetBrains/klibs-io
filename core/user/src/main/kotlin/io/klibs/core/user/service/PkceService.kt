@@ -1,6 +1,6 @@
 package io.klibs.core.user.service
 
-import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
 import java.security.MessageDigest
@@ -9,7 +9,7 @@ import java.util.Base64
 
 /** PKCE S256 binds the authorization code to the secret generated before redirecting the browser to Hub. */
 @Service
-@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
 class PkceService(
     private val secureRandom: SecureRandom = SecureRandom(),
 ) {

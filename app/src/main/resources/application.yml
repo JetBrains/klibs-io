@@ -139,9 +139,7 @@ klibs:
       client-id: ${KLIBS_AUTH_HUB_CLIENT_ID:}
       scope: ${KLIBS_AUTH_HUB_SCOPE:openid profile email}
       callback-url: ${KLIBS_AUTH_HUB_CALLBACK_URL:}
-      connect-timeout: ${KLIBS_AUTH_HUB_CONNECT_TIMEOUT:2s}
-      request-timeout: ${KLIBS_AUTH_HUB_REQUEST_TIMEOUT:5s}
-      callback-timeout: ${KLIBS_AUTH_HUB_CALLBACK_TIMEOUT:10s}
+      request-timeout: ${KLIBS_AUTH_HUB_REQUEST_TIMEOUT:30s}
       login-attempt-ttl: ${KLIBS_AUTH_HUB_LOGIN_ATTEMPT_TTL:10m}
     hmac-secret: ${KLIBS_AUTH_HMAC_SECRET:}
     trusted-frontend-origin: ${KLIBS_AUTH_TRUSTED_FRONTEND_ORIGIN:}

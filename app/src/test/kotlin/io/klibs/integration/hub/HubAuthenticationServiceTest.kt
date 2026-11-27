@@ -1,7 +1,7 @@
 package io.klibs.integration.hub
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.klibs.integration.hub.configuration.HubClientSettings
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties
 import io.klibs.integration.hub.enums.HubAuthenticationFailure
 import io.klibs.integration.hub.exception.HubAuthenticationException
 import io.klibs.integration.hub.service.HubAuthenticationService
@@ -163,9 +163,9 @@ class HubAuthenticationServiceTest {
     }
 
     @Test
-    fun `the callback budget stops user info before the longer per-request timeout`() {
+    fun `the per-request timeout also stops a stalled user info response body`() {
         server.userInfoBodyGate = CountDownLatch(1)
-        val uut = service(callbackTimeout = Duration.ofMillis(300))
+        val uut = service(requestTimeout = Duration.ofMillis(300))
 
         assertTimeoutPreemptively(Duration.ofSeconds(2)) {
             val exception = assertFailsWith<HubAuthenticationException> { uut.authenticate("code", VERIFIER) }
@@ -179,13 +179,17 @@ class HubAuthenticationServiceTest {
 
     private fun service(
         requestTimeout: Duration = Duration.ofSeconds(4),
-        callbackTimeout: Duration = Duration.ofSeconds(4),
     ) = HubAuthenticationService(
         OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
-            .retryOnConnectionFailure(false).build(),
+            .retryOnConnectionFailure(false).callTimeout(requestTimeout).build(),
         jacksonObjectMapper(),
-        HubClientSettings(
-            server.baseUrl, "klibs-client", CALLBACK_URL, "openid", requestTimeout, callbackTimeout,
+        HubAuthenticationProperties(
+            baseUrl = server.baseUrl,
+            clientId = "klibs-client",
+            scope = "openid",
+            callbackUrl = CALLBACK_URL,
+            requestTimeout = requestTimeout,
+            loginAttemptTtl = Duration.ofMinutes(10),
         ),
     )
 

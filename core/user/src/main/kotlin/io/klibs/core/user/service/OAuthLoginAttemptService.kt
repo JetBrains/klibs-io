@@ -2,7 +2,7 @@ package io.klibs.core.user.service
 
 import io.klibs.core.user.dto.OAuthLoginAttemptDto
 import io.klibs.core.user.dto.OAuthLoginCallbackDto
-import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
@@ -12,7 +12,7 @@ import java.time.Clock
 import java.util.Base64
 
 @Service
-@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
 class OAuthLoginAttemptService(
     private val hashingService: AuthenticationHashingService,
     private val pkceService: PkceService,

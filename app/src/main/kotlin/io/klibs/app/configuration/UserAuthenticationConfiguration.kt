@@ -1,12 +1,11 @@
 package io.klibs.app.configuration
 
-import io.klibs.app.configuration.properties.HubAuthenticationProperties
 import io.klibs.app.configuration.properties.UserAuthenticationProperties
 import io.klibs.core.user.service.AuthenticationHashingService
 import io.klibs.core.user.service.OAuthLoginSettings
 import io.klibs.core.user.service.UserSessionSettings
-import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
-import io.klibs.integration.hub.configuration.HubClientSettings
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import okhttp3.OkHttpClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -17,7 +16,7 @@ import java.net.URI
 import java.util.Base64
 
 @Configuration
-@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
 @EnableConfigurationProperties(UserAuthenticationProperties::class, HubAuthenticationProperties::class)
 class UserAuthenticationConfiguration(
     private val properties: UserAuthenticationProperties,
@@ -46,19 +45,7 @@ class UserAuthenticationConfiguration(
     )
 
     @Bean
-    fun hubClientSettings(): HubClientSettings = HubClientSettings(
-        baseUrl = hubProperties.baseUrl,
-        clientId = hubProperties.clientId,
-        callbackUrl = hubProperties.callbackUrl,
-        scope = hubProperties.scope,
-        requestTimeout = hubProperties.requestTimeout,
-        callbackTimeout = hubProperties.callbackTimeout,
-    )
-
-    @Bean
     fun hubHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(hubProperties.connectTimeout)
-        .readTimeout(hubProperties.requestTimeout)
         .callTimeout(hubProperties.requestTimeout)
         // Do not retry single-use code exchange or automatically follow HTTP redirects.
         .retryOnConnectionFailure(false)
@@ -95,7 +82,7 @@ class UserAuthenticationConfiguration(
 
     private fun validateTrustedOrigin(
         trustedOrigin: String,
-        requireHttps: Boolean,
+        requireHttps: Boolean = false,
     ) {
         val uri = URI.create(trustedOrigin)
         require(uri.scheme == "http" || uri.scheme == "https") {

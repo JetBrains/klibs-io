@@ -5,7 +5,7 @@ import io.klibs.core.user.dto.OAuthLoginAttemptDto
 import io.klibs.core.user.dto.OAuthLoginCallbackDto
 import io.klibs.core.user.service.OAuthLoginAttemptService
 import io.klibs.core.user.service.OAuthLoginSettings
-import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component
 import java.time.Duration
 
 @Component
-@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
 class LoginCookieService(
     userAuthenticationProperties: UserAuthenticationProperties,
     private val loginSettings: OAuthLoginSettings,

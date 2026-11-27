@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.klibs.integration.hub.configuration.HUB_AUTHENTICATION_ENABLED_PROPERTY
-import io.klibs.integration.hub.configuration.HubClientSettings
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties
+import io.klibs.integration.hub.configuration.properties.HubAuthenticationProperties.Companion.ENABLED_PROPERTY
 import io.klibs.integration.hub.enums.HubAuthenticationFailure
 import io.klibs.integration.hub.exception.HubAuthenticationException
 import okhttp3.FormBody
@@ -19,24 +19,23 @@ import org.springframework.stereotype.Service
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.URI
-import java.util.concurrent.TimeUnit
 
 @Service
-@ConditionalOnProperty(HUB_AUTHENTICATION_ENABLED_PROPERTY, havingValue = "true")
+@ConditionalOnProperty(ENABLED_PROPERTY, havingValue = "true")
 class HubAuthenticationService(
     private val hubHttpClient: OkHttpClient,
     private val objectMapper: ObjectMapper,
-    private val settings: HubClientSettings,
+    private val properties: HubAuthenticationProperties,
 ) {
-    private val baseUrl = settings.baseUrl.trimEnd('/')
+    private val baseUrl = properties.baseUrl.trimEnd('/')
 
     fun createAuthorizationUri(state: String, codeChallenge: String): URI =
         baseUrl.toHttpUrl().newBuilder()
             .addPathSegments("api/rest/oauth2/auth")
             .addQueryParameter("response_type", "code")
-            .addQueryParameter("client_id", settings.clientId)
-            .addQueryParameter("redirect_uri", settings.callbackUrl)
-            .addQueryParameter("scope", settings.scope)
+            .addQueryParameter("client_id", properties.clientId)
+            .addQueryParameter("redirect_uri", properties.callbackUrl)
+            .addQueryParameter("scope", properties.scope)
             .addQueryParameter("state", state)
             .addQueryParameter("request_credentials", "default")
             .addQueryParameter("code_challenge", codeChallenge)
@@ -45,14 +44,13 @@ class HubAuthenticationService(
             .toUri()
 
     fun authenticate(code: String, codeVerifier: String): String {
-        val deadline = System.nanoTime() + settings.callbackTimeout.toNanos()
         try {
-            val tokenResponse = execute(tokenRequest(code, codeVerifier), deadline, tokenExchange = true)
+            val tokenResponse = execute(tokenRequest(code, codeVerifier), tokenExchange = true)
             val token = requiredText(tokenResponse, "access_token")
             if (!requiredText(tokenResponse, "token_type").equals("Bearer", ignoreCase = true)) {
                 throw HubAuthenticationException(HubAuthenticationFailure.MALFORMED_RESPONSE)
             }
-            val user = execute(userInfoRequest(token), deadline, tokenExchange = false)
+            val user = execute(userInfoRequest(token), tokenExchange = false)
             return requiredText(user, "sub")
         } catch (exception: Exception) {
             val failure = when (exception) {
@@ -76,8 +74,8 @@ class HubAuthenticationService(
             FormBody.Builder()
                 .add("grant_type", "authorization_code")
                 .add("code", code)
-                .add("redirect_uri", settings.callbackUrl)
-                .add("client_id", settings.clientId)
+                .add("redirect_uri", properties.callbackUrl)
+                .add("client_id", properties.clientId)
                 .add("code_verifier", codeVerifier)
                 .build(),
         )
@@ -89,11 +87,8 @@ class HubAuthenticationService(
         .header("Authorization", "Bearer $token")
         .build()
 
-    private fun execute(request: Request, deadline: Long, tokenExchange: Boolean): JsonNode {
-        val call = hubHttpClient.newCall(request)
-        // The second call gets only the budget left by the first, including reading its response body.
-        call.timeout().timeout(minOf(settings.requestTimeout.toNanos(), remainingNanos(deadline)), TimeUnit.NANOSECONDS)
-        return call.execute().use { response ->
+    private fun execute(request: Request, tokenExchange: Boolean): JsonNode {
+        return hubHttpClient.newCall(request).execute().use { response ->
             parseResponse(response, tokenExchange)
         }
     }
@@ -116,10 +111,6 @@ class HubAuthenticationService(
     private fun requiredText(json: JsonNode, field: String): String =
         json[field]?.takeIf { it.isTextual }?.textValue()?.takeIf { it.isNotBlank() }
             ?: throw HubAuthenticationException(HubAuthenticationFailure.MALFORMED_RESPONSE)
-
-    private fun remainingNanos(deadline: Long): Long = (deadline - System.nanoTime()).also {
-        if (it <= 0) throw HubAuthenticationException(HubAuthenticationFailure.TIMEOUT)
-    }
 
     private companion object {
         val log = LoggerFactory.getLogger(HubAuthenticationService::class.java)
