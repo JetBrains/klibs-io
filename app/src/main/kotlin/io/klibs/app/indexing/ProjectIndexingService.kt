@@ -3,24 +3,27 @@ package io.klibs.app.indexing
 import io.klibs.app.service.TagsGenerationService
 import io.klibs.app.util.BackoffProvider
 import io.klibs.core.owner.ScmOwnerRepository
+import io.klibs.core.project.ANDROIDX_DEFAULT_DESCRIPTION
+import io.klibs.core.project.ANDROIDX_GITHUB_OWNER
 import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.entity.TagEntity
 import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.service.OwnerMarkerService
+import io.klibs.core.readme.dto.AndroidxProjectDTO
+import io.klibs.core.readme.dto.ReadmeContent
+import io.klibs.core.readme.service.GithubReadmeContentBuilder
+import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.readme.AndroidxReadmeProvider
-import io.klibs.core.readme.GitHubIndexingReadmeContent
-import io.klibs.core.readme.ReadmeContentBuilder
-import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.github.GitHubIntegration
 import io.klibs.integration.github.model.ReadmeFetchResult
 import io.klibs.integration.maven.MavenArtifact
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -39,10 +42,11 @@ class ProjectIndexingService(
     private val tagsGenerationService: TagsGenerationService,
     private val projectTagRepository: ProjectTagRepository,
     private val gitHubIntegration: GitHubIntegration,
-    private val readmeContentBuilder: ReadmeContentBuilder,
-    @Qualifier("aiDescriptionBackoffProvider")
+    private val githubReadmeContentBuilder: GithubReadmeContentBuilder,
+    private val eventPublisher: ApplicationEventPublisher,
+    @param:Qualifier("aiDescriptionBackoffProvider")
     private val descriptionBackoffProvider: BackoffProvider,
-    @Qualifier("aiTagsBackoffProvider")
+    @param:Qualifier("aiTagsBackoffProvider")
     private val tagsBackoffProvider: BackoffProvider,
     private val ownerMarkerService: OwnerMarkerService,
 ) {
@@ -65,8 +69,6 @@ class ProjectIndexingService(
                 ReadmeService.ProjectInfo(
                     project.idNotNull,
                     project.scmRepoId,
-                    project.name,
-                    ownerLogin
                 ),
             )
                 ?: error("Unable to generate the description due to missing or empty README.md for $project")
@@ -104,8 +106,6 @@ class ProjectIndexingService(
                 ReadmeService.ProjectInfo(
                     project.idNotNull,
                     project.scmRepoId,
-                    project.name,
-                    repo.ownerLogin
                 ),
             )
                 ?: error("Unable to generate the description due to missing or empty README.md for $project")
@@ -179,11 +179,11 @@ class ProjectIndexingService(
         mavenArtifact: MavenArtifact,
         scmRepositoryEntity: ScmRepositoryEntity,
     ): ProjectEntity {
-        if (scmRepositoryEntity.ownerLogin == AndroidxReadmeProvider.OWNER_NAME) {
+        if (scmRepositoryEntity.ownerLogin == ANDROIDX_GITHUB_OWNER) {
             return persistAndroidxProject(mavenArtifact, scmRepositoryEntity)
         }
 
-        val readmeContent = fetchReadmeContent(scmRepositoryEntity)
+        val readmeContent = fetchGithubReadmeContent(scmRepositoryEntity)
 
         logger.debug("Persisting a new project for {}", mavenArtifact)
         val persistedEntity = projectRepository.insert(
@@ -207,8 +207,11 @@ class ProjectIndexingService(
                 )
             )
 
-            readmeService.writeReadmeFiles(
+            readmeService.saveReadmeMetadata(
                 scmRepositoryId = scmRepositoryEntity.idNotNull,
+                readmeMetadataEntity = null,
+            )
+            readmeService.writeReadmeFiles(
                 rawContent = readmeContent.raw,
                 projectId = persistedEntity.idNotNull,
                 mdContent = readmeContent.markdown,
@@ -225,12 +228,6 @@ class ProjectIndexingService(
     ): ProjectEntity {
         val projectName = resolveProjectName(mavenArtifact, scmRepositoryEntity)
 
-//      There used to be a code here to fetch and minimize readme to add minimizedReadme.
-//      However, it will never trigger correctly.
-//      A new androidx project will be persisted here if authors publish a new unknown androidx package.
-//      For minimizedReadme to be updated, we would need to place README into resources folder beforehand.
-//      I'd say it is very unlikely, and probably a new project will be persisted without minimizedReadme.
-
         logger.debug("Persisting a new androidx project {} by {}", projectName, mavenArtifact)
 
         val persistedEntity = projectRepository.insert(
@@ -246,15 +243,24 @@ class ProjectIndexingService(
             )
         )
         ownerMarkerService.assignOwnerMarkers(persistedEntity.idNotNull, scmRepositoryEntity.ownerLogin)
+        eventPublisher.publishEvent(
+            AndroidxProjectCreatedEvent(
+                AndroidxProjectDTO(
+                    id = persistedEntity.idNotNull,
+                    name = persistedEntity.name,
+                    description = persistedEntity.description,
+                )
+            )
+        )
 
         return persistedEntity
     }
 
-    private fun fetchReadmeContent(scmRepositoryEntity: ScmRepositoryEntity): GitHubIndexingReadmeContent? {
+    private fun fetchGithubReadmeContent(scmRepositoryEntity: ScmRepositoryEntity): ReadmeContent? {
         return when (val result = gitHubIntegration.getReadmeWithModifiedSinceCheck(
             scmRepositoryEntity.nativeId, Instant.EPOCH
         )) {
-            is ReadmeFetchResult.Content -> readmeContentBuilder.buildFromMarkdown(
+            is ReadmeFetchResult.Content -> githubReadmeContentBuilder.buildFromMarkdown(
                 readmeMd = result.markdown,
                 nativeId = scmRepositoryEntity.nativeId,
                 ownerLogin = scmRepositoryEntity.ownerLogin,
@@ -270,7 +276,7 @@ class ProjectIndexingService(
         mavenArtifact: MavenArtifact,
         scmRepositoryEntity: ScmRepositoryEntity,
     ): String {
-        if (scmRepositoryEntity.ownerLogin != AndroidxReadmeProvider.OWNER_NAME) {
+        if (scmRepositoryEntity.ownerLogin != ANDROIDX_GITHUB_OWNER) {
             return scmRepositoryEntity.name
         }
         return mavenArtifact.groupId.split('.').getOrNull(1)
@@ -279,7 +285,5 @@ class ProjectIndexingService(
 
     companion object {
         private val logger = LoggerFactory.getLogger(ProjectIndexingService::class.java)
-        private const val ANDROIDX_DEFAULT_DESCRIPTION =
-            "This is androidx library, that was not documented or supported well. It is probably just a KMP module, that could be used on your own responsibility."
     }
 }

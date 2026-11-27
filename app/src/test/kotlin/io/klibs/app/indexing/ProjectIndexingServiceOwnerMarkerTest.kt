@@ -8,7 +8,7 @@ import io.klibs.core.project.ProjectEntity
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.service.OwnerMarkerService
-import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.service.GithubReadmeContentBuilder
 import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
@@ -21,6 +21,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.springframework.context.ApplicationEventPublisher
 import java.time.Instant
 
 class ProjectIndexingServiceOwnerMarkerTest {
@@ -33,7 +34,8 @@ class ProjectIndexingServiceOwnerMarkerTest {
     private val tagsGenerator = mockk<TagsGenerationService>()
     private val projectTagRepository = mockk<ProjectTagRepository>()
     private val gitHubIntegration = mockk<GitHubIntegration>()
-    private val readmeContentBuilder = mockk<ReadmeContentBuilder>()
+    private val githubReadmeContentBuilder = mockk<GithubReadmeContentBuilder>()
+    private val eventPublisher = mockk<ApplicationEventPublisher>(relaxUnitFun = true)
     private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val tagsBackoffProvider = BackoffProvider("tagsBackoff", mockk(relaxed = true))
     private val ownerMarkerService = mockk<OwnerMarkerService>(relaxUnitFun = true)
@@ -47,7 +49,8 @@ class ProjectIndexingServiceOwnerMarkerTest {
         tagsGenerationService = tagsGenerator,
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
-        readmeContentBuilder = readmeContentBuilder,
+        githubReadmeContentBuilder = githubReadmeContentBuilder,
+        eventPublisher = eventPublisher,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
         ownerMarkerService = ownerMarkerService,

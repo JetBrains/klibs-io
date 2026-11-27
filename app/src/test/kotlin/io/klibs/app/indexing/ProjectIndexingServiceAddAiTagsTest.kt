@@ -9,16 +9,17 @@ import io.klibs.core.project.enums.TagOrigin
 import io.klibs.core.project.repository.ProjectRepository
 import io.klibs.core.project.repository.ProjectTagRepository
 import io.klibs.core.project.service.OwnerMarkerService
-import io.klibs.core.readme.ReadmeContentBuilder
+import io.klibs.core.readme.service.GithubReadmeContentBuilder
+import io.klibs.core.readme.service.ReadmeService
 import io.klibs.core.scm.repository.ScmRepositoryEntity
 import io.klibs.core.scm.repository.ScmRepositoryRepository
-import io.klibs.core.readme.service.ReadmeService
 import io.klibs.integration.ai.ProjectDescriptionGenerator
 import io.klibs.integration.github.GitHubIntegration
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.springframework.context.ApplicationEventPublisher
 import java.time.Instant
 
 class ProjectIndexingServiceAddAiTagsTest {
@@ -31,7 +32,8 @@ class ProjectIndexingServiceAddAiTagsTest {
     private val tagsGenerator = mockk<TagsGenerationService>()
     private val projectTagRepository = mockk<ProjectTagRepository>()
     private val gitHubIntegration = mockk<GitHubIntegration>()
-    private val readmeContentBuilder = mockk<ReadmeContentBuilder>()
+    private val githubReadmeContentBuilder = mockk<GithubReadmeContentBuilder>()
+    private val eventPublisher = mockk<ApplicationEventPublisher>()
     private val descriptionBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val tagsBackoffProvider = BackoffProvider("descriptionBackoff", mockk(relaxed = true))
     private val ownerMarkerService = mockk<OwnerMarkerService>()
@@ -45,7 +47,8 @@ class ProjectIndexingServiceAddAiTagsTest {
         tagsGenerationService = tagsGenerator,
         projectTagRepository = projectTagRepository,
         gitHubIntegration = gitHubIntegration,
-        readmeContentBuilder = readmeContentBuilder,
+        githubReadmeContentBuilder = githubReadmeContentBuilder,
+        eventPublisher = eventPublisher,
         descriptionBackoffProvider = descriptionBackoffProvider,
         tagsBackoffProvider = tagsBackoffProvider,
         ownerMarkerService = ownerMarkerService,
@@ -94,7 +97,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         every { scmRepositoryRepository.findById(scmRepoId) } returns repo
         every {
             readmeService.readReadmeMd(
-                ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "octocat")
+                ReadmeService.ProjectInfo(projectId, scmRepoId)
             )
         } returns readme
 
@@ -182,7 +185,7 @@ class ProjectIndexingServiceAddAiTagsTest {
         every { scmRepositoryRepository.findById(scmRepoId) } returns repo
         every {
             readmeService.readReadmeMd(
-                ReadmeService.ProjectInfo(projectId, scmRepoId, "test-repo", "owner")
+                ReadmeService.ProjectInfo(projectId, scmRepoId)
             )
         } returns "# Test README"
 

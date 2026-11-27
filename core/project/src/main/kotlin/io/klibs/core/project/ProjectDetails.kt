@@ -71,7 +71,7 @@ data class ProjectDetails(
 
     fun getHomepageLink(): String? {
         return when {
-            isAndroidx -> "https://developer.android.com/jetpack/androidx/releases/${this.name}"
+            isAndroidx -> "$ANDROIDX_RELEASES_URL${this.name}"
             else -> linkHomepage
         }
     }

@@ -7,7 +7,7 @@ data class ProjectEntity(
     val scmRepoId: Int,
     var ownerId: Int,
     var name: String,
-    val description: String?,
+    var description: String?,
     var minimizedReadme: String?,
 
     val latestVersion: String,

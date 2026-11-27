@@ -7,6 +7,5 @@ apply:
 
 dependencies:
   - ../package
-  - ../readme
   - ../scm-owner
   - ../scm-repository

@@ -49,9 +49,9 @@ class S3ReadmeCRUDService(
     private fun readReadme(key: String): String? = s3StorageService.readText(bucketName, key)
 
     override fun writeReadmeFiles(projectId: Int, rawContent: String, mdContent: String, htmlContent: String) {
-        writeReadmeContent(projectId = projectId, type = ReadmeType.RAW, content = rawContent)
         writeReadmeContent(projectId = projectId, type = ReadmeType.MARKDOWN, content = mdContent)
         writeReadmeContent(projectId = projectId, type = ReadmeType.HTML, content = htmlContent)
+        writeReadmeContent(projectId = projectId, type = ReadmeType.RAW, content = rawContent)
     }
 
    private fun writeReadmeContent(projectId: Int, type: ReadmeType, content: String) {

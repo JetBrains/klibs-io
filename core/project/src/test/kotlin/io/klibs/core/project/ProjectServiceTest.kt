@@ -1,17 +1,11 @@
 package io.klibs.core.project
 
 import io.klibs.core.pckg.service.PackageService
-import io.klibs.core.project.enums.TagOrigin
-import io.klibs.core.project.repository.AllowedProjectTagsRepository
-import io.klibs.core.project.repository.MarkerRepository
-import io.klibs.core.project.repository.ProjectRepository
-import io.klibs.core.project.repository.ProjectTagRepository
-import io.klibs.core.project.repository.TagRepository
 import io.klibs.core.project.entity.TagEntity
+import io.klibs.core.project.enums.TagOrigin
+import io.klibs.core.project.repository.*
 import io.klibs.core.scm.repository.ScmRepositoryRepository
 import io.klibs.core.scm.repository.health.repository.ScmRepoHealthComponentsRepository
-import io.klibs.core.project.repository.ProjectHiddenRepository
-import io.klibs.core.readme.service.ReadmeService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -22,7 +16,6 @@ import kotlin.test.assertFailsWith
 class ProjectServiceTest {
 
     private val packageService = mockk<PackageService>()
-    private val readmeService = mockk<ReadmeService>()
     private val projectRepository = mockk<ProjectRepository>()
     private val scmRepositoryRepository = mockk<ScmRepositoryRepository>()
     private val markerRepository = mockk<MarkerRepository>()
@@ -35,7 +28,6 @@ class ProjectServiceTest {
 
     private val uut = ProjectService(
         packageService,
-        readmeService,
         projectRepository,
         scmRepositoryRepository,
         markerRepository,
