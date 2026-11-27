@@ -426,8 +426,8 @@ Existing anonymous browsing and Basic-auth operator/admin flows must keep workin
     partial session may remain; a newly created local user may remain and must be reused by a later login.
   - Each HTTP call to Hub must stop when its timeout is reached, so a stalled Hub cannot keep a backend request running
     indefinitely.
-  - Default timeout budget: connect <= 2 seconds, each Hub HTTP call <= 5 seconds, and the combined callback Hub-call budget
-    <= 10 seconds. These confirmed defaults must be configurable (section 14.2).
+  - Each Hub HTTP call has a configurable total timeout, 30 seconds by default. Connection, read, and write timeouts use
+    OkHttp defaults; there is no separate combined timeout for the callback's Hub calls (section 14.2).
   - Authentication failures may log only a safe error category, such as invalid OAuth state (state) or Hub timeout. Logs
     must not contain raw tokens, authorization codes, Hub user ids, or session cookies.
 
@@ -915,8 +915,8 @@ Notes:
 
   <br>
 
-  - **Decision:** Hub timeout defaults are connect <= 2 seconds, each call <= 5 seconds, and callback Hub calls <= 10 seconds
-    in total.
+  - **Decision:** each Hub HTTP call has a configurable 30-second total timeout. Connection, read, and write timeouts use
+    OkHttp defaults; there is no separate combined timeout for the callback's Hub calls.
   - **Decision:** local sessions use 30-day idle TTL, 1-day refresh interval, and 180-day absolute TTL; the cookie follows the
     remaining server-side TTL.
   - **Decision:** OAuth state and the login cookie share a configurable TTL, 10 minutes by default.
