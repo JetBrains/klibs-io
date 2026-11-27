@@ -62,7 +62,7 @@ Prefer Kotlin idioms to manual code: use `partition` and `associateWith` instead
 # No unrelated changes
 Applies to: `**/*`
 
-Revert unrelated edits before opening a PR, including whitespace or trailing-newline changes, brace or `()` tweaks, and stray `@Deprecated` or `@ConditionalOnProperty` annotations.
+Revert unrelated edits before opening a PR, including whitespace or trailing-newline changes, brace or `()` tweaks, and stray `@Deprecated` or `@ConditionalOnProperty` annotations. Exceptions to this rule are: adding use-site targets in annotations like: 'param', 'field', 'get', etc.
 
 # No magic values
 Applies to: 
@@ -111,7 +111,7 @@ In every Liquibase changeset, add preconditions covering every object it creates
 # JPA for new persistence code
 Applies to: `**/*.kt`
 
-Implement new entities and repositories with JPA (`@Entity` and Spring Data `save`). Do not use data classes with `JdbcClient` or manual insert/update branching; all new entities should use JPA.
+Implement new entities and repositories with JPA (`@Entity` and Spring Data `save`). Do not use data classes with `JdbcClient` or manual insert/update branching; all new entities should use JPA. Exceptions to this rule is ProjectEntity and it's repository.
 
 # Materialized view recreation
 Applies to:
